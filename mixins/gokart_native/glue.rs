@@ -278,7 +278,6 @@ pub(in crate::game) fn items(items: &mut Vec<Item>) {
     push_item(items, rules::ITEM_OFF_ROADER, 1, Rarity::Rare);
     push_item(items, rules::ITEM_QUAD_BIKE, 1, Rarity::Uncommon);
     push_item(items, rules::ITEM_POLICE_CAR, 1, Rarity::Epic);
-    push_item(items, rules::ITEM_DACIA_LOGAN_POLICE, 1, Rarity::Rare);
     push_item(items, rules::ITEM_ENGINE_IRON, 1, Rarity::Common);
     push_item(items, rules::ITEM_ENGINE_GOLD, 1, Rarity::Uncommon);
     push_item(items, rules::ITEM_ENGINE_DIAMOND, 1, Rarity::Rare);
@@ -504,7 +503,7 @@ fn lookup_kart_uuid(
             .as_ref()
             .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_DACIA_LOGAN))
         {
-            rules::KartSpec::default_dacia_logan()
+            rules::KartSpec::default_police_car()
         } else {
             rules::KartSpec::default()
         };
@@ -960,7 +959,7 @@ fn vehicle_kind_from_tags(tags: &[String]) -> Option<rules::VehicleKind> {
     } else if tags.iter().any(|t| t == rules::ENTITY_TAG_POLICE_CAR) {
         Some(rules::VehicleKind::PoliceCar)
     } else if tags.iter().any(|t| t == rules::ENTITY_TAG_DACIA_LOGAN) {
-        Some(rules::VehicleKind::DaciaLoganPolice)
+        Some(rules::VehicleKind::PoliceCar)
     } else {
         Some(rules::VehicleKind::GoKart)
     }
@@ -1199,7 +1198,6 @@ pub(in crate::game) fn perform_command(
             make_kart_item(game, rules::KartSpec::default()),
             make_kart_item(game, rules::KartSpec::default_quad_bike()),
             make_kart_item(game, rules::KartSpec::default_off_roader()),
-            make_kart_item(game, rules::KartSpec::default_dacia_logan()),
             make_kart_item(game, rules::KartSpec::default_police_car()),
             stack_of(rules::ITEM_ENGINE_GOLD, 1),
             stack_of(rules::ITEM_ENGINE_DIAMOND, 1),
@@ -1230,11 +1228,6 @@ pub(in crate::game) fn perform_command(
             rules::KartSpec::default_quad_bike()
         } else if matches!(arg, "police_car" | "policecar" | "police" | "politia" | "politie" | "bmw") {
             rules::KartSpec::default_police_car()
-        } else if matches!(
-            arg,
-            "dacia_logan_police" | "dacia_logan" | "dacia" | "logan" | "logan_politie" | "logan_police"
-        ) {
-            rules::KartSpec::default_dacia_logan()
         } else {
             rules::KartSpec::default()
         };
@@ -1305,7 +1298,7 @@ pub(in crate::game) fn perform_command(
     game.native_tell(
         player.uuid,
         Text::literal(
-            "/vehicle [remove | remove all | clear | spawn [go_kart|quad_bike|off_roader|police|logan] | pack | kit | fuel | paint <color>]",
+            "/vehicle [remove | remove all | clear | spawn [go_kart|quad_bike|off_roader|police] | pack | kit | fuel | paint <color>]",
         )
         .with_color(text::YELLOW),
     );

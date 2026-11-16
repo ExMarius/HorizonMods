@@ -1,6 +1,6 @@
-# Horizon Vehicles: Go-Kart, ATV Quad Bike, 4x4 Off-Roader, Poliția Română & Dacia Logan Poliție (`gokart_native` v0.9.0)
+# Horizon Vehicles: Go-Kart, ATV Quad Bike, 4x4 Off-Roader, Poliția Română (`gokart_native` v0.10.1)
 
-Mod nativ **FiveM-style de Vehicule 3D** pentru **Horizon 26.3 (Launcher `0.2.69+` / Nightly)**: **Go-Kart**, **ATV Quad Bike**, **Off-Roader 4x4**, **Autospecială Poliția Română (Pursuit Sedan)** și **Dacia Logan Poliția Română** — cu aripi 3D poligonale curbate în 5 segmente pe conturul roții + contra-aripi interioare și praguri continue de la roți la roți, girofar Red/Blue dinamic + sirenă pe tasta `[H]`, faruri emisive (`light_emission: 15`) + blocuri reale `minecraft:light` noaptea, categorie dedicată **Horizon Vehicles** în Creative Inventory și modele 3D verificate fără z-fighting.
+Mod nativ **FiveM-style de Vehicule 3D** pentru **Horizon 26.3 (Launcher `0.2.69+` / Nightly)**: **Go-Kart**, **ATV Quad Bike**, **Off-Roader 4x4**, **Autospecială Poliția Română (Pursuit Sedan)** — cu aripi 3D poligonale curbate în 5 segmente pe conturul roții + contra-aripi interioare și praguri continue de la roți la roți, girofar Red/Blue dinamic + sirenă pe tasta `[H]`, faruri emisive (`light_emission: 15`) + blocuri reale `minecraft:light` noaptea, categorie dedicată **Horizon Vehicles** în Creative Inventory și modele 3D verificate fără z-fighting.
 
 Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: conține atât codul nativ Rust (fizică pe două punți la 20 TPS, drift, charge-boost, tracțiune 4x4 off-road, HUD cu vitezometru analogic + digital, Garaj interactiv de tuning, cameră inteligentă Chase + Free-Look și IK în timp real pentru mâinile șoferului pe volan), cât și pachetul de resurse încorporat (`gokart-content.hmod` cu modele 3D, texturi pixel-art originale, sunete OGG Vorbis sintetizate, rețete Survival și localizare completă în **Română `ro_ro`** și **Engleză `en_us`**).
 
@@ -13,7 +13,6 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
 - **ATV Quad Bike (`gokart:quad_bike`)** — ATV agil de traseu cu ghidon articulat `quad_handlebars` + handguards, șa centrală, suspensie vizibilă cu arcuri elicoidale, portbagaje față/spate și urcare peste blocuri întregi (`step_height = 1.05`, rezervor `2.800 mB`).
 - **4x4 Off-Roader (`gokart:off_roader`)** — SUV off-road 4x4 (`~2.14` blocuri lățime × `~3.05` blocuri lungime, `step_height = 1.05`), aripi trapezoidale 3D evazate cu contra-aripi + praguri rock-slider continue de la roată la roată, bullbar îngust central cu troliu, roll-cage cu 4 proiectoare pe plafon, roată de rezervă pe hayon și rezervor `4.000 mB`.
 - **Autospecială Poliția Română — Pursuit Sedan (`gokart:police_car`)** — Sedan sportiv de intervenție cu grilă dublă și stroboscoape integrate, aripi curbate în 5 segmente cu contra-aripi + praguri aero și linie mediană continuă de la roți la roți, plafon conectat cu antenă shark-fin, colantare Battenberg albastru/galben-neon `POLIȚIA`, plăcuțe `RO`, laptop MDT în bord și **girofar aerodinamic Red/Blue + sirenă pe `[H]`** (`4.500 mB`).
-- **Dacia Logan Poliția Română (`gokart:dacia_logan_police`)** — Silueta autentică în 3 volume **Dacia Logan** de patrulă: grilă frontală `#dacia_grille` cu emblemă centrală albă/crom, faruri late + proiectoare de ceață în bară, aripi curbate cu bandou negru mat și contra-aripi, portiere la linie de la roți la roți cu **bandou negru lateral specific Logan**, antenă flexibilă pe plafon, **rampă clasică înaltă de girofar pe picioare de prindere** (`[H]` pentru sirenă & stroboscoape!), portbagaj înalt specific Logan cu ornament cromat, plăcuțe `RO` și stopuri pătrate pe colț (`4.200 mB`).
 - **3 Motoare (`Engine Tiers`)**:
   - `gokart:small_engine_iron` — **Motor Mic de Fier**: `52 km/h` pe Go-Kart (`47 km/h` pe Off-Roader), cuplu echilibrat.
   - `gokart:small_engine_gold` — **Motor Mic de Aur**: `64 km/h` pe Go-Kart (`58 km/h` pe Off-Roader), accelerație rapidă.
@@ -60,7 +59,6 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
 | **ATV Quad Bike** | `B L B` / `I E I` / `W _ W` | `B` = Grilaj Fier, `L` = Piele, `I` = Fier, `E` = Motor Mic de Fier, `W` = Roată Sport |
 | **4x4 Off-Roader** | `L G L` / `I B I` / `W E W` | `L` = Piele, `G` = Geam, `I` = Fier, `B` = Bloc de Fier, `W` = Roată Sport, `E` = Motor Mic de Aur |
 | **Autospecială Poliția Română** | `R L B` / `I I I` / `W E W` | `R` = Redstone, `L` = Piele, `B` = Lapis Lazuli, `I` = Fier, `W` = Roată Racing, `E` = Motor Diamant |
-| **Dacia Logan Poliția Română** | `R G B` / `I L I` / `W E W` | `R` = Redstone, `G` = Geam, `B` = Lapis Lazuli, `I` = Fier, `L` = Piele, `W` = Roată Sport, `E` = Motor Aur |
 | **Cheie Mecanică** | `I _ I` / `_ I _` / `_ R _` | `I` = Fier, `R` = Vopsea Roșie |
 | **Canistră Combustibil** | `_ I R` / `I C I` / `I I I` | `I` = Fier, `R` = Vopsea Roșie, `C` = Cărbune |
 
@@ -68,8 +66,8 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
 
 ## Comenzi Rapide (`/vehicle`, `/vehicel` sau `/gokart`)
 
-- `/vehicle kit` *(OP / Singleplayer Cheats)* — Oferă pachetul complet (**Go-Kart**, **ATV Quad Bike**, **4x4 Off-Roader**, **Autospecială Poliția Română**, **Dacia Logan Poliția Română**, motoare Aur/Diamant, roți Sport/Racing, Cheie Mecanică, Canistră plină și vopsele).
-- `/vehicle spawn [go_kart | quad_bike | off_roader | police | logan]` *(OP)* — Spawnează instant vehiculul dorit în fața jucătorului (`logan` / `dacia` / `dacia_logan` pentru Dacia Logan de Poliție).
+- `/vehicle kit` *(OP / Singleplayer Cheats)* — Oferă pachetul complet (**Go-Kart**, **ATV Quad Bike**, **4x4 Off-Roader**, **Autospecială Poliția Română**, motoare Aur/Diamant, roți Sport/Racing, Cheie Mecanică, Canistră plină și vopsele).
+- `/vehicle spawn [go_kart | quad_bike | off_roader | police]` *(OP)* — Spawnează instant vehiculul dorit în fața jucătorului.
 - `/vehicle remove`, `/vehicle remove <rază>` sau `/vehicle remove all` *(aliasuri: `/vehicel remove [all]`, `/vehicle clear`, `/vehicle delete`, plus butonul **Șterge Definitiv** în Garajul `[K]`)* — Șterge garantat din lume (`native_remove_mob`) atât vehiculele active, cât și vehiculele vechi rămase din sesiuni anterioare, curățând instant și blocurile de lumină.
 - `/vehicle fuel` *(OP)* — Comută între consum normal de combustibil și **Combustibil Infinit**.
 - `/vehicle paint <culoare>` — Vopsește vehiculul curent/apropiat (`red`, `green`, `blue`, `yellow`, `orange`, `lime`, `cyan`, `black`, `white` etc.).

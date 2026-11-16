@@ -9,8 +9,8 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.9.0";
-pub const DESCRIPTION: &str = "FiveM-inspired 3D Vehicles for Horizon: Go-Kart, Quad Bike ATV, 4x4 Off-Roader, Poliția Română Pursuit Sedan & Dacia Logan Poliția Română with sculpted wheel arches, emissive lights, dynamic night headlights, siren & girofar, and /vehicle remove.";
+pub const VERSION: &str = "0.10.1";
+pub const DESCRIPTION: &str = "FiveM-inspired 3D Vehicles for Horizon: Go-Kart, Quad Bike ATV, 4x4 Off-Roader, Poliția Română Pursuit Sedan with sculpted wheel arches, emissive lights, dynamic night headlights, siren & girofar, and /vehicle remove.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
 pub const CLIENT_CONFIG_FILE: &str = "gokart-client.toml";
@@ -47,7 +47,7 @@ pub const MODEL_BODY: &str = "gokart:block/go_kart_body";
 pub const MODEL_OFF_ROADER_BODY: &str = "gokart:block/off_roader_body";
 pub const MODEL_QUAD_BIKE_BODY: &str = "gokart:block/quad_bike_body";
 pub const MODEL_POLICE_CAR_BODY: &str = "gokart:block/police_car_body";
-pub const MODEL_DACIA_LOGAN_BODY: &str = "gokart:block/dacia_logan_police_body";
+pub const MODEL_DACIA_LOGAN_BODY: &str = MODEL_POLICE_CAR_BODY;
 pub const MODEL_STEERING: &str = "gokart:block/go_kart_steering_wheel";
 pub const MODEL_QUAD_HANDLEBARS: &str = "gokart:block/quad_handlebars";
 pub const MODEL_SIREN_RED: &str = "gokart:block/siren_red";
@@ -59,12 +59,11 @@ pub const MODEL_ENGINE_IRON: &str = "gokart:block/engine_iron";
 pub const MODEL_ENGINE_GOLD: &str = "gokart:block/engine_gold";
 pub const MODEL_ENGINE_DIAMOND: &str = "gokart:block/engine_diamond";
 
-pub const STANDALONE_MODELS: [&str; 15] = [
+pub const STANDALONE_MODELS: [&str; 14] = [
     MODEL_BODY,
     MODEL_OFF_ROADER_BODY,
     MODEL_QUAD_BIKE_BODY,
     MODEL_POLICE_CAR_BODY,
-    MODEL_DACIA_LOGAN_BODY,
     MODEL_STEERING,
     MODEL_QUAD_HANDLEBARS,
     MODEL_SIREN_RED,
@@ -186,7 +185,7 @@ impl VehicleKind {
             1 => Self::OffRoader,
             2 => Self::QuadBike,
             3 => Self::PoliceCar,
-            4 => Self::DaciaLoganPolice,
+            4 => Self::PoliceCar,
             _ => Self::GoKart,
         }
     }
@@ -211,7 +210,7 @@ impl VehicleKind {
             "quad_bike" | "quadbike" | "atv" | "quad" => Self::QuadBike,
             "police_car" | "policecar" | "police" | "politia" | "politie" | "bmw" => Self::PoliceCar,
             "dacia_logan_police" | "dacia_logan" | "dacia" | "logan" | "logan_politie" | "logan_police" => {
-                Self::DaciaLoganPolice
+                Self::PoliceCar
             }
             _ => Self::GoKart,
         }
@@ -223,7 +222,6 @@ impl VehicleKind {
             ITEM_OFF_ROADER => Some(Self::OffRoader),
             ITEM_QUAD_BIKE => Some(Self::QuadBike),
             ITEM_POLICE_CAR => Some(Self::PoliceCar),
-            ITEM_DACIA_LOGAN_POLICE => Some(Self::DaciaLoganPolice),
             _ => None,
         }
     }
@@ -1920,7 +1918,7 @@ mod tests {
             },
             ClientKartView {
                 entity_id: 1004,
-                spec: KartSpec::default_dacia_logan(),
+                spec: KartSpec::default_police_car(),
                 steer_deg: 9.25,
                 wheel_rot_deg: 84.0,
                 speed_kmh: 61.5,
@@ -1940,7 +1938,7 @@ mod tests {
         assert!((decoded[0].steer_deg - (-14.5)).abs() < 0.05);
         assert!(decoded[0].drifting && decoded[0].boosting && !decoded[0].burnout && !decoded[0].siren_on);
         assert_eq!(decoded[1].entity_id, 1004);
-        assert_eq!(decoded[1].spec.kind, VehicleKind::DaciaLoganPolice);
+        assert_eq!(decoded[1].spec.kind, VehicleKind::PoliceCar);
         assert!(decoded[1].spec.kind.is_police());
         assert_eq!(decoded[1].spec, views[1].spec);
         assert!(decoded[1].siren_on);
@@ -1967,6 +1965,14 @@ mod tests {
             speed_kmh: false,
         };
         assert_eq!(ClientSettings::decode_toml(&cfg.encode_toml()), cfg);
+    }
+
+    #[test]
+    fn legacy_logan_data_migrates_to_pursuit_sedan() {
+        assert_eq!(VehicleKind::from_code(4), VehicleKind::PoliceCar);
+        assert_eq!(VehicleKind::from_slug("dacia_logan_police"), VehicleKind::PoliceCar);
+        assert_eq!(KartSpec::decode_component("kind=dacia_logan_police;fuel=1000").kind, VehicleKind::PoliceCar);
+        assert_eq!(VehicleKind::from_item(ITEM_DACIA_LOGAN_POLICE), None);
     }
 
     #[test]
