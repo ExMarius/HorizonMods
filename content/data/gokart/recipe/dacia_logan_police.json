@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "transportation",
+  "pattern": [
+    "RGB",
+    "ILI",
+    "WEW"
+  ],
+  "key": {
+    "R": "minecraft:redstone",
+    "G": "minecraft:glass_pane",
+    "B": "minecraft:lapis_lazuli",
+    "I": "minecraft:iron_ingot",
+    "L": "minecraft:leather",
+    "W": "gokart:sports_wheel",
+    "E": "gokart:small_engine_gold"
+  },
+  "result": {
+    "id": "gokart:dacia_logan_police",
+    "count": 1
+  }
+}

@@ -9,8 +9,8 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.8.0";
-pub const DESCRIPTION: &str = "FiveM-inspired 3D Vehicles for Horizon: Go-Kart, Quad Bike ATV, 4x4 Off-Roader & Romanian Police Car (Poliția Română) with dynamic night headlights, siren & flashing girofar, Creative Tab, and /vehicle remove.";
+pub const VERSION: &str = "0.9.0";
+pub const DESCRIPTION: &str = "FiveM-inspired 3D Vehicles for Horizon: Go-Kart, Quad Bike ATV, 4x4 Off-Roader, Poliția Română Pursuit Sedan & Dacia Logan Poliția Română with sculpted wheel arches, emissive lights, dynamic night headlights, siren & girofar, and /vehicle remove.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
 pub const CLIENT_CONFIG_FILE: &str = "gokart-client.toml";
@@ -21,12 +21,14 @@ pub const ENTITY_TAG: &str = "gokart_vehicle";
 pub const ENTITY_TAG_OFF_ROADER: &str = "gokart_off_roader";
 pub const ENTITY_TAG_QUAD_BIKE: &str = "gokart_quad_bike";
 pub const ENTITY_TAG_POLICE_CAR: &str = "gokart_police_car";
+pub const ENTITY_TAG_DACIA_LOGAN: &str = "gokart_dacia_logan";
 
 // Custom items
 pub const ITEM_GO_KART: &str = "gokart:go_kart";
 pub const ITEM_OFF_ROADER: &str = "gokart:off_roader";
 pub const ITEM_QUAD_BIKE: &str = "gokart:quad_bike";
 pub const ITEM_POLICE_CAR: &str = "gokart:police_car";
+pub const ITEM_DACIA_LOGAN_POLICE: &str = "gokart:dacia_logan_police";
 pub const ITEM_ENGINE_IRON: &str = "gokart:small_engine_iron";
 pub const ITEM_ENGINE_GOLD: &str = "gokart:small_engine_gold";
 pub const ITEM_ENGINE_DIAMOND: &str = "gokart:small_engine_diamond";
@@ -45,6 +47,7 @@ pub const MODEL_BODY: &str = "gokart:block/go_kart_body";
 pub const MODEL_OFF_ROADER_BODY: &str = "gokart:block/off_roader_body";
 pub const MODEL_QUAD_BIKE_BODY: &str = "gokart:block/quad_bike_body";
 pub const MODEL_POLICE_CAR_BODY: &str = "gokart:block/police_car_body";
+pub const MODEL_DACIA_LOGAN_BODY: &str = "gokart:block/dacia_logan_police_body";
 pub const MODEL_STEERING: &str = "gokart:block/go_kart_steering_wheel";
 pub const MODEL_QUAD_HANDLEBARS: &str = "gokart:block/quad_handlebars";
 pub const MODEL_SIREN_RED: &str = "gokart:block/siren_red";
@@ -56,11 +59,12 @@ pub const MODEL_ENGINE_IRON: &str = "gokart:block/engine_iron";
 pub const MODEL_ENGINE_GOLD: &str = "gokart:block/engine_gold";
 pub const MODEL_ENGINE_DIAMOND: &str = "gokart:block/engine_diamond";
 
-pub const STANDALONE_MODELS: [&str; 14] = [
+pub const STANDALONE_MODELS: [&str; 15] = [
     MODEL_BODY,
     MODEL_OFF_ROADER_BODY,
     MODEL_QUAD_BIKE_BODY,
     MODEL_POLICE_CAR_BODY,
+    MODEL_DACIA_LOGAN_BODY,
     MODEL_STEERING,
     MODEL_QUAD_HANDLEBARS,
     MODEL_SIREN_RED,
@@ -82,6 +86,7 @@ pub const CHAN_SYNC: &str = "gokart:sync";
 pub const KART_MAX_FUEL_MB: u32 = 2_000;
 pub const QUAD_BIKE_MAX_FUEL_MB: u32 = 3_000;
 pub const OFF_ROADER_MAX_FUEL_MB: u32 = 4_000;
+pub const DACIA_LOGAN_MAX_FUEL_MB: u32 = 4_200;
 pub const POLICE_CAR_MAX_FUEL_MB: u32 = 4_500;
 pub const JERRY_MAX_FUEL_MB: u32 = 5_000;
 pub const JERRY_DEFAULT_FUEL_MB: u32 = 2_500;
@@ -111,11 +116,13 @@ pub const SEAT_ATTACH_Y: f32 = (3.30 * 1.14) / 16.0;   // 0.235125 b (3.76 tx cu
 pub const SEAT_OFFSET_Z: f32 = (-3.80 * 1.18) / 16.0;  // -0.28025 b (-4.484 tx, 18.9 tx legroom!)
 pub const MAX_STEER_DEG: f32 = 25.0;
 pub const STEP_HEIGHT: f64 = 0.625;
+pub const DACIA_LOGAN_STEP_HEIGHT: f64 = 0.80;
 pub const POLICE_CAR_STEP_HEIGHT: f64 = 0.75;
 pub const QUAD_BIKE_STEP_HEIGHT: f64 = 1.02;
 pub const OFF_ROADER_STEP_HEIGHT: f64 = 1.06;
 pub const DEFAULT_CAMERA_DISTANCE: f32 = 4.5;
 pub const QUAD_BIKE_CAMERA_DISTANCE: f32 = 4.9;
+pub const DACIA_LOGAN_CAMERA_DISTANCE: f32 = 5.7;
 pub const POLICE_CAR_CAMERA_DISTANCE: f32 = 6.0;
 pub const OFF_ROADER_CAMERA_DISTANCE: f32 = 6.4;
 
@@ -126,6 +133,7 @@ pub enum VehicleKind {
     OffRoader,
     QuadBike,
     PoliceCar,
+    DaciaLoganPolice,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -169,16 +177,22 @@ impl VehicleKind {
             Self::OffRoader => 1,
             Self::QuadBike => 2,
             Self::PoliceCar => 3,
+            Self::DaciaLoganPolice => 4,
         }
     }
 
     pub fn from_code(code: u8) -> Self {
-        match code & 0x3 {
+        match code & 0x7 {
             1 => Self::OffRoader,
             2 => Self::QuadBike,
             3 => Self::PoliceCar,
+            4 => Self::DaciaLoganPolice,
             _ => Self::GoKart,
         }
+    }
+
+    pub fn is_police(self) -> bool {
+        matches!(self, Self::PoliceCar | Self::DaciaLoganPolice)
     }
 
     pub fn slug(self) -> &'static str {
@@ -187,6 +201,7 @@ impl VehicleKind {
             Self::OffRoader => "off_roader",
             Self::QuadBike => "quad_bike",
             Self::PoliceCar => "police_car",
+            Self::DaciaLoganPolice => "dacia_logan_police",
         }
     }
 
@@ -194,7 +209,10 @@ impl VehicleKind {
         match s.trim() {
             "off_roader" | "offroader" | "4x4" | "jeep" => Self::OffRoader,
             "quad_bike" | "quadbike" | "atv" | "quad" => Self::QuadBike,
-            "police_car" | "policecar" | "police" | "politia" | "politie" => Self::PoliceCar,
+            "police_car" | "policecar" | "police" | "politia" | "politie" | "bmw" => Self::PoliceCar,
+            "dacia_logan_police" | "dacia_logan" | "dacia" | "logan" | "logan_politie" | "logan_police" => {
+                Self::DaciaLoganPolice
+            }
             _ => Self::GoKart,
         }
     }
@@ -205,6 +223,7 @@ impl VehicleKind {
             ITEM_OFF_ROADER => Some(Self::OffRoader),
             ITEM_QUAD_BIKE => Some(Self::QuadBike),
             ITEM_POLICE_CAR => Some(Self::PoliceCar),
+            ITEM_DACIA_LOGAN_POLICE => Some(Self::DaciaLoganPolice),
             _ => None,
         }
     }
@@ -215,6 +234,7 @@ impl VehicleKind {
             Self::OffRoader => ITEM_OFF_ROADER,
             Self::QuadBike => ITEM_QUAD_BIKE,
             Self::PoliceCar => ITEM_POLICE_CAR,
+            Self::DaciaLoganPolice => ITEM_DACIA_LOGAN_POLICE,
         }
     }
 
@@ -224,6 +244,7 @@ impl VehicleKind {
             Self::OffRoader => "gokart.vehicle.off_roader",
             Self::QuadBike => "gokart.vehicle.quad_bike",
             Self::PoliceCar => "gokart.vehicle.police_car",
+            Self::DaciaLoganPolice => "gokart.vehicle.dacia_logan_police",
         }
     }
 
@@ -232,6 +253,7 @@ impl VehicleKind {
             Self::GoKart => KART_MAX_FUEL_MB,
             Self::QuadBike => QUAD_BIKE_MAX_FUEL_MB,
             Self::OffRoader => OFF_ROADER_MAX_FUEL_MB,
+            Self::DaciaLoganPolice => DACIA_LOGAN_MAX_FUEL_MB,
             Self::PoliceCar => POLICE_CAR_MAX_FUEL_MB,
         }
     }
@@ -362,6 +384,37 @@ impl VehicleKind {
                 step_height: POLICE_CAR_STEP_HEIGHT,
                 default_cam_dist: POLICE_CAR_CAMERA_DISTANCE,
             },
+            Self::DaciaLoganPolice => VehicleLayout {
+                body_model: MODEL_DACIA_LOGAN_BODY,
+                // Authentic compact Romanian sedan: 33.1 tx (2.07 b) wide x 61.6 tx (3.85 b) long x 1.89 b tall!
+                body_scale: [1.34, 1.36, 1.35],
+                front_axle_z: (13.0 * 1.35) / 16.0, // +1.096875 b (+17.55 tx)
+                rear_axle_z: (-13.0 * 1.35) / 16.0, // -1.096875 b (-17.55 tx)
+                wheelbase: (26.0 * 1.35) / 16.0,    // 2.19375 b (35.10 tx)
+                front_track_half_x: 13.38 / 16.0,   // outer tire wall at ±16.50 tx == flush Logan arch!
+                rear_track_half_x: 13.38 / 16.0,
+                front_hub_y: 0.325,                 // (4.0 / 16) * 1.30 -> flat on Y = 0.000!
+                rear_hub_y: 0.325,
+                front_wheel_scale: [1.30, 1.30, 1.30],
+                rear_wheel_scale: [1.30, 1.30, 1.30],
+                steer_model: MODEL_STEERING,
+                steer_pivot: [5.90 / 16.0, 15.65 / 16.0, 5.05 / 16.0],
+                steer_tilt_deg: 28.0,
+                steer_scale: [1.08, 1.08, 1.08],
+                steer_grip_radius_tx: 3.34,
+                engine_pivot: None,
+                engine_scale: [1.0, 1.0, 1.0],
+                spare_wheel_pivot: None,
+                spare_wheel_scale: [1.0, 1.0, 1.0],
+                exhaust_offset_z: (-22.4 * 1.35) / 16.0,
+                exhaust_height_y: 0.27,
+                nose_light_dist: 2.20,
+                seat_attach: [5.90 / 16.0, 7.50 / 16.0, -2.80 / 16.0],
+                leg_xrot: -1.42,
+                max_steer_deg: 26.0,
+                step_height: DACIA_LOGAN_STEP_HEIGHT,
+                default_cam_dist: DACIA_LOGAN_CAMERA_DISTANCE,
+            },
         }
     }
 }
@@ -444,6 +497,7 @@ pub const ACT_PICKUP_KART: u8 = 2;
 pub const ACT_EJECT_ENGINE: u8 = 3;
 pub const ACT_REFUEL_INV: u8 = 4;
 pub const ACT_TOGGLE_FUEL_RULE: u8 = 5;
+pub const ACT_DELETE_KART: u8 = 6;
 
 // ---------------------------------------------------------------------------
 // Engine Tiers
@@ -962,12 +1016,23 @@ impl KartSpec {
         }
     }
 
+    pub fn default_dacia_logan() -> Self {
+        Self {
+            kind: VehicleKind::DaciaLoganPolice,
+            engine: EngineTier::Gold,
+            wheels: WheelType::Sports,
+            paint: PaintColor::White,
+            fuel_mb: DACIA_LOGAN_MAX_FUEL_MB,
+        }
+    }
+
     pub fn default_for_kind(kind: VehicleKind) -> Self {
         match kind {
             VehicleKind::GoKart => Self::default(),
             VehicleKind::OffRoader => Self::default_off_roader(),
             VehicleKind::QuadBike => Self::default_quad_bike(),
             VehicleKind::PoliceCar => Self::default_police_car(),
+            VehicleKind::DaciaLoganPolice => Self::default_dacia_logan(),
         }
     }
 
@@ -1247,6 +1312,14 @@ impl KartRuntime {
                 SurfaceKind::Loose => 0.84,
                 SurfaceKind::Ice => 0.90,
             }
+        } else if self.spec.kind == VehicleKind::DaciaLoganPolice {
+            // Legendary Dacia Logan suspension & road-handling on Romanian roads + country dirt!
+            match surface {
+                SurfaceKind::Road => 1.06,
+                SurfaceKind::Dirt => 1.03,
+                SurfaceKind::Loose => 0.94,
+                SurfaceKind::Ice => 0.92,
+            }
         } else {
             self.spec.wheels.surface_speed_factor(surface)
         };
@@ -1455,8 +1528,8 @@ pub fn encode_sync_packet(require_fuel: bool, karts: &[ClientKartView]) -> Vec<u
         let flags = u8::from(k.drifting)
             | (u8::from(k.burnout) << 1)
             | (u8::from(k.boosting) << 2)
-            | ((k.spec.kind.code() & 0x3) << 3)
-            | (u8::from(k.siren_on) << 5);
+            | ((k.spec.kind.code() & 0x7) << 3)
+            | (u8::from(k.siren_on) << 6);
         out.push(flags);
     }
     out
@@ -1486,7 +1559,7 @@ pub fn decode_sync_packet(data: &[u8]) -> Option<(bool, Vec<ClientKartView>)> {
         let speed_kmh = u16::from_le_bytes([s[13], s[14]]) as f32 / 10.0;
         let boost_charge = s[15] as f32 / 255.0;
         let flags = s[16];
-        let kind = VehicleKind::from_code((flags >> 3) & 0x3);
+        let kind = VehicleKind::from_code((flags >> 3) & 0x7);
         karts.push(ClientKartView {
             entity_id,
             spec: KartSpec {
@@ -1503,7 +1576,7 @@ pub fn decode_sync_packet(data: &[u8]) -> Option<(bool, Vec<ClientKartView>)> {
             drifting: (flags & 1) != 0,
             burnout: (flags & 2) != 0,
             boosting: (flags & 4) != 0,
-            siren_on: (flags & 32) != 0,
+            siren_on: (flags & 64) != 0,
         });
     }
     Some((require_fuel, karts))
@@ -1826,32 +1899,51 @@ mod tests {
 
     #[test]
     fn sync_packet_and_world_save_round_trip() {
-        let views = vec![ClientKartView {
-            entity_id: 991,
-            spec: KartSpec {
-                kind: VehicleKind::OffRoader,
-                engine: EngineTier::Diamond,
-                wheels: WheelType::Racing,
-                paint: PaintColor::Lime,
-                fuel_mb: 3750,
+        let views = vec![
+            ClientKartView {
+                entity_id: 991,
+                spec: KartSpec {
+                    kind: VehicleKind::OffRoader,
+                    engine: EngineTier::Diamond,
+                    wheels: WheelType::Racing,
+                    paint: PaintColor::Lime,
+                    fuel_mb: 3750,
+                },
+                steer_deg: -14.5,
+                wheel_rot_deg: 212.25,
+                speed_kmh: 72.4,
+                boost_charge: 0.8,
+                drifting: true,
+                burnout: false,
+                boosting: true,
+                siren_on: false,
             },
-            steer_deg: -14.5,
-            wheel_rot_deg: 212.25,
-            speed_kmh: 72.4,
-            boost_charge: 0.8,
-            drifting: true,
-            burnout: false,
-            boosting: true,
-            siren_on: true,
-        }];
+            ClientKartView {
+                entity_id: 1004,
+                spec: KartSpec::default_dacia_logan(),
+                steer_deg: 9.25,
+                wheel_rot_deg: 84.0,
+                speed_kmh: 61.5,
+                boost_charge: 0.25,
+                drifting: false,
+                burnout: false,
+                boosting: false,
+                siren_on: true,
+            },
+        ];
         let bytes = encode_sync_packet(false, &views);
         let (req_fuel, decoded) = decode_sync_packet(&bytes).expect("valid packet");
         assert!(!req_fuel);
-        assert_eq!(decoded.len(), 1);
+        assert_eq!(decoded.len(), 2);
         assert_eq!(decoded[0].entity_id, 991);
         assert_eq!(decoded[0].spec, views[0].spec);
         assert!((decoded[0].steer_deg - (-14.5)).abs() < 0.05);
-        assert!(decoded[0].drifting && decoded[0].boosting && !decoded[0].burnout && decoded[0].siren_on);
+        assert!(decoded[0].drifting && decoded[0].boosting && !decoded[0].burnout && !decoded[0].siren_on);
+        assert_eq!(decoded[1].entity_id, 1004);
+        assert_eq!(decoded[1].spec.kind, VehicleKind::DaciaLoganPolice);
+        assert!(decoded[1].spec.kind.is_police());
+        assert_eq!(decoded[1].spec, views[1].spec);
+        assert!(decoded[1].siren_on);
 
         let mut world = SavedWorldData {
             require_fuel: false,
@@ -1861,6 +1953,10 @@ mod tests {
         world.karts.insert(
             0x1234_5678_9abc_def0_1122_3344_5566_7788,
             ("minecraft:overworld".into(), views[0].spec),
+        );
+        world.karts.insert(
+            0x8877_6655_4433_2211_0fed_cba9_8765_4321,
+            ("minecraft:overworld".into(), views[1].spec),
         );
         let text = world.encode();
         assert_eq!(SavedWorldData::decode(&text), world);
@@ -1876,12 +1972,18 @@ mod tests {
     #[test]
     fn kart_spatial_geometry_places_tires_on_ground_and_aligns_cockpit() {
         let model_wheel_radius = 4.0_f32 / 16.0;
-        for kind in [VehicleKind::GoKart, VehicleKind::OffRoader] {
+        for kind in [
+            VehicleKind::GoKart,
+            VehicleKind::OffRoader,
+            VehicleKind::QuadBike,
+            VehicleKind::PoliceCar,
+            VehicleKind::DaciaLoganPolice,
+        ] {
             let lay = kind.layout();
             let front_bottom = lay.front_hub_y - model_wheel_radius * lay.front_wheel_scale[1];
             let rear_bottom = lay.rear_hub_y - model_wheel_radius * lay.rear_wheel_scale[1];
-            assert!(front_bottom.abs() < 1e-6, "front tires rest flat on Y=0");
-            assert!(rear_bottom.abs() < 1e-6, "rear tires rest flat on Y=0");
+            assert!(front_bottom.abs() < 1e-6, "front tires rest flat on Y=0 for {kind:?}");
+            assert!(rear_bottom.abs() < 1e-6, "rear tires rest flat on Y=0 for {kind:?}");
             assert!(lay.steer_pivot[2] > lay.seat_attach[2]);
             assert!(lay.steer_pivot[1] > lay.seat_attach[1]);
 

@@ -990,7 +990,8 @@
             8.73
           ]
         }
-      }
+      },
+      "light_emission": 15
     },
     {
       "from": [
@@ -1058,7 +1059,8 @@
             8.73
           ]
         }
-      }
+      },
+      "light_emission": 15
     },
     {
       "from": [
@@ -3442,6 +3444,7 @@
           ]
         }
       },
+      "light_emission": 11,
       "rotation": {
         "origin": [
           8.0,
@@ -4450,7 +4453,8 @@
             8.95
           ]
         }
-      }
+      },
+      "light_emission": 15
     },
     {
       "from": [
@@ -4932,7 +4936,8 @@
             8.8
           ]
         }
-      }
+      },
+      "light_emission": 15
     }
   ]
 }

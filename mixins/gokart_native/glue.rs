@@ -278,6 +278,7 @@ pub(in crate::game) fn items(items: &mut Vec<Item>) {
     push_item(items, rules::ITEM_OFF_ROADER, 1, Rarity::Rare);
     push_item(items, rules::ITEM_QUAD_BIKE, 1, Rarity::Uncommon);
     push_item(items, rules::ITEM_POLICE_CAR, 1, Rarity::Epic);
+    push_item(items, rules::ITEM_DACIA_LOGAN_POLICE, 1, Rarity::Rare);
     push_item(items, rules::ITEM_ENGINE_IRON, 1, Rarity::Common);
     push_item(items, rules::ITEM_ENGINE_GOLD, 1, Rarity::Uncommon);
     push_item(items, rules::ITEM_ENGINE_DIAMOND, 1, Rarity::Rare);
@@ -316,27 +317,28 @@ pub(in crate::game) fn listed(mods: &mut Vec<NativeMod>) {
 
 pub(in crate::game) fn commands(commands: &mut Vec<NativeCommand>) {
     commands.push(NativeCommand::new("vehicle"));
-    commands.push(NativeCommand::new("vehicle remove"));
-    commands.push(NativeCommand::new("vehicle remove <target:text>"));
+    commands.push(NativeCommand::new("vehicle remove [target:text]"));
+    commands.push(NativeCommand::new("vehicle delete [target:text]"));
+    commands.push(NativeCommand::new("vehicle clear"));
     commands.push(NativeCommand::new("vehicle pack"));
     commands.push(NativeCommand::new("vehicle paint <color:text>"));
     commands.push(NativeCommand::op("vehicle kit", 2));
-    commands.push(NativeCommand::op("vehicle spawn", 2));
-    commands.push(NativeCommand::op("vehicle spawn <vehicle:text>", 2));
+    commands.push(NativeCommand::op("vehicle spawn [vehicle:text]", 2));
     commands.push(NativeCommand::op("vehicle fuel", 2));
 
     commands.push(NativeCommand::new("vehicel"));
-    commands.push(NativeCommand::new("vehicel remove"));
-    commands.push(NativeCommand::new("vehicel remove <target:text>"));
-    commands.push(NativeCommand::op("vehicel spawn", 2));
-    commands.push(NativeCommand::op("vehicel spawn <vehicle:text>", 2));
+    commands.push(NativeCommand::new("vehicel remove [target:text]"));
+    commands.push(NativeCommand::new("vehicel delete [target:text]"));
+    commands.push(NativeCommand::new("vehicel clear"));
+    commands.push(NativeCommand::new("vehicel pack"));
+    commands.push(NativeCommand::op("vehicel spawn [vehicle:text]", 2));
 
     commands.push(NativeCommand::new("gokart"));
-    commands.push(NativeCommand::new("gokart remove"));
+    commands.push(NativeCommand::new("gokart remove [target:text]"));
+    commands.push(NativeCommand::new("gokart clear"));
     commands.push(NativeCommand::new("gokart paint <color:text>"));
     commands.push(NativeCommand::op("gokart kit", 2));
-    commands.push(NativeCommand::op("gokart spawn", 2));
-    commands.push(NativeCommand::op("gokart spawn <vehicle:text>", 2));
+    commands.push(NativeCommand::op("gokart spawn [vehicle:text]", 2));
     commands.push(NativeCommand::op("gokart fuel", 2));
 }
 
@@ -360,6 +362,9 @@ fn kart_summon_nbt(kind: rules::VehicleKind) -> Compound {
         }
         rules::VehicleKind::PoliceCar => {
             tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_POLICE_CAR)));
+        }
+        rules::VehicleKind::DaciaLoganPolice => {
+            tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_DACIA_LOGAN)));
         }
         rules::VehicleKind::GoKart => {}
     }
@@ -417,6 +422,9 @@ fn prepare_kart_mob(game: &mut Game<'_>, entity_id: u32, yaw: f32, kind: rules::
             }
             rules::VehicleKind::PoliceCar => {
                 game.native_entity_add_tag(eref, rules::ENTITY_TAG_POLICE_CAR);
+            }
+            rules::VehicleKind::DaciaLoganPolice => {
+                game.native_entity_add_tag(eref, rules::ENTITY_TAG_DACIA_LOGAN);
             }
             rules::VehicleKind::GoKart => {}
         }
@@ -492,6 +500,11 @@ fn lookup_kart_uuid(
             .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_POLICE_CAR))
         {
             rules::KartSpec::default_police_car()
+        } else if tags
+            .as_ref()
+            .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_DACIA_LOGAN))
+        {
+            rules::KartSpec::default_dacia_logan()
         } else {
             rules::KartSpec::default()
         };
@@ -526,7 +539,10 @@ fn pickup_kart_for_player(
         .native_entity(entity_id)
         .and_then(|e| game.native_entity_position(e))
         .unwrap_or(who.position);
-    game.native_remove_entity(&rt.dimension, entity_id);
+    let _ = game.native_remove_mob(&rt.dimension, entity_id);
+    if rt.dimension != who.dimension {
+        let _ = game.native_remove_mob(&who.dimension, entity_id);
+    }
 
     let item = make_kart_item(game, rt.spec);
     if let Some(leftover) = game.native_give_stack(who.uuid, item) {
@@ -612,6 +628,10 @@ pub(in crate::game) fn use_item_on(
                 rules::VehicleKind::PoliceCar => tr(
                     "gokart.msg.placed_police_car",
                     "Poliția Română Patrol Car deployed! Press [H] while driving for Siren & Girofar.",
+                ),
+                rules::VehicleKind::DaciaLoganPolice => tr(
+                    "gokart.msg.placed_dacia_logan",
+                    "Dacia Logan Poliția Română deployed! Press [H] while driving for Siren & Girofar.",
                 ),
                 rules::VehicleKind::GoKart => tr(
                     "gokart.msg.placed",
@@ -919,25 +939,114 @@ pub(in crate::game) fn attack_entity(
     }
 }
 
+fn vehicle_kind_from_tags(tags: &[String]) -> Option<rules::VehicleKind> {
+    let has_any = tags.iter().any(|t| {
+        matches!(
+            t.as_str(),
+            rules::ENTITY_TAG
+                | rules::ENTITY_TAG_OFF_ROADER
+                | rules::ENTITY_TAG_QUAD_BIKE
+                | rules::ENTITY_TAG_POLICE_CAR
+                | rules::ENTITY_TAG_DACIA_LOGAN
+        )
+    });
+    if !has_any {
+        return None;
+    }
+    if tags.iter().any(|t| t == rules::ENTITY_TAG_OFF_ROADER) {
+        Some(rules::VehicleKind::OffRoader)
+    } else if tags.iter().any(|t| t == rules::ENTITY_TAG_QUAD_BIKE) {
+        Some(rules::VehicleKind::QuadBike)
+    } else if tags.iter().any(|t| t == rules::ENTITY_TAG_POLICE_CAR) {
+        Some(rules::VehicleKind::PoliceCar)
+    } else if tags.iter().any(|t| t == rules::ENTITY_TAG_DACIA_LOGAN) {
+        Some(rules::VehicleKind::DaciaLoganPolice)
+    } else {
+        Some(rules::VehicleKind::GoKart)
+    }
+}
+
+/// Discovers ALL vehicle mob IDs in `dimension` — both tracked in `st.id_to_uuid` AND any
+/// orphaned `minecraft:pig` carrying `gokart_*` tags from earlier sessions!
+fn discover_vehicle_mobs(
+    game: &Game<'_>,
+    st: &ServerState,
+    dimension: &str,
+) -> Vec<(u32, [f64; 3])> {
+    let mut found: BTreeMap<u32, [f64; 3]> = BTreeMap::new();
+    for (&eid, &uuid) in &st.id_to_uuid {
+        if st
+            .by_uuid
+            .get(&uuid)
+            .is_some_and(|rt| rt.dimension != dimension)
+        {
+            continue;
+        }
+        if let Some(eref) = game.native_entity(eid)
+            && let Some(pos) = game.native_entity_position(eref)
+        {
+            found.insert(eid, pos);
+        }
+    }
+    for mob in game.native_mobs(dimension) {
+        if mob.kind != "minecraft:pig" || found.contains_key(&mob.id) {
+            continue;
+        }
+        if let Some(eref) = game.native_entity(mob.id)
+            && let Some(tags) = game.native_entity_tags(eref)
+            && vehicle_kind_from_tags(&tags).is_some()
+        {
+            found.insert(mob.id, mob.pos);
+        }
+    }
+    found.into_iter().collect()
+}
+
 fn delete_kart_entity(
     game: &mut Game<'_>,
     st: &mut ServerState,
     dimension: &str,
     entity_id: u32,
 ) -> Option<(rules::VehicleKind, [f64; 3])> {
-    let uuid = lookup_kart_uuid(game, st, dimension, entity_id)?;
-    let rt = st.by_uuid.remove(&uuid)?;
+    let pos = game
+        .native_entity(entity_id)
+        .and_then(|e| game.native_entity_position(e));
+    let tag_kind = game
+        .native_entity(entity_id)
+        .and_then(|e| game.native_entity_tags(e))
+        .and_then(|t| vehicle_kind_from_tags(&t));
+
+    let tracked_uuid = lookup_kart_uuid(game, st, dimension, entity_id);
+    let mut removed_kind = tag_kind;
+    let mut target_dim = dimension.to_owned();
+
+    if let Some(uuid) = tracked_uuid {
+        if let Some(rt) = st.by_uuid.remove(&uuid) {
+            removed_kind = Some(rt.spec.kind);
+            target_dim = rt.dimension;
+        }
+    }
     st.id_to_uuid.remove(&entity_id);
     st.pre_tick_pos.remove(&entity_id);
     st.selected_kart.retain(|_, &mut v| v != entity_id);
-    st.dirty = true;
 
-    let pos = game
-        .native_entity(entity_id)
-        .and_then(|e| game.native_entity_position(e))
-        .unwrap_or([0.0, 64.0, 0.0]);
-    game.native_remove_entity(&rt.dimension, entity_id);
-    Some((rt.spec.kind, pos))
+    let killed_target = game.native_remove_mob(&target_dim, entity_id);
+    let killed_here = if target_dim != dimension {
+        game.native_remove_mob(dimension, entity_id)
+    } else {
+        false
+    };
+    let _ = game.native_remove_entity(&target_dim, entity_id);
+
+    if killed_target || killed_here || removed_kind.is_some() {
+        st.dirty = true;
+        Some((
+            removed_kind.unwrap_or(rules::VehicleKind::GoKart),
+            pos.unwrap_or([0.0, 64.0, 0.0]),
+        ))
+    } else {
+        None
+    }
 }
 
 fn closest_kart_id(
@@ -947,31 +1056,23 @@ fn closest_kart_id(
     max_dist: f64,
 ) -> Option<u32> {
     if let Some(rid) = game.riding
-        && st.id_to_uuid.contains_key(&rid)
         && let Some(eref) = game.native_entity(rid)
-        && game
-            .native_entity_distance_to_sqr(eref, player.position)
-            .is_some_and(|d2| d2 <= max_dist * max_dist)
+        && (st.id_to_uuid.contains_key(&rid)
+            || game
+                .native_entity_tags(eref)
+                .is_some_and(|t| vehicle_kind_from_tags(&t).is_some()))
     {
         return Some(rid);
     }
+    let max_d2 = max_dist * max_dist;
     let mut best: Option<(u32, f64)> = None;
-    for (&id, &uuid) in &st.id_to_uuid {
-        if st
-            .by_uuid
-            .get(&uuid)
-            .is_some_and(|rt| rt.dimension != player.dimension)
-        {
-            continue;
-        }
-        let Some(eref) = game.native_entity(id) else {
-            continue;
-        };
-        let Some(d2) = game.native_entity_distance_to_sqr(eref, player.position) else {
-            continue;
-        };
-        if d2 <= max_dist * max_dist && best.is_none_or(|(_, b)| d2 < b) {
-            best = Some((id, d2));
+    for (eid, pos) in discover_vehicle_mobs(game, st, &player.dimension) {
+        let dx = pos[0] - player.position[0];
+        let dy = pos[1] - player.position[1];
+        let dz = pos[2] - player.position[2];
+        let d2 = dx * dx + dy * dy + dz * dz;
+        if d2 <= max_d2 && best.is_none_or(|(_, b)| d2 < b) {
+            best = Some((eid, d2));
         }
     }
     best.map(|(id, _)| id)
@@ -983,7 +1084,7 @@ pub(in crate::game) fn perform_command(
     command: &str,
     ran: &mut bool,
 ) {
-    let trimmed = command.trim();
+    let trimmed = command.trim().trim_start_matches('/');
     let first = trimmed.split_whitespace().next().unwrap_or("");
     if *ran
         || !matches!(first, "vehicle" | "vehicel" | "gokart")
@@ -998,25 +1099,35 @@ pub(in crate::game) fn perform_command(
     };
     let st = guard.as_mut().expect("server state");
 
-    if rest == "remove"
+    if rest == "clear"
+        || rest == "remove"
         || rest.starts_with("remove ")
         || rest == "delete"
         || rest.starts_with("delete ")
         || rest == "rm"
         || rest.starts_with("rm ")
     {
-        let sub_arg = rest
-            .split_once(char::is_whitespace)
-            .map(|(_, a)| a.trim())
-            .unwrap_or("");
+        let sub_arg = if rest == "clear" {
+            "all"
+        } else {
+            rest.split_once(char::is_whitespace)
+                .map(|(_, a)| a.trim())
+                .unwrap_or("")
+        };
         if sub_arg.eq_ignore_ascii_case("all") || sub_arg == "*" {
-            let ids: Vec<u32> = st.id_to_uuid.keys().copied().collect();
+            let candidates = discover_vehicle_mobs(game, st, &player.dimension);
             let mut removed_count = 0usize;
-            for eid in ids {
+            for (eid, _) in candidates {
                 if delete_kart_entity(game, st, &player.dimension, eid).is_some() {
                     removed_count += 1;
                 }
             }
+            // Also prune any stale saved UUIDs in this dimension whose mobs were unloaded/gone
+            st.by_uuid.retain(|_, rt| rt.dimension != player.dimension);
+            st.id_to_uuid.retain(|&id, _| game.native_entity(id).is_some());
+            st.dirty = true;
+            sync_headlight_blocks(game, st);
+            flush_server_save(st);
             broadcast_sync_now(game, st);
             let msg = tr1(
                 "gokart.msg.removed_many",
@@ -1030,22 +1141,20 @@ pub(in crate::game) fn perform_command(
             && radius > 0.0
         {
             let r2 = radius * radius;
-            let ids: Vec<u32> = st
-                .id_to_uuid
-                .keys()
-                .copied()
-                .filter(|&eid| {
-                    game.native_entity(eid)
-                        .and_then(|e| game.native_entity_distance_to_sqr(e, player.position))
-                        .is_some_and(|d2| d2 <= r2)
-                })
-                .collect();
+            let candidates = discover_vehicle_mobs(game, st, &player.dimension);
             let mut removed_count = 0usize;
-            for eid in ids {
-                if delete_kart_entity(game, st, &player.dimension, eid).is_some() {
+            for (eid, pos) in candidates {
+                let dx = pos[0] - player.position[0];
+                let dy = pos[1] - player.position[1];
+                let dz = pos[2] - player.position[2];
+                if dx * dx + dy * dy + dz * dz <= r2
+                    && delete_kart_entity(game, st, &player.dimension, eid).is_some()
+                {
                     removed_count += 1;
                 }
             }
+            sync_headlight_blocks(game, st);
+            flush_server_save(st);
             broadcast_sync_now(game, st);
             let msg = tr1(
                 "gokart.msg.removed_many",
@@ -1055,10 +1164,12 @@ pub(in crate::game) fn perform_command(
             game.native_tell(player.uuid, Text::literal(msg).with_color(text::GREEN));
             return;
         }
-        if let Some(eid) = closest_kart_id(game, st, player, 10.0)
+        if let Some(eid) = closest_kart_id(game, st, player, 16.0)
             && let Some((vkind, pos)) = delete_kart_entity(game, st, &player.dimension, eid)
         {
             game.native_play_sound_in_place("gokart:wrench", pos, SOUND_PLAYERS, 0.9, 0.95);
+            sync_headlight_blocks(game, st);
+            flush_server_save(st);
             broadcast_sync_now(game, st);
             let vname = tr(vkind.lang_key(), vkind.slug());
             let msg = tr1("gokart.msg.removed_one", "Removed %1$s!", &vname);
@@ -1088,6 +1199,7 @@ pub(in crate::game) fn perform_command(
             make_kart_item(game, rules::KartSpec::default()),
             make_kart_item(game, rules::KartSpec::default_quad_bike()),
             make_kart_item(game, rules::KartSpec::default_off_roader()),
+            make_kart_item(game, rules::KartSpec::default_dacia_logan()),
             make_kart_item(game, rules::KartSpec::default_police_car()),
             stack_of(rules::ITEM_ENGINE_GOLD, 1),
             stack_of(rules::ITEM_ENGINE_DIAMOND, 1),
@@ -1116,14 +1228,21 @@ pub(in crate::game) fn perform_command(
             rules::KartSpec::default_off_roader()
         } else if matches!(arg, "quad_bike" | "quadbike" | "quad" | "atv") {
             rules::KartSpec::default_quad_bike()
-        } else if matches!(arg, "police_car" | "policecar" | "police" | "politia" | "politie") {
+        } else if matches!(arg, "police_car" | "policecar" | "police" | "politia" | "politie" | "bmw") {
             rules::KartSpec::default_police_car()
+        } else if matches!(
+            arg,
+            "dacia_logan_police" | "dacia_logan" | "dacia" | "logan" | "logan_politie" | "logan_police"
+        ) {
+            rules::KartSpec::default_dacia_logan()
         } else {
             rules::KartSpec::default()
         };
         let yaw_rad = player.yaw.to_radians();
         let dist = match spec.kind {
-            rules::VehicleKind::OffRoader | rules::VehicleKind::PoliceCar => 3.2,
+            rules::VehicleKind::OffRoader
+            | rules::VehicleKind::PoliceCar
+            | rules::VehicleKind::DaciaLoganPolice => 3.2,
             rules::VehicleKind::QuadBike => 2.5,
             rules::VehicleKind::GoKart => 2.4,
         };
@@ -1143,6 +1262,9 @@ pub(in crate::game) fn perform_command(
                 }
                 rules::VehicleKind::PoliceCar => {
                     tr("gokart.msg.placed_police_car", "Poliția Română Patrol Car deployed!")
+                }
+                rules::VehicleKind::DaciaLoganPolice => {
+                    tr("gokart.msg.placed_dacia_logan", "Dacia Logan Poliția Română deployed!")
                 }
                 rules::VehicleKind::GoKart => tr("gokart.msg.placed", "Go-Kart deployed!"),
             };
@@ -1183,7 +1305,7 @@ pub(in crate::game) fn perform_command(
     game.native_tell(
         player.uuid,
         Text::literal(
-            "/vehicle [remove | remove all | spawn [go_kart|quad_bike|off_roader|police] | pack | kit | fuel | paint <color>]",
+            "/vehicle [remove | remove all | clear | spawn [go_kart|quad_bike|off_roader|police|logan] | pack | kit | fuel | paint <color>]",
         )
         .with_color(text::YELLOW),
     );
@@ -1247,6 +1369,8 @@ fn find_rider_uuid(
         kart_pos[1] + f64::from(rules::VehicleKind::QuadBike.layout().seat_attach[1]) - 0.6;
     let seat_y_pol =
         kart_pos[1] + f64::from(rules::VehicleKind::PoliceCar.layout().seat_attach[1]) - 0.6;
+    let seat_y_logan =
+        kart_pos[1] + f64::from(rules::VehicleKind::DaciaLoganPolice.layout().seat_attach[1]) - 0.6;
     players.iter().find_map(|p| {
         let dx = p.position[0] - kart_pos[0];
         let dz = p.position[2] - kart_pos[2];
@@ -1254,6 +1378,7 @@ fn find_rider_uuid(
             || (p.position[1] - seat_y_off).abs() < 0.55
             || (p.position[1] - seat_y_quad).abs() < 0.55
             || (p.position[1] - seat_y_pol).abs() < 0.55
+            || (p.position[1] - seat_y_logan).abs() < 0.55
             || (p.position[1] - seat_y_pig).abs() < 0.55;
         (dx * dx + dz * dz < 1.15 && dy_ok).then_some(p.uuid)
     })
@@ -1336,7 +1461,7 @@ pub(in crate::game) fn entity_tick_pre(
     let drifting = rt.drifting;
     let burnout = rt.burnout;
     let boosting = rt.boost_ticks > 0;
-    let siren_active = rt.spec.kind == rules::VehicleKind::PoliceCar && rt.siren_on;
+    let siren_active = rt.spec.kind.is_police() && rt.siren_on;
     let fuel_changed = rt.spec.fuel_mb != prev_fuel;
     if fuel_changed {
         st.dirty = true;
@@ -1707,7 +1832,7 @@ pub(in crate::game) fn net_from_client(
             if let Some(kid) = kart_id
                 && let Some(&uuid) = st.id_to_uuid.get(&kid)
                 && let Some(rt) = st.by_uuid.get_mut(&uuid)
-                && rt.spec.kind == rules::VehicleKind::PoliceCar
+                && rt.spec.kind.is_police()
             {
                 rt.siren_on = !rt.siren_on;
                 let now_on = rt.siren_on;
@@ -1737,15 +1862,29 @@ pub(in crate::game) fn net_from_client(
             }
         }
         rules::ACT_PICKUP_KART => {
-            if let Some(kart_id) = target_arg.or_else(|| nearest_kart_id(game, st, &who, 6.0)) {
+            if let Some(kart_id) = target_arg.or_else(|| nearest_kart_id(game, st, &who, 8.0)) {
                 drop(guard);
                 game.native_as_player(player, |g| {
                     if let Some(mut g2) = server_state(g)
                         && let Some(s2) = g2.as_mut()
                     {
                         pickup_kart_for_player(g, s2, &who, kart_id);
+                        sync_headlight_blocks(g, s2);
                     }
                 });
+            }
+        }
+        rules::ACT_DELETE_KART => {
+            if let Some(kart_id) = target_arg.or_else(|| closest_kart_id(game, st, &who, 10.0))
+                && let Some((vkind, pos)) = delete_kart_entity(game, st, &who.dimension, kart_id)
+            {
+                game.native_play_sound_in_place("gokart:wrench", pos, SOUND_PLAYERS, 0.9, 0.95);
+                sync_headlight_blocks(game, st);
+                flush_server_save(st);
+                broadcast_sync_now(game, st);
+                let vname = tr(vkind.lang_key(), vkind.slug());
+                let msg = tr1("gokart.msg.removed_one", "Removed %1$s!", &vname);
+                game.native_action_bar(player, Text::literal(msg).with_color(text::GREEN));
             }
         }
         rules::ACT_EJECT_ENGINE => {
@@ -2281,6 +2420,7 @@ pub(in crate::game) fn mob_submit(
     let roll_mult = match kart.spec.kind {
         rules::VehicleKind::OffRoader => 1.75,
         rules::VehicleKind::QuadBike => 1.45,
+        rules::VehicleKind::DaciaLoganPolice => 1.42,
         rules::VehicleKind::PoliceCar => 1.30,
         rules::VehicleKind::GoKart => 1.0,
     };
@@ -2297,6 +2437,7 @@ pub(in crate::game) fn mob_submit(
     let roll_center_y = match kart.spec.kind {
         rules::VehicleKind::OffRoader => 0.36,
         rules::VehicleKind::QuadBike => 0.30,
+        rules::VehicleKind::DaciaLoganPolice => 0.30,
         rules::VehicleKind::PoliceCar => 0.28,
         rules::VehicleKind::GoKart => 0.18,
     };
@@ -2371,15 +2512,21 @@ pub(in crate::game) fn mob_submit(
         );
     }
 
-    // 2e. FiveM Alternating Red & Blue Girofar + Grille Strobe Flashers on Poliția Română!
-    if kart.spec.kind == rules::VehicleKind::PoliceCar && kart.siren_on {
+    // 2e. FiveM Alternating Red & Blue Girofar + Grille Strobe Flashers on Romanian Police Cars!
+    if kart.spec.kind.is_police() && kart.siren_on {
         let phase = ((mob.age * 0.65) as i32).rem_euclid(2) == 0;
+        let (roof_x, roof_y, roof_z, grille_x, grille_y, grille_z) =
+            if kart.spec.kind == rules::VehicleKind::DaciaLoganPolice {
+                (5.8 / 16.0, 29.5 / 16.0, -1.6 / 16.0, 3.0 / 16.0, 10.6 / 16.0, 30.8 / 16.0)
+            } else {
+                (6.2 / 16.0, 28.6 / 16.0, -2.1 / 16.0, 3.4 / 16.0, 10.6 / 16.0, 32.8 / 16.0)
+            };
         if phase {
             // Left BLUE roof dome + Right BLUE grille strobe
             draw_part_at_pivot(
                 draw,
                 rules::MODEL_SIREN_BLUE,
-                [6.2 / 16.0, 28.5 / 16.0, -2.1 / 16.0],
+                [roof_x, roof_y, roof_z],
                 &[],
                 [1.42, 1.38, 1.42],
                 0xFFFFFF,
@@ -2387,7 +2534,7 @@ pub(in crate::game) fn mob_submit(
             draw_part_at_pivot(
                 draw,
                 rules::MODEL_SIREN_BLUE,
-                [-3.4 / 16.0, 10.6 / 16.0, 32.8 / 16.0],
+                [-grille_x, grille_y, grille_z],
                 &[],
                 [0.65, 0.55, 0.45],
                 0xFFFFFF,
@@ -2397,7 +2544,7 @@ pub(in crate::game) fn mob_submit(
             draw_part_at_pivot(
                 draw,
                 rules::MODEL_SIREN_RED,
-                [-6.2 / 16.0, 28.5 / 16.0, -2.1 / 16.0],
+                [-roof_x, roof_y, roof_z],
                 &[],
                 [1.42, 1.38, 1.42],
                 0xFFFFFF,
@@ -2405,7 +2552,7 @@ pub(in crate::game) fn mob_submit(
             draw_part_at_pivot(
                 draw,
                 rules::MODEL_SIREN_RED,
-                [3.4 / 16.0, 10.6 / 16.0, 32.8 / 16.0],
+                [grille_x, grille_y, grille_z],
                 &[],
                 [0.65, 0.55, 0.45],
                 0xFFFFFF,
@@ -2502,18 +2649,7 @@ fn entity_vehicle_kind(game: &Game<'_>, entity_id: u32) -> Option<rules::Vehicle
     let tags = game
         .native_entity(entity_id)
         .and_then(|e| game.native_entity_tags(e))?;
-    if !tags.iter().any(|t| t == rules::ENTITY_TAG) {
-        return None;
-    }
-    if tags.iter().any(|t| t == rules::ENTITY_TAG_OFF_ROADER) {
-        Some(rules::VehicleKind::OffRoader)
-    } else if tags.iter().any(|t| t == rules::ENTITY_TAG_QUAD_BIKE) {
-        Some(rules::VehicleKind::QuadBike)
-    } else if tags.iter().any(|t| t == rules::ENTITY_TAG_POLICE_CAR) {
-        Some(rules::VehicleKind::PoliceCar)
-    } else {
-        Some(rules::VehicleKind::GoKart)
-    }
+    vehicle_kind_from_tags(&tags)
 }
 
 fn is_kart_entity(game: &Game<'_>, entity_id: u32) -> bool {
@@ -2807,17 +2943,24 @@ fn garage_layout(
 
     let mut y_cursor = py + 62.0;
     if target_kart.is_some() {
+        let third_w = (bw - 8.0) / 3.0;
         btns.push(GarageButton {
             id: 1,
-            rect: [bx, y_cursor, (bw - 6.0) * 0.5, 18.0],
-            label: tr("gokart.ui.btn_pickup", "Pack Vehicle to Item"),
+            rect: [bx, y_cursor, third_w, 18.0],
+            label: tr("gokart.ui.btn_pickup", "Pack Item"),
             accent: 0xFF2E7D32,
         });
         btns.push(GarageButton {
             id: 2,
-            rect: [bx + (bw + 6.0) * 0.5, y_cursor, (bw - 6.0) * 0.5, 18.0],
-            label: tr("gokart.ui.btn_eject_engine", "Remove Engine"),
+            rect: [bx + third_w + 4.0, y_cursor, third_w, 18.0],
+            label: tr("gokart.ui.btn_eject_engine", "Eject Engine"),
             accent: 0xFFB86B1E,
+        });
+        btns.push(GarageButton {
+            id: 8,
+            rect: [bx + (third_w + 4.0) * 2.0, y_cursor, third_w, 18.0],
+            label: tr("gokart.ui.btn_delete", "Delete"),
+            accent: 0xFFC62828,
         });
         y_cursor += 22.0;
         btns.push(GarageButton {
@@ -3034,6 +3177,12 @@ pub(in crate::game) fn screen_mouse(
                 7 => {
                     c.pending_close_garage = true;
                 }
+                8 => {
+                    let mut p = vec![rules::ACT_DELETE_KART];
+                    p.extend_from_slice(&target_id.to_le_bytes());
+                    c.pending_actions.push(p);
+                    c.pending_close_garage = true;
+                }
                 code @ 100..=115 => {
                     let mut p = vec![20 + (code - 100)];
                     p.extend_from_slice(&target_id.to_le_bytes());
@@ -3058,7 +3207,8 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
         rules::ITEM_GO_KART
         | rules::ITEM_OFF_ROADER
         | rules::ITEM_QUAD_BIKE
-        | rules::ITEM_POLICE_CAR => {
+        | rules::ITEM_POLICE_CAR
+        | rules::ITEM_DACIA_LOGAN_POLICE => {
             let spec = read_kart_spec(game, stack);
             let eng = tr(spec.engine.lang_key(), spec.engine.slug());
             let whl = tr(spec.wheels.lang_key(), spec.wheels.slug());
@@ -3097,6 +3247,10 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
                 rules::VehicleKind::PoliceCar => tr(
                     "gokart.tooltip.place_police_car",
                     "Right-click ground to deploy Poliția Română Patrol Car ([H] toggles Siren & Girofar!)",
+                ),
+                rules::VehicleKind::DaciaLoganPolice => tr(
+                    "gokart.tooltip.place_dacia_logan",
+                    "Right-click ground to deploy Dacia Logan Poliția Română ([H] toggles Siren & Girofar!)",
                 ),
                 rules::VehicleKind::GoKart => tr(
                     "gokart.tooltip.place_hint",
