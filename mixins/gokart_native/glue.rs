@@ -339,20 +339,19 @@ fn kart_summon_nbt() -> Compound {
 }
 
 fn prepare_kart_mob(game: &mut Game<'_>, entity_id: u32, yaw: f32) {
-    if let Ok(mid) = i32::try_from(entity_id)
-        && let Some(m) = game.mobs.iter_mut().find(|m| m.id == mid)
-    {
+    if let Some(m) = game.mobs.iter_mut().find(|m| m.id == entity_id) {
         m.ai.goals.clear();
         m.ai.targets.clear();
         m.extra.saddled = true;
         m.silent = true;
-        m.invulnerable = true;
+        m.invulnerable_flag = true;
         m.persistent = true;
         m.yaw = yaw;
         m.body_yaw = yaw;
         m.head_yaw = yaw;
     }
     if let Some(eref) = game.native_entity(entity_id) {
+        game.native_entity_add_tag(eref, rules::ENTITY_TAG);
         game.native_entity_set_rotation(eref, yaw, 0.0);
         game.native_entity_set_head_yaw(eref, yaw);
     }
@@ -403,11 +402,9 @@ fn lookup_kart_uuid(
         return Some(uuid);
     }
     // Recover any tagged Go-Kart entity whose entry wasn't in karts.txt yet
-    if let Ok(mid) = i32::try_from(entity_id)
-        && game
-            .mobs
-            .iter()
-            .any(|m| m.id == mid && m.tags.iter().any(|t| t == rules::ENTITY_TAG))
+    if game
+        .native_entity_tags(eref)
+        .is_some_and(|tags| tags.iter().any(|t| t == rules::ENTITY_TAG))
     {
         st.id_to_uuid.insert(entity_id, uuid);
         st.by_uuid.insert(
@@ -989,14 +986,12 @@ pub(in crate::game) fn entity_tick_pre(
     // Keep vanilla pig AI completely inert while leaving `travel` enabled for collisions & step-up
     let mut on_ground = true;
     let mut in_water = false;
-    if let Ok(mid) = i32::try_from(entity)
-        && let Some(m) = game.mobs.iter_mut().find(|m| m.id == mid)
-    {
+    if let Some(m) = game.mobs.iter_mut().find(|m| m.id == entity) {
         m.ai.goals.clear();
         m.ai.targets.clear();
         m.extra.saddled = true;
         m.silent = true;
-        m.invulnerable = true;
+        m.invulnerable_flag = true;
         on_ground = m.on_ground;
         in_water = m.fluids.in_water;
     }
@@ -1126,9 +1121,7 @@ pub(in crate::game) fn entity_tick_post(game: &mut Game<'_>, _dimension: &str, e
     };
 
     // Keep body_yaw and yaw locked to Go-Kart chassis heading after `ai::tick`
-    if let Ok(mid) = i32::try_from(entity)
-        && let Some(m) = game.mobs.iter_mut().find(|m| m.id == mid)
-    {
+    if let Some(m) = game.mobs.iter_mut().find(|m| m.id == entity) {
         m.yaw = target_yaw;
         m.body_yaw = target_yaw;
         m.head_yaw = target_yaw;
