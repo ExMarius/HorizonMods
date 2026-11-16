@@ -355,26 +355,74 @@ def generate_vehicle_textures() -> None:
                 pixels.append(c)
         write_png(bdir / fname, 16, 16, pixels)
 
-    # 2n. `dacia_grille.png`: Authentic Dacia Logan horizontal chrome/white link-grille + central DC emblem!
+    # 2n. `dacia_grille.png`: Authentic Dacia Logan II Facelift black honeycomb + central silver-blue U-shield + twin chrome link rows!
     pixels = []
     for y in range(16):
         for x in range(16):
             border = y in (0, 1, 14, 15) or x in (0, 15)
-            emblem = (y in (4, 5, 10, 11) and x in (6, 7, 8, 9)) or (y in (6, 7, 8, 9) and x in (6, 9))
-            link_bar = y in (5, 10) and (x % 2 == 0) and 2 <= x <= 13
+            shield_rim = (x in (6, 9) and 4 <= y <= 10) or (y in (4, 11) and 6 <= x <= 9)
+            shield_top = y == 5 and x in (7, 8)
+            shield_in = 7 <= x <= 8 and 6 <= y <= 10
+            chrome_links = y in (5, 6, 9, 10) and x in (2, 3, 4, 11, 12, 13) and not (y in (6, 9) and x in (3, 12))
             mesh = ((x + y) % 2 == 0) and 2 <= y <= 13
             if border:
-                c = (36, 40, 48, 255)
-            elif emblem:
-                c = (242, 246, 252, 255)
-            elif link_bar:
-                c = (206, 214, 226, 255)
+                c = (28, 31, 38, 255)
+            elif shield_rim or shield_top:
+                c = (238, 243, 250, 255)
+            elif shield_in:
+                c = (26, 58, 122, 255)
+            elif chrome_links:
+                c = (212, 220, 232, 255)
             elif mesh:
-                c = (20, 23, 29, 255)
+                c = (18, 20, 26, 255)
             else:
-                c = (32, 36, 44, 255)
+                c = (30, 34, 42, 255)
             pixels.append(c)
     write_png(bdir / "dacia_grille.png", 16, 16, pixels)
+
+    # 2o. `logan_side.png`: Authentic 2020/2021 Dacia Logan Poliția Română yellow-blue Battenberg door livery!
+    pixels = []
+    for y in range(16):
+        for x in range(16):
+            seam = x in (0, 8, 15)
+            batten = (x // 2) % 2 == 0
+            # Crisp white `POLIȚIA` lettering strokes inside the royal-blue band (y in 7..9)
+            letter = y in (7, 8, 9) and (x in (2, 4, 6, 9, 11, 13)) and not (y == 8 and x in (4, 11))
+            if y <= 1:
+                c = (214, 220, 228, 255) if seam else (248, 250, 253, 255)
+            elif y in (2, 3):
+                c = (224, 248, 38, 255)
+            elif y == 4:
+                c = (248, 250, 253, 255)
+            elif y == 5 or y == 11:
+                c = (236, 242, 250, 255) if batten else (24, 78, 194, 255)
+            elif 6 <= y <= 10:
+                if letter:
+                    c = (246, 249, 254, 255)
+                else:
+                    c = (20, 70, 182, 255) if y < 9 else (16, 56, 156, 255)
+            elif y == 12:
+                c = (248, 250, 253, 255)
+            elif y == 13:
+                c = (224, 248, 38, 255)
+            else:
+                c = (210, 216, 224, 255) if seam else (245, 248, 252, 255)
+            pixels.append(c)
+    write_png(bdir / "logan_side.png", 16, 16, pixels)
+
+    # 2p. `logan_blue.png` & `logan_lime.png`: Royal-blue bumper wedges & fluorescent neon-yellow reflective trim!
+    write_png(
+        bdir / "logan_blue.png",
+        16,
+        16,
+        [(20, 70, 182, 255) if (x + y) % 3 != 0 else (24, 78, 196, 255) for y in range(16) for x in range(16)],
+    )
+    write_png(
+        bdir / "logan_lime.png",
+        16,
+        16,
+        [(226, 250, 40, 255) if (x // 2 + y) % 2 == 0 else (208, 236, 28, 255) for y in range(16) for x in range(16)],
+    )
 
     # 3. `kart_seat.png`: Racing bucket seat upholstery (dark red-stitched charcoal leather)
     pixels = []
@@ -1203,24 +1251,27 @@ def generate_models() -> None:
         flare_tex: str = "#body",
         flare_tint=0,
     ) -> list:
-        """Builds a symmetric (left +X & right -X) 5-segment polygonal wheel arch around axle `cz`:
+        """Builds a 100% WATERTIGHT, ZERO-GAP symmetric 5-segment wheel arch around axle `cz`:
+          - Closed 4-wall `#carbon` inner wheelhouse tub (inner wall + ceiling + front/rear splash bulkheads)
           - Top horizontal crown + 3D outward sculpted eyebrow flare lip (`vx_body .. vx_flare`)
-          - Front-upper (`+slope_deg`) & rear-upper (`-slope_deg`) angled arch slopes + matching 3D flare lips
-          - Upper fender spandrel fills so the beltline `vy_top` is 100% seamless with zero holes
-          - Front & rear lower vertical fender jambs (`vy_jamb_bot .. vy_top`) flush at `vx_body` + flare lips
-          - Recessed dark `#carbon` inner wheelhouse liner (`contra-aripă`) so wheel wells never look hollow!
+          - Deep-backed front (`+slope_deg`) & rear (`-slope_deg`) sloped arch eyebrows (`vx_body - 0.025`)
+            paired with stepped flush spandrels & corner bridges at `vx_body` -> ZERO triangle holes or V-notches!
+          - Continuous 5-segment arch flare lip from front sill -> front slope -> crown -> rear slope -> rear sill!
         """
         elems = []
         rad = math.radians(slope_deg)
-        reach_z = slope_len * math.cos(rad)
-        drop_y = slope_len * math.sin(rad)
+        cos_a = math.cos(rad)
+        sin_a = math.sin(rad)
+        reach_z = slope_len * cos_a
+        drop_y = slope_len * sin_a
         z_f_crown = cz + half_crown
         z_r_crown = cz - half_crown
         z_f_open = round(z_f_crown + reach_z, 3)
         z_r_open = round(z_r_crown - reach_z, 3)
-        y_jamb_mid = round(vy_crown - drop_y + 0.35, 3)
-        crown_thick = round(min(0.85, max(0.55, (vy_top - vy_crown) * 0.52)), 3)
-        lip_thick = round(min(0.68, crown_thick - 0.04), 3)
+        y_arch_corner = round(vy_crown - drop_y, 3)
+        # Deep-backed rotated eyebrow height: seals the entire triangular spandrel without exceeding `vy_top`!
+        rot_h = round(min(2.35, max(0.95, (vy_top - vy_crown - 0.12) / max(0.65, cos_a))), 3)
+        lip_thick = round(min(0.66, max(0.46, (vy_top - vy_crown) * 0.30)), 3)
 
         for sgn in (1.0, -1.0):
             def bx(x0, x1):
@@ -1228,45 +1279,61 @@ def generate_models() -> None:
                 return (min(a, b), max(a, b))
 
             b0, b1 = bx(vx_in, vx_body)
+            br0, br1 = bx(vx_in + 0.03, vx_body - 0.025)
             f0, f1 = bx(vx_body + 0.02, vx_flare)
             l0, l1 = bx(liner_x0, liner_x1)
+            tub0, tub1 = bx(liner_x1 + 0.03, vx_body - 0.38)
 
-            # 1. Dark `#carbon` inner wheelhouse splash liner (`contra-aripă`) inboard of tire
-            elems.append(obox([l0, liner_y0, z_r_open - 0.25], [l1, vy_top - 0.15, z_f_open + 0.25], "#carbon"))
+            # 1. Enclosed 4-Wall Dark `#carbon` Wheelhouse Tub (`oală completă contra-aripă` — zero daylight!)
+            z_tub_r = max(vz_outer_min + 0.06, z_r_open - 0.48)
+            z_tub_f = min(vz_outer_max - 0.06, z_f_open + 0.48)
+            elems.append(obox([l0, liner_y0, z_tub_r], [l1, vy_top - 0.10, z_tub_f], "#carbon"))
+            elems.append(obox([tub0, vy_crown + 0.04, z_tub_r + 0.04], [tub1, vy_crown + 0.52, z_tub_f - 0.04], "#carbon"))
+            if z_tub_f > z_f_open + 0.08:
+                elems.append(obox([tub0, vy_jamb_bot + 0.06, z_f_open + 0.03], [tub1, vy_crown + 0.02, z_tub_f], "#carbon"))
+            if z_r_open - 0.08 > z_tub_r:
+                elems.append(obox([tub0, vy_jamb_bot + 0.06, z_tub_r], [tub1, vy_crown + 0.02, z_r_open - 0.03], "#carbon"))
 
             # 2. Top horizontal arch crown + proud 3D outward fender flare lip
             elems.append(obox([b0, vy_crown, z_r_crown], [b1, vy_top, z_f_crown], body_tex, tint=body_tint))
-            elems.append(obox([f0, vy_crown + 0.04, z_r_crown + 0.04], [f1, vy_crown + lip_thick, z_f_crown - 0.04], flare_tex, tint=flare_tint))
+            elems.append(obox([f0, vy_crown + 0.03, z_r_crown + 0.02], [f1, vy_crown + lip_thick, z_f_crown - 0.02], flare_tex, tint=flare_tint))
 
-            # 3. Front-upper sloped arch eyebrow (`+slope_deg` around X at `(0, vy_crown, z_f_crown)`) + flare lip
+            # 3. Deep-backed Front-upper sloped eyebrow (`+slope_deg`) + continuous 3D flare lip
             f_rot = ("x", slope_deg, [0.0, vy_crown, z_f_crown])
-            elems.append(obox([b0, vy_crown, z_f_crown], [b1, vy_crown + crown_thick, z_f_crown + slope_len], body_tex, tint=body_tint, rot=f_rot))
-            elems.append(obox([f0, vy_crown + 0.03, z_f_crown + 0.04], [f1, vy_crown + lip_thick, z_f_crown + slope_len - 0.04], flare_tex, tint=flare_tint, rot=f_rot))
+            elems.append(obox([br0, vy_crown, z_f_crown], [br1, vy_crown + rot_h, z_f_crown + slope_len + 0.28], body_tex, tint=body_tint, rot=f_rot))
+            elems.append(obox([f0, vy_crown + 0.02, z_f_crown + 0.03], [f1, vy_crown + lip_thick, z_f_crown + slope_len + 0.06], flare_tex, tint=flare_tint, rot=f_rot))
 
-            # 4. Rear-upper sloped arch eyebrow (`-slope_deg` around X at `(0, vy_crown, z_r_crown)`) + flare lip
+            # 4. Deep-backed Rear-upper sloped eyebrow (`-slope_deg`) + continuous 3D flare lip
             r_rot = ("x", -slope_deg, [0.0, vy_crown, z_r_crown])
-            elems.append(obox([b0, vy_crown, z_r_crown - slope_len], [b1, vy_crown + crown_thick, z_r_crown], body_tex, tint=body_tint, rot=r_rot))
-            elems.append(obox([f0, vy_crown + 0.03, z_r_crown - slope_len + 0.04], [f1, vy_crown + lip_thick, z_r_crown - 0.04], flare_tex, tint=flare_tint, rot=r_rot))
+            elems.append(obox([br0, vy_crown, z_r_crown - slope_len - 0.28], [br1, vy_crown + rot_h, z_r_crown], body_tex, tint=body_tint, rot=r_rot))
+            elems.append(obox([f0, vy_crown + 0.02, z_r_crown - slope_len - 0.06], [f1, vy_crown + lip_thick, z_r_crown - 0.03], flare_tex, tint=flare_tint, rot=r_rot))
 
-            # 5. Upper spandrel fills above sloped eyebrows (keeps top fender beltline `vy_top` unbroken & flush!)
-            if vz_outer_max > z_f_crown + 0.06:
-                z_sp_f_end = min(vz_outer_max, z_f_open)
-                if z_sp_f_end > z_f_crown + 0.06 and vy_top > vy_crown + crown_thick + 0.06:
-                    elems.append(obox([b0, vy_crown + crown_thick + 0.02, z_f_crown + 0.03],
-                                      [b1, vy_top, z_sp_f_end - 0.02], body_tex, tint=body_tint))
-            if vz_outer_min < z_r_crown - 0.06:
-                z_sp_r_start = max(vz_outer_min, z_r_open)
-                if z_r_crown - 0.06 > z_sp_r_start and vy_top > vy_crown + crown_thick + 0.06:
-                    elems.append(obox([b0, vy_crown + crown_thick + 0.02, z_sp_r_start + 0.02],
-                                      [b1, vy_top, z_r_crown - 0.03], body_tex, tint=body_tint))
-
-            # 6. Front & Rear lower vertical fender jambs + lower arch flare lips!
+            # 5. Zero-Gap Stepped Spandrels & Full Vertical Jambs at exact `vx_body` (disjoint Z intervals!)
+            z_f_mid = round((z_f_crown + z_f_open) * 0.5, 3)
+            y_sp_hi = round(min(vy_top - 0.35, vy_crown + rot_h * cos_a * 0.44), 3)
+            y_sp_mid = round(min(y_sp_hi - 0.15, y_arch_corner + rot_h * cos_a * 0.50), 3)
+            if vz_outer_max > z_f_crown + 0.08:
+                z1 = min(vz_outer_max, z_f_mid)
+                if z1 > z_f_crown + 0.05 and vy_top > y_sp_hi + 0.05:
+                    elems.append(obox([b0, y_sp_hi, z_f_crown + 0.02], [b1, vy_top, z1 - 0.01], body_tex, tint=body_tint))
+                z2 = min(vz_outer_max, z_f_open)
+                if z2 > z_f_mid + 0.05 and vy_top > y_sp_mid + 0.05:
+                    elems.append(obox([b0, y_sp_mid, z_f_mid + 0.01], [b1, vy_top, z2 - 0.01], body_tex, tint=body_tint))
             if vz_outer_max > z_f_open + 0.05:
-                elems.append(obox([b0, vy_jamb_bot, z_f_open + 0.02], [b1, vy_top, vz_outer_max], body_tex, tint=body_tint))
-                elems.append(obox([f0, vy_jamb_bot + 0.10, z_f_open + 0.04], [f1, y_jamb_mid, min(vz_outer_max - 0.04, z_f_open + 0.72)], flare_tex, tint=flare_tint))
+                elems.append(obox([b0, vy_jamb_bot, z_f_open + 0.01], [b1, vy_top, vz_outer_max], body_tex, tint=body_tint))
+                elems.append(obox([f0, vy_jamb_bot + 0.06, z_f_open + 0.02], [f1, y_arch_corner + 0.32, min(vz_outer_max - 0.03, z_f_open + 0.68)], flare_tex, tint=flare_tint))
+
+            z_r_mid = round((z_r_crown + z_r_open) * 0.5, 3)
+            if vz_outer_min < z_r_crown - 0.08:
+                zr1 = max(vz_outer_min, z_r_mid)
+                if z_r_crown - 0.05 > zr1 and vy_top > y_sp_hi + 0.05:
+                    elems.append(obox([b0, y_sp_hi, zr1 + 0.01], [b1, vy_top, z_r_crown - 0.02], body_tex, tint=body_tint))
+                zr2 = max(vz_outer_min, z_r_open)
+                if z_r_mid - 0.05 > zr2 and vy_top > y_sp_mid + 0.05:
+                    elems.append(obox([b0, y_sp_mid, zr2 + 0.01], [b1, vy_top, z_r_mid - 0.01], body_tex, tint=body_tint))
             if vz_outer_min < z_r_open - 0.05:
-                elems.append(obox([b0, vy_jamb_bot, vz_outer_min], [b1, vy_top, z_r_open - 0.02], body_tex, tint=body_tint))
-                elems.append(obox([f0, vy_jamb_bot + 0.10, max(vz_outer_min + 0.04, z_r_open - 0.72)], [f1, y_jamb_mid, z_r_open - 0.04], flare_tex, tint=flare_tint))
+                elems.append(obox([b0, vy_jamb_bot, vz_outer_min], [b1, vy_top, z_r_open - 0.01], body_tex, tint=body_tint))
+                elems.append(obox([f0, vy_jamb_bot + 0.06, max(vz_outer_min + 0.03, z_r_open - 0.68)], [f1, y_arch_corner + 0.32, z_r_open - 0.02], flare_tex, tint=flare_tint))
 
         return elems
 
@@ -1300,8 +1367,10 @@ def generate_models() -> None:
         obox([-0.85, 10.85, 0.85], [0.85, 11.85, 2.35], "#seat", rot=("x", -12.0, [0.0, 8.25, 1.6])),
         obox([-1.25, 8.25, 2.6], [-0.75, 10.2, 3.1], "#chrome", rot=("x", -8.0, [-1.0, 8.25, 2.85])),
 
-        # --- Sculpted 4x4 Hood, 7-Slot Grille, Unobstructed Headlights & Narrow Center Winch Bullbar! ---
-        obox([-8.2,  5.6,  9.2], [ 8.2, 12.2, 21.8], "#body", tint=0),
+        # --- Sculpted 4x4 Hood (narrowed `±5.8` in wheel zone for 31° steer clearance!), 7-Slot Grille & Bullbar ---
+        obox([-5.8,  5.6,  9.2], [ 5.8, 10.02, 19.6], "#carbon"),
+        obox([-8.2, 10.05, 9.2], [ 8.2, 12.2,  21.8], "#body", tint=0),
+        obox([-8.2,  5.6, 19.62],[ 8.2, 10.02, 21.8], "#body", tint=0),
         obox([-7.8, 12.25, 9.2], [ 7.8, 13.35, 21.4], "#body", tint=0),
         obox([-3.6, 13.4, 11.2], [ 3.6, 14.25, 19.0], "#carbon"),
         obox([-3.0, 13.45, 19.05], [3.0, 14.15, 19.65], "#grille"),
@@ -1592,8 +1661,10 @@ def generate_models() -> None:
         obox([ 10.58, 6.95, 21.65], [12.22, 9.45, 22.48], "#amber", full_uv_faces=("south", "north")),
         obox([-12.22, 6.95, 21.65], [-10.58, 9.45, 22.48], "#amber", full_uv_faces=("south", "north")),
 
-        # --- C. Sculpted Poliția Română Hood (`#police_hood`) & Curved 5-Segment Front Wheel Arches! ---
-        obox([ -8.20, 6.28,  8.55], [ 8.20, 10.35, 21.93], "#body", tint=0),
+        # --- C. Sculpted Poliția Română Hood (`#police_hood`) & Zero-Gap Curved Front Wheel Arches! ---
+        obox([ -5.85, 6.28,  8.55], [ 5.85,  8.72, 18.80], "#carbon"),
+        obox([ -8.20, 8.75,  8.55], [ 8.20, 10.35, 21.93], "#body", tint=0),
+        obox([ -8.20, 6.28, 18.82], [ 8.20,  8.72, 21.93], "#body", tint=0),
         obox([ -5.65, 10.37, 8.60], [ 5.65, 11.00, 21.85], "#police_hood", full_uv_faces=("up", "south")),
         obox([  5.68, 10.37, 8.60], [ 8.20, 10.90, 21.85], "#body", tint=0),
         obox([ -8.20, 10.37, 8.60], [-5.68, 10.90, 21.85], "#body", tint=0),
@@ -1601,7 +1672,7 @@ def generate_models() -> None:
             cz=13.80, vx_in=8.22, vx_body=12.25, vx_flare=12.68,
             vy_crown=8.75, vy_top=10.90, half_crown=2.15, slope_len=3.20, slope_deg=38.0,
             vz_outer_min=8.55, vz_outer_max=21.90, vy_jamb_bot=2.88,
-            liner_x0=6.95, liner_x1=7.65, liner_y0=3.15,
+            liner_x0=5.90, liner_x1=6.35, liner_y0=3.15,
             body_tex="#body", body_tint=0, flare_tex="#body", flare_tint=0,
         ),
 
@@ -1622,7 +1693,7 @@ def generate_models() -> None:
         obox([-12.58, 9.05,  1.0], [-12.27, 9.70,  3.4], "#chrome"),
         obox([-12.58, 9.05, -6.6], [-12.27, 9.70, -4.2], "#chrome"),
 
-        # --- E. Seamless Connected Sedan Greenhouse (100% Clear Windows!), Roof Rails & Shark-Fin Antenna ---
+        # --- E. Full 4-Door, 5-Seat Sedan Greenhouse (Open Rear Cabin!), Roof Rails & Shark-Fin Antenna ---
         # Slanted A-pillars (-24 deg) + top windshield visor + lower cowl chrome seal + parked wipers
         obox([ 10.0, 10.92, 6.8], [11.35, 19.35, 8.0], "#body", tint=0, rot=("x", -24.0, [0.0, 10.92, 7.4])),
         obox([-11.35, 10.92, 6.8], [-10.0, 19.35, 8.0], "#body", tint=0, rot=("x", -24.0, [0.0, 10.92, 7.4])),
@@ -1630,18 +1701,20 @@ def generate_models() -> None:
         obox([ -9.98, 10.94, 7.20], [ 9.98, 11.26, 7.60], "#chrome", rot=("x", -24.0, [0.0, 10.92, 7.4])),
         obox([  1.0, 11.02, 7.95], [ 7.6, 11.35, 8.30], "#frame", rot=("z", 3.0, [1.0, 11.15, 8.1])),
         obox([ -7.6, 11.02, 7.95], [-1.0, 11.35, 8.30], "#frame", rot=("z", 3.0, [-7.6, 11.15, 8.1])),
-        # Gloss-black center B-pillars + window beltline chrome trim!
+        # Gloss-black center B-pillars + rear-door Hofmeister divider + full window chrome beltline!
         obox([ 10.45, 10.92, -1.5], [11.45, 18.60, -0.3], "#carbon"),
         obox([-11.45, 10.92, -1.5], [-10.45, 18.60, -0.3], "#carbon"),
+        obox([ 10.55, 11.08, -10.8], [11.35, 18.60, -10.1], "#carbon"),
+        obox([-11.35, 11.08, -10.8], [-10.55, 18.60, -10.1], "#carbon"),
         obox([ 11.48, 10.92, -8.4], [12.18, 11.24,  6.6], "#chrome"),
         obox([-12.18, 10.92, -8.4], [-11.48, 11.24, 6.6], "#chrome"),
-        # Slanted C-pillars (+26 deg) + rear window upper header bar
-        obox([ 10.0, 10.92, -10.2], [11.35, 19.25, -9.0], "#body", tint=0, rot=("x", 26.0, [0.0, 10.92, -9.6])),
-        obox([-11.35, 10.92, -10.2], [-10.0, 19.25, -9.0], "#body", tint=0, rot=("x", 26.0, [0.0, 10.92, -9.6])),
-        obox([ -9.98, 18.45, -10.1], [ 9.98, 19.25, -9.1], "#body", tint=0, rot=("x", 26.0, [0.0, 10.92, -9.6])),
-        # Connected Sedan Roof Panel (`vy_m = 18.62..19.80, vz = -6.8..+4.3`) + Shark-Fin Radio Antenna + Mirrors!
-        obox([-11.25, 18.62, -6.8], [11.25, 19.80,  4.3], "#body", tint=0),
-        obox([ -0.55, 19.82, -6.2], [ 0.55, 20.95, -4.4], "#carbon", rot=("x", 18.0, [0.0, 19.82, -5.3])),
+        # Slanted C-pillars (+26 deg) at `vz = -15.80` -> encloses the ENTIRE 3-seat rear passenger cabin!
+        obox([ 10.0, 11.08, -16.40], [11.35, 19.35, -15.20], "#body", tint=0, rot=("x", 26.0, [0.0, 11.08, -15.80])),
+        obox([-11.35, 11.08, -16.40], [-10.0, 19.35, -15.20], "#body", tint=0, rot=("x", 26.0, [0.0, 11.08, -15.80])),
+        obox([ -9.98, 18.55, -16.30], [ 9.98, 19.35, -15.30], "#body", tint=0, rot=("x", 26.0, [0.0, 11.08, -15.80])),
+        # Extended Full-Cabin Sedan Roof Panel (`vz = -12.35..+4.30`) + Shark-Fin Radio Antenna + Mirrors!
+        obox([-11.25, 18.62, -12.35], [11.25, 19.80,  4.3], "#body", tint=0),
+        obox([ -0.55, 19.82, -11.6], [ 0.55, 20.95, -9.8], "#carbon", rot=("x", 18.0, [0.0, 19.82, -10.7])),
         obox([ -1.8,  17.85,  3.1], [ 1.8,  18.55,  3.7], "#frame"),
         obox([ 11.40, 11.40,  5.5], [12.55, 12.00,  6.25], "#frame"),
         obox([ 12.57, 11.05,  5.1], [14.25, 13.05,  6.35], "#body", tint=0),
@@ -1656,24 +1729,31 @@ def generate_models() -> None:
         obox([  1.42, 20.37, -2.55], [ 8.2, 21.65, -0.45], "#siren_blue", full_uv_faces=("south", "north", "up")),
         obox([ -8.2,  20.37, -2.55], [-1.42, 21.65, -0.45], "#siren_red", full_uv_faces=("south", "north", "up")),
 
-        # --- G. Police Cockpit: Digital Dash, MDT Police Laptop, Partition & Seats ---
+        # --- G. Police Cockpit & Open 3-Seat Rear Cabin: Dash, MDT Laptop, Partition & 5 Seats! ---
         obox([-10.18, 7.6,  6.2], [10.18, 10.9, 8.50], "#seat"),
         obox([  2.4, 10.92, 6.2], [ 7.0, 12.1, 8.2], "#carbon"),
         obox([  2.8, 10.95, 5.90], [ 6.6, 11.95, 6.18], "#dash", full_uv_faces=("north", "south")),
-        obox([ -1.5,  3.92, -5.8], [ 1.5,  7.58, 6.18], "#carbon"),
+        obox([ -1.5,  3.92, -4.1], [ 1.5,  7.58, 6.18], "#carbon"),
         obox([ -1.8,  8.2,   4.0], [ 1.4, 10.8,  4.6], "#dash", rot=("y", 18.0, [0.0, 9.5, 4.3]), full_uv_faces=("north", "south")),
         obox([  4.15, 10.9,  3.46], [5.35, 12.0, 6.18], "#chrome", rot=("x", 28.0, [4.75, 11.45, 3.46])),
-        obox([  1.6,  3.92, -5.2], [ 8.0,  5.4,  1.0], "#seat"),
-        obox([  1.6,  5.42, -6.4], [ 8.0, 13.8, -4.9], "#seat", rot=("x", -8.0, [4.8, 5.42, -5.2])),
-        obox([  2.8, 13.85, -6.5], [ 6.8, 15.9, -5.1], "#seat"),
-        obox([ -8.0,  3.92, -5.2], [-1.6,  5.4,  1.0], "#seat"),
-        obox([ -8.0,  5.42, -6.4], [-1.6, 13.8, -4.9], "#seat", rot=("x", -8.0, [-4.8, 5.42, -5.2])),
-        obox([ -6.8, 13.85, -6.5], [-2.8, 15.9, -5.1], "#seat"),
-        obox([ -9.8, 10.8, -7.2], [ 9.8, 17.8, -6.65], "#grille"),
-        obox([ -9.2,  4.2, -16.8], [ 9.2,  6.2, -11.2], "#seat"),
-        obox([ -9.2,  6.22, -18.2], [9.2, 12.8, -16.6], "#seat"),
+        # Front Patrol Bucket Seats + Protective Mesh Partition + Open Rear Footwell & 3-Place Rear Bench!
+        obox([  1.6,  3.92, -3.4], [ 8.0,  5.4,  1.8], "#seat"),
+        obox([  1.6,  5.42, -4.6], [ 8.0, 13.8, -3.1], "#seat", rot=("x", -8.0, [4.8, 5.42, -3.4])),
+        obox([  2.8, 13.85, -4.7], [ 6.8, 15.9, -3.3], "#seat"),
+        obox([ -8.0,  3.92, -3.4], [-1.6,  5.4,  1.8], "#seat"),
+        obox([ -8.0,  5.42, -4.6], [-1.6, 13.8, -3.1], "#seat", rot=("x", -8.0, [-4.8, 5.42, -3.4])),
+        obox([ -6.8, 13.85, -4.7], [-2.8, 15.9, -3.3], "#seat"),
+        obox([ -9.8, 10.8, -5.5], [ 9.8, 17.8, -5.0], "#grille"),
+        # Rear floor carpet (`vz = -14.5..-4.15`) + 3-seat rear bench (inboard of rear wheelhouses!) + 3 headrests!
+        obox([ -6.70, 3.92, -14.5], [ 6.70, 4.35, -4.15], "#carbon"),
+        obox([ -6.70, 4.38, -14.4], [ 6.70, 7.80, -9.10], "#seat"),
+        obox([ -9.60, 9.35, -15.6], [ 9.60, 13.6, -14.1], "#seat", rot=("x", -8.0, [0.0, 9.35, -14.4])),
+        obox([ -6.70, 7.82, -15.4], [ 6.70, 9.33, -14.1], "#seat"),
+        obox([  4.8, 13.65, -15.8], [ 8.2, 15.5, -14.5], "#seat"),
+        obox([ -1.6, 13.65, -15.8], [ 1.6, 15.1, -14.5], "#seat"),
+        obox([ -8.2, 13.65, -15.8], [-4.8, 15.5, -14.5], "#seat"),
 
-        # --- H. Curved 5-Segment Rear Wheel Arches, Trunk (`#police_hood`), Ducktail Spoiler & L-LED Tail Lamps! ---
+        # --- H. Zero-Gap Rear Wheel Arches, Rear Trunk (`vz = -22.2..-15.65`), Spoiler & L-LED Tail Lamps! ---
         *sculpted_wheel_arch(
             cz=-13.80, vx_in=8.22, vx_body=12.25, vx_flare=12.68,
             vy_crown=8.75, vy_top=11.05, half_crown=2.15, slope_len=3.20, slope_deg=38.0,
@@ -1681,8 +1761,10 @@ def generate_models() -> None:
             liner_x0=6.95, liner_x1=7.65, liner_y0=3.15,
             body_tex="#body", body_tint=0, flare_tex="#body", flare_tint=0,
         ),
-        obox([ -8.20, 5.80, -22.20], [ 8.20, 11.05, -8.55], "#body", tint=0),
-        obox([ -5.45, 11.07, -21.05], [5.45, 11.45, -10.2], "#police_hood", full_uv_faces=("up", "north")),
+        obox([ -6.75, 5.80, -18.95], [ 6.75,  8.72, -15.68], "#carbon"),
+        obox([ -8.20, 5.80, -22.20], [ 8.20,  8.72, -18.98], "#body", tint=0),
+        obox([ -8.20, 8.75, -22.20], [ 8.20, 11.05, -15.68], "#body", tint=0),
+        obox([ -5.45, 11.07, -21.05], [5.45, 11.45, -16.10], "#police_hood", full_uv_faces=("up", "north")),
         obox([-11.4,  11.08, -22.40], [11.4, 11.82, -21.10], "#carbon", rot=("x", 10.0, [0.0, 11.2, -21.7])),
         # Sculpted L-Bar LED Tail-Lamps, Amber Turn Indicators, Reverse Lamps, RO Plate & Diffuser Bumper!
         obox([  4.6,  8.15, -22.52], [11.85, 10.45, -22.22], "#taillight", full_uv_faces=("north", "south")),
@@ -1723,149 +1805,188 @@ def generate_models() -> None:
     )
 
     # =========================================================================
-    # 7a-bis. Dacia Logan Poliția Română (`dacia_logan_police_body.json`)!
+    # 7a-bis. Dacia Logan II Facelift Poliția Română (`dacia_logan_police_body.json`)!
     # =========================================================================
-    # Iconic Romanian Police Dacia Logan patrol sedan (`Poliția Română` Logan):
-    #   - Authentic compact upright 3-box Logan silhouette (`body_scale = [1.34, 1.36, 1.35]`, axles `cz = ±13.0`)
-    #   - Curved 5-segment wheel arches with dark matte Dacia arch trim (`#frame`) & inner `#carbon` wheelhouses!
-    #   - Flush `vx = ±11.95` Logan doors "de la roți la roți" + signature black lower door rub-strip (`bandou negru`)!
-    #   - Trapezoidal Dacia grille (`#dacia_grille`) with central white/chrome emblem, wide headlights & bumper fog lamps!
-    #   - Upright connected Logan greenhouse, flexible roof radio whip antenna & classic tall Girofar ramp on roof feet!
-    #   - Characteristic high-deck boxy Logan trunk, chrome trunk garnish, `RO` plates & square corner tail-lights!
+    # Remodeled 1:1 from real Romanian Police Dacia Logan II Facelift (2017-2021) reference photos:
+    #   - 100% Zero-Gap Curved 5-Segment Wheel Arches + enclosed 4-wall `#carbon` inner wheelhouses!
+    #   - Authentic white bumper with royal-blue corner wedges, neon-lime strip above `MAI/RO` plate & fog-lamp pods!
+    #   - `#dacia_grille` with silver-blue Dacia U-shield & twin chrome link rows + wide headlights!
+    #   - Full 4-Door, 5-Seat Extended Logan Cabin: open rear passenger legroom + 3-place rear bench with 3 headrests,
+    #     rear-door fixed quarter-glass divider, white mirrors, `#logan_side` 2020/2021 yellow-blue `POLIȚIA` livery!
+    #   - Front roof radio whip antenna + sleek LED Girofar ramp on twin outer roof-gutter feet + short high Logan trunk!
     logan_elements = [
-        # --- A. Logan Underbody Floorpan, Subframes, Axles & Single Right-Side Exhaust Pipe ---
-        obox([ -9.95, 2.85, -8.55], [ 9.95, 3.95,  8.55], "#carbon"),
-        obox([ -6.10, 2.85,  8.58], [ 6.10, 3.95, 21.10], "#frame"),
-        obox([ -6.10, 2.85, -21.10], [6.10, 3.95, -8.58], "#frame"),
+        # --- A. Full-Cabin Underbody Floorpan, Subframes, Axles & Right-Side Logan Exhaust ---
+        obox([ -9.95, 2.85, -8.45], [ 9.95, 3.95,  8.45], "#carbon"),
+        obox([ -6.70, 2.85, -15.85], [6.70, 3.95, -8.48], "#carbon"),
+        obox([ -6.10, 2.85,  8.48], [ 6.10, 3.95, 21.20], "#frame"),
+        obox([ -6.10, 2.85, -21.20], [6.10, 3.95, -15.88], "#frame"),
         obox([ -9.35, 2.15,  12.45], [9.35, 3.05,  13.55], "#chrome"),
         obox([ -9.35, 2.15, -13.55], [9.35, 3.05, -12.45], "#chrome"),
-        obox([ -6.30, 2.25, -22.95], [-4.85, 3.15, -20.60], "#chrome"),
+        obox([ -6.30, 2.25, -23.05], [-4.85, 3.15, -20.60], "#chrome"),
 
-        # --- B. Authentic Dacia Logan Front Bumper, Fog Lights, `RO` Plate & `#dacia_grille` ---
-        obox([-11.95, 3.00, 21.25], [11.95, 6.55, 22.65], "#body", tint=0),
-        obox([-11.75, 2.50, 21.05], [11.75, 2.98, 22.80], "#frame"),
-        obox([ -3.75, 4.45, 22.67], [ 3.75, 6.15, 22.98], "#plate_ro", full_uv_faces=("south", "north")),
-        obox([ -6.60, 3.15, 22.67], [ 6.60, 4.38, 22.88], "#grille"),
-        # Signature Dacia Logan round/square corner fog-light pods (`proiectoare în bară`)!
-        obox([  7.25, 3.35, 22.67], [10.85, 5.15, 22.90], "#frame"),
-        obox([  8.05, 3.65, 22.92], [10.05, 4.85, 23.12], "#headlight", full_uv_faces=("south", "north")),
-        obox([-10.85, 3.35, 22.67], [-7.25, 5.15, 22.90], "#frame"),
-        obox([-10.05, 3.65, 22.92], [-8.05, 4.85, 23.12], "#headlight", full_uv_faces=("south", "north")),
-        # Trapezoidal Dacia Logan grille (`#dacia_grille`) + top chrome bar + Red/Blue police grille strobes!
-        obox([ -5.35, 6.58, 21.40], [ 5.35, 9.95, 22.45], "#dacia_grille", full_uv_faces=("south", "north")),
-        obox([ -5.35, 9.97, 21.55], [ 5.35, 10.32, 22.58], "#chrome"),
-        obox([  1.55, 7.35, 22.47], [ 3.10, 8.25, 22.75], "#siren_blue", full_uv_faces=("south", "north")),
-        obox([ -3.10, 7.35, 22.47], [-1.55, 8.25, 22.75], "#siren_red", full_uv_faces=("south", "north")),
-        # Wide Dacia Logan Headlights (`#headlight`) + Outer Amber Turn Signals (`#amber`)!
-        obox([  5.40, 6.80, 21.30], [ 9.95, 9.95, 22.35], "#headlight", full_uv_faces=("south", "north")),
-        obox([ -9.95, 6.80, 21.30], [-5.40, 9.95, 22.35], "#headlight", full_uv_faces=("south", "north")),
-        obox([  9.98, 6.95, 20.95], [11.90, 9.80, 21.95], "#amber", full_uv_faces=("south", "north")),
-        obox([-11.90, 6.95, 20.95], [-9.98, 9.80, 21.95], "#amber", full_uv_faces=("south", "north")),
+        # --- B. Real Dacia Logan II Facelift White Front Bumper, Blue Corner Wedges, Neon Strip & Fog Lamps ---
+        obox([ -7.35, 3.00, 21.30], [ 7.35, 6.55, 22.65], "#body", tint=0),
+        obox([  7.38, 3.00, 21.30], [11.95, 4.92, 22.65], "#body", tint=0),
+        obox([-11.95, 3.00, 21.30], [-7.38, 4.92, 22.65], "#body", tint=0),
+        # Signature Royal-Blue corner wedges on bumper cheeks under headlights (exact photo match!)
+        obox([  7.38, 4.95, 21.30], [11.95, 6.55, 22.65], "#logan_blue"),
+        obox([-11.95, 4.95, 21.30], [-7.38, 6.55, 22.65], "#logan_blue"),
+        obox([-11.80, 2.50, 21.10], [11.80, 2.98, 22.82], "#frame"),
+        # Fluorescent neon-yellow reflective strip above `RO / MAI` front license plate + lower honeycomb intake!
+        obox([ -5.15, 6.08, 22.67], [ 5.15, 6.52, 22.84], "#logan_lime"),
+        obox([ -3.85, 4.35, 22.67], [ 3.85, 6.02, 22.98], "#plate_ro", full_uv_faces=("south", "north")),
+        obox([ -6.95, 3.12, 22.67], [ 6.95, 4.28, 22.88], "#grille"),
+        # Recessed black trapezoidal fog-light bezels + chrome trim + bright projector fog lamps!
+        obox([  7.35, 3.22, 22.67], [11.15, 4.88, 22.90], "#frame"),
+        obox([  8.05, 3.48, 22.92], [10.35, 4.68, 23.04], "#chrome"),
+        obox([  8.30, 3.60, 23.06], [10.10, 4.56, 23.18], "#headlight", full_uv_faces=("south", "north")),
+        obox([-11.15, 3.22, 22.67], [-7.35, 4.88, 22.90], "#frame"),
+        obox([-10.35, 3.48, 22.92], [-8.05, 4.68, 23.04], "#chrome"),
+        obox([-10.10, 3.60, 23.06], [-8.30, 4.56, 23.18], "#headlight", full_uv_faces=("south", "north")),
+        # Dacia Logan II Facelift Grille (`#dacia_grille`) + chrome top moulding + covert Red/Blue strobes!
+        obox([ -5.30, 6.58, 21.45], [ 5.30, 10.00, 22.50], "#dacia_grille", full_uv_faces=("south", "north")),
+        obox([ -5.30, 10.02, 21.58], [5.30, 10.34, 22.62], "#chrome"),
+        obox([  1.55, 7.38, 22.52], [ 3.10, 8.28, 22.78], "#siren_blue", full_uv_faces=("south", "north")),
+        obox([ -3.10, 7.38, 22.52], [-1.55, 8.28, 22.78], "#siren_red", full_uv_faces=("south", "north")),
+        # Wide Swept Dacia Logan Headlights (`#headlight`) + Corner Amber Turn Signals (`#amber`)!
+        obox([  5.35, 6.75, 21.32], [10.25, 10.02, 22.40], "#headlight", full_uv_faces=("south", "north")),
+        obox([-10.25, 6.75, 21.32], [-5.35, 10.02, 22.40], "#headlight", full_uv_faces=("south", "north")),
+        obox([ 10.28, 6.90, 20.95], [11.92,  9.88, 22.02], "#amber", full_uv_faces=("south", "north")),
+        obox([-11.92, 6.90, 20.95], [-10.28, 9.88, 22.02], "#amber", full_uv_faces=("south", "north")),
 
-        # --- C. Domed Dacia Logan Hood (`#police_hood`) & Curved 5-Segment Front Wheel Arches! ---
-        obox([ -7.95,  6.58, 8.15], [ 7.95, 10.45, 21.23], "#body", tint=0),
-        obox([ -5.45, 10.47, 8.20], [ 5.45, 11.18, 21.10], "#police_hood", full_uv_faces=("up", "south")),
-        obox([  5.48, 10.47, 8.20], [ 7.95, 11.08, 21.10], "#body", tint=0),
-        obox([ -7.95, 10.47, 8.20], [-5.48, 11.08, 21.10], "#body", tint=0),
+        # --- C. Domed Dacia Logan Hood (`#police_hood` + Washer Jets) & Zero-Gap Front Wheel Arches! ---
+        obox([ -5.70,  6.58, 8.15], [ 5.70,  8.45, 18.00], "#carbon"),
+        obox([ -7.95,  8.48, 8.15], [ 7.95, 10.45, 21.28], "#body", tint=0),
+        obox([ -7.95,  6.58,18.02], [ 7.95,  8.45, 21.28], "#body", tint=0),
+        obox([ -5.55, 10.47, 8.20], [ 5.55, 11.20, 21.15], "#police_hood", full_uv_faces=("up", "south")),
+        obox([  5.58, 10.47, 8.20], [ 7.95, 11.10, 21.15], "#body", tint=0),
+        obox([ -7.95, 10.47, 8.20], [-5.58, 11.10, 21.15], "#body", tint=0),
+        obox([  2.60, 11.22, 10.60], [ 3.15, 11.45, 11.25], "#frame"),
+        obox([ -3.15, 11.22, 10.60], [-2.60, 11.45, 11.25], "#frame"),
         *sculpted_wheel_arch(
-            cz=13.00, vx_in=7.98, vx_body=11.95, vx_flare=12.36,
-            vy_crown=8.50, vy_top=11.15, half_crown=2.05, slope_len=3.05, slope_deg=38.0,
-            vz_outer_min=8.15, vz_outer_max=21.20, vy_jamb_bot=3.02,
-            liner_x0=6.78, liner_x1=7.48, liner_y0=3.10,
+            cz=13.00, vx_in=7.98, vx_body=11.95, vx_flare=12.34,
+            vy_crown=8.48, vy_top=11.15, half_crown=2.05, slope_len=3.05, slope_deg=38.0,
+            vz_outer_min=8.15, vz_outer_max=21.25, vy_jamb_bot=3.02,
+            liner_x0=5.75, liner_x1=6.15, liner_y0=3.10,
             body_tex="#body", body_tint=0, flare_tex="#frame", flare_tint=None,
         ),
 
-        # --- D. Wheel-to-Wheel Logan Rocker Sills, Battenberg Doors & Black Door Rub-Strips (`bandou negru`)! ---
-        obox([  9.98, 2.88, -8.10], [12.24,  3.82,  8.10], "#frame"),
-        obox([-12.24, 2.88, -8.10], [-9.98,  3.82,  8.10], "#frame"),
-        obox([  9.98, 3.84, -8.10], [11.95, 11.20,  8.10], "#police_side", full_uv_faces=("east", "west")),
-        obox([-11.95, 3.84, -8.10], [-9.98, 11.20,  8.10], "#police_side", full_uv_faces=("east", "west")),
-        # Unmistakable Dacia Logan black protective lower door rub-strip (`bandou lateral`) & black door handles!
-        obox([ 11.97, 4.70, -7.85], [12.20,  5.50,  7.85], "#frame"),
-        obox([-12.20, 4.70, -7.85], [-11.97, 5.50,  7.85], "#frame"),
-        obox([ 11.97, 9.45,  0.90], [12.28, 10.12,  3.15], "#frame"),
-        obox([ 11.97, 9.45, -6.35], [12.28, 10.12, -4.10], "#frame"),
-        obox([-12.28, 9.45,  0.90], [-11.97, 10.12, 3.15], "#frame"),
-        obox([-12.28, 9.45, -6.35], [-11.97, 10.12,-4.10], "#frame"),
+        # --- D. Wheel-to-Wheel 4-Door `#logan_side` Yellow-Blue Battenberg Livery, Rocker Sills & 4 Handles! ---
+        obox([  9.98, 2.88, -8.10], [12.18,  3.78,  8.10], "#body", tint=0),
+        obox([-12.18, 2.88, -8.10], [-9.98,  3.78,  8.10], "#body", tint=0),
+        obox([  9.98, 2.52, -8.10], [11.90,  2.86,  8.10], "#frame"),
+        obox([-11.90, 2.52, -8.10], [-9.98,  2.86,  8.10], "#frame"),
+        obox([  9.98, 3.80, -8.10], [11.95, 11.20,  8.10], "#logan_side", full_uv_faces=("east", "west")),
+        obox([-11.95, 3.80, -8.10], [-9.98, 11.20,  8.10], "#logan_side", full_uv_faces=("east", "west")),
+        # Front & Rear white-painted Dacia Logan pull door handles + front fender tricolor badge!
+        obox([ 11.97, 9.25,  0.55], [12.30,  9.95,  2.85], "#body", tint=0),
+        obox([ 11.97, 9.25, -6.95], [12.30,  9.95, -4.65], "#body", tint=0),
+        obox([-12.30, 9.25,  0.55], [-11.97, 9.95,  2.85], "#body", tint=0),
+        obox([-12.30, 9.25, -6.95], [-11.97, 9.95, -4.65], "#body", tint=0),
+        obox([ 11.97, 9.85,  8.55], [12.14, 10.35,  9.45], "#amber"),
+        obox([-12.14, 9.85,  8.55], [-11.97,10.35,  9.45], "#amber"),
 
-        # --- E. Upright Dacia Logan Sedan Cabin (100% Clear Windows!), Whip Antenna & Black Mirrors ---
-        obox([  9.75, 11.22, 6.55], [11.10, 19.85, 7.75], "#body", tint=0, rot=("x", -21.0, [0.0, 11.22, 7.15])),
-        obox([-11.10, 11.22, 6.55], [-9.75, 19.85, 7.75], "#body", tint=0, rot=("x", -21.0, [0.0, 11.22, 7.15])),
-        obox([ -9.72, 19.05, 6.65], [ 9.72, 19.85, 7.65], "#body", tint=0, rot=("x", -21.0, [0.0, 11.22, 7.15])),
-        obox([ -9.72, 11.24, 6.95], [ 9.72, 11.55, 7.35], "#frame", rot=("x", -21.0, [0.0, 11.22, 7.15])),
+        # --- E. Extended Full 4-Door, 5-Seat Dacia Logan Cabin, Quarter Glass, White Mirrors & Whip Antenna! ---
+        obox([  9.75, 11.22, 6.55], [11.10, 19.90, 7.75], "#body", tint=0, rot=("x", -22.0, [0.0, 11.22, 7.15])),
+        obox([-11.10, 11.22, 6.55], [-9.75, 19.90, 7.75], "#body", tint=0, rot=("x", -22.0, [0.0, 11.22, 7.15])),
+        obox([ -9.72, 19.10, 6.65], [ 9.72, 19.90, 7.65], "#body", tint=0, rot=("x", -22.0, [0.0, 11.22, 7.15])),
+        obox([ -9.72, 11.24, 6.95], [ 9.72, 11.55, 7.35], "#frame", rot=("x", -22.0, [0.0, 11.22, 7.15])),
         obox([  0.90, 11.25, 7.65], [ 7.30, 11.58, 8.00], "#frame", rot=("z", 3.0, [0.9, 11.4, 7.8])),
         obox([ -7.30, 11.25, 7.65], [-0.90, 11.58, 8.00], "#frame", rot=("z", 3.0, [-7.3, 11.4, 7.8])),
-        # Matte-black vertical B-pillars + window weatherstrip seal
-        obox([ 10.15, 11.22, -1.45], [11.20, 19.10, -0.25], "#frame"),
-        obox([-11.20, 11.22, -1.45], [-10.15, 19.10, -0.25], "#frame"),
+        # Black center B-pillars (`vz = -1.35`) + thin Rear-Door Fixed Quarter-Glass Divider (`vz = -10.45`)!
+        obox([ 10.15, 11.22, -1.90], [11.20, 19.10, -0.75], "#frame"),
+        obox([-11.20, 11.22, -1.90], [-10.15, 19.10, -0.75], "#frame"),
+        obox([ 10.30, 11.52, -10.85], [11.10, 19.10, -10.15], "#frame"),
+        obox([-11.10, 11.52, -10.85], [-10.30, 19.10, -10.15], "#frame"),
         obox([ 11.22, 11.22, -8.05], [11.90, 11.52,  6.35], "#frame"),
         obox([-11.90, 11.22, -8.05], [-11.22, 11.52, 6.35], "#frame"),
-        # Upright Logan C-pillars (+22 deg) + rear window header
-        obox([  9.75, 11.55, -10.35], [11.10, 19.80, -9.15], "#body", tint=0, rot=("x", 22.0, [0.0, 11.55, -9.75])),
-        obox([-11.10, 11.55, -10.35], [-9.75, 19.80, -9.15], "#body", tint=0, rot=("x", 22.0, [0.0, 11.55, -9.75])),
-        obox([ -9.72, 19.00, -10.25], [ 9.72, 19.80, -9.25], "#body", tint=0, rot=("x", 22.0, [0.0, 11.55, -9.75])),
-        # Connected Logan Roof Panel (`vy = 19.12..20.28`) + Front Flexible Black Radio Whip Antenna!
-        obox([-10.95, 19.12, -7.05], [10.95, 20.28,  4.25], "#body", tint=0),
-        obox([ -0.22, 20.30,  2.40], [ 0.22, 23.65,  2.85], "#frame", rot=("x", 32.0, [0.0, 20.30, 2.62])),
+        # Rear C-pillars (+24 deg) moved back to `vz = -16.10` -> full 5-seat Logan greenhouse over rear bench!
+        obox([  9.75, 11.55, -16.70], [11.10, 19.95, -15.50], "#body", tint=0, rot=("x", 24.0, [0.0, 11.55, -16.10])),
+        obox([-11.10, 11.55, -16.70], [-9.75, 19.95, -15.50], "#body", tint=0, rot=("x", 24.0, [0.0, 11.55, -16.10])),
+        obox([ -9.72, 19.15, -16.60], [ 9.72, 19.95, -15.60], "#body", tint=0, rot=("x", 24.0, [0.0, 11.55, -16.10])),
+        # Full-Length Connected Logan Roof (`vz = -12.85..+4.20`) + Front Roof Radio Whip Antenna!
+        obox([-10.95, 19.12, -12.85], [10.95, 20.28,  4.20], "#body", tint=0),
+        obox([ -0.22, 20.30,  2.50], [ 0.22, 23.85,  2.95], "#frame", rot=("x", 34.0, [0.0, 20.30, 2.72])),
         obox([ -1.70, 18.35,  3.10], [ 1.70, 19.05,  3.65], "#frame"),
-        # Classic black Dacia Logan exterior wing mirrors!
+        # White-painted Dacia Logan II Facelift exterior wing mirrors on black stalks (exact photo match!)
         obox([ 11.12, 11.65,  5.25], [12.25, 12.25,  6.00], "#frame"),
-        obox([ 12.27, 11.30,  4.85], [13.85, 13.25,  6.10], "#frame"),
-        obox([ 12.38, 11.45,  4.70], [13.68, 13.10,  4.83], "#chrome"),
+        obox([ 12.27, 11.30,  4.85], [13.90, 13.25,  6.15], "#body", tint=0),
+        obox([ 12.38, 11.45,  4.70], [13.72, 13.10,  4.83], "#chrome"),
         obox([-12.25, 11.65,  5.25], [-11.12, 12.25, 6.00], "#frame"),
-        obox([-13.85, 11.30,  4.85], [-12.27, 13.25, 6.10], "#frame"),
-        obox([-13.68, 11.45,  4.70], [-12.38, 13.10, 4.83], "#chrome"),
+        obox([-13.90, 11.30,  4.85], [-12.27, 13.25, 6.15], "#body", tint=0),
+        obox([-13.72, 11.45,  4.70], [-12.38, 13.10, 4.83], "#chrome"),
 
-        # --- F. Classic Tall Poliția Română Logan Girofar Ramp on Twin Roof Mounting Feet! ---
-        # Daylight gap under the bar between twin roof brackets (`vx = ±5.0..±6.8`) — pure Dacia Logan Poliție!
-        obox([  5.00, 20.30, -2.15], [ 6.85, 20.95, -0.25], "#frame"),
-        obox([ -6.85, 20.30, -2.15], [-5.00, 20.95, -0.25], "#frame"),
-        obox([ -7.90, 20.97, -2.25], [ 7.90, 21.28, -0.15], "#frame"),
-        obox([ -1.55, 21.30, -2.30], [ 1.55, 22.45, -0.10], "#body", tint=0),
-        obox([ -1.25, 21.42, -0.08], [ 1.25, 22.30,  0.04], "#grille"),
-        obox([  1.58, 21.30, -2.25], [ 7.75, 22.45, -0.15], "#siren_blue", full_uv_faces=("south", "north", "up")),
-        obox([ -7.75, 21.30, -2.25], [-1.58, 22.45, -0.15], "#siren_red", full_uv_faces=("south", "north", "up")),
+        # --- F. Sleek Poliția Română LED Girofar Ramp on Twin Outer Roof-Gutter Brackets! ---
+        obox([  5.60, 20.30, -2.15], [ 7.35, 20.88, -0.25], "#frame"),
+        obox([ -7.35, 20.30, -2.15], [-5.60, 20.88, -0.25], "#frame"),
+        obox([ -8.25, 20.90, -2.25], [ 8.25, 21.22, -0.15], "#frame"),
+        obox([ -1.45, 21.24, -2.30], [ 1.45, 22.35, -0.10], "#carbon"),
+        obox([  1.48, 21.24, -2.25], [ 8.10, 22.35, -0.15], "#siren_blue", full_uv_faces=("south", "north", "up")),
+        obox([ -8.10, 21.24, -2.25], [-1.48, 22.35, -0.15], "#siren_red", full_uv_faces=("south", "north", "up")),
 
-        # --- G. Logan Police Interior: Practical Charcoal Dash, Police Radio/MDT, Shifter & Cloth Seats ---
+        # --- G. Spacious 5-Seat Dacia Logan Interior: 2 Front Seats + Open Rear Legroom + 3-Seat Rear Bench! ---
         obox([ -9.92,  7.60,  5.95], [ 9.92, 11.20,  8.10], "#seat"),
         obox([  2.20, 11.22,  6.00], [ 6.60, 12.30,  7.90], "#carbon"),
         obox([  2.55, 11.25,  5.70], [ 6.25, 12.15,  5.98], "#dash", full_uv_faces=("north", "south")),
-        obox([ -1.40,  3.98, -5.50], [ 1.40,  7.58,  5.92], "#carbon"),
-        obox([ -1.55,  8.10,  3.85], [ 1.35, 10.55,  4.45], "#dash", rot=("y", 15.0, [0.0, 9.3, 4.15]), full_uv_faces=("north", "south")),
+        # Signature round Dacia air-vent chrome rings on dashboard + MediaNav/MDT police screen + pedals!
+        obox([ -1.90,  9.85,  5.75], [-0.55, 10.85,  5.93], "#chrome"),
+        obox([  0.55,  9.85,  5.75], [ 1.90, 10.85,  5.93], "#chrome"),
+        obox([ -8.45,  9.85,  5.75], [-7.10, 10.85,  5.93], "#chrome"),
+        obox([ -1.35,  3.98, -4.00], [ 1.35,  7.58,  5.92], "#carbon"),
+        obox([ -1.55,  8.10,  3.85], [ 1.35, 10.45,  4.45], "#dash", rot=("y", 15.0, [0.0, 9.3, 4.15]), full_uv_faces=("north", "south")),
         obox([ -0.35,  7.60,  1.20], [ 0.35,  9.95,  1.90], "#chrome", rot=("x", -10.0, [0.0, 7.60, 1.55])),
         obox([  3.85, 10.95,  3.74], [ 4.95, 12.05,  5.92], "#chrome", rot=("x", 26.0, [4.40, 11.51, 3.74])),
-        # Front Logan cloth seats (`vx = ±4.40`) + rear passenger bench
-        obox([  1.55,  3.98, -5.00], [ 7.55,  5.45,  1.00], "#seat"),
-        obox([  1.55,  5.48, -6.20], [ 7.55, 14.00, -4.75], "#seat", rot=("x", -7.0, [4.40, 5.48, -5.00])),
-        obox([  2.75, 14.05, -6.30], [ 6.35, 16.05, -4.95], "#seat"),
-        obox([ -7.55,  3.98, -5.00], [-1.55,  5.45,  1.00], "#seat"),
-        obox([ -7.55,  5.48, -6.20], [-1.55, 14.00, -4.75], "#seat", rot=("x", -7.0, [-4.40, 5.48, -5.00])),
-        obox([ -6.35, 14.05, -6.30], [-2.75, 16.05, -4.95], "#seat"),
-        obox([ -9.00,  4.20, -16.40], [ 9.00,  6.25, -10.80], "#seat"),
-        obox([ -9.00,  6.28, -17.85], [ 9.00, 13.10, -16.25], "#seat"),
+        obox([  3.20,  4.00,  6.40], [ 4.00,  5.85,  7.10], "#chrome", rot=("x", -18.0, [3.6, 4.0, 6.75])),
+        obox([  4.80,  4.00,  6.40], [ 5.60,  5.85,  7.10], "#chrome", rot=("x", -18.0, [5.2, 4.0, 6.75])),
+        # 2 Contoured Front Seats (`vx = ±4.55`, backrests at `vz = -3.95..-2.55`) -> leaves HUGE open rear legroom!
+        obox([  1.55,  3.98, -2.85], [ 7.55,  5.45,  2.15], "#seat"),
+        obox([  1.55,  5.48, -4.05], [ 7.55, 13.95, -2.60], "#seat", rot=("x", -7.0, [4.55, 5.48, -2.85])),
+        obox([  2.75, 14.00, -4.15], [ 6.35, 15.95, -2.80], "#seat"),
+        obox([ -7.55,  3.98, -2.85], [-1.55,  5.45,  2.15], "#seat"),
+        obox([ -7.55,  5.48, -4.05], [-1.55, 13.95, -2.60], "#seat", rot=("x", -7.0, [-4.55, 5.48, -2.85])),
+        obox([ -6.35, 14.00, -4.15], [-2.75, 15.95, -2.80], "#seat"),
+        # Open Rear Passenger FloorTunnel (`vz = -9.15..-4.05`) + FULL 3-PLACE DACIA LOGAN REAR BENCH & 3 HEADRESTS!
+        obox([ -1.15,  3.98, -9.02], [ 1.15,  5.05, -4.05], "#carbon"),
+        obox([ -6.68,  3.98, -14.40], [ 6.68, 7.85, -9.05], "#seat"),
+        # Subtle seat-division bolsters & red seatbelt buckles marking Left / Center / Right rear seats!
+        obox([  2.20,  7.87, -13.90], [ 2.60, 8.15, -9.50], "#carbon"),
+        obox([ -2.60,  7.87, -13.90], [-2.20, 8.15, -9.50], "#carbon"),
+        obox([  1.80,  7.87, -14.20], [ 2.15, 8.35, -13.65], "#taillight"),
+        obox([ -2.15,  7.87, -14.20], [-1.80, 8.35, -13.65], "#taillight"),
+        # Full-width reclined 3-seat rear backrest (inboard below arch crown, full-width above!) + 3 Headrests!
+        obox([ -6.68,  7.88, -15.45], [ 6.68, 9.15, -14.20], "#seat"),
+        obox([ -9.55,  9.18, -15.75], [ 9.55, 13.70, -14.25], "#seat", rot=("x", -8.0, [0.0, 9.18, -14.50])),
+        obox([  4.85, 13.75, -15.95], [ 8.25, 15.75, -14.60], "#seat"),
+        obox([ -1.65, 13.75, -15.95], [ 1.65, 15.30, -14.60], "#seat"),
+        obox([ -8.25, 13.75, -15.95], [-4.85, 15.75, -14.60], "#seat"),
 
-        # --- H. High-Deck Boxy Dacia Logan Trunk, Curved Rear Wheel Arches, `RO` Plate & Square Tail-Lamps! ---
+        # --- H. Zero-Gap Rear Wheel Arches, Short High-Deck Logan Trunk (`vz = -22.0..-15.95`) & Square Tail-Lamps! ---
         *sculpted_wheel_arch(
-            cz=-13.00, vx_in=7.98, vx_body=11.95, vx_flare=12.36,
-            vy_crown=8.50, vy_top=11.65, half_crown=2.05, slope_len=3.05, slope_deg=38.0,
-            vz_outer_min=-21.20, vz_outer_max=-8.15, vy_jamb_bot=3.15,
+            cz=-13.00, vx_in=7.98, vx_body=11.95, vx_flare=12.34,
+            vy_crown=8.48, vy_top=11.50, half_crown=2.05, slope_len=3.05, slope_deg=38.0,
+            vz_outer_min=-21.55, vz_outer_max=-8.15, vy_jamb_bot=3.15,
             liner_x0=6.78, liner_x1=7.48, liner_y0=3.10,
             body_tex="#body", body_tint=0, flare_tex="#frame", flare_tint=None,
         ),
-        obox([ -7.95,  5.85, -21.50], [ 7.95, 11.65, -8.15], "#body", tint=0),
-        obox([ -5.25, 11.67, -20.85], [ 5.25, 12.05, -10.20], "#police_hood", full_uv_faces=("up", "north")),
-        # Chrome Dacia trunk garnish strip + Romanian `RO` plate + tall square-block Logan corner tail-lights!
-        obox([ -4.60,  9.25, -21.78], [ 4.60,  9.80, -21.52], "#chrome"),
-        obox([ -3.75,  7.05, -21.80], [ 3.75,  8.95, -21.52], "#plate_ro", full_uv_faces=("north", "south")),
-        obox([  7.45,  8.45, -21.82], [11.75, 11.35, -21.52], "#taillight", full_uv_faces=("north", "south")),
-        obox([-11.75,  8.45, -21.82], [-7.45, 11.35, -21.52], "#taillight", full_uv_faces=("north", "south")),
-        obox([  8.85,  7.10, -21.82], [11.75,  8.40, -21.52], "#amber", full_uv_faces=("north", "south")),
-        obox([-11.75,  7.10, -21.82], [-8.85,  8.40, -21.52], "#amber", full_uv_faces=("north", "south")),
-        obox([  7.45,  7.10, -21.80], [ 8.80,  8.40, -21.52], "#headlight", full_uv_faces=("north", "south")),
-        obox([ -8.80,  7.10, -21.80], [-7.45,  8.40, -21.52], "#headlight", full_uv_faces=("north", "south")),
-        # Stepped Logan Rear Bumper + Matte-Black Lower Valence!
-        obox([-11.95,  3.25, -22.55], [11.95,  5.82, -21.25], "#body", tint=0),
-        obox([-11.65,  2.60, -22.65], [11.65,  3.22, -21.35], "#frame"),
+        # Rear parcel shelf behind headrests + compact high-deck Logan trunk (ZERO intrusion into rear wheelhouses!)
+        obox([ -9.50, 11.15, -15.92], [ 9.50, 11.75, -14.55], "#carbon"),
+        obox([ -6.65,  5.85, -18.10], [ 6.65,  8.45, -15.95], "#carbon"),
+        obox([ -7.95,  5.85, -21.85], [ 7.95,  8.45, -18.12], "#body", tint=0),
+        obox([ -7.95,  8.48, -21.85], [ 7.95, 11.82, -15.95], "#body", tint=0),
+        obox([ -5.35, 11.84, -21.35], [ 5.35, 12.18, -16.20], "#police_hood", full_uv_faces=("up", "north")),
+        # Chrome Dacia trunk garnish + neon-lime rear strip + `RO` plate + 4-square Dacia Logan II corner tail-lights!
+        obox([ -4.80,  9.55, -22.12], [ 4.80, 10.05, -21.87], "#chrome"),
+        obox([ -4.80,  6.20, -22.12], [ 4.80,  6.62, -21.87], "#logan_lime"),
+        obox([ -3.80,  7.15, -22.14], [ 3.80,  9.05, -21.87], "#plate_ro", full_uv_faces=("north", "south")),
+        obox([  7.45,  8.55, -22.16], [11.78, 11.55, -21.87], "#taillight", full_uv_faces=("north", "south")),
+        obox([-11.78,  8.55, -22.16], [-7.45, 11.55, -21.87], "#taillight", full_uv_faces=("north", "south")),
+        obox([  8.85,  7.10, -22.16], [11.78,  8.50, -21.87], "#amber", full_uv_faces=("north", "south")),
+        obox([-11.78,  7.10, -22.16], [-8.85,  8.50, -21.87], "#amber", full_uv_faces=("north", "south")),
+        obox([  7.45,  7.10, -22.14], [ 8.80,  8.50, -21.87], "#headlight", full_uv_faces=("north", "south")),
+        obox([ -8.80,  7.10, -22.14], [-7.45,  8.50, -21.87], "#headlight", full_uv_faces=("north", "south")),
+        # Stepped White Logan Rear Bumper + Matte-Black Lower Diffuser Valence!
+        obox([-11.95,  3.25, -22.85], [11.95,  5.82, -21.60], "#body", tint=0),
+        obox([-11.65,  2.60, -22.95], [11.65,  3.22, -21.70], "#frame"),
     ]
     (mdir / "dacia_logan_police_body.json").write_text(
         json.dumps(
@@ -1876,6 +1997,9 @@ def generate_models() -> None:
                     "carbon": "gokart:block/kart_carbon",
                     "grille": "gokart:block/kart_grille",
                     "dacia_grille": "gokart:block/dacia_grille",
+                    "logan_side": "gokart:block/logan_side",
+                    "logan_blue": "gokart:block/logan_blue",
+                    "logan_lime": "gokart:block/logan_lime",
                     "headlight": "gokart:block/kart_headlight",
                     "taillight": "gokart:block/kart_taillight",
                     "amber": "gokart:block/kart_amber",
@@ -2738,7 +2862,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles v0.9.0 assets, sculpted 5-segment wheel arches, Poliția Română & Dacia Logan Poliție, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles v0.10.0 assets, sculpted 5-segment wheel arches, Poliția Română & Dacia Logan Poliție, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":
