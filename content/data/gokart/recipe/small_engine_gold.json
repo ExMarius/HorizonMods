@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "GGG",
+    "GEG",
+    "RGR"
+  ],
+  "key": {
+    "G": "minecraft:gold_ingot",
+    "E": "gokart:small_engine_iron",
+    "R": "minecraft:redstone"
+  },
+  "result": {
+    "id": "gokart:small_engine_gold",
+    "count": 1
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "pattern": [
+    " IR",
+    "ICI",
+    "III"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "R": "minecraft:red_dye",
+    "C": "minecraft:coal"
+  },
+  "result": {
+    "id": "gokart:jerry_can",
+    "count": 1
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " W ",
+    "WIW",
+    " W "
+  ],
+  "key": {
+    "W": "minecraft:black_wool",
+    "I": "minecraft:iron_ingot"
+  },
+  "result": {
+    "id": "gokart:standard_wheel",
+    "count": 2
+  }
+}

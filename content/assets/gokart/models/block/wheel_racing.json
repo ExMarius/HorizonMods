@@ -1,0 +1,212 @@
+{
+  "textures": {
+    "wheel": "gokart:block/wheel_racing",
+    "chrome": "gokart:block/kart_chrome"
+  },
+  "elements": [
+    {
+      "from": [
+        5.5,
+        4.6,
+        5.4
+      ],
+      "to": [
+        10.5,
+        11.4,
+        10.6
+      ],
+      "faces": {
+        "down": {
+          "texture": "#wheel",
+          "uv": [
+            0.0,
+            0.0,
+            5.0,
+            5.2
+          ]
+        },
+        "up": {
+          "texture": "#wheel",
+          "uv": [
+            0.0,
+            0.0,
+            5.0,
+            5.2
+          ]
+        },
+        "north": {
+          "texture": "#wheel",
+          "uv": [
+            0.0,
+            0.0,
+            5.0,
+            6.8
+          ]
+        },
+        "south": {
+          "texture": "#wheel",
+          "uv": [
+            0.0,
+            0.0,
+            5.0,
+            6.8
+          ]
+        },
+        "west": {
+          "texture": "#wheel",
+          "uv": [
+            0.0,
+            0.0,
+            5.2,
+            6.8
+          ]
+        },
+        "east": {
+          "texture": "#wheel",
+          "uv": [
+            0.0,
+            0.0,
+            5.2,
+            6.8
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        5.5,
+        5.4,
+        4.6
+      ],
+      "to": [
+        10.5,
+        10.6,
+        11.4
+      ],
+      "faces": {
+        "down": {
+          "texture": "#wheel",
+          "uv": [
+            0.0,
+            0.0,
+            5.0,
+            6.8
+          ]
+        },
+        "up": {
+          "texture": "#wheel",
+          "uv": [
+            0.0,
+            0.0,
+            5.0,
+            6.8
+          ]
+        },
+        "north": {
+          "texture": "#wheel",
+          "uv": [
+            0.0,
+            0.0,
+            5.0,
+            5.2
+          ]
+        },
+        "south": {
+          "texture": "#wheel",
+          "uv": [
+            0.0,
+            0.0,
+            5.0,
+            5.2
+          ]
+        },
+        "west": {
+          "texture": "#wheel",
+          "uv": [
+            0.0,
+            0.0,
+            6.8,
+            5.2
+          ]
+        },
+        "east": {
+          "texture": "#wheel",
+          "uv": [
+            0.0,
+            0.0,
+            6.8,
+            5.2
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        5.2,
+        6.6,
+        6.6
+      ],
+      "to": [
+        10.8,
+        9.4,
+        9.4
+      ],
+      "faces": {
+        "down": {
+          "texture": "#chrome",
+          "uv": [
+            0.0,
+            0.0,
+            5.6,
+            2.8
+          ]
+        },
+        "up": {
+          "texture": "#chrome",
+          "uv": [
+            0.0,
+            0.0,
+            5.6,
+            2.8
+          ]
+        },
+        "north": {
+          "texture": "#chrome",
+          "uv": [
+            0.0,
+            0.0,
+            5.6,
+            2.8
+          ]
+        },
+        "south": {
+          "texture": "#chrome",
+          "uv": [
+            0.0,
+            0.0,
+            5.6,
+            2.8
+          ]
+        },
+        "west": {
+          "texture": "#chrome",
+          "uv": [
+            0.0,
+            0.0,
+            2.8,
+            2.8
+          ]
+        },
+        "east": {
+          "texture": "#chrome",
+          "uv": [
+            0.0,
+            0.0,
+            2.8,
+            2.8
+          ]
+        }
+      }
+    }
+  ]
+}

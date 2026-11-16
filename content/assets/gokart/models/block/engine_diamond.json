@@ -1,0 +1,281 @@
+{
+  "textures": {
+    "engine": "gokart:block/engine_diamond",
+    "frame": "gokart:block/kart_frame",
+    "chrome": "gokart:block/kart_chrome"
+  },
+  "elements": [
+    {
+      "from": [
+        4.8,
+        4.5,
+        5.0
+      ],
+      "to": [
+        11.2,
+        9.8,
+        10.8
+      ],
+      "faces": {
+        "down": {
+          "texture": "#engine",
+          "uv": [
+            0.0,
+            0.0,
+            6.4,
+            5.8
+          ]
+        },
+        "up": {
+          "texture": "#engine",
+          "uv": [
+            0.0,
+            0.0,
+            6.4,
+            5.8
+          ]
+        },
+        "north": {
+          "texture": "#engine",
+          "uv": [
+            0.0,
+            0.0,
+            6.4,
+            5.3
+          ]
+        },
+        "south": {
+          "texture": "#engine",
+          "uv": [
+            0.0,
+            0.0,
+            6.4,
+            5.3
+          ]
+        },
+        "west": {
+          "texture": "#engine",
+          "uv": [
+            0.0,
+            0.0,
+            5.8,
+            5.3
+          ]
+        },
+        "east": {
+          "texture": "#engine",
+          "uv": [
+            0.0,
+            0.0,
+            5.8,
+            5.3
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        5.6,
+        9.8,
+        5.8
+      ],
+      "to": [
+        10.4,
+        11.6,
+        9.6
+      ],
+      "faces": {
+        "down": {
+          "texture": "#frame",
+          "uv": [
+            0.0,
+            0.0,
+            4.8,
+            3.8
+          ]
+        },
+        "up": {
+          "texture": "#frame",
+          "uv": [
+            0.0,
+            0.0,
+            4.8,
+            3.8
+          ]
+        },
+        "north": {
+          "texture": "#frame",
+          "uv": [
+            0.0,
+            0.0,
+            4.8,
+            1.8
+          ]
+        },
+        "south": {
+          "texture": "#frame",
+          "uv": [
+            0.0,
+            0.0,
+            4.8,
+            1.8
+          ]
+        },
+        "west": {
+          "texture": "#frame",
+          "uv": [
+            0.0,
+            0.0,
+            3.8,
+            1.8
+          ]
+        },
+        "east": {
+          "texture": "#frame",
+          "uv": [
+            0.0,
+            0.0,
+            3.8,
+            1.8
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        9.5,
+        6.5,
+        1.2
+      ],
+      "to": [
+        11.3,
+        8.3,
+        6.2
+      ],
+      "faces": {
+        "down": {
+          "texture": "#chrome",
+          "uv": [
+            0.0,
+            0.0,
+            1.8,
+            5.0
+          ]
+        },
+        "up": {
+          "texture": "#chrome",
+          "uv": [
+            0.0,
+            0.0,
+            1.8,
+            5.0
+          ]
+        },
+        "north": {
+          "texture": "#chrome",
+          "uv": [
+            0.0,
+            0.0,
+            1.8,
+            1.8
+          ]
+        },
+        "south": {
+          "texture": "#chrome",
+          "uv": [
+            0.0,
+            0.0,
+            1.8,
+            1.8
+          ]
+        },
+        "west": {
+          "texture": "#chrome",
+          "uv": [
+            0.0,
+            0.0,
+            5.0,
+            1.8
+          ]
+        },
+        "east": {
+          "texture": "#chrome",
+          "uv": [
+            0.0,
+            0.0,
+            5.0,
+            1.8
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        9.8,
+        6.8,
+        0.2
+      ],
+      "to": [
+        11.0,
+        8.0,
+        1.4
+      ],
+      "faces": {
+        "down": {
+          "texture": "#frame",
+          "uv": [
+            0.0,
+            0.0,
+            1.2,
+            1.2
+          ]
+        },
+        "up": {
+          "texture": "#frame",
+          "uv": [
+            0.0,
+            0.0,
+            1.2,
+            1.2
+          ]
+        },
+        "north": {
+          "texture": "#frame",
+          "uv": [
+            0.0,
+            0.0,
+            1.2,
+            1.2
+          ]
+        },
+        "south": {
+          "texture": "#frame",
+          "uv": [
+            0.0,
+            0.0,
+            1.2,
+            1.2
+          ]
+        },
+        "west": {
+          "texture": "#frame",
+          "uv": [
+            0.0,
+            0.0,
+            1.2,
+            1.2
+          ]
+        },
+        "east": {
+          "texture": "#frame",
+          "uv": [
+            0.0,
+            0.0,
+            1.2,
+            1.2
+          ]
+        }
+      }
+    }
+  ]
+}

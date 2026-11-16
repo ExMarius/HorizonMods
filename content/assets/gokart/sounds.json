@@ -1,0 +1,62 @@
+{
+  "engine.pulse": {
+    "subtitle": "subtitles.gokart.engine",
+    "sounds": [
+      {
+        "name": "gokart:engine_pulse",
+        "attenuation_distance": 24,
+        "stream": false
+      }
+    ]
+  },
+  "horn": {
+    "subtitle": "subtitles.gokart.horn",
+    "sounds": [
+      {
+        "name": "gokart:horn",
+        "attenuation_distance": 36,
+        "stream": false
+      }
+    ]
+  },
+  "drift": {
+    "subtitle": "subtitles.gokart.drift",
+    "sounds": [
+      {
+        "name": "gokart:drift",
+        "attenuation_distance": 20,
+        "stream": false
+      }
+    ]
+  },
+  "boost": {
+    "subtitle": "subtitles.gokart.boost",
+    "sounds": [
+      {
+        "name": "gokart:boost",
+        "attenuation_distance": 28,
+        "stream": false
+      }
+    ]
+  },
+  "wrench": {
+    "subtitle": "subtitles.gokart.wrench",
+    "sounds": [
+      {
+        "name": "gokart:wrench",
+        "attenuation_distance": 12,
+        "stream": false
+      }
+    ]
+  },
+  "refuel": {
+    "subtitle": "subtitles.gokart.refuel",
+    "sounds": [
+      {
+        "name": "gokart:refuel",
+        "attenuation_distance": 12,
+        "stream": false
+      }
+    ]
+  }
+}

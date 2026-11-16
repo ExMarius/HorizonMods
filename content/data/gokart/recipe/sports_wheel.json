@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " L ",
+    "GSG",
+    " L "
+  ],
+  "key": {
+    "L": "minecraft:leather",
+    "G": "minecraft:gold_ingot",
+    "S": "gokart:standard_wheel"
+  },
+  "result": {
+    "id": "gokart:sports_wheel",
+    "count": 1
+  }
+}

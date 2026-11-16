@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " D ",
+    "RSR",
+    " D "
+  ],
+  "key": {
+    "D": "minecraft:dried_kelp_block",
+    "R": "minecraft:redstone",
+    "S": "gokart:sports_wheel"
+  },
+  "result": {
+    "id": "gokart:racing_wheel",
+    "count": 1
+  }
+}
