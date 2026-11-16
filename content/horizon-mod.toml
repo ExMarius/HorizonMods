@@ -1,7 +1,7 @@
 id = "gokart"
-name = "Go-Kart & Off-Roader (MrCrayfish Vehicle Tribute)"
-version = "0.6.0"
-description = "3D Go-Kart models, custom pixel-art textures, synthesized engine/horn/drift audio, crafting recipes, and EN/RO localization for the Go-Kart native mod."
+name = "Horizon Vehicles: Go-Kart, Quad Bike & 4x4 Off-Roader"
+version = "0.7.0"
+description = "Realistic 3D Go-Kart, Quad Bike ATV & 4x4 Off-Roader models, multi-material textures, Creative Inventory tab, audio, recipes, and EN/RO localization."
 authors = ["ExMarius"]
 api = "0.2"
 side = "both"

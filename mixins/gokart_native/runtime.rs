@@ -9,8 +9,8 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.6.0";
-pub const DESCRIPTION: &str = "Driveable full-scale 3D Go-Kart, Quad Bike ATV & 4x4 Off-Roader inspired by MrCrayfish's Vehicle Mod: Iron/Gold/Diamond engines, Standard/Sports/Racing wheels, 16-color paint shop, drift + turbo boost, fuel & tuning garage.";
+pub const VERSION: &str = "0.7.0";
+pub const DESCRIPTION: &str = "Realistic 3D Go-Kart, Quad Bike ATV & 4x4 Off-Roader inspired by MrCrayfish's Vehicle Mod: Creative Inventory Tab, /vehicle remove, multi-material 3D models, ATV handlebars, 16-color paint shop, drift + turbo boost.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
 pub const CLIENT_CONFIG_FILE: &str = "gokart-client.toml";
@@ -43,6 +43,7 @@ pub const MODEL_BODY: &str = "gokart:block/go_kart_body";
 pub const MODEL_OFF_ROADER_BODY: &str = "gokart:block/off_roader_body";
 pub const MODEL_QUAD_BIKE_BODY: &str = "gokart:block/quad_bike_body";
 pub const MODEL_STEERING: &str = "gokart:block/go_kart_steering_wheel";
+pub const MODEL_QUAD_HANDLEBARS: &str = "gokart:block/quad_handlebars";
 pub const MODEL_WHEEL_STANDARD: &str = "gokart:block/wheel_standard";
 pub const MODEL_WHEEL_SPORTS: &str = "gokart:block/wheel_sports";
 pub const MODEL_WHEEL_RACING: &str = "gokart:block/wheel_racing";
@@ -50,11 +51,12 @@ pub const MODEL_ENGINE_IRON: &str = "gokart:block/engine_iron";
 pub const MODEL_ENGINE_GOLD: &str = "gokart:block/engine_gold";
 pub const MODEL_ENGINE_DIAMOND: &str = "gokart:block/engine_diamond";
 
-pub const STANDALONE_MODELS: [&str; 10] = [
+pub const STANDALONE_MODELS: [&str; 11] = [
     MODEL_BODY,
     MODEL_OFF_ROADER_BODY,
     MODEL_QUAD_BIKE_BODY,
     MODEL_STEERING,
+    MODEL_QUAD_HANDLEBARS,
     MODEL_WHEEL_STANDARD,
     MODEL_WHEEL_SPORTS,
     MODEL_WHEEL_RACING,
@@ -91,6 +93,7 @@ pub const STEER_PIVOT: [f32; 3] = [0.0, (10.50 * 1.14) / 16.0, (2.95 * 1.18) / 1
 pub const STEER_TILT_DEG: f32 = 30.0;
 pub const STEER_SCALE: [f32; 3] = [1.14, 1.14, 1.14];
 pub const STEER_WHEEL_TURN_MULT: f32 = 1.8;
+pub const QUAD_HANDLEBAR_TURN_MULT: f32 = 1.15;
 pub const ENGINE_PIVOT: [f32; 3] = [0.0, (6.50 * 1.14) / 16.0, (-11.6 * 1.18) / 16.0];
 pub const ENGINE_SCALE: [f32; 3] = [1.18, 1.18, 1.18];
 pub const EXHAUST_OFFSET_Z: f32 = (-18.4 * 1.18) / 16.0;
@@ -126,6 +129,7 @@ pub struct VehicleLayout {
     pub rear_hub_y: f32,
     pub front_wheel_scale: [f32; 3],
     pub rear_wheel_scale: [f32; 3],
+    pub steer_model: &'static str,
     pub steer_pivot: [f32; 3],
     pub steer_tilt_deg: f32,
     pub steer_scale: [f32; 3],
@@ -224,6 +228,7 @@ impl VehicleKind {
                 rear_hub_y: REAR_HUB_Y,
                 front_wheel_scale: FRONT_WHEEL_SCALE,
                 rear_wheel_scale: REAR_WHEEL_SCALE,
+                steer_model: MODEL_STEERING,
                 steer_pivot: STEER_PIVOT,
                 steer_tilt_deg: STEER_TILT_DEG,
                 steer_scale: STEER_SCALE,
@@ -253,6 +258,7 @@ impl VehicleKind {
                 rear_hub_y: 0.390,
                 front_wheel_scale: [1.55, 1.56, 1.56],
                 rear_wheel_scale: [1.55, 1.56, 1.56],
+                steer_model: MODEL_STEERING,
                 // Left-hand driver bucket seat (+6.816 tx) & matching left steering column!
                 steer_pivot: [6.816 / 16.0, 17.30 / 16.0, 4.45 / 16.0],
                 steer_tilt_deg: 32.0,
@@ -283,10 +289,11 @@ impl VehicleKind {
                 rear_hub_y: 0.340,
                 front_wheel_scale: [1.38, 1.36, 1.36],
                 rear_wheel_scale: [1.38, 1.36, 1.36],
+                steer_model: MODEL_QUAD_HANDLEBARS,
                 steer_pivot: [0.0, 17.60 / 16.0, 4.90 / 16.0],
                 steer_tilt_deg: 38.0,
-                steer_scale: [1.10, 1.10, 1.10],
-                steer_grip_radius_tx: 3.42,
+                steer_scale: [1.12, 1.12, 1.12],
+                steer_grip_radius_tx: 5.45,
                 engine_pivot: None,
                 engine_scale: [1.0, 1.0, 1.0],
                 spare_wheel_pivot: None,
@@ -317,27 +324,51 @@ pub fn compute_driver_ik_angles(kind: VehicleKind, steer_deg: f32) -> ([f32; 3],
     let sh_left = [rider_x_tx + 5.0 * AVATAR_SCALE, shoulder_y, rider_z_tx];
     let sh_right = [rider_x_tx - 5.0 * AVATAR_SCALE, shoulder_y, rider_z_tx];
 
-    let tilt = lay.steer_tilt_deg.to_radians();
-    let theta = (steer_deg * STEER_WHEEL_TURN_MULT).to_radians();
-    let r_grip = lay.steer_grip_radius_tx;
-    let hub = [
-        lay.steer_pivot[0] * 16.0,
-        lay.steer_pivot[1] * 16.0 + 0.40,
-        lay.steer_pivot[2] * 16.0,
-    ];
-
-    let t_left = [
-        hub[0] + r_grip * theta.cos(),
-        hub[1] - r_grip * theta.sin() * tilt.cos(),
-        hub[2] + r_grip * theta.sin() * tilt.sin(),
-    ];
-    let t_right = [
-        hub[0] - r_grip * theta.cos(),
-        hub[1] + r_grip * theta.sin() * tilt.cos(),
-        hub[2] - r_grip * theta.sin() * tilt.sin(),
-    ];
-
-    let roll = 0.10 * theta.sin();
+    let (t_left, t_right, roll) = if kind == VehicleKind::QuadBike {
+        // ATV T-handlebars: yawing left (+steer_deg) pulls left grip back (-Z) and pushes right grip forward (+Z)!
+        let yaw = (steer_deg * QUAD_HANDLEBAR_TURN_MULT).to_radians();
+        let r_grip = lay.steer_grip_radius_tx;
+        let hub = [
+            lay.steer_pivot[0] * 16.0,
+            lay.steer_pivot[1] * 16.0 + 1.65,
+            lay.steer_pivot[2] * 16.0,
+        ];
+        (
+            [
+                hub[0] + r_grip * yaw.cos(),
+                hub[1],
+                hub[2] - r_grip * yaw.sin(),
+            ],
+            [
+                hub[0] - r_grip * yaw.cos(),
+                hub[1],
+                hub[2] + r_grip * yaw.sin(),
+            ],
+            0.05 * yaw.sin(),
+        )
+    } else {
+        let tilt = lay.steer_tilt_deg.to_radians();
+        let theta = (steer_deg * STEER_WHEEL_TURN_MULT).to_radians();
+        let r_grip = lay.steer_grip_radius_tx;
+        let hub = [
+            lay.steer_pivot[0] * 16.0,
+            lay.steer_pivot[1] * 16.0 + 0.40,
+            lay.steer_pivot[2] * 16.0,
+        ];
+        (
+            [
+                hub[0] + r_grip * theta.cos(),
+                hub[1] - r_grip * theta.sin() * tilt.cos(),
+                hub[2] + r_grip * theta.sin() * tilt.sin(),
+            ],
+            [
+                hub[0] - r_grip * theta.cos(),
+                hub[1] + r_grip * theta.sin() * tilt.cos(),
+                hub[2] - r_grip * theta.sin() * tilt.sin(),
+            ],
+            0.10 * theta.sin(),
+        )
+    };
     let solve = |sh: [f32; 3], target: [f32; 3]| -> [f32; 3] {
         let dx = target[0] - sh[0];
         let dy = target[1] - sh[1];

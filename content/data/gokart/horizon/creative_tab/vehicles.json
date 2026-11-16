@@ -1,0 +1,17 @@
+{
+  "title": "Horizon Vehicles",
+  "icon": "gokart:go_kart",
+  "items": [
+    "gokart:go_kart",
+    "gokart:quad_bike",
+    "gokart:off_roader",
+    "gokart:small_engine_iron",
+    "gokart:small_engine_gold",
+    "gokart:small_engine_diamond",
+    "gokart:standard_wheel",
+    "gokart:sports_wheel",
+    "gokart:racing_wheel",
+    "gokart:wrench",
+    "gokart:jerry_can"
+  ]
+}

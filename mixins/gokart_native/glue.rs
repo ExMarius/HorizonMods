@@ -291,17 +291,17 @@ pub(in crate::game) fn standalone_models(models: &mut Vec<String>) {
 pub(in crate::game) fn listed(mods: &mut Vec<NativeMod>) {
     mods.push(NativeMod {
         id: rules::ID.into(),
-        title: format!("Go-Kart {}", rules::VERSION),
+        title: format!("Horizon Vehicles {}", rules::VERSION),
         description: tr("gokart.mod.description", rules::DESCRIPTION),
         keys: vec![
             [
                 "horn".into(),
-                "Go-Kart Horn / Claxon".into(),
+                "Vehicle Horn / Claxon".into(),
                 "key.keyboard.h".into(),
             ],
             [
                 "garage".into(),
-                "Go-Kart Garage & Settings / Garaj".into(),
+                "Vehicle Garage & Paint Shop / Garaj".into(),
                 "key.keyboard.k".into(),
             ],
         ],
@@ -309,7 +309,24 @@ pub(in crate::game) fn listed(mods: &mut Vec<NativeMod>) {
 }
 
 pub(in crate::game) fn commands(commands: &mut Vec<NativeCommand>) {
+    commands.push(NativeCommand::new("vehicle"));
+    commands.push(NativeCommand::new("vehicle remove"));
+    commands.push(NativeCommand::new("vehicle remove <target:text>"));
+    commands.push(NativeCommand::new("vehicle pack"));
+    commands.push(NativeCommand::new("vehicle paint <color:text>"));
+    commands.push(NativeCommand::op("vehicle kit", 2));
+    commands.push(NativeCommand::op("vehicle spawn", 2));
+    commands.push(NativeCommand::op("vehicle spawn <vehicle:text>", 2));
+    commands.push(NativeCommand::op("vehicle fuel", 2));
+
+    commands.push(NativeCommand::new("vehicel"));
+    commands.push(NativeCommand::new("vehicel remove"));
+    commands.push(NativeCommand::new("vehicel remove <target:text>"));
+    commands.push(NativeCommand::op("vehicel spawn", 2));
+    commands.push(NativeCommand::op("vehicel spawn <vehicle:text>", 2));
+
     commands.push(NativeCommand::new("gokart"));
+    commands.push(NativeCommand::new("gokart remove"));
     commands.push(NativeCommand::new("gokart paint <color:text>"));
     commands.push(NativeCommand::op("gokart kit", 2));
     commands.push(NativeCommand::op("gokart spawn", 2));
@@ -881,6 +898,64 @@ pub(in crate::game) fn attack_entity(
     }
 }
 
+fn delete_kart_entity(
+    game: &mut Game<'_>,
+    st: &mut ServerState,
+    dimension: &str,
+    entity_id: u32,
+) -> Option<(rules::VehicleKind, [f64; 3])> {
+    let uuid = lookup_kart_uuid(game, st, dimension, entity_id)?;
+    let rt = st.by_uuid.remove(&uuid)?;
+    st.id_to_uuid.remove(&entity_id);
+    st.pre_tick_pos.remove(&entity_id);
+    st.selected_kart.retain(|_, &mut v| v != entity_id);
+    st.dirty = true;
+
+    let pos = game
+        .native_entity(entity_id)
+        .and_then(|e| game.native_entity_position(e))
+        .unwrap_or([0.0, 64.0, 0.0]);
+    game.native_remove_entity(&rt.dimension, entity_id);
+    Some((rt.spec.kind, pos))
+}
+
+fn closest_kart_id(
+    game: &Game<'_>,
+    st: &ServerState,
+    player: &NativeServerPlayer,
+    max_dist: f64,
+) -> Option<u32> {
+    if let Some(rid) = game.riding
+        && st.id_to_uuid.contains_key(&rid)
+        && let Some(eref) = game.native_entity(rid)
+        && game
+            .native_entity_distance_to_sqr(eref, player.position)
+            .is_some_and(|d2| d2 <= max_dist * max_dist)
+    {
+        return Some(rid);
+    }
+    let mut best: Option<(u32, f64)> = None;
+    for (&id, &uuid) in &st.id_to_uuid {
+        if st
+            .by_uuid
+            .get(&uuid)
+            .is_some_and(|rt| rt.dimension != player.dimension)
+        {
+            continue;
+        }
+        let Some(eref) = game.native_entity(id) else {
+            continue;
+        };
+        let Some(d2) = game.native_entity_distance_to_sqr(eref, player.position) else {
+            continue;
+        };
+        if d2 <= max_dist * max_dist && best.is_none_or(|(_, b)| d2 < b) {
+            best = Some((id, d2));
+        }
+    }
+    best.map(|(id, _)| id)
+}
+
 pub(in crate::game) fn perform_command(
     game: &mut Game<'_>,
     player: &NativeServerPlayer,
@@ -889,15 +964,103 @@ pub(in crate::game) fn perform_command(
 ) {
     let trimmed = command.trim();
     let first = trimmed.split_whitespace().next().unwrap_or("");
-    if *ran || first != "gokart" || !game.native_on(rules::ID) {
+    if *ran
+        || !matches!(first, "vehicle" | "vehicel" | "gokart")
+        || !game.native_on(rules::ID)
+    {
         return;
     }
     *ran = true;
-    let rest = trimmed.strip_prefix("gokart").unwrap_or("").trim();
+    let rest = trimmed.strip_prefix(first).unwrap_or("").trim();
     let Some(mut guard) = server_state(game) else {
         return;
     };
     let st = guard.as_mut().expect("server state");
+
+    if rest == "remove"
+        || rest.starts_with("remove ")
+        || rest == "delete"
+        || rest.starts_with("delete ")
+        || rest == "rm"
+        || rest.starts_with("rm ")
+    {
+        let sub_arg = rest
+            .split_once(char::is_whitespace)
+            .map(|(_, a)| a.trim())
+            .unwrap_or("");
+        if sub_arg.eq_ignore_ascii_case("all") || sub_arg == "*" {
+            let ids: Vec<u32> = st.id_to_uuid.keys().copied().collect();
+            let mut removed_count = 0usize;
+            for eid in ids {
+                if delete_kart_entity(game, st, &player.dimension, eid).is_some() {
+                    removed_count += 1;
+                }
+            }
+            broadcast_sync_now(game, st);
+            let msg = tr1(
+                "gokart.msg.removed_many",
+                "Removed %1$s vehicle(s) from the world.",
+                &removed_count.to_string(),
+            );
+            game.native_tell(player.uuid, Text::literal(msg).with_color(text::GREEN));
+            return;
+        }
+        if let Ok(radius) = sub_arg.parse::<f64>()
+            && radius > 0.0
+        {
+            let r2 = radius * radius;
+            let ids: Vec<u32> = st
+                .id_to_uuid
+                .keys()
+                .copied()
+                .filter(|&eid| {
+                    game.native_entity(eid)
+                        .and_then(|e| game.native_entity_distance_to_sqr(e, player.position))
+                        .is_some_and(|d2| d2 <= r2)
+                })
+                .collect();
+            let mut removed_count = 0usize;
+            for eid in ids {
+                if delete_kart_entity(game, st, &player.dimension, eid).is_some() {
+                    removed_count += 1;
+                }
+            }
+            broadcast_sync_now(game, st);
+            let msg = tr1(
+                "gokart.msg.removed_many",
+                "Removed %1$s vehicle(s) from the world.",
+                &removed_count.to_string(),
+            );
+            game.native_tell(player.uuid, Text::literal(msg).with_color(text::GREEN));
+            return;
+        }
+        if let Some(eid) = closest_kart_id(game, st, player, 10.0)
+            && let Some((vkind, pos)) = delete_kart_entity(game, st, &player.dimension, eid)
+        {
+            game.native_play_sound_in_place("gokart:wrench", pos, SOUND_PLAYERS, 0.9, 0.95);
+            broadcast_sync_now(game, st);
+            let vname = tr(vkind.lang_key(), vkind.slug());
+            let msg = tr1("gokart.msg.removed_one", "Removed %1$s!", &vname);
+            game.native_tell(player.uuid, Text::literal(msg).with_color(text::GREEN));
+        } else {
+            let msg = tr(
+                "gokart.msg.remove_none",
+                "No vehicle nearby to remove (use /vehicle remove all to clear all).",
+            );
+            game.native_tell(player.uuid, Text::literal(msg).with_color(text::YELLOW));
+        }
+        return;
+    }
+
+    if rest == "pack" {
+        if let Some(eid) = closest_kart_id(game, st, player, 8.0) {
+            pickup_kart_for_player(game, st, player, eid);
+        } else {
+            let msg = tr("gokart.msg.remove_none", "No vehicle nearby.");
+            game.native_tell(player.uuid, Text::literal(msg).with_color(text::YELLOW));
+        }
+        return;
+    }
 
     if rest == "kit" {
         let items_to_give = [
@@ -976,7 +1139,7 @@ pub(in crate::game) fn perform_command(
 
     if let Some(color_arg) = rest.strip_prefix("paint ") {
         let paint = rules::PaintColor::from_slug(color_arg);
-        if let Some(kart_id) = nearest_kart_id(game, st, player, 6.0)
+        if let Some(kart_id) = closest_kart_id(game, st, player, 8.0)
             && let Some(&u) = st.id_to_uuid.get(&kart_id)
             && let Some(rt) = st.by_uuid.get_mut(&u)
         {
@@ -984,7 +1147,7 @@ pub(in crate::game) fn perform_command(
             st.dirty = true;
             broadcast_sync_now(game, st);
             let cname = tr(paint.lang_key(), paint.slug());
-            let txt = tr1("gokart.msg.painted", "Go-Kart painted %1$s!", &cname);
+            let txt = tr1("gokart.msg.painted", "Vehicle painted %1$s!", &cname);
             game.native_tell(player.uuid, Text::literal(txt).with_color(paint.rgb()));
         }
         return;
@@ -992,7 +1155,10 @@ pub(in crate::game) fn perform_command(
 
     game.native_tell(
         player.uuid,
-        Text::literal("/gokart [kit | spawn | fuel | paint <color>]").with_color(text::YELLOW),
+        Text::literal(
+            "/vehicle [remove | remove all | spawn [go_kart|quad_bike|off_roader] | pack | kit | fuel | paint <color>]",
+        )
+        .with_color(text::YELLOW),
     );
 }
 
@@ -1986,18 +2152,29 @@ pub(in crate::game) fn mob_submit(
     game.native_draw_model(draw, lay.body_model, kart.spec.paint.rgb());
     draw.pop();
 
-    // 2b. Coaxial 3-Spoke Sport Steering Wheel (center on Go-Kart, left driver pod on Off-Roader!)
-    draw_part_at_pivot(
-        draw,
-        rules::MODEL_STEERING,
-        lay.steer_pivot,
-        &[
-            ([1.0, 0.0, 0.0], lay.steer_tilt_deg),
-            ([0.0, 0.0, 1.0], -steer_deg * rules::STEER_WHEEL_TURN_MULT),
-        ],
-        lay.steer_scale,
-        0xFFFFFF,
-    );
+    // 2b. Coaxial Sport Steering Wheel (Go-Kart / 4x4) OR Dedicated ATV T-Handlebars (Quad Bike)!
+    if kart.spec.kind == rules::VehicleKind::QuadBike {
+        draw_part_at_pivot(
+            draw,
+            lay.steer_model,
+            lay.steer_pivot,
+            &[([0.0, 1.0, 0.0], steer_deg * rules::QUAD_HANDLEBAR_TURN_MULT)],
+            lay.steer_scale,
+            kart.spec.paint.rgb(),
+        );
+    } else {
+        draw_part_at_pivot(
+            draw,
+            lay.steer_model,
+            lay.steer_pivot,
+            &[
+                ([1.0, 0.0, 0.0], lay.steer_tilt_deg),
+                ([0.0, 0.0, 1.0], -steer_deg * rules::STEER_WHEEL_TURN_MULT),
+            ],
+            lay.steer_scale,
+            0xFFFFFF,
+        );
+    }
 
     // 2c. Exposed Rear Racing Small Engine on Go-Kart (Iron / Gold / Diamond)
     if let (Some(ep), Some(engine_model)) = (lay.engine_pivot, kart.spec.engine.model_id()) {
