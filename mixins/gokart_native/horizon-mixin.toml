@@ -1,6 +1,6 @@
 [mod]
 id = "gokart_native"
-version = "0.2.2"
+version = "0.3.0"
 priority = 100
 
 # Planned and verified against Horizon Nightly 2026-11-16 (`9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0`, NATIVE_HOOKS_API = 415).
@@ -287,6 +287,26 @@ bindings = [
   { name = "mob", ty = "&horizon_client::mod_api::NativeMobRender<'_>", value = "mob" },
   { name = "draw", ty = "&mut horizon_client::mod_api::BlockEntityDraw", value = "&mut *draw" },
   { name = "drawn", ty = "&mut bool", value = "&mut *drawn" },
+]
+
+# Ergonomic low-slung Go-Kart bucket seat rider positioning (local 1st/3rd person + remote players).
+[[injection]]
+id = "position-rider"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client::game::mounts::Game<'_>::position_rider"
+helper = "position_rider.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "position-riders"
+kind = "RETURN"
+target = "horizon_client::game::passengers::Game<'_>::position_riders"
+helper = "position_riders.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
 ]
 
 [[injection]]

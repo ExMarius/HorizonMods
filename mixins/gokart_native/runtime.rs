@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.2.0";
+pub const VERSION: &str = "0.3.0";
 pub const DESCRIPTION: &str = "Driveable 3D Go-Kart inspired by MrCrayfish's Vehicle Mod: Iron/Gold/Diamond engines, Standard/Sports/Racing wheels, 16-color dye painting, drift + turbo boost, fuel & tuning garage.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
@@ -65,11 +65,27 @@ pub const KART_MAX_FUEL_MB: u32 = 2_000;
 pub const JERRY_MAX_FUEL_MB: u32 = 5_000;
 pub const JERRY_DEFAULT_FUEL_MB: u32 = 2_500;
 
-// MrCrayfish Go-Kart physical geometry (in blocks; 16 texels = 1.0 block)
-pub const FRONT_AXLE_Z: f32 = 9.0 / 16.0;
-pub const REAR_AXLE_Z: f32 = -9.5 / 16.0;
-pub const WHEELBASE: f32 = FRONT_AXLE_Z - REAR_AXLE_Z; // 1.15625 blocks
-pub const MAX_STEER_DEG: f32 = 22.0;
+// Horizon Sprint Kart unified spatial geometry (in blocks; 16 texels = 1.0 block,
+// origin (0, 0, 0) = road surface directly beneath entity center; +X left, +Y up, +Z forward)
+pub const FRONT_AXLE_Z: f32 = 13.0 / 16.0;       // +0.8125 b
+pub const REAR_AXLE_Z: f32 = -11.0 / 16.0;       // -0.6875 b
+pub const WHEELBASE: f32 = FRONT_AXLE_Z - REAR_AXLE_Z; // 1.5000 b
+pub const FRONT_TRACK_HALF_X: f32 = 10.5 / 16.0; // ±0.65625 b
+pub const REAR_TRACK_HALF_X: f32 = 11.6 / 16.0;  // ±0.72500 b (staggered wider rear track!)
+pub const FRONT_HUB_Y: f32 = 0.196_875;          // (3.5 / 16) * 0.90 -> tire bottom at Y = 0.000
+pub const REAR_HUB_Y: f32 = 0.218_75;            // (3.5 / 16) * 1.00 -> tire bottom at Y = 0.000
+pub const FRONT_WHEEL_SCALE: [f32; 3] = [0.88, 0.90, 0.90];
+pub const REAR_WHEEL_SCALE: [f32; 3] = [1.16, 1.00, 1.00];
+pub const STEER_PIVOT: [f32; 3] = [0.0, 9.1 / 16.0, 3.6 / 16.0];
+pub const STEER_TILT_DEG: f32 = 35.0;
+pub const STEER_SCALE: [f32; 3] = [0.86, 0.86, 0.86];
+pub const ENGINE_PIVOT: [f32; 3] = [0.0, 7.6 / 16.0, -11.4 / 16.0];
+pub const ENGINE_SCALE: [f32; 3] = [0.95, 0.95, 0.95];
+pub const EXHAUST_OFFSET_Z: f32 = -18.5 / 16.0;
+pub const EXHAUST_HEIGHT_Y: f32 = 0.48;
+pub const SEAT_ATTACH_Y: f32 = 4.20 / 16.0;      // 0.2625 b (flush on bucket seat cushion!)
+pub const SEAT_OFFSET_Z: f32 = -3.0 / 16.0;      // -0.1875 b (flush against contoured backrest!)
+pub const MAX_STEER_DEG: f32 = 26.0;
 pub const STEP_HEIGHT: f64 = 0.625;
 pub const DEFAULT_CAMERA_DISTANCE: f32 = 4.0;
 
@@ -887,12 +903,12 @@ impl KartRuntime {
             self.vel_xz = [0.0, 0.0];
         }
 
-        // 8. Wheel Spin Animation Angle
+        // 8. Exact No-Slip Wheel Rolling Kinematics
         let spin_deg = if self.burnout {
             42.0
         } else {
-            // Wheel radius ~ 3.4/16 = 0.2125 blocks -> circumference ~ 1.335 blocks
-            (self.forward_speed / 1.335) * 360.0
+            let circumference = 2.0 * std::f32::consts::PI * REAR_HUB_Y;
+            (self.forward_speed / circumference) * 360.0
         };
         self.wheel_rot_deg = (self.wheel_rot_deg + spin_deg).rem_euclid(360.0);
 
@@ -1387,5 +1403,17 @@ mod tests {
             speed_kmh: false,
         };
         assert_eq!(ClientSettings::decode_toml(&cfg.encode_toml()), cfg);
+    }
+
+    #[test]
+    fn kart_spatial_geometry_places_tires_on_ground_and_aligns_cockpit() {
+        let model_wheel_radius = 3.5_f32 / 16.0;
+        let front_bottom = FRONT_HUB_Y - model_wheel_radius * FRONT_WHEEL_SCALE[1];
+        let rear_bottom = REAR_HUB_Y - model_wheel_radius * REAR_WHEEL_SCALE[1];
+        assert!(front_bottom.abs() < 1e-6, "front tires rest flat on Y=0");
+        assert!(rear_bottom.abs() < 1e-6, "rear tires rest flat on Y=0");
+        assert!((WHEELBASE - 1.50).abs() < 1e-6);
+        assert!(REAR_TRACK_HALF_X > FRONT_TRACK_HALF_X);
+        assert!(STEER_PIVOT[2] > SEAT_OFFSET_Z && STEER_PIVOT[1] > SEAT_ATTACH_Y);
     }
 }

@@ -137,34 +137,43 @@ def generate_vehicle_textures() -> None:
             pixels.append(c)
     write_png(bdir / "kart_chrome.png", 16, 16, pixels)
 
-    # 5. Wheel textures: `wheel_standard.png`, `wheel_sports.png`, `wheel_racing.png`
+    # 5. `kart_tire.png`: Vulcanized dark racing rubber with subtle tread channels
+    pixels = []
+    for y in range(16):
+        for x in range(16):
+            channel = x in (3, 12)
+            sipe = ((y + (x // 4)) % 4 == 0) and (4 <= x <= 11)
+            base = 24 if channel else (30 if sipe else 35)
+            grain = ((x * 5 + y * 3) % 3) - 1
+            v = max(16, base + grain)
+            pixels.append((v, v + 1, v + 3, 255))
+    write_png(bdir / "kart_tire.png", 16, 16, pixels)
+
+    # 6. Wheel Alloy Rim textures: `wheel_standard.png`, `wheel_sports.png`, `wheel_racing.png`
+    # Full 16x16 centered alloy rim discs (mapped [0,0,16,16] onto West/East wheel rim faces)
     wheel_configs = [
-        ("wheel_standard.png", (38, 40, 44), (175, 182, 190), (110, 116, 124)),
-        ("wheel_sports.png",   (30, 32, 36), (235, 185, 48),  (58, 138, 225)),
-        ("wheel_racing.png",   (24, 25, 28), (230, 52, 52),   (242, 205, 62)),
+        ("wheel_standard.png", (196, 204, 214), (122, 130, 142), (70, 76, 86)),
+        ("wheel_sports.png",   (246, 198, 56),  (54, 142, 232),  (44, 52, 68)),
+        ("wheel_racing.png",   (236, 52, 50),   (248, 208, 62),  (38, 40, 48)),
     ]
-    for fname, rubber, rim, accent in wheel_configs:
+    for fname, rim_hi, accent, recess in wheel_configs:
         pixels = []
         for y in range(16):
             for x in range(16):
                 dx = x - 7.5
                 dy = y - 7.5
                 dist = math.hypot(dx, dy)
-                if dist < 2.2:
+                if dist < 2.4:
                     c = (*accent, 255)
-                elif dist < 4.7:
-                    spoke = abs(dx) < 1.1 or abs(dy) < 1.1
-                    c = (*rim, 255) if spoke else (rim[0] // 2, rim[1] // 2, rim[2] // 2, 255)
+                elif dist > 6.4:
+                    c = (*rim_hi, 255)
                 else:
-                    groove = ((x + y) % 3 == 0)
-                    r = max(14, rubber[0] - (8 if groove else 0))
-                    g = max(14, rubber[1] - (8 if groove else 0))
-                    b = max(16, rubber[2] - (8 if groove else 0))
-                    c = (r, g, b, 255)
+                    spoke = abs(dx) < 1.35 or abs(dy) < 1.35 or abs(abs(dx) - abs(dy)) < 1.15
+                    c = (*rim_hi, 255) if spoke else (*recess, 255)
                 pixels.append(c)
         write_png(bdir / fname, 16, 16, pixels)
 
-    # 6. Engine block textures: `engine_iron.png`, `engine_gold.png`, `engine_diamond.png`
+    # 7. Engine block textures: `engine_iron.png`, `engine_gold.png`, `engine_diamond.png`
     engine_configs = [
         ("engine_iron.png",    (158, 164, 172), (96, 102, 110), (212, 74, 56)),
         ("engine_gold.png",    (238, 192, 58),  (166, 118, 24), (225, 64, 48)),
@@ -364,70 +373,184 @@ def generate_item_textures() -> None:
 # Standalone 3D JSON Vehicle Models (`assets/gokart/models/block/*.json`)
 # ---------------------------------------------------------------------------
 
-def box(from_xyz, to_xyz, tex: str, tint: bool = False) -> dict:
-    dx = max(1.0, min(16.0, abs(to_xyz[0] - from_xyz[0])))
-    dy = max(1.0, min(16.0, abs(to_xyz[1] - from_xyz[1])))
-    dz = max(1.0, min(16.0, abs(to_xyz[2] - from_xyz[2])))
+def box(
+    from_xyz,
+    to_xyz,
+    tex: str,
+    tint: bool = False,
+    rot=None,
+    full_uv_faces=(),
+) -> dict:
+    dx = max(0.5, min(16.0, abs(to_xyz[0] - from_xyz[0])))
+    dy = max(0.5, min(16.0, abs(to_xyz[1] - from_xyz[1])))
+    dz = max(0.5, min(16.0, abs(to_xyz[2] - from_xyz[2])))
+
+    def centered_uv(w: float, h: float) -> list:
+        u0 = round(max(0.0, 8.0 - w * 0.5), 2)
+        v0 = round(max(0.0, 8.0 - h * 0.5), 2)
+        u1 = round(min(16.0, u0 + w), 2)
+        v1 = round(min(16.0, v0 + h), 2)
+        return [u0, v0, u1, v1]
+
     uv_map = {
-        "down": [0.0, 0.0, round(dx, 2), round(dz, 2)],
-        "up": [0.0, 0.0, round(dx, 2), round(dz, 2)],
-        "north": [0.0, 0.0, round(dx, 2), round(dy, 2)],
-        "south": [0.0, 0.0, round(dx, 2), round(dy, 2)],
-        "west": [0.0, 0.0, round(dz, 2), round(dy, 2)],
-        "east": [0.0, 0.0, round(dz, 2), round(dy, 2)],
+        "down": centered_uv(dx, dz),
+        "up": centered_uv(dx, dz),
+        "north": centered_uv(dx, dy),
+        "south": centered_uv(dx, dy),
+        "west": centered_uv(dz, dy),
+        "east": centered_uv(dz, dy),
     }
+    for d in full_uv_faces:
+        uv_map[d] = [0.0, 0.0, 16.0, 16.0]
+
     faces = {}
     for d in ("down", "up", "north", "south", "west", "east"):
         f = {"texture": tex, "uv": uv_map[d]}
         if tint:
             f["tintindex"] = 0
         faces[d] = f
-    return {"from": from_xyz, "to": to_xyz, "faces": faces}
+    elem = {"from": [round(v, 3) for v in from_xyz], "to": [round(v, 3) for v in to_xyz], "faces": faces}
+    if rot is not None:
+        axis, angle, origin = rot
+        elem["rotation"] = {
+            "origin": [round(v, 3) for v in origin],
+            "axis": axis,
+            "angle": round(float(angle), 2),
+        }
+    return elem
+
+
+def v2m(vx: float, vy: float, vz: float) -> list:
+    """Convert vehicle-centered texels (vx, vy, vz) where (0,0,0) is ground under entity
+    center (+X left, +Y up, +Z forward) into block-model texels (mx, my, mz) around (8, 0, 8)."""
+    return [8.0 + vx, vy, 8.0 + vz]
+
+
+def vbox(vx0, vy0, vz0, vx1, vy1, vz1, tex: str, tint: bool = False, vrot=None, full_uv_faces=()) -> dict:
+    mrot = None
+    if vrot is not None:
+        axis, angle, (ox, oy, oz) = vrot
+        mrot = (axis, angle, v2m(ox, oy, oz))
+    return box(
+        v2m(min(vx0, vx1), min(vy0, vy1), min(vz0, vz1)),
+        v2m(max(vx0, vx1), max(vy0, vy1), max(vz0, vz1)),
+        tex,
+        tint=tint,
+        rot=mrot,
+        full_uv_faces=full_uv_faces,
+    )
 
 
 def generate_models() -> None:
     mdir = ASSETS / "models" / "block"
     mdir.mkdir(parents=True, exist_ok=True)
 
-    # Coordinate convention:
-    # Block model center is (8, 0, 8) at feet; +Z is forward (south), -Z is rear (north),
-    # +X is left (east), -X is right (west), +Y is up.
-    # Horizon allows standard Minecraft element coordinates [-16, 32], giving a crisp
-    # 1.75-block long racing Go-Kart!
-
-    # 1. `go_kart_body.json`
+    # =========================================================================
+    # 1. `go_kart_body.json` — Original "Horizon Sprint Kart" Spaceframe & Body
+    # =========================================================================
+    # Canonical Vehicle Frame (16 texels = 1.0 block):
+    #   Origin (0, 0, 0) = ground plane directly under kart entity center
+    #   +X = Driver's LEFT, -X = Driver's RIGHT, +Y = UP, +Z = FORWARD
+    #   Front Axle Z = +13.0 tx (+0.8125 b), Front Track X = ±10.2 tx (±0.6375 b)
+    #   Rear Axle  Z = -11.0 tx (-0.6875 b), Rear Track  X = ±11.4 tx (±0.7125 b)
+    #   Driver Seat Cushion Top = +4.2 tx (+0.2625 b) at Z = -2.0 tx (-0.125 b)
+    #   Steering Wheel Hub Pivot = (0.0, 9.4, +4.6) tx, shaft angle +35.0 deg X
+    #   Rear Engine Deck Top = +3.6 tx (+0.225 b), Engine Pivot = (0.0, 7.6, -11.4) tx
     body_elements = [
-        # Main dark steel floorpan & side rails (no tintindex)
-        box([2.5, 1.5, -7.0], [13.5, 2.8, 16.5], "#frame"),
-        # Rear engine mounting deck
-        box([3.0, 2.0, -13.5], [13.0, 3.5, -7.0], "#frame"),
-        # Front axle crossbar & rear axle housing
-        box([0.5, 2.0, 12.5], [15.5, 3.2, 14.5], "#frame"),
-        box([0.5, 2.2, -10.5], [15.5, 3.6, -8.5], "#frame"),
-        # Front tubular bumper + painted nose spoiler (`tint = True`)
-        box([1.5, 2.0, 18.5], [14.5, 4.0, 20.5], "#frame"),
-        box([2.5, 2.8, 15.0], [13.5, 5.4, 19.2], "#body", tint=True),
-        # Sloped front nose cowling (`tint = True`)
-        box([3.5, 4.8, 10.5], [12.5, 7.0, 16.0], "#body", tint=True),
-        # Left & right painted aerodynamic side pods (`tint = True`)
-        box([13.2, 2.2, -4.5], [15.8, 5.6, 10.5], "#body", tint=True),
-        box([0.2, 2.2, -4.5], [2.8, 5.6, 10.5], "#body", tint=True),
-        # Rear painted bumper cowling (`tint = True`) + steel crash bar
-        box([2.0, 2.5, -15.2], [14.0, 4.6, -13.5], "#frame"),
-        box([3.0, 3.5, -14.2], [13.0, 6.2, -12.2], "#body", tint=True),
-        # Bucket racing seat (base cushion, side bolsters, high backrest)
-        box([4.0, 2.8, -5.5], [12.0, 4.4, 2.5], "#seat"),
-        box([3.5, 4.0, -5.5], [5.0, 7.5, 1.5], "#seat"),
-        box([11.0, 4.0, -5.5], [12.5, 7.5, 1.5], "#seat"),
-        box([4.0, 4.4, -6.8], [12.0, 11.2, -4.8], "#seat"),
-        # Painted seat back shell (`tint = True`)
-        box([4.5, 4.8, -7.4], [11.5, 10.6, -6.7], "#body", tint=True),
-        # Steering column support & angled shaft
-        box([6.8, 2.8, 9.8], [9.2, 8.2, 11.6], "#frame"),
-        box([7.3, 7.2, 7.4], [8.7, 9.6, 10.8], "#chrome"),
-        # Throttle & brake pedals at front of footwell
-        box([4.5, 2.8, 14.5], [6.2, 5.2, 15.5], "#chrome"),
-        box([9.8, 2.8, 14.5], [11.5, 5.2, 15.5], "#chrome"),
+        # --- A. Tubular Racing Spaceframe & Flat Steel Floorpan ---
+        # Central flat floorpan tray (footwell to under-seat)
+        vbox(-4.2, 1.8, -6.8,  4.2, 2.5, 16.0, "#frame"),
+        # Left & right primary longitudinal chassis frame rails
+        vbox( 3.6, 1.7, -15.8,  4.7, 2.9, 17.2, "#frame"),
+        vbox(-4.7, 1.7, -15.8, -3.6, 2.9, 17.2, "#frame"),
+        # Footwell raised side kick-plates (keeps boots tucked inside cockpit)
+        vbox( 3.8, 2.5,  6.8,  4.6, 4.4, 15.8, "#frame"),
+        vbox(-4.6, 2.5,  6.8, -3.8, 4.4, 15.8, "#frame"),
+
+        # --- B. Front Suspension Crossbeam, Exposed Spindles, Kingpin C-Yokes & Tie-Rods ---
+        # Heavy front axle beam & outer C-yoke kingpin brackets reaching out to vx = ±8.1
+        vbox(-8.0, 2.4, 12.2,  8.0, 3.6, 13.8, "#frame"),
+        vbox( 7.2, 2.0, 11.9,  8.2, 4.1, 14.1, "#chrome"),
+        vbox(-8.2, 2.0, 11.9, -7.2, 4.1, 14.1, "#chrome"),
+        # Twin chrome steering tie-rods behind front beam (connect steering pitman to spindles)
+        vbox(-7.6, 3.0, 10.9,  7.6, 3.6, 11.5, "#chrome"),
+
+        # --- C. Sculpted Swept-V Front Racing Wing, Bumper Hoop & Sloped Nassau Fairing ---
+        # Positioned 1.2 tx further forward so even at ±28 deg full steering lock there is clean daylight!
+        vbox(-6.5, 2.1, 20.8,  6.5, 3.2, 21.9, "#frame"),
+        vbox( 5.6, 2.1, 18.8, 10.6, 3.1, 19.8, "#frame", vrot=("y",  15.0, (6.0, 2.6, 19.3))),
+        vbox(-10.6, 2.1, 18.8, -5.6, 3.1, 19.8, "#frame", vrot=("y", -15.0, (-6.0, 2.6, 19.3))),
+        # Swept-V painted front aerodynamic wing blades + central nose splitter (`tint = True`)
+        vbox(-5.4, 2.4, 18.2,  5.4, 4.5, 21.5, "#body", tint=True, vrot=("x", 13.0, (0.0, 3.4, 19.8))),
+        vbox( 4.2, 2.4, 18.0, 10.8, 4.3, 20.6, "#body", tint=True, vrot=("y",  15.0, (4.8, 3.3, 19.4))),
+        vbox(-10.8, 2.4, 18.0, -4.2, 4.3, 20.6, "#body", tint=True, vrot=("y", -15.0, (-4.8, 3.3, 19.4))),
+        # Painted central nose cone wedge (`tint = True`, narrow ±4.0 tx for generous tire lock clearance!)
+        vbox(-4.0, 2.9, 12.2,  4.0, 5.6, 18.6, "#body", tint=True, vrot=("x", 15.0, (0.0, 4.2, 15.4))),
+        # Painted sloped Nassau steering cowling rising toward driver (`tint = True`)
+        vbox(-3.9, 4.4,  6.8,  3.9, 7.3, 12.8, "#body", tint=True, vrot=("x", 22.0, (0.0, 5.8,  9.8))),
+        # Front number-plate / racing crest trim strip on nose
+        vbox(-2.3, 5.5, 11.2,  2.3, 6.2, 15.6, "#chrome", vrot=("x", 17.0, (0.0, 5.8, 13.4))),
+
+        # --- D. Sculpted Aerodynamic Side Pontoons & Nerf Bars (Strictly Between Z=-5.6 and Z=+7.4) ---
+        # Steel nerf-bar outriggers supporting left & right pontoons
+        vbox( 4.6, 2.1, -4.6,  9.2, 2.8, -3.6, "#frame"),
+        vbox( 4.6, 2.1,  4.8,  9.2, 2.8,  5.8, "#frame"),
+        vbox(-9.2, 2.1, -4.6, -4.6, 2.8, -3.6, "#frame"),
+        vbox(-9.2, 2.1,  4.8, -4.6, 2.8,  5.8, "#frame"),
+        # Main painted side pontoons (`tint = True`)
+        vbox( 4.8, 2.2, -5.5,  9.6, 5.6,  6.2, "#body", tint=True),
+        vbox(-9.6, 2.2, -5.5, -4.8, 5.6,  6.2, "#body", tint=True),
+        # Angled front radiator/air-intake wedges on pontoons (`tint = True`)
+        vbox( 5.0, 2.3,  4.8,  9.3, 5.4,  7.4, "#body", tint=True, vrot=("y", -18.0, (7.0, 3.8, 6.0))),
+        vbox(-9.3, 2.3,  4.8, -5.0, 5.4,  7.4, "#body", tint=True, vrot=("y",  18.0, (-7.0, 3.8, 6.0))),
+        # Dark recessed intake grilles & outer black rub-strips on pontoons
+        vbox( 5.4, 2.7,  6.9,  8.6, 4.9,  7.5, "#seat", vrot=("y", -18.0, (7.0, 3.8, 6.0))),
+        vbox(-8.6, 2.7,  6.9, -5.4, 4.9,  7.5, "#seat", vrot=("y",  18.0, (-7.0, 3.8, 6.0))),
+        vbox( 9.4, 2.5, -5.2, 10.0, 3.9,  5.8, "#frame"),
+        vbox(-10.0, 2.5, -5.2, -9.4, 3.9, 5.8, "#frame"),
+
+        # --- E. Ergonomic Bucket Racing Seat (Zero-Gap Flush with Seated Driver at Y=4.2, Z=-3.0) ---
+        # Molded seat pan & quilted alcantara cushion (top at exact Y = 4.2 tx)
+        vbox(-4.4, 2.5, -6.4,  4.4, 4.2,  1.8, "#seat"),
+        # Left & right hip/thigh lateral racing bolsters
+        vbox( 3.9, 3.6, -6.2,  5.3, 8.4,  1.0, "#seat"),
+        vbox(-5.3, 3.6, -6.2, -3.9, 8.4,  1.0, "#seat"),
+        # Contoured high-back bucket backrest (`-5 deg` X-recline, zero-gap flush against Z=-5.0 back!)
+        vbox(-4.3, 4.0, -6.4,  4.3, 14.2, -4.8, "#seat", vrot=("x", -5.0, (0.0, 4.2, -5.4))),
+        # Integrated upper headrest pad
+        vbox(-2.9, 13.8, -6.7, 2.9, 16.0, -5.0, "#seat", vrot=("x", -4.0, (0.0, 14.2, -5.8))),
+        # Painted fiberglass outer seat shell (`tint = True`)
+        vbox(-4.0, 4.4, -7.0,  4.0, 13.8, -6.2, "#body", tint=True, vrot=("x", -5.0, (0.0, 4.2, -5.4))),
+
+        # --- F. Coaxial Steering Column Tower & +35.0 deg Chrome Shaft + Footwell Pedals ---
+        # Structural steering support bulkhead under Nassau cowling
+        vbox(-1.6, 2.5,  8.0,  1.6, 6.6,  9.8, "#frame"),
+        # Chrome steering shaft: origin at exact STEER_PIVOT (0.0, 9.1, +3.6) tilted +35.0 deg X!
+        vbox(-0.65, 8.45, 3.6, 0.65, 9.75, 11.2, "#chrome", vrot=("x", 35.0, (0.0, 9.1, 3.6))),
+        # Upper column bearing collar right behind steering wheel boss
+        vbox(-1.05, 8.05, 4.2, 1.05, 10.15, 5.4, "#frame", vrot=("x", 35.0, (0.0, 9.1, 3.6))),
+        # Footwell Chrome Throttle & Brake Pedals + Heel Stops
+        vbox( 1.6, 2.5, 12.2,  3.2, 6.1, 13.0, "#chrome", vrot=("x", -18.0, (2.4, 2.8, 12.6))),
+        vbox(-3.2, 2.5, 12.2, -1.6, 6.1, 13.0, "#chrome", vrot=("x", -18.0, (-2.4, 2.8, 12.6))),
+        vbox(-3.4, 2.5, 10.6,  3.4, 3.0, 11.3, "#frame"),
+
+        # --- G. Rear Live Chrome Axle, Ventilated Brake Rotor, Chain Sprocket & Engine Deck ---
+        # Rear engine mounting deck plate (top surface at exact Y = 3.6 tx)
+        vbox(-4.6, 2.4, -15.8,  4.6, 3.6, -7.0, "#frame"),
+        # Bearing carrier blocks on frame rails at Z = -11.0
+        vbox( 3.5, 2.2, -12.1,  5.2, 4.8, -9.9, "#frame"),
+        vbox(-5.2, 2.2, -12.1, -3.5, 4.8, -9.9, "#frame"),
+        # Full-width live chrome rear axle shaft coaxial with rear wheels at (Y=3.5, Z=-11.0)!
+        vbox(-9.1, 2.95, -11.55, 9.1, 4.05, -10.45, "#chrome"),
+        # Ventilated rear brake disc + painted caliper on LEFT (+X), drive sprocket on RIGHT (-X, aligned with engine clutch!)
+        vbox( 5.6, 1.9, -12.8,  6.2, 5.3, -9.2, "#chrome"),
+        vbox( 5.3, 3.6, -9.7,   6.5, 5.7, -8.4, "#body", tint=True),
+        vbox(-4.2, 2.0, -12.6, -3.5, 5.2, -9.4, "#frame"),
+        # Rear tubular crash bar & painted rear valence panel (`tint = True`, behind Z=-14.5 rear slicks)
+        vbox(-8.8, 2.4, -18.0,  8.8, 3.8, -16.8, "#frame"),
+        vbox( 4.0, 2.4, -17.0,  4.9, 3.8, -15.4, "#frame"),
+        vbox(-4.9, 2.4, -17.0, -4.0, 3.8, -15.4, "#frame"),
+        vbox(-6.4, 2.8, -17.2,  6.4, 5.0, -15.6, "#body", tint=True),
     ]
     (mdir / "go_kart_body.json").write_text(
         json.dumps(
@@ -445,19 +568,31 @@ def generate_models() -> None:
         + "\n"
     )
 
-    # 2. `go_kart_steering_wheel.json` — Centered around (8, 8, 8) so rotating around
-    # [0.5, 0.5, 0.5] spins cleanly along the steering column axis!
+    # =========================================================================
+    # 2. `go_kart_steering_wheel.json` — 8-Segment Round 3-Spoke Sport Wheel
+    # =========================================================================
+    # Authored symmetrically around (8.0, 8.0, 8.0) in XY plane:
+    #   - Outer diameter = 6.2 tx (radius 3.1 tx), scaled 0.85 -> 0.33 b diameter
+    #   - Hub center is EXACTLY (8.0, 8.0, 8.0) -> zero wobble when spinning around Z!
     sw_elements = [
-        # Center hub
-        box([6.8, 6.8, 7.2], [9.2, 9.2, 8.8], "#chrome"),
-        # Outer grip ring (top, bottom, left, right)
-        box([5.2, 10.2, 7.4], [10.8, 11.4, 8.6], "#seat"),
-        box([5.2, 4.6, 7.4], [10.8, 5.8, 8.6], "#seat"),
-        box([4.6, 5.2, 7.4], [5.8, 10.8, 8.6], "#seat"),
-        box([10.2, 5.2, 7.4], [11.4, 10.8, 8.6], "#seat"),
-        # Three spokes
-        box([5.8, 7.5, 7.6], [10.2, 8.5, 8.4], "#chrome"),
-        box([7.5, 5.8, 7.6], [8.5, 8.0, 8.4], "#chrome"),
+        # Central machined aluminum boss + shaft collar
+        box([6.9, 6.9, 7.2], [9.1, 9.1, 8.9], "#chrome"),
+        box([7.4, 7.4, 6.95], [8.6, 8.6, 7.25], "#frame"),
+        # 8-segment octagonal sport grip ring (4 cardinal + 4 rotated 45 deg around Z at [8,8,8])
+        # Top segment includes racing 12-o'clock chrome/stripe marker!
+        box([6.6, 10.2, 7.45], [9.4, 11.15, 8.55], "#seat"),
+        box([7.65, 10.25, 7.40], [8.35, 11.20, 8.60], "#chrome"),
+        box([6.6, 4.85, 7.45], [9.4, 5.8, 8.55], "#seat"),
+        box([4.85, 6.6, 7.45], [5.8, 9.4, 8.55], "#seat"),
+        box([10.2, 6.6, 7.45], [11.15, 9.4, 8.55], "#seat"),
+        box([6.6, 10.2, 7.48], [9.4, 11.12, 8.52], "#seat", rot=("z", 45.0, [8.0, 8.0, 8.0])),
+        box([6.6, 4.88, 7.48], [9.4, 5.8, 8.52], "#seat", rot=("z", 45.0, [8.0, 8.0, 8.0])),
+        box([4.88, 6.6, 7.48], [5.8, 9.4, 8.52], "#seat", rot=("z", 45.0, [8.0, 8.0, 8.0])),
+        box([10.2, 6.6, 7.48], [11.12, 9.4, 8.52], "#seat", rot=("z", 45.0, [8.0, 8.0, 8.0])),
+        # 3-spoke brushed aluminum spider (left, right, bottom)
+        box([5.6, 7.55, 7.65], [7.1, 8.45, 8.35], "#chrome", rot=("z",  12.0, [8.0, 8.0, 8.0])),
+        box([8.9, 7.55, 7.65], [10.4, 8.45, 8.35], "#chrome", rot=("z", -12.0, [8.0, 8.0, 8.0])),
+        box([7.55, 5.6, 7.65], [8.45, 7.1, 8.35], "#chrome"),
     ]
     (mdir / "go_kart_steering_wheel.json").write_text(
         json.dumps(
@@ -465,6 +600,7 @@ def generate_models() -> None:
                 "textures": {
                     "seat": "gokart:block/kart_seat",
                     "chrome": "gokart:block/kart_chrome",
+                    "frame": "gokart:block/kart_frame",
                 },
                 "elements": sw_elements,
             },
@@ -473,24 +609,65 @@ def generate_models() -> None:
         + "\n"
     )
 
-    # 3. Wheel 3D models (`wheel_standard.json`, `wheel_sports.json`, `wheel_racing.json`)
-    # Centered at (8, 8, 8), rolling around X axis, width along X [5.4..10.6], radius ~3.5 texels
-    for wname, tex in [
+    # =========================================================================
+    # 3. 16-Sided Cylindrical Racing Wheels (`wheel_standard`, `wheel_sports`, `wheel_racing`)
+    # =========================================================================
+    # Authored symmetrically around (8.0, 8.0, 8.0):
+    #   - Exact outer radius R = 3.50 tx (Y in [4.50, 11.50]), half-chord = 0.72 tx
+    #   - 4 boxes at 0, 22.5, 45, 67.5 deg around X -> smooth closed 16-gon slick cylinder!
+    #   - Tire width X in [5.50, 10.50] (5.00 tx = ±2.50 tx from hub)
+    #   - Recessed 8-sided alloy rim disc with centered [0,0,16,16] spoke UVs + chrome center-lock nut
+    for wname, rim_tex in [
         ("wheel_standard", "gokart:block/wheel_standard"),
         ("wheel_sports", "gokart:block/wheel_sports"),
         ("wheel_racing", "gokart:block/wheel_racing"),
     ]:
-        # Octagonal-ish 2-box cross + hub profile so rotation around X is visibly crisp!
-        w_elements = [
-            box([5.5, 4.6, 5.4], [10.5, 11.4, 10.6], "#wheel"),
-            box([5.5, 5.4, 4.6], [10.5, 10.6, 11.4], "#wheel"),
-            box([5.2, 6.6, 6.6], [10.8, 9.4, 9.4], "#chrome"),
-        ]
+        w_elements = []
+        for idx, ang in enumerate((0.0, 22.5, 45.0, 67.5)):
+            # Slight 0.01 tx X inset on alternating segments prevents coplanar sidewall Z-fighting!
+            eps = 0.012 * idx
+            r = None if ang == 0.0 else ("x", ang, [8.0, 8.0, 8.0])
+            w_elements.append(
+                box([5.50 + eps, 4.50, 7.28], [10.50 - eps, 11.50, 8.72], "#tire", rot=r)
+            )
+            w_elements.append(
+                box([5.50 + eps, 7.28, 4.50], [10.50 - eps, 8.72, 11.50], "#tire", rot=r)
+            )
+        # Recessed dark tire sidewall ring (octagonal, R=2.55 tx, chord=1.06 tx -> true circle inside tire!)
+        for r_ang in (0.0, 45.0):
+            rr = None if r_ang == 0.0 else ("x", r_ang, [8.0, 8.0, 8.0])
+            w_elements.append(box([5.42, 5.45, 6.94], [10.58, 10.55, 9.06], "#tire", rot=rr))
+            w_elements.append(box([5.42, 6.94, 5.45], [10.58, 9.06, 10.55], "#tire", rot=rr))
+        # True round 8-sided deep-dish alloy wheel rim (R=1.95 tx, chord=0.81 tx -> zero star spikes!)
+        for idx_r, r_ang in enumerate((0.0, 45.0)):
+            eps_r = 0.01 * idx_r
+            rr = None if r_ang == 0.0 else ("x", r_ang, [8.0, 8.0, 8.0])
+            w_elements.append(
+                box(
+                    [5.32 + eps_r, 6.05, 7.19],
+                    [10.68 - eps_r, 9.95, 8.81],
+                    "#rim",
+                    rot=rr,
+                    full_uv_faces=("west", "east"),
+                )
+            )
+            w_elements.append(
+                box(
+                    [5.33 + eps_r, 7.19, 6.05],
+                    [10.67 - eps_r, 8.81, 9.95],
+                    "#rim",
+                    rot=rr,
+                    full_uv_faces=("west", "east"),
+                )
+            )
+        # Center-lock chrome racing hub nut & inner spindle boss
+        w_elements.append(box([5.10, 7.25, 7.25], [10.90, 8.75, 8.75], "#chrome"))
         (mdir / f"{wname}.json").write_text(
             json.dumps(
                 {
                     "textures": {
-                        "wheel": tex,
+                        "tire": "gokart:block/kart_tire",
+                        "rim": rim_tex,
                         "chrome": "gokart:block/kart_chrome",
                     },
                     "elements": w_elements,
@@ -500,21 +677,41 @@ def generate_models() -> None:
             + "\n"
         )
 
-    # 4. Rear Small Engine 3D models (`engine_iron.json`, `engine_gold.json`, `engine_diamond.json`)
-    # Centered at (8, 8, 8)
+    # =========================================================================
+    # 4. Rear Racing Small Engines (`engine_iron`, `engine_gold`, `engine_diamond`)
+    # =========================================================================
+    # Authored around (8.0, 8.0, 8.0) with +Z forward (toward seat) and -Z rear (toward bumper):
+    #   - Mounted at ENGINE_PIVOT = (0.0, 7.6, -11.4) tx with scale 0.95 (NO 180 flip!)
+    #   - Crankcase bottom at my = 3.80 -> lands at vy = 7.6 - 4.2*0.95 = 3.61 tx (flush on 3.60 deck!)
+    #   - Inclined finned cylinder head (-18 deg X), pull-starter shroud, top fuel tank & pod filter,
+    #     and twin upswept chrome exhaust headers + mufflers pointing cleanly backward (-Z)!
     for ename, tex in [
         ("engine_iron", "gokart:block/engine_iron"),
         ("engine_gold", "gokart:block/engine_gold"),
         ("engine_diamond", "gokart:block/engine_diamond"),
     ]:
         e_elements = [
-            # Crankcase & cylinder block with cooling fins
-            box([4.8, 4.5, 5.0], [11.2, 9.8, 10.8], "#engine"),
-            # Top air filter / fuel tank cap
-            box([5.6, 9.8, 5.8], [10.4, 11.6, 9.6], "#frame"),
-            # Twin chrome exhaust header & muffler pointing backward (-Z)
-            box([9.5, 6.5, 1.2], [11.3, 8.3, 6.2], "#chrome"),
-            box([9.8, 6.8, 0.2], [11.0, 8.0, 1.4], "#frame"),
+            # Lower bolted crankcase & sump block (rests flush on rear engine deck)
+            box([4.9, 3.8, 5.2], [11.1, 7.6, 10.8], "#frame"),
+            # Inclined finned racing cylinder barrel & tier-colored head
+            box([5.2, 6.4, 5.6], [10.8, 11.4, 10.2], "#engine", rot=("x", -18.0, [8.0, 7.2, 8.0])),
+            # Left-side (+X) recoil pull-starter housing & center hub (away from drive chain)
+            box([11.0, 4.3, 5.8], [11.8, 8.5, 10.0], "#engine"),
+            box([11.75, 5.6, 7.1], [12.05, 7.2, 8.7], "#chrome"),
+            # Right-side (-X) centrifugal clutch & chain guard aligned directly over right axle sprocket!
+            box([4.1, 3.8, 6.4], [5.0, 6.9, 9.9], "#chrome"),
+            # Top auxiliary fuel tank + chrome filler cap
+            box([5.5, 8.8, 8.6], [10.5, 11.2, 11.4], "#frame"),
+            box([7.3, 11.2, 9.4], [8.7, 11.8, 10.8], "#chrome"),
+            # High-flow conical pod air intake filter
+            box([6.4, 9.6, 4.4], [9.6, 11.8, 7.2], "#chrome", rot=("x", 10.0, [8.0, 10.5, 5.8])),
+            # Twin upswept chrome exhaust headers + dark racing mufflers + bright chrome tailpipe tips!
+            box([5.5, 7.2, 1.6], [6.9, 8.6, 6.2], "#chrome", rot=("x", 12.0, [6.2, 7.9, 6.0])),
+            box([9.1, 7.2, 1.6], [10.5, 8.6, 6.2], "#chrome", rot=("x", 12.0, [9.8, 7.9, 6.0])),
+            box([5.35, 7.05, 0.5], [7.05, 8.75, 2.4], "#frame", rot=("x", 12.0, [6.2, 7.9, 6.0])),
+            box([8.95, 7.05, 0.5], [10.65, 8.75, 2.4], "#frame", rot=("x", 12.0, [9.8, 7.9, 6.0])),
+            box([5.65, 7.35, 0.0], [6.75, 8.45, 0.6], "#chrome", rot=("x", 12.0, [6.2, 7.9, 6.0])),
+            box([9.25, 7.35, 0.0], [10.35, 8.45, 0.6], "#chrome", rot=("x", 12.0, [9.8, 7.9, 6.0])),
         ]
         (mdir / f"{ename}.json").write_text(
             json.dumps(

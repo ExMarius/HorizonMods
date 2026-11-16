@@ -7,6 +7,7 @@ use horizon_client::{
     hud::HudBatch,
     items::ItemStack,
     lang,
+    mobs::riders as mob_riders,
     mod_api::{
         BlockEntityDraw, Corners, KeyCode, NativeCommand, NativeMobRender, NativeMod,
         NativeScreenView, NativeServerPlayer, ParticleOptions, ParticleType, ServerTickPhase,
@@ -19,6 +20,7 @@ use horizon_world::nbt::{Compound, JavaString, Tag};
 use std::{
     collections::{BTreeMap, HashMap},
     fs,
+    ops::ControlFlow,
     path::PathBuf,
     sync::{Mutex, MutexGuard},
 };
@@ -956,12 +958,14 @@ fn find_rider_uuid(
     {
         return Some(host.uuid);
     }
-    let seat_y = kart_pos[1] + SEAT_HEIGHT_PIG;
+    let seat_y_pig = kart_pos[1] + SEAT_HEIGHT_PIG;
+    let seat_y_kart = kart_pos[1] + f64::from(rules::SEAT_ATTACH_Y) - 0.6;
     players.iter().find_map(|p| {
         let dx = p.position[0] - kart_pos[0];
         let dz = p.position[2] - kart_pos[2];
-        let dy = (p.position[1] - seat_y).abs();
-        (dx * dx + dz * dz < 0.16 && dy < 0.45).then_some(p.uuid)
+        let dy_ok =
+            (p.position[1] - seat_y_kart).abs() < 0.45 || (p.position[1] - seat_y_pig).abs() < 0.45;
+        (dx * dx + dz * dz < 0.36 && dy_ok).then_some(p.uuid)
     })
 }
 
@@ -1052,12 +1056,32 @@ pub(in crate::game) fn entity_tick_pre(
     game.native_entity_set_head_yaw(eref, outcome.yaw_deg);
     game.native_entity_set_velocity(eref, outcome.velocity);
 
-    // Exhaust, drift screech, engine rumble & turbo boost FX
+    // Exhaust, drift screech, engine rumble & turbo boost FX at exact 3D component coords!
+    // Forward unit vector in Horizon (+Z at yaw=0, -X at yaw=90): [-sin(yaw), +cos(yaw)]
+    // Left unit vector (+X at yaw=0, +Z at yaw=90): [+cos(yaw), +sin(yaw)]
     let yaw_rad = outcome.yaw_deg.to_radians();
+    let fwd_x = f64::from(-yaw_rad.sin());
+    let fwd_z = f64::from(yaw_rad.cos());
+    let left_x = f64::from(yaw_rad.cos());
+    let left_z = f64::from(yaw_rad.sin());
+
+    let exh_z = f64::from(rules::EXHAUST_OFFSET_Z);
     let exhaust_pos = [
-        pos[0] + f64::from(yaw_rad.sin()) * 0.82,
-        pos[1] + 0.28,
-        pos[2] - f64::from(yaw_rad.cos()) * 0.82,
+        pos[0] + fwd_x * exh_z,
+        pos[1] + f64::from(rules::EXHAUST_HEIGHT_Y),
+        pos[2] + fwd_z * exh_z,
+    ];
+    let rear_z = f64::from(rules::REAR_AXLE_Z);
+    let rear_x = f64::from(rules::REAR_TRACK_HALF_X);
+    let rear_left_patch = [
+        pos[0] + fwd_x * rear_z + left_x * rear_x,
+        pos[1] + 0.05,
+        pos[2] + fwd_z * rear_z + left_z * rear_x,
+    ];
+    let rear_right_patch = [
+        pos[0] + fwd_x * rear_z - left_x * rear_x,
+        pos[1] + 0.05,
+        pos[2] + fwd_z * rear_z - left_z * rear_x,
     ];
 
     if outcome.boost_triggered {
@@ -1067,7 +1091,7 @@ pub(in crate::game) fn entity_tick_pre(
             &flame,
             None,
             exhaust_pos,
-            [0.18, 0.08, 0.18],
+            [0.14, 0.06, 0.14],
             0.06,
             10,
         );
@@ -1091,14 +1115,17 @@ pub(in crate::game) fn entity_tick_pre(
 
     if outcome.tire_smoke && tick_count.is_multiple_of(2) {
         let smoke = ParticleOptions::simple(ParticleType::Smoke);
-        game.native_send_particles_in_place(
-            &smoke,
-            None,
-            exhaust_pos,
-            [0.26, 0.05, 0.26],
-            0.02,
-            if burnout || boosting { 4 } else { 2 },
-        );
+        let count = if burnout || boosting { 2 } else { 1 };
+        for patch in [rear_left_patch, rear_right_patch] {
+            game.native_send_particles_in_place(
+                &smoke,
+                None,
+                patch,
+                [0.10, 0.04, 0.10],
+                0.015,
+                count,
+            );
+        }
         if (drifting || burnout) && tick_count.is_multiple_of(6) {
             game.native_play_sound_in_place("gokart:drift", pos, SOUND_NEUTRAL, 0.42, 1.0);
         }
@@ -1613,91 +1640,235 @@ pub(in crate::game) fn mob_submit(
     // Claim rendering completely so the backing pig is never drawn!
     *drawn = true;
 
+    let circumference = 2.0 * std::f32::consts::PI * rules::REAR_HUB_Y;
+    let bps = kart.speed_kmh / (20.0 * 3.6);
     let wheel_spin = kart.wheel_rot_deg
         + if kart.burnout {
             mob.partial * 42.0
         } else {
-            mob.partial * (kart.speed_kmh / 72.0) * 95.0
+            mob.partial * (bps / circumference) * 360.0
         };
 
-    draw.push();
-
-    // Subtle cornering body roll & turbo boost squat for lively suspension feel
-    let roll_deg = if kart.drifting {
-        -kart.steer_deg * 0.22
-    } else {
-        -kart.steer_deg * 0.08 * (kart.speed_kmh / 60.0).min(1.0)
-    };
-    let pitch_deg: f32 = if kart.boosting { -2.2 } else { 0.0 };
-    if roll_deg.abs() > 0.05 {
-        draw.rotate_about([0.0, 0.0, 1.0], roll_deg, [0.0, 0.2, 0.0]);
-    }
-    if pitch_deg.abs() > 0.05 {
-        draw.rotate_about([1.0, 0.0, 0.0], pitch_deg, [0.0, 0.2, -0.3]);
-    }
-
-    // 1. Go-Kart Chassis & Dye-Tinted Body Panels
-    draw.push();
-    draw.translate([-0.5, 0.02, -0.5]);
-    game.native_draw_model(draw, rules::MODEL_BODY, kart.spec.paint.rgb());
-    draw.pop();
-
-    // 2. Angled Rotating Steering Wheel (-45 deg tilt on X, spins around shaft Z)
-    draw.push();
-    draw.translate([-0.5, 0.08, -0.5 + 0.16]);
-    draw.rotate_about([1.0, 0.0, 0.0], -42.0, [0.5, 0.5, 0.5]);
-    draw.rotate_about([0.0, 0.0, 1.0], -kart.steer_deg * 2.2, [0.5, 0.5, 0.5]);
-    draw.scale([0.82, 0.82, 0.82]);
-    game.native_draw_model(draw, rules::MODEL_STEERING, 0xFFFFFF);
-    draw.pop();
-
-    // 3. Rear Small Engine (Iron / Gold / Diamond) with subtle running vibration
-    if let Some(engine_model) = kart.spec.engine.model_id() {
-        let vib = if kart.speed_kmh > 0.5 || kart.burnout {
-            (mob.age * 1.85).sin() * 0.006
-        } else {
-            (mob.age * 0.7).sin() * 0.002
-        };
+    // Helper that transforms any standalone model authored symmetrically around
+    // texel center (8, 8, 8) (= [0.5, 0.5, 0.5] blocks) to exact vehicle pivot `pivot`
+    // with zero eccentric scale shift and zero rotation wobble!
+    let draw_part_at_pivot = |draw: &mut BlockEntityDraw,
+                              model: &str,
+                              pivot: [f32; 3],
+                              rots: &[([f32; 3], f32)],
+                              scale: [f32; 3],
+                              tint: u32| {
         draw.push();
-        draw.translate([-0.5 + vib, -0.14, -0.5 - 0.64]);
-        draw.rotate_about([0.0, 1.0, 0.0], 180.0, [0.5, 0.5, 0.5]);
-        draw.scale([0.92, 0.92, 0.92]);
-        game.native_draw_model(draw, engine_model, 0xFFFFFF);
+        draw.translate(pivot);
+        for &(axis, deg) in rots {
+            if deg.abs() > 0.001 {
+                draw.rotate_about(axis, deg, [0.0, 0.0, 0.0]);
+            }
+        }
+        draw.scale(scale);
+        draw.translate([-0.5, -0.5, -0.5]);
+        game.native_draw_model(draw, model, tint);
         draw.pop();
-    }
+    };
 
-    // 4. Four Articulated 3D Wheels (front wheels steer + spin; rear wheels wider + spin!)
+    // 1. Four Articulated 16-Sided Racing Wheels — planted flat on Y = 0.000 road surface!
+    // Front wheels steer around kingpin +Y first, then roll around axle +X; rear slicks are wider.
     let wheel_model = kart.spec.wheels.model_id();
     let wheel_mounts: [([f32; 3], [f32; 3], bool); 4] = [
         // Front-Left & Front-Right
-        ([0.46, 0.19, rules::FRONT_AXLE_Z], [0.85, 0.82, 0.82], true),
-        ([-0.46, 0.19, rules::FRONT_AXLE_Z], [0.85, 0.82, 0.82], true),
-        // Rear-Left & Rear-Right
-        ([0.50, 0.21, rules::REAR_AXLE_Z], [1.02, 0.92, 0.92], false),
-        ([-0.50, 0.21, rules::REAR_AXLE_Z], [1.02, 0.92, 0.92], false),
+        (
+            [rules::FRONT_TRACK_HALF_X, rules::FRONT_HUB_Y, rules::FRONT_AXLE_Z],
+            rules::FRONT_WHEEL_SCALE,
+            true,
+        ),
+        (
+            [-rules::FRONT_TRACK_HALF_X, rules::FRONT_HUB_Y, rules::FRONT_AXLE_Z],
+            rules::FRONT_WHEEL_SCALE,
+            true,
+        ),
+        // Rear-Left & Rear-Right (staggered wider rear track!)
+        (
+            [rules::REAR_TRACK_HALF_X, rules::REAR_HUB_Y, rules::REAR_AXLE_Z],
+            rules::REAR_WHEEL_SCALE,
+            false,
+        ),
+        (
+            [-rules::REAR_TRACK_HALF_X, rules::REAR_HUB_Y, rules::REAR_AXLE_Z],
+            rules::REAR_WHEEL_SCALE,
+            false,
+        ),
     ];
 
-    for (offset, wscale, is_front) in wheel_mounts {
-        draw.push();
-        draw.translate([offset[0] - 0.5, offset[1] - 0.5, offset[2] - 0.5]);
-        if is_front {
-            draw.rotate_about([0.0, 1.0, 0.0], kart.steer_deg, [0.5, 0.5, 0.5]);
-        }
+    for (pivot, wscale, is_front) in wheel_mounts {
         let spin_now = if is_front && kart.burnout {
             kart.wheel_rot_deg
         } else {
             wheel_spin
         };
-        draw.rotate_about([1.0, 0.0, 0.0], spin_now, [0.5, 0.5, 0.5]);
-        // Scale around wheel center [0.5, 0.5, 0.5]
-        draw.translate([0.5, 0.5, 0.5]);
-        draw.scale(wscale);
-        draw.translate([-0.5, -0.5, -0.5]);
-        game.native_draw_model(draw, wheel_model, 0xFFFFFF);
-        draw.pop();
+        if is_front {
+            draw_part_at_pivot(
+                draw,
+                wheel_model,
+                pivot,
+                &[([0.0, 1.0, 0.0], kart.steer_deg), ([1.0, 0.0, 0.0], spin_now)],
+                wscale,
+                0xFFFFFF,
+            );
+        } else {
+            draw_part_at_pivot(
+                draw,
+                wheel_model,
+                pivot,
+                &[([1.0, 0.0, 0.0], spin_now)],
+                wscale,
+                0xFFFFFF,
+            );
+        }
+    }
+
+    // 2. Sprung Chassis Assembly (subtle cornering body roll & turbo boost squat relative to wheels!)
+    draw.push();
+    let roll_deg = if kart.drifting {
+        -kart.steer_deg * 0.16
+    } else {
+        -kart.steer_deg * 0.06 * (kart.speed_kmh / 60.0).min(1.0)
+    };
+    let pitch_deg: f32 = if kart.boosting { -1.8 } else { 0.0 };
+    if roll_deg.abs() > 0.04 {
+        draw.rotate_about([0.0, 0.0, 1.0], roll_deg, [0.0, 0.20, 0.0]);
+    }
+    if pitch_deg.abs() > 0.04 {
+        draw.rotate_about([1.0, 0.0, 0.0], pitch_deg, [0.0, 0.20, rules::REAR_AXLE_Z]);
+    }
+
+    // 2a. Tubular Spaceframe, Sculpted Nose, Pontoons, Pedals, Bucket Seat & Live Rear Axle
+    // Authored around (8, 0, 8) -> translate([-0.5, 0.0, -0.5]) maps model Y=0 directly to Y=0!
+    draw.push();
+    draw.translate([-0.5, 0.0, -0.5]);
+    game.native_draw_model(draw, rules::MODEL_BODY, kart.spec.paint.rgb());
+    draw.pop();
+
+    // 2b. Coaxial +35.0 deg 3-Spoke Sport Steering Wheel (spins purely around tilted shaft Z!)
+    draw_part_at_pivot(
+        draw,
+        rules::MODEL_STEERING,
+        rules::STEER_PIVOT,
+        &[
+            ([1.0, 0.0, 0.0], rules::STEER_TILT_DEG),
+            ([0.0, 0.0, 1.0], -kart.steer_deg * 2.0),
+        ],
+        rules::STEER_SCALE,
+        0xFFFFFF,
+    );
+
+    // 2c. Rear Racing Small Engine (Iron / Gold / Diamond) flush on rear engine deck
+    if let Some(engine_model) = kart.spec.engine.model_id() {
+        let vib = if kart.speed_kmh > 0.5 || kart.burnout {
+            (mob.age * 1.85).sin() * 0.004
+        } else {
+            (mob.age * 0.7).sin() * 0.0015
+        };
+        let ep = rules::ENGINE_PIVOT;
+        draw_part_at_pivot(
+            draw,
+            engine_model,
+            [ep[0] + vib, ep[1], ep[2]],
+            &[],
+            rules::ENGINE_SCALE,
+            0xFFFFFF,
+        );
     }
 
     draw.pop();
+}
+
+// ---------------------------------------------------------------------------
+// Ergonomic Low-Slung Go-Kart Bucket Seat Rider Positioning (`mounts` & `passengers`)
+// ---------------------------------------------------------------------------
+
+fn is_kart_entity(game: &Game<'_>, entity_id: u32) -> bool {
+    {
+        let c = lock(&CLIENT);
+        if c.karts.contains_key(&entity_id) {
+            return true;
+        }
+    }
+    game.native_entity(entity_id)
+        .and_then(|e| game.native_entity_tags(e))
+        .is_some_and(|tags| tags.iter().any(|t| t == rules::ENTITY_TAG))
+}
+
+pub(in crate::game) fn position_rider(game: &mut Game<'_>) -> ControlFlow<()> {
+    if !game.native_on(rules::ID) {
+        return ControlFlow::Continue(());
+    }
+    let Some(ride_id) = game.riding else {
+        return ControlFlow::Continue(());
+    };
+    if !is_kart_entity(game, ride_id) {
+        return ControlFlow::Continue(());
+    }
+    let Some(m) = game.mobs.iter().find(|m| m.id == ride_id && !m.removed) else {
+        return ControlFlow::Continue(());
+    };
+    let at = mob_riders::seat(
+        [
+            0.0,
+            f64::from(rules::SEAT_ATTACH_Y),
+            f64::from(rules::SEAT_OFFSET_Z),
+        ],
+        f64::from(0.6_f32),
+        m.position,
+        m.yaw,
+    );
+    let first = game.posed_rider != game.riding;
+    game.posed_rider = game.riding;
+    if let Some(p) = game.player.as_mut() {
+        game.previous_position = if first { at } else { p.position };
+        p.position = at;
+        p.velocity = horizon_core::geometry::Vec3::ZERO;
+        p.fall_distance = 0.0;
+    }
+    ControlFlow::Break(())
+}
+
+pub(in crate::game) fn position_riders_post(game: &mut Game<'_>) {
+    if !game.native_on(rules::ID) {
+        return;
+    }
+    let attach = [
+        0.0,
+        f64::from(rules::SEAT_ATTACH_Y),
+        f64::from(rules::SEAT_OFFSET_Z),
+    ];
+    for i in 0..game.mobs.len() {
+        let Some(v) = game.mobs[i].extra.mount else {
+            continue;
+        };
+        if !is_kart_entity(game, v) {
+            continue;
+        }
+        let Some(v_idx) = game.mobs.iter().position(|m| m.id == v) else {
+            continue;
+        };
+        if v_idx == i {
+            continue;
+        }
+        let (pos, prev, yaw, prev_yaw, v_width) = {
+            let veh = &game.mobs[v_idx];
+            (
+                veh.position,
+                veh.previous,
+                veh.yaw,
+                veh.previous_yaw,
+                veh.width(),
+            )
+        };
+        let m = &mut game.mobs[i];
+        let offset = mob_riders::vehicle_attachment(m, v_width);
+        m.position = mob_riders::seat(attach, offset, pos, yaw);
+        m.previous = mob_riders::seat(attach, offset, prev, prev_yaw);
+    }
 }
 
 // ---------------------------------------------------------------------------
