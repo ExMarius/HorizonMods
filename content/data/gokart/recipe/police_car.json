@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "transportation",
+  "pattern": [
+    "RLB",
+    "III",
+    "WEW"
+  ],
+  "key": {
+    "R": "minecraft:redstone",
+    "L": "minecraft:leather",
+    "B": "minecraft:lapis_lazuli",
+    "I": "minecraft:iron_ingot",
+    "W": "gokart:racing_wheel",
+    "E": "gokart:small_engine_diamond"
+  },
+  "result": {
+    "id": "gokart:police_car",
+    "count": 1
+  }
+}

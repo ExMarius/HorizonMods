@@ -1,6 +1,6 @@
-# Horizon Vehicles: Go-Kart, Quad Bike ATV & 4x4 Off-Roader (`gokart_native` v0.6.0)
+# Horizon Vehicles: Go-Kart, ATV Quad Bike, 4x4 Off-Roader & Poliția Română (`gokart_native` v0.8.0)
 
-Mod nativ complet de **Vehicule 3D (Go-Kart full-size & 4x4 Off-Roader)** pentru **Horizon 26.3 (Launcher `0.2.69+` / Nightly)**, inspirat din celebrul [MrCrayfish's Vehicle Mod](https://github.com/MrCrayfish/MrCrayfishVehicleMod) (implementare și design 100% originale, compatibile GPL-3.0).
+Mod nativ **FiveM-style de Vehicule 3D** pentru **Horizon 26.3 (Launcher `0.2.69+` / Nightly)**: **Go-Kart**, **ATV Quad Bike**, **Off-Roader 4x4** și **Autospecială Poliția Română** (cu girofar Red/Blue dinamic + sirenă pe tasta `[H]`, faruri reale `minecraft:light` care se aprind automat noaptea în fața mașinii, categorie dedicată **Horizon Vehicles** în Creative Inventory și modele 3D multi-material verificate fără z-fighting).
 
 Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: conține atât codul nativ Rust (fizică pe două punți la 20 TPS, drift, charge-boost, tracțiune 4x4 off-road, HUD cu vitezometru analogic + digital, Garaj interactiv de tuning, cameră inteligentă Chase + Free-Look și IK în timp real pentru mâinile șoferului pe volan), cât și pachetul de resurse încorporat (`gokart-content.hmod` cu modele 3D, texturi pixel-art originale, sunete OGG Vorbis sintetizate, rețete Survival și localizare completă în **Română `ro_ro`** și **Engleză `en_us`**).
 
@@ -60,12 +60,13 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
 
 ---
 
-## Comenzi Rapide
+## Comenzi Rapide (`/vehicle` sau `/gokart`)
 
-- `/gokart kit` *(OP / Singleplayer Cheats)* — Oferă pachetul complet de testare (**Go-Kart**, **4x4 Off-Roader**, motoare Aur/Diamant, roți Sport/Racing, Cheie Mecanică, Canistră plină și vopsele).
-- `/gokart spawn` sau `/gokart spawn off_roader` *(OP)* — Spawnează instant un Go-Kart sau un 4x4 Off-Roader în fața jucătorului.
-- `/gokart fuel` *(OP)* — Comută între consum normal de combustibil și **Combustibil Infinit**.
-- `/gokart paint <culoare>` — Vopsește vehiculul curent/apropiat (`red`, `green`, `blue`, `yellow`, `orange`, `lime`, `cyan`, `black`, `white` etc.).
+- `/vehicle kit` *(OP / Singleplayer Cheats)* — Oferă pachetul complet (**Go-Kart**, **ATV Quad Bike**, **4x4 Off-Roader**, **Autospecială Poliția Română**, motoare Aur/Diamant, roți Sport/Racing, Cheie Mecanică, Canistră plină și vopsele).
+- `/vehicle spawn [go_kart | quad_bike | off_roader | police]` *(OP)* — Spawnează instant vehiculul dorit în fața jucătorului.
+- `/vehicle remove` sau `/vehicle remove all` — Șterge vehiculul curent/cel mai apropiat (sau toate vehiculele din lume) și curăță instant blocurile de lumină.
+- `/vehicle fuel` *(OP)* — Comută între consum normal de combustibil și **Combustibil Infinit**.
+- `/vehicle paint <culoare>` — Vopsește vehiculul curent/apropiat (`red`, `green`, `blue`, `yellow`, `orange`, `lime`, `cyan`, `black`, `white` etc.).
 
 ---
 

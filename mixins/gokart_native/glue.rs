@@ -2,7 +2,7 @@
 // Connects pure-Rust vehicle physics/state (`crate::game::gokart`, runtime.rs)
 // to Horizon Nightly's stable native hook points.
 
-use crate::game::{Game, gokart as rules, perspective::CameraType};
+use crate::game::{Game, NativeBlockEdit, NativeBlockRun, gokart as rules, perspective::CameraType};
 use horizon_client::{
     hud::HudBatch,
     items::ItemStack,
@@ -19,7 +19,7 @@ use horizon_mods::content::{Item, Rarity};
 use horizon_world::nbt::{Compound, JavaString, Tag};
 use std::{
     any::Any,
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, BTreeSet, HashMap},
     fs,
     ops::ControlFlow,
     path::PathBuf,
@@ -47,6 +47,8 @@ struct ServerState {
     selected_kart: HashMap<u128, u32>,
     /// Position of each Go-Kart before `ai::tick` for wall-impact detection.
     pre_tick_pos: HashMap<u32, ([f64; 3], f32)>,
+    /// Currently placed nighttime `minecraft:light` blocks `(dimension, [x, y, z])`.
+    active_lights: BTreeSet<(String, [i32; 3])>,
 }
 
 #[derive(Default)]
@@ -216,6 +218,7 @@ fn server_state(game: &Game<'_>) -> Option<MutexGuard<'static, Option<ServerStat
         for (uuid, (dim, spec)) in saved.karts {
             by_uuid.insert(uuid, rules::KartRuntime::new(uuid, dim, spec));
         }
+        let active_lights: BTreeSet<(String, [i32; 3])> = saved.lights.into_iter().collect();
         *guard = Some(ServerState {
             dir,
             require_fuel: saved.require_fuel,
@@ -226,6 +229,7 @@ fn server_state(game: &Game<'_>) -> Option<MutexGuard<'static, Option<ServerStat
             inputs: HashMap::new(),
             selected_kart: HashMap::new(),
             pre_tick_pos: HashMap::new(),
+            active_lights,
         });
     }
     Some(guard)
@@ -238,6 +242,7 @@ fn flush_server_save(st: &mut ServerState) {
     let mut data = rules::SavedWorldData {
         require_fuel: st.require_fuel,
         karts: Default::default(),
+        lights: st.active_lights.iter().cloned().collect(),
     };
     for (&uuid, rt) in &st.by_uuid {
         data.karts.insert(uuid, (rt.dimension.clone(), rt.spec));
@@ -272,6 +277,7 @@ pub(in crate::game) fn items(items: &mut Vec<Item>) {
     push_item(items, rules::ITEM_GO_KART, 1, Rarity::Uncommon);
     push_item(items, rules::ITEM_OFF_ROADER, 1, Rarity::Rare);
     push_item(items, rules::ITEM_QUAD_BIKE, 1, Rarity::Uncommon);
+    push_item(items, rules::ITEM_POLICE_CAR, 1, Rarity::Epic);
     push_item(items, rules::ITEM_ENGINE_IRON, 1, Rarity::Common);
     push_item(items, rules::ITEM_ENGINE_GOLD, 1, Rarity::Uncommon);
     push_item(items, rules::ITEM_ENGINE_DIAMOND, 1, Rarity::Rare);
@@ -352,6 +358,9 @@ fn kart_summon_nbt(kind: rules::VehicleKind) -> Compound {
         rules::VehicleKind::QuadBike => {
             tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_QUAD_BIKE)));
         }
+        rules::VehicleKind::PoliceCar => {
+            tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_POLICE_CAR)));
+        }
         rules::VehicleKind::GoKart => {}
     }
     nbt.insert(JavaString::from("Tags"), Tag::List(tags));
@@ -405,6 +414,9 @@ fn prepare_kart_mob(game: &mut Game<'_>, entity_id: u32, yaw: f32, kind: rules::
             }
             rules::VehicleKind::QuadBike => {
                 game.native_entity_add_tag(eref, rules::ENTITY_TAG_QUAD_BIKE);
+            }
+            rules::VehicleKind::PoliceCar => {
+                game.native_entity_add_tag(eref, rules::ENTITY_TAG_POLICE_CAR);
             }
             rules::VehicleKind::GoKart => {}
         }
@@ -475,6 +487,11 @@ fn lookup_kart_uuid(
             .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_QUAD_BIKE))
         {
             rules::KartSpec::default_quad_bike()
+        } else if tags
+            .as_ref()
+            .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_POLICE_CAR))
+        {
+            rules::KartSpec::default_police_car()
         } else {
             rules::KartSpec::default()
         };
@@ -591,6 +608,10 @@ pub(in crate::game) fn use_item_on(
                 rules::VehicleKind::QuadBike => tr(
                     "gokart.msg.placed_quad_bike",
                     "Quad Bike ATV deployed! Right-click to ride, Wrench to tune.",
+                ),
+                rules::VehicleKind::PoliceCar => tr(
+                    "gokart.msg.placed_police_car",
+                    "Poliția Română Patrol Car deployed! Press [H] while driving for Siren & Girofar.",
                 ),
                 rules::VehicleKind::GoKart => tr(
                     "gokart.msg.placed",
@@ -1067,6 +1088,7 @@ pub(in crate::game) fn perform_command(
             make_kart_item(game, rules::KartSpec::default()),
             make_kart_item(game, rules::KartSpec::default_quad_bike()),
             make_kart_item(game, rules::KartSpec::default_off_roader()),
+            make_kart_item(game, rules::KartSpec::default_police_car()),
             stack_of(rules::ITEM_ENGINE_GOLD, 1),
             stack_of(rules::ITEM_ENGINE_DIAMOND, 1),
             stack_of(rules::ITEM_WHEEL_SPORTS, 1),
@@ -1082,7 +1104,7 @@ pub(in crate::game) fn perform_command(
         }
         let msg = tr(
             "gokart.msg.kit_given",
-            "Delivered Go-Kart, Quad Bike ATV & 4x4 Off-Roader Kit!",
+            "Delivered complete Go-Kart, ATV, 4x4 & Poliția Română Kit!",
         );
         game.native_tell(player.uuid, Text::literal(msg).with_color(text::GOLD));
         return;
@@ -1094,12 +1116,14 @@ pub(in crate::game) fn perform_command(
             rules::KartSpec::default_off_roader()
         } else if matches!(arg, "quad_bike" | "quadbike" | "quad" | "atv") {
             rules::KartSpec::default_quad_bike()
+        } else if matches!(arg, "police_car" | "policecar" | "police" | "politia" | "politie") {
+            rules::KartSpec::default_police_car()
         } else {
             rules::KartSpec::default()
         };
         let yaw_rad = player.yaw.to_radians();
         let dist = match spec.kind {
-            rules::VehicleKind::OffRoader => 3.2,
+            rules::VehicleKind::OffRoader | rules::VehicleKind::PoliceCar => 3.2,
             rules::VehicleKind::QuadBike => 2.5,
             rules::VehicleKind::GoKart => 2.4,
         };
@@ -1116,6 +1140,9 @@ pub(in crate::game) fn perform_command(
                 }
                 rules::VehicleKind::QuadBike => {
                     tr("gokart.msg.placed_quad_bike", "Quad Bike ATV deployed!")
+                }
+                rules::VehicleKind::PoliceCar => {
+                    tr("gokart.msg.placed_police_car", "Poliția Română Patrol Car deployed!")
                 }
                 rules::VehicleKind::GoKart => tr("gokart.msg.placed", "Go-Kart deployed!"),
             };
@@ -1156,7 +1183,7 @@ pub(in crate::game) fn perform_command(
     game.native_tell(
         player.uuid,
         Text::literal(
-            "/vehicle [remove | remove all | spawn [go_kart|quad_bike|off_roader] | pack | kit | fuel | paint <color>]",
+            "/vehicle [remove | remove all | spawn [go_kart|quad_bike|off_roader|police] | pack | kit | fuel | paint <color>]",
         )
         .with_color(text::YELLOW),
     );
@@ -1218,12 +1245,15 @@ fn find_rider_uuid(
         kart_pos[1] + f64::from(rules::VehicleKind::OffRoader.layout().seat_attach[1]) - 0.6;
     let seat_y_quad =
         kart_pos[1] + f64::from(rules::VehicleKind::QuadBike.layout().seat_attach[1]) - 0.6;
+    let seat_y_pol =
+        kart_pos[1] + f64::from(rules::VehicleKind::PoliceCar.layout().seat_attach[1]) - 0.6;
     players.iter().find_map(|p| {
         let dx = p.position[0] - kart_pos[0];
         let dz = p.position[2] - kart_pos[2];
         let dy_ok = (p.position[1] - seat_y_kart).abs() < 0.55
             || (p.position[1] - seat_y_off).abs() < 0.55
             || (p.position[1] - seat_y_quad).abs() < 0.55
+            || (p.position[1] - seat_y_pol).abs() < 0.55
             || (p.position[1] - seat_y_pig).abs() < 0.55;
         (dx * dx + dz * dz < 1.15 && dy_ok).then_some(p.uuid)
     })
@@ -1306,6 +1336,7 @@ pub(in crate::game) fn entity_tick_pre(
     let drifting = rt.drifting;
     let burnout = rt.burnout;
     let boosting = rt.boost_ticks > 0;
+    let siren_active = rt.spec.kind == rules::VehicleKind::PoliceCar && rt.siren_on;
     let fuel_changed = rt.spec.fuel_mb != prev_fuel;
     if fuel_changed {
         st.dirty = true;
@@ -1316,6 +1347,10 @@ pub(in crate::game) fn entity_tick_pre(
     game.native_entity_set_rotation(eref, outcome.yaw_deg, 0.0);
     game.native_entity_set_head_yaw(eref, outcome.yaw_deg);
     game.native_entity_set_velocity(eref, outcome.velocity);
+
+    if siren_active && tick_count.is_multiple_of(26) {
+        game.native_play_sound_in_place("gokart:siren", pos, SOUND_PLAYERS, 0.95, 1.0);
+    }
 
     // Exhaust, drift screech, engine rumble & turbo boost FX at exact 3D component coords!
     let yaw_rad = outcome.yaw_deg.to_radians();
@@ -1435,6 +1470,101 @@ pub(in crate::game) fn entity_tick_post(game: &mut Game<'_>, _dimension: &str, e
     }
 }
 
+fn sync_headlight_blocks(game: &mut Game<'_>, st: &mut ServerState) {
+    // Minecraft dusk/night is 12,500..=23,500 ticks on the 24,000-tick day cycle!
+    let tod = game.world.day_time.rem_euclid(24_000);
+    let overworld_night = (12_500..=23_500).contains(&tod);
+
+    let mut desired: BTreeSet<(String, [i32; 3])> = BTreeSet::new();
+    for (&eid, &uuid) in &st.id_to_uuid {
+        let Some(rt) = st.by_uuid.get(&uuid) else {
+            continue;
+        };
+        let night_here = overworld_night || rt.dimension != "minecraft:overworld";
+        if !night_here {
+            continue;
+        }
+        let Some(eref) = game.native_entity(eid) else {
+            continue;
+        };
+        let Some(pos) = game.native_entity_position(eref) else {
+            continue;
+        };
+        let yaw = game.native_entity_rotation(eref).map_or(0.0, |r| r[0]);
+        let yaw_rad = yaw.to_radians();
+        let fwd_x = f64::from(-yaw_rad.sin());
+        let fwd_z = f64::from(yaw_rad.cos());
+        let nose = f64::from(rt.spec.kind.layout().nose_light_dist);
+
+        // Project a real FiveM headlight cone (near bumper + road beam ahead)!
+        for d in [nose, nose + 2.1] {
+            let bx = (pos[0] + fwd_x * d).floor() as i32;
+            let by = (pos[1] + 0.65).floor() as i32;
+            let bz = (pos[2] + fwd_z * d).floor() as i32;
+            desired.insert((rt.dimension.clone(), [bx, by, bz]));
+        }
+    }
+
+    if desired == st.active_lights {
+        return;
+    }
+
+    // 1. Remove stale `minecraft:light` blocks (strictly filtered by `only = "minecraft:light"`!)
+    let mut to_clear: BTreeMap<String, Vec<NativeBlockRun>> = BTreeMap::new();
+    for (dim, pos) in &st.active_lights {
+        if !desired.contains(&(dim.clone(), *pos)) {
+            to_clear.entry(dim.clone()).or_default().push(NativeBlockRun {
+                x: pos[0],
+                y: pos[1],
+                z: pos[2],
+                height: 1,
+                surface: None,
+                block: 0,
+                only: Some(0),
+            });
+        }
+    }
+    for (dim, runs) in to_clear {
+        let edit = NativeBlockEdit {
+            palette: vec!["minecraft:air".into()],
+            filters: vec!["minecraft:light".into()],
+            runs,
+            neighbour_updates: true,
+            block_entities: Vec::new(),
+        };
+        let _ = game.native_edit_blocks(&dim, &edit);
+    }
+
+    // 2. Place new `minecraft:light[level=15]` blocks ONLY into `minecraft:air`!
+    let mut to_place: BTreeMap<String, Vec<NativeBlockRun>> = BTreeMap::new();
+    for (dim, pos) in &desired {
+        if !st.active_lights.contains(&(dim.clone(), *pos)) {
+            to_place.entry(dim.clone()).or_default().push(NativeBlockRun {
+                x: pos[0],
+                y: pos[1],
+                z: pos[2],
+                height: 1,
+                surface: None,
+                block: 0,
+                only: Some(0),
+            });
+        }
+    }
+    for (dim, runs) in to_place {
+        let edit = NativeBlockEdit {
+            palette: vec!["minecraft:light[level=15]".into()],
+            filters: vec!["minecraft:air".into()],
+            runs,
+            neighbour_updates: true,
+            block_entities: Vec::new(),
+        };
+        let _ = game.native_edit_blocks(&dim, &edit);
+    }
+
+    st.active_lights = desired;
+    st.dirty = true;
+}
+
 pub(in crate::game) fn server_tick(game: &mut Game<'_>, phase: ServerTickPhase) {
     if !matches!(phase, ServerTickPhase::ServerTickEnd { world_running: true })
         || !game.native_on(rules::ID)
@@ -1451,6 +1581,7 @@ pub(in crate::game) fn server_tick(game: &mut Game<'_>, phase: ServerTickPhase) 
     st.id_to_uuid.retain(|&id, _| game.native_entity(id).is_some());
 
     if st.tick.is_multiple_of(2) {
+        sync_headlight_blocks(game, st);
         broadcast_sync_now(game, st);
     }
     if st.tick.is_multiple_of(SAVE_INTERVAL_TICKS) {
@@ -1473,6 +1604,7 @@ fn broadcast_sync_now(game: &mut Game<'_>, st: &ServerState) {
                 drifting: rt.drifting,
                 burnout: rt.burnout,
                 boosting: rt.boost_ticks > 0,
+                siren_on: rt.siren_on,
             });
         }
     }
@@ -1503,6 +1635,7 @@ pub(in crate::game) fn player_logged_in(game: &mut Game<'_>, player: u128) {
                 drifting: false,
                 burnout: false,
                 boosting: false,
+                siren_on: rt.siren_on,
             });
         }
     }
@@ -1566,11 +1699,42 @@ pub(in crate::game) fn net_from_client(
 
     match action {
         rules::ACT_HORN => {
-            let sound_pos = target_arg
+            let kart_id = target_arg.or_else(|| closest_kart_id(game, st, &who, 5.0));
+            let sound_pos = kart_id
                 .and_then(|id| game.native_entity(id))
                 .and_then(|e| game.native_entity_position(e))
                 .unwrap_or(who.position);
-            game.native_play_sound_in_place("gokart:horn", sound_pos, SOUND_PLAYERS, 1.15, 1.0);
+            if let Some(kid) = kart_id
+                && let Some(&uuid) = st.id_to_uuid.get(&kid)
+                && let Some(rt) = st.by_uuid.get_mut(&uuid)
+                && rt.spec.kind == rules::VehicleKind::PoliceCar
+            {
+                rt.siren_on = !rt.siren_on;
+                let now_on = rt.siren_on;
+                if now_on {
+                    game.native_play_sound_in_place(
+                        "gokart:siren",
+                        sound_pos,
+                        SOUND_PLAYERS,
+                        1.0,
+                        1.0,
+                    );
+                    let txt = tr(
+                        "gokart.msg.siren_on",
+                        "Police Siren & Girofar: ON [H]",
+                    );
+                    game.native_action_bar(player, Text::literal(txt).with_color(text::AQUA));
+                } else {
+                    let txt = tr(
+                        "gokart.msg.siren_off",
+                        "Police Siren & Girofar: OFF",
+                    );
+                    game.native_action_bar(player, Text::literal(txt).with_color(text::GRAY));
+                }
+                broadcast_sync_now(game, st);
+            } else {
+                game.native_play_sound_in_place("gokart:horn", sound_pos, SOUND_PLAYERS, 1.15, 1.0);
+            }
         }
         rules::ACT_PICKUP_KART => {
             if let Some(kart_id) = target_arg.or_else(|| nearest_kart_id(game, st, &who, 6.0)) {
@@ -2117,6 +2281,7 @@ pub(in crate::game) fn mob_submit(
     let roll_mult = match kart.spec.kind {
         rules::VehicleKind::OffRoader => 1.75,
         rules::VehicleKind::QuadBike => 1.45,
+        rules::VehicleKind::PoliceCar => 1.30,
         rules::VehicleKind::GoKart => 1.0,
     };
     let roll_deg = if kart.drifting {
@@ -2132,6 +2297,7 @@ pub(in crate::game) fn mob_submit(
     let roll_center_y = match kart.spec.kind {
         rules::VehicleKind::OffRoader => 0.36,
         rules::VehicleKind::QuadBike => 0.30,
+        rules::VehicleKind::PoliceCar => 0.28,
         rules::VehicleKind::GoKart => 0.18,
     };
     if roll_deg.abs() > 0.04 {
@@ -2193,16 +2359,58 @@ pub(in crate::game) fn mob_submit(
         );
     }
 
-    // 2d. Tailgate-mounted Matching Spare Wheel on 4x4 Off-Roader!
+    // 2d. Tailgate-mounted Matching Spare Wheel on 4x4 Off-Roader (flush & dead straight on carrier!)
     if let Some(sp) = lay.spare_wheel_pivot {
         draw_part_at_pivot(
             draw,
             wheel_model,
             sp,
-            &[([0.0, 1.0, 0.0], 90.0), ([0.0, 0.0, 1.0], -10.0)],
+            &[([0.0, 1.0, 0.0], 90.0)],
             lay.spare_wheel_scale,
             0xFFFFFF,
         );
+    }
+
+    // 2e. FiveM Alternating Red & Blue Girofar + Grille Strobe Flashers on Poliția Română!
+    if kart.spec.kind == rules::VehicleKind::PoliceCar && kart.siren_on {
+        let phase = ((mob.age * 0.65) as i32).rem_euclid(2) == 0;
+        if phase {
+            // Left BLUE roof dome + Right BLUE grille strobe
+            draw_part_at_pivot(
+                draw,
+                rules::MODEL_SIREN_BLUE,
+                [6.2 / 16.0, 28.5 / 16.0, -2.1 / 16.0],
+                &[],
+                [1.42, 1.38, 1.42],
+                0xFFFFFF,
+            );
+            draw_part_at_pivot(
+                draw,
+                rules::MODEL_SIREN_BLUE,
+                [-3.4 / 16.0, 10.6 / 16.0, 32.8 / 16.0],
+                &[],
+                [0.65, 0.55, 0.45],
+                0xFFFFFF,
+            );
+        } else {
+            // Right RED roof dome + Left RED grille strobe
+            draw_part_at_pivot(
+                draw,
+                rules::MODEL_SIREN_RED,
+                [-6.2 / 16.0, 28.5 / 16.0, -2.1 / 16.0],
+                &[],
+                [1.42, 1.38, 1.42],
+                0xFFFFFF,
+            );
+            draw_part_at_pivot(
+                draw,
+                rules::MODEL_SIREN_RED,
+                [3.4 / 16.0, 10.6 / 16.0, 32.8 / 16.0],
+                &[],
+                [0.65, 0.55, 0.45],
+                0xFFFFFF,
+            );
+        }
     }
 
     draw.pop();
@@ -2301,6 +2509,8 @@ fn entity_vehicle_kind(game: &Game<'_>, entity_id: u32) -> Option<rules::Vehicle
         Some(rules::VehicleKind::OffRoader)
     } else if tags.iter().any(|t| t == rules::ENTITY_TAG_QUAD_BIKE) {
         Some(rules::VehicleKind::QuadBike)
+    } else if tags.iter().any(|t| t == rules::ENTITY_TAG_POLICE_CAR) {
+        Some(rules::VehicleKind::PoliceCar)
     } else {
         Some(rules::VehicleKind::GoKart)
     }
@@ -2845,7 +3055,10 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
         return;
     }
     match &*stack.item {
-        rules::ITEM_GO_KART | rules::ITEM_OFF_ROADER | rules::ITEM_QUAD_BIKE => {
+        rules::ITEM_GO_KART
+        | rules::ITEM_OFF_ROADER
+        | rules::ITEM_QUAD_BIKE
+        | rules::ITEM_POLICE_CAR => {
             let spec = read_kart_spec(game, stack);
             let eng = tr(spec.engine.lang_key(), spec.engine.slug());
             let whl = tr(spec.wheels.lang_key(), spec.wheels.slug());
@@ -2880,6 +3093,10 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
                 rules::VehicleKind::QuadBike => tr(
                     "gokart.tooltip.place_quad_bike",
                     "Right-click ground to deploy Quad Bike ATV (nimble 1-block trail climber!)",
+                ),
+                rules::VehicleKind::PoliceCar => tr(
+                    "gokart.tooltip.place_police_car",
+                    "Right-click ground to deploy Poliția Română Patrol Car ([H] toggles Siren & Girofar!)",
                 ),
                 rules::VehicleKind::GoKart => tr(
                     "gokart.tooltip.place_hint",

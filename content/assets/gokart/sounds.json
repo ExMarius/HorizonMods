@@ -58,5 +58,15 @@
         "stream": false
       }
     ]
+  },
+  "siren": {
+    "subtitle": "subtitles.gokart.siren",
+    "sounds": [
+      {
+        "name": "gokart:siren",
+        "attenuation_distance": 56,
+        "stream": false
+      }
+    ]
   }
 }

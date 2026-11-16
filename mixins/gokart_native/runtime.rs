@@ -9,8 +9,8 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.7.0";
-pub const DESCRIPTION: &str = "Realistic 3D Go-Kart, Quad Bike ATV & 4x4 Off-Roader inspired by MrCrayfish's Vehicle Mod: Creative Inventory Tab, /vehicle remove, multi-material 3D models, ATV handlebars, 16-color paint shop, drift + turbo boost.";
+pub const VERSION: &str = "0.8.0";
+pub const DESCRIPTION: &str = "FiveM-inspired 3D Vehicles for Horizon: Go-Kart, Quad Bike ATV, 4x4 Off-Roader & Romanian Police Car (Poliția Română) with dynamic night headlights, siren & flashing girofar, Creative Tab, and /vehicle remove.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
 pub const CLIENT_CONFIG_FILE: &str = "gokart-client.toml";
@@ -20,11 +20,13 @@ pub const SERVER_CONFIG_FILE: &str = "gokart-server.toml";
 pub const ENTITY_TAG: &str = "gokart_vehicle";
 pub const ENTITY_TAG_OFF_ROADER: &str = "gokart_off_roader";
 pub const ENTITY_TAG_QUAD_BIKE: &str = "gokart_quad_bike";
+pub const ENTITY_TAG_POLICE_CAR: &str = "gokart_police_car";
 
 // Custom items
 pub const ITEM_GO_KART: &str = "gokart:go_kart";
 pub const ITEM_OFF_ROADER: &str = "gokart:off_roader";
 pub const ITEM_QUAD_BIKE: &str = "gokart:quad_bike";
+pub const ITEM_POLICE_CAR: &str = "gokart:police_car";
 pub const ITEM_ENGINE_IRON: &str = "gokart:small_engine_iron";
 pub const ITEM_ENGINE_GOLD: &str = "gokart:small_engine_gold";
 pub const ITEM_ENGINE_DIAMOND: &str = "gokart:small_engine_diamond";
@@ -42,8 +44,11 @@ pub const COMP_JERRY_FUEL: &str = "gokart:jerry_fuel";
 pub const MODEL_BODY: &str = "gokart:block/go_kart_body";
 pub const MODEL_OFF_ROADER_BODY: &str = "gokart:block/off_roader_body";
 pub const MODEL_QUAD_BIKE_BODY: &str = "gokart:block/quad_bike_body";
+pub const MODEL_POLICE_CAR_BODY: &str = "gokart:block/police_car_body";
 pub const MODEL_STEERING: &str = "gokart:block/go_kart_steering_wheel";
 pub const MODEL_QUAD_HANDLEBARS: &str = "gokart:block/quad_handlebars";
+pub const MODEL_SIREN_RED: &str = "gokart:block/siren_red";
+pub const MODEL_SIREN_BLUE: &str = "gokart:block/siren_blue";
 pub const MODEL_WHEEL_STANDARD: &str = "gokart:block/wheel_standard";
 pub const MODEL_WHEEL_SPORTS: &str = "gokart:block/wheel_sports";
 pub const MODEL_WHEEL_RACING: &str = "gokart:block/wheel_racing";
@@ -51,12 +56,15 @@ pub const MODEL_ENGINE_IRON: &str = "gokart:block/engine_iron";
 pub const MODEL_ENGINE_GOLD: &str = "gokart:block/engine_gold";
 pub const MODEL_ENGINE_DIAMOND: &str = "gokart:block/engine_diamond";
 
-pub const STANDALONE_MODELS: [&str; 11] = [
+pub const STANDALONE_MODELS: [&str; 14] = [
     MODEL_BODY,
     MODEL_OFF_ROADER_BODY,
     MODEL_QUAD_BIKE_BODY,
+    MODEL_POLICE_CAR_BODY,
     MODEL_STEERING,
     MODEL_QUAD_HANDLEBARS,
+    MODEL_SIREN_RED,
+    MODEL_SIREN_BLUE,
     MODEL_WHEEL_STANDARD,
     MODEL_WHEEL_SPORTS,
     MODEL_WHEEL_RACING,
@@ -74,6 +82,7 @@ pub const CHAN_SYNC: &str = "gokart:sync";
 pub const KART_MAX_FUEL_MB: u32 = 2_000;
 pub const QUAD_BIKE_MAX_FUEL_MB: u32 = 3_000;
 pub const OFF_ROADER_MAX_FUEL_MB: u32 = 4_000;
+pub const POLICE_CAR_MAX_FUEL_MB: u32 = 4_500;
 pub const JERRY_MAX_FUEL_MB: u32 = 5_000;
 pub const JERRY_DEFAULT_FUEL_MB: u32 = 2_500;
 
@@ -102,10 +111,12 @@ pub const SEAT_ATTACH_Y: f32 = (3.30 * 1.14) / 16.0;   // 0.235125 b (3.76 tx cu
 pub const SEAT_OFFSET_Z: f32 = (-3.80 * 1.18) / 16.0;  // -0.28025 b (-4.484 tx, 18.9 tx legroom!)
 pub const MAX_STEER_DEG: f32 = 25.0;
 pub const STEP_HEIGHT: f64 = 0.625;
+pub const POLICE_CAR_STEP_HEIGHT: f64 = 0.75;
 pub const QUAD_BIKE_STEP_HEIGHT: f64 = 1.02;
 pub const OFF_ROADER_STEP_HEIGHT: f64 = 1.06;
 pub const DEFAULT_CAMERA_DISTANCE: f32 = 4.5;
 pub const QUAD_BIKE_CAMERA_DISTANCE: f32 = 4.9;
+pub const POLICE_CAR_CAMERA_DISTANCE: f32 = 6.0;
 pub const OFF_ROADER_CAMERA_DISTANCE: f32 = 6.4;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -114,6 +125,7 @@ pub enum VehicleKind {
     GoKart,
     OffRoader,
     QuadBike,
+    PoliceCar,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -140,6 +152,8 @@ pub struct VehicleLayout {
     pub spare_wheel_scale: [f32; 3],
     pub exhaust_offset_z: f32,
     pub exhaust_height_y: f32,
+    /// Forward offset in blocks from entity origin to front bumper nose (for nighttime `minecraft:light` beams).
+    pub nose_light_dist: f32,
     /// Rider seat attachment `[x, y, z]` in blocks (`+x` = vehicle left, `+y` = up, `+z` = forward).
     pub seat_attach: [f32; 3],
     pub leg_xrot: f32,
@@ -154,6 +168,7 @@ impl VehicleKind {
             Self::GoKart => 0,
             Self::OffRoader => 1,
             Self::QuadBike => 2,
+            Self::PoliceCar => 3,
         }
     }
 
@@ -161,6 +176,7 @@ impl VehicleKind {
         match code & 0x3 {
             1 => Self::OffRoader,
             2 => Self::QuadBike,
+            3 => Self::PoliceCar,
             _ => Self::GoKart,
         }
     }
@@ -170,13 +186,15 @@ impl VehicleKind {
             Self::GoKart => "go_kart",
             Self::OffRoader => "off_roader",
             Self::QuadBike => "quad_bike",
+            Self::PoliceCar => "police_car",
         }
     }
 
     pub fn from_slug(s: &str) -> Self {
         match s.trim() {
-            "off_roader" | "offroader" => Self::OffRoader,
+            "off_roader" | "offroader" | "4x4" | "jeep" => Self::OffRoader,
             "quad_bike" | "quadbike" | "atv" | "quad" => Self::QuadBike,
+            "police_car" | "policecar" | "police" | "politia" | "politie" => Self::PoliceCar,
             _ => Self::GoKart,
         }
     }
@@ -186,6 +204,7 @@ impl VehicleKind {
             ITEM_GO_KART => Some(Self::GoKart),
             ITEM_OFF_ROADER => Some(Self::OffRoader),
             ITEM_QUAD_BIKE => Some(Self::QuadBike),
+            ITEM_POLICE_CAR => Some(Self::PoliceCar),
             _ => None,
         }
     }
@@ -195,6 +214,7 @@ impl VehicleKind {
             Self::GoKart => ITEM_GO_KART,
             Self::OffRoader => ITEM_OFF_ROADER,
             Self::QuadBike => ITEM_QUAD_BIKE,
+            Self::PoliceCar => ITEM_POLICE_CAR,
         }
     }
 
@@ -203,6 +223,7 @@ impl VehicleKind {
             Self::GoKart => "gokart.vehicle.go_kart",
             Self::OffRoader => "gokart.vehicle.off_roader",
             Self::QuadBike => "gokart.vehicle.quad_bike",
+            Self::PoliceCar => "gokart.vehicle.police_car",
         }
     }
 
@@ -211,6 +232,7 @@ impl VehicleKind {
             Self::GoKart => KART_MAX_FUEL_MB,
             Self::QuadBike => QUAD_BIKE_MAX_FUEL_MB,
             Self::OffRoader => OFF_ROADER_MAX_FUEL_MB,
+            Self::PoliceCar => POLICE_CAR_MAX_FUEL_MB,
         }
     }
 
@@ -239,6 +261,7 @@ impl VehicleKind {
                 spare_wheel_scale: [1.0, 1.0, 1.0],
                 exhaust_offset_z: EXHAUST_OFFSET_Z,
                 exhaust_height_y: EXHAUST_HEIGHT_Y,
+                nose_light_dist: 1.85,
                 seat_attach: [0.0, SEAT_ATTACH_Y, SEAT_OFFSET_Z],
                 leg_xrot: -1.48,
                 max_steer_deg: MAX_STEER_DEG,
@@ -266,10 +289,11 @@ impl VehicleKind {
                 steer_grip_radius_tx: 3.58,
                 engine_pivot: None,
                 engine_scale: [1.0, 1.0, 1.0],
-                spare_wheel_pivot: Some([0.0, 14.6 / 16.0, -33.2 / 16.0]),
-                spare_wheel_scale: [1.26, 1.32, 1.32],
+                spare_wheel_pivot: Some([0.0, 14.8 / 16.0, -34.6 / 16.0]),
+                spare_wheel_scale: [1.24, 1.32, 1.32],
                 exhaust_offset_z: (-23.8 * 1.42) / 16.0,
                 exhaust_height_y: 0.34,
+                nose_light_dist: 2.35,
                 seat_attach: [6.816 / 16.0, 9.108 / 16.0, -3.550 / 16.0],
                 leg_xrot: -1.42,
                 max_steer_deg: 24.0,
@@ -300,11 +324,43 @@ impl VehicleKind {
                 spare_wheel_scale: [1.0, 1.0, 1.0],
                 exhaust_offset_z: (-18.5 * 1.24) / 16.0,
                 exhaust_height_y: 0.44,
+                nose_light_dist: 1.75,
                 seat_attach: [0.0, 9.40 / 16.0, -3.10 / 16.0],
                 leg_xrot: -1.16,
                 max_steer_deg: 28.0,
                 step_height: QUAD_BIKE_STEP_HEIGHT,
                 default_cam_dist: QUAD_BIKE_CAMERA_DISTANCE,
+            },
+            Self::PoliceCar => VehicleLayout {
+                body_model: MODEL_POLICE_CAR_BODY,
+                // 34.8 tx (2.17 b) wide x 66.4 tx (4.15 b) long Poliția Română patrol sedan!
+                body_scale: [1.38, 1.34, 1.40],
+                front_axle_z: (13.8 * 1.40) / 16.0, // +1.2075 b (+19.32 tx)
+                rear_axle_z: (-13.8 * 1.40) / 16.0, // -1.2075 b (-19.32 tx)
+                wheelbase: (27.6 * 1.40) / 16.0,    // 2.4150 b (38.64 tx)
+                front_track_half_x: 14.12 / 16.0,   // outer tire wall at ±17.38 tx == flush arch!
+                rear_track_half_x: 14.12 / 16.0,
+                front_hub_y: 0.340,                 // (4.0 / 16) * 1.36 -> flat on Y = 0.000!
+                rear_hub_y: 0.340,
+                front_wheel_scale: [1.36, 1.36, 1.36],
+                rear_wheel_scale: [1.36, 1.36, 1.36],
+                steer_model: MODEL_STEERING,
+                steer_pivot: [6.35 / 16.0, 15.40 / 16.0, 4.85 / 16.0],
+                steer_tilt_deg: 28.0,
+                steer_scale: [1.12, 1.12, 1.12],
+                steer_grip_radius_tx: 3.46,
+                engine_pivot: None,
+                engine_scale: [1.0, 1.0, 1.0],
+                spare_wheel_pivot: None,
+                spare_wheel_scale: [1.0, 1.0, 1.0],
+                exhaust_offset_z: (-23.6 * 1.40) / 16.0,
+                exhaust_height_y: 0.28,
+                nose_light_dist: 2.35,
+                seat_attach: [6.35 / 16.0, 7.24 / 16.0, -3.10 / 16.0],
+                leg_xrot: -1.44,
+                max_steer_deg: 25.0,
+                step_height: POLICE_CAR_STEP_HEIGHT,
+                default_cam_dist: POLICE_CAR_CAMERA_DISTANCE,
             },
         }
     }
@@ -896,11 +952,22 @@ impl KartSpec {
         }
     }
 
+    pub fn default_police_car() -> Self {
+        Self {
+            kind: VehicleKind::PoliceCar,
+            engine: EngineTier::Diamond,
+            wheels: WheelType::Racing,
+            paint: PaintColor::White,
+            fuel_mb: POLICE_CAR_MAX_FUEL_MB,
+        }
+    }
+
     pub fn default_for_kind(kind: VehicleKind) -> Self {
         match kind {
             VehicleKind::GoKart => Self::default(),
             VehicleKind::OffRoader => Self::default_off_roader(),
             VehicleKind::QuadBike => Self::default_quad_bike(),
+            VehicleKind::PoliceCar => Self::default_police_car(),
         }
     }
 
@@ -1019,6 +1086,8 @@ pub struct KartRuntime {
     pub drifting: bool,
     /// True while holding Throttle + Handbrake stationary burnout!
     pub burnout: bool,
+    /// True while FiveM-style emergency siren & flashing girofar are active (Police Car).
+    pub siren_on: bool,
     /// Fractional millibucket accumulator for smooth sub-mB fuel drain.
     pub fuel_accum: f32,
     /// Tick counter for sound / exhaust cadence.
@@ -1056,6 +1125,7 @@ impl KartRuntime {
             boost_power: 0.0,
             drifting: false,
             burnout: false,
+            siren_on: false,
             fuel_accum: 0.0,
             tick_count: 0,
         }
@@ -1169,6 +1239,13 @@ impl KartRuntime {
                 SurfaceKind::Dirt => 1.05,
                 SurfaceKind::Loose => 0.99,
                 SurfaceKind::Ice => 0.92,
+            }
+        } else if self.spec.kind == VehicleKind::PoliceCar {
+            match surface {
+                SurfaceKind::Road => 1.14,
+                SurfaceKind::Dirt => 0.98,
+                SurfaceKind::Loose => 0.84,
+                SurfaceKind::Ice => 0.90,
             }
         } else {
             self.spec.wheels.surface_speed_factor(surface)
@@ -1352,12 +1429,13 @@ pub struct ClientKartView {
     pub drifting: bool,
     pub burnout: bool,
     pub boosting: bool,
+    pub siren_on: bool,
 }
 
 /// Encodes `require_fuel` + a slice of `ClientKartView` into a compact binary frame.
 pub fn encode_sync_packet(require_fuel: bool, karts: &[ClientKartView]) -> Vec<u8> {
     let count = karts.len().min(255);
-    let mut out = Vec::with_capacity(2 + count * 16);
+    let mut out = Vec::with_capacity(2 + count * 17);
     out.push(u8::from(require_fuel));
     out.push(count as u8);
     for k in karts.iter().take(count) {
@@ -1377,7 +1455,8 @@ pub fn encode_sync_packet(require_fuel: bool, karts: &[ClientKartView]) -> Vec<u
         let flags = u8::from(k.drifting)
             | (u8::from(k.burnout) << 1)
             | (u8::from(k.boosting) << 2)
-            | ((k.spec.kind.code() & 0x3) << 3);
+            | ((k.spec.kind.code() & 0x3) << 3)
+            | (u8::from(k.siren_on) << 5);
         out.push(flags);
     }
     out
@@ -1424,6 +1503,7 @@ pub fn decode_sync_packet(data: &[u8]) -> Option<(bool, Vec<ClientKartView>)> {
             drifting: (flags & 1) != 0,
             burnout: (flags & 2) != 0,
             boosting: (flags & 4) != 0,
+            siren_on: (flags & 32) != 0,
         });
     }
     Some((require_fuel, karts))
@@ -1437,6 +1517,7 @@ pub fn decode_sync_packet(data: &[u8]) -> Option<(bool, Vec<ClientKartView>)> {
 pub struct SavedWorldData {
     pub require_fuel: bool,
     pub karts: BTreeMap<u128, (String, KartSpec)>,
+    pub lights: Vec<(String, [i32; 3])>,
 }
 
 impl Default for SavedWorldData {
@@ -1444,6 +1525,7 @@ impl Default for SavedWorldData {
         Self {
             require_fuel: true,
             karts: BTreeMap::new(),
+            lights: Vec::new(),
         }
     }
 }
@@ -1458,6 +1540,9 @@ impl SavedWorldData {
                 "kart={uuid:032x}|{dim}|{}\n",
                 spec.encode_component()
             ));
+        }
+        for (dim, [x, y, z]) in &self.lights {
+            out.push_str(&format!("light={dim}|{x},{y},{z}\n"));
         }
         out
     }
@@ -1481,6 +1566,19 @@ impl SavedWorldData {
                 if let Ok(uuid) = u128::from_str_radix(u_hex.trim(), 16) {
                     data.karts
                         .insert(uuid, (dim.trim().to_owned(), KartSpec::decode_component(spec_str)));
+                }
+            } else if let Some(rest) = line.strip_prefix("light=") {
+                if let Some((dim, coords)) = rest.split_once('|') {
+                    let mut c = coords.split(',');
+                    if let (Some(xs), Some(ys), Some(zs)) = (c.next(), c.next(), c.next())
+                        && let (Ok(x), Ok(y), Ok(z)) = (
+                            xs.trim().parse::<i32>(),
+                            ys.trim().parse::<i32>(),
+                            zs.trim().parse::<i32>(),
+                        )
+                    {
+                        data.lights.push((dim.trim().to_owned(), [x, y, z]));
+                    }
                 }
             }
         }
@@ -1744,6 +1842,7 @@ mod tests {
             drifting: true,
             burnout: false,
             boosting: true,
+            siren_on: true,
         }];
         let bytes = encode_sync_packet(false, &views);
         let (req_fuel, decoded) = decode_sync_packet(&bytes).expect("valid packet");
@@ -1752,11 +1851,12 @@ mod tests {
         assert_eq!(decoded[0].entity_id, 991);
         assert_eq!(decoded[0].spec, views[0].spec);
         assert!((decoded[0].steer_deg - (-14.5)).abs() < 0.05);
-        assert!(decoded[0].drifting && decoded[0].boosting && !decoded[0].burnout);
+        assert!(decoded[0].drifting && decoded[0].boosting && !decoded[0].burnout && decoded[0].siren_on);
 
         let mut world = SavedWorldData {
             require_fuel: false,
             karts: BTreeMap::new(),
+            lights: vec![("minecraft:overworld".into(), [12, 65, -8])],
         };
         world.karts.insert(
             0x1234_5678_9abc_def0_1122_3344_5566_7788,

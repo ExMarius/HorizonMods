@@ -274,6 +274,87 @@ def generate_vehicle_textures() -> None:
             pixels.append(c)
     write_png(bdir / "kart_spring.png", 16, 16, pixels)
 
+    # 2j. `police_side.png`: Poliția Română door livery (white top, blue/neon-lime Battenberg strip, navy band)
+    pixels = []
+    for y in range(16):
+        for x in range(16):
+            seam = x in (0, 15)
+            if seam:
+                c = (186, 194, 206, 255)
+            elif y <= 3:
+                c = (246, 249, 252, 255)
+            elif y in (4, 5, 6, 7):
+                # Iconic Romanian Police neon-yellow/lime & royal-blue Battenberg reflective checker!
+                chk = ((x // 3) + (y // 2)) % 2 == 0
+                c = (218, 248, 42, 255) if chk else (24, 78, 196, 255)
+            elif y == 8:
+                c = (248, 250, 252, 255)
+            elif 9 <= y <= 13:
+                c = (20, 58, 156, 255) if y < 12 else (15, 44, 124, 255)
+            else:
+                c = (32, 36, 44, 255)
+            pixels.append(c)
+    write_png(bdir / "police_side.png", 16, 16, pixels)
+
+    # 2k. `police_hood.png`: Poliția Română cobalt-blue hood/trunk shield with neon-yellow chevrons
+    pixels = []
+    for y in range(16):
+        for x in range(16):
+            dx = abs(x - 7.5)
+            chev = int(dx + y) % 4 in (0, 1) and y in (2, 3, 4, 11, 12)
+            if dx > 5.8:
+                c = (244, 247, 252, 255)
+            elif chev:
+                c = (226, 248, 46, 255)
+            elif dx > 4.6:
+                c = (250, 252, 255, 255)
+            else:
+                c = (22, 68, 178, 255) if y % 2 == 0 else (18, 56, 152, 255)
+            pixels.append(c)
+    write_png(bdir / "police_hood.png", 16, 16, pixels)
+
+    # 2l. `plate_ro.png`: Authentic EU / Romanian license plate (`RO` blue strip + crisp black digits)
+    pixels = []
+    for y in range(16):
+        for x in range(16):
+            border = x == 0 or x == 15 or y in (0, 1, 14, 15)
+            eu_strip = 1 <= x <= 3 and 2 <= y <= 13
+            eu_star = x == 2 and y in (4, 5)
+            ro_letters = y in (5, 6, 7, 8, 9, 10) and x in (5, 6, 8, 10, 12, 13) and not (y in (7, 8) and x == 10)
+            if border:
+                c = (26, 29, 36, 255)
+            elif eu_star:
+                c = (250, 214, 42, 255)
+            elif eu_strip:
+                c = (18, 68, 184, 255)
+            elif ro_letters:
+                c = (22, 24, 30, 255)
+            else:
+                c = (246, 248, 252, 255)
+            pixels.append(c)
+    write_png(bdir / "plate_ro.png", 16, 16, pixels)
+
+    # 2m. `siren_red.png` & `siren_blue.png`: Intense glowing emergency LED girofar domes!
+    for fname, core_col, mid_col, rim_col in [
+        ("siren_red.png",  (255, 228, 224), (255, 42, 42),  (178, 14, 22)),
+        ("siren_blue.png", (224, 246, 255), (36, 136, 255), (14, 62, 176)),
+    ]:
+        pixels = []
+        for y in range(16):
+            for x in range(16):
+                dx = abs(x - 7.5)
+                dy = abs(y - 7.5)
+                if x in (0, 15) or y in (0, 15):
+                    c = (*rim_col, 255)
+                elif dy <= 2.5 and dx <= 4.5:
+                    c = (*core_col, 255)
+                elif dy <= 5.0 and dx <= 6.0:
+                    c = (*mid_col, 255)
+                else:
+                    c = (*rim_col, 255)
+                pixels.append(c)
+        write_png(bdir / fname, 16, 16, pixels)
+
     # 3. `kart_seat.png`: Racing bucket seat upholstery (dark red-stitched charcoal leather)
     pixels = []
     for y in range(16):
@@ -467,6 +548,40 @@ def generate_item_textures() -> None:
         "................",
     ]
     grid_to_png(idir / "quad_bike.png", quad_art, quad_pal)
+
+    # 1d. Romanian Police Car (`Poliția Română`) item icon (`police_car.png`)
+    pol_pal = {
+        ".": T,
+        "K": (24, 26, 32, 255),
+        "G": (64, 68, 76, 255),
+        "S": (196, 204, 214, 255),
+        "W": (246, 249, 252, 255),
+        "B": (24, 72, 188, 255),
+        "L": (218, 248, 42, 255),
+        "R": (252, 46, 46, 255),
+        "C": (42, 148, 255, 255),
+        "A": (152, 214, 246, 255),
+        "Y": (255, 236, 128, 255),
+    }
+    pol_art = [
+        "................",
+        "......CCRR......",
+        "....WWWWWWWW....",
+        "...WWAAWWAAWW...",
+        "..WWWWWWWWWWWW..",
+        ".RWWWWWWWWWWWWY.",
+        ".WLBLBLBLBLBLBY.",
+        ".BBBBBBBBBBBBBB.",
+        ".GGGGGGGGGGGGGG.",
+        "..KKKK....KKKK..",
+        ".KGGGGK..KGGGGK.",
+        ".KGSSGK..KGSSGK.",
+        ".KGGGGK..KGGGGK.",
+        "..KKKK....KKKK..",
+        "................",
+        "................",
+    ]
+    grid_to_png(idir / "police_car.png", pol_art, pol_pal)
 
     # 2. Small Engines (`small_engine_iron.png`, `small_engine_gold.png`, `small_engine_diamond.png`)
     engine_tiers = [
@@ -683,13 +798,13 @@ def generate_models() -> None:
     # =========================================================================
     body_elements = [
         # --- A. Carbon-Fiber Floorpan & Tubular Chromoly Spaceframe ---
-        vbox(-6.2, 0.95, -6.4,  6.2, 1.85, 13.0, "#carbon"),
-        vbox( 5.2, 1.00, -17.6,  6.4, 2.40, 17.8, "#frame"),
-        vbox(-6.4, 1.00, -17.6, -5.2, 2.40, 17.8, "#frame"),
+        vbox(-6.2, 0.95, -6.38, 6.2, 1.84, 13.0, "#carbon"),
+        vbox( 5.2, 1.00, -17.55, 6.4, 2.40, 17.8, "#frame"),
+        vbox(-6.4, 1.00, -17.55,-5.2, 2.40, 17.8, "#frame"),
         # Tall protective footwell side tubs (keeps Steve's thighs & boots 100% inside the chassis!)
-        vbox( 5.3, 1.85,  4.8,  6.4, 5.10, 13.4, "#body", tint=True),
-        vbox(-6.4, 1.85,  4.8, -5.3, 5.10, 13.4, "#body", tint=True),
-        vbox(-5.6, 1.85, 12.2,  5.6, 5.40, 13.4, "#frame"),
+        vbox( 5.3, 2.42,  4.8,  6.38, 5.10, 12.18, "#body", tint=True),
+        vbox(-6.38,2.42,  4.8, -5.3,  5.10, 12.18, "#body", tint=True),
+        vbox(-5.6, 1.86, 12.2,  5.6,  5.40, 13.4, "#frame"),
 
         # --- B. Front Axle Beam, Kingpin Yokes, Steering Tie-Rods & Front Disc Brakes ---
         vbox(-7.8, 2.15, 10.6,  7.8, 3.25, 11.9, "#frame"),
@@ -727,8 +842,8 @@ def generate_models() -> None:
         vbox( 6.8, 1.75,  5.45, 11.2, 5.05, 6.10, "#grille", vrot=("y", -16.0, (9.0, 3.4, 4.9))),
         vbox(-11.2, 1.75, 5.45, -6.8, 5.05, 6.10, "#grille", vrot=("y",  16.0, (-9.0, 3.4, 4.9))),
         # Carbon lower aero skirts + tubular chrome side nerf bars
-        vbox( 11.85, 1.00, -5.8, 12.55, 1.95, 5.2, "#carbon"),
-        vbox(-12.55, 1.00, -5.8, -11.85, 1.95, 5.2, "#carbon"),
+        vbox( 12.22, 1.00, -5.8, 12.58, 1.95, 5.2, "#carbon"),
+        vbox(-12.58, 1.00, -5.8, -12.22, 1.95, 5.2, "#carbon"),
         vbox( 12.05, 2.35, -6.2, 12.60, 3.05, 5.4, "#chrome"),
         vbox(-12.60, 2.35, -6.2, -12.05, 3.05, 5.4, "#chrome"),
         vbox( 6.2, 1.70, -15.6,  6.9, 6.20, -6.0, "#frame"),
@@ -752,14 +867,14 @@ def generate_models() -> None:
         vbox(-1.1, 1.90,  8.6,  1.1, 3.90, 10.6, "#chrome"),
         vbox( 1.8, 1.85,  7.6,  3.8, 5.60,  8.5, "#chrome", vrot=("x", -18.0, (2.8, 2.0, 8.0))),
         vbox(-3.8, 1.85,  7.6, -1.8, 5.60,  8.5, "#chrome", vrot=("x", -18.0, (-2.8, 2.0, 8.0))),
-        vbox(-4.4, 1.85,  6.4,  4.4, 2.35,  7.2, "#frame"),
+        vbox(-4.4, 1.86,  7.65, 4.4, 2.35,  8.35, "#frame"),
 
         # --- G. Rear Drivetrain (Live Axle, Ventilated Brake Rotor, Chain Sprocket & FIA Rain Light!) ---
-        vbox(-6.0, 1.30, -17.6,  6.0, 2.45, -6.4, "#frame"),
-        vbox( 5.8, 2.20, -17.4,  7.8, 5.20, -14.8, "#body", tint=True),
-        vbox(-7.8, 2.20, -17.4, -5.8, 5.20, -14.8, "#body", tint=True),
-        vbox( 5.0, 1.90, -12.6,  6.4, 5.20, -10.2, "#frame"),
-        vbox(-6.4, 1.90, -12.6, -5.0, 5.20, -10.2, "#frame"),
+        vbox(-5.18, 1.30, -17.6,  5.18, 2.45, -6.4, "#frame"),
+        vbox( 5.8, 2.42, -17.4,  7.8, 5.20, -14.8, "#body", tint=True),
+        vbox(-7.8, 2.42, -17.4, -5.8, 5.20, -14.8, "#body", tint=True),
+        vbox( 5.0, 2.46, -12.6,  6.36, 5.20, -10.2, "#frame"),
+        vbox(-6.36,2.46, -12.6, -5.0,  5.20, -10.2, "#frame"),
         vbox(-8.8, 2.30, -12.0,  8.8, 3.40, -10.8, "#chrome"),
         # Left rear ventilated brake disc + red caliper; Right rear drive sprocket + carbon chain guard!
         vbox( 6.55, 1.35, -13.3, 7.15, 5.25, -9.5, "#chrome"),
@@ -900,19 +1015,20 @@ def generate_models() -> None:
     ]:
         w_elements = []
         for idx, ang in enumerate((0.0, 22.5, 45.0, 67.5)):
-            eps = 0.012 * idx
+            eps = 0.014 * idx
             r = None if ang == 0.0 else ("x", ang, [8.0, 8.0, 8.0])
             w_elements.append(
                 box([5.60 + eps, 4.00, 7.20], [10.40 - eps, 12.00, 8.80], "#tire", rot=r)
             )
             w_elements.append(
-                box([5.60 + eps, 7.20, 4.00], [10.40 - eps, 8.80, 12.00], "#tire", rot=r)
+                box([5.607 + eps, 7.20, 4.00], [10.393 - eps, 8.80, 12.00], "#tire", rot=r)
             )
         # Recessed dark tire sidewall ring (octagonal, R=2.95 tx, chord=1.22 tx -> true circle inside tire!)
-        for r_ang in (0.0, 45.0):
+        for idx_s, r_ang in enumerate((0.0, 45.0)):
+            eps_s = 0.010 * idx_s
             rr = None if r_ang == 0.0 else ("x", r_ang, [8.0, 8.0, 8.0])
-            w_elements.append(box([5.52, 5.05, 6.78], [10.48, 10.95, 9.22], "#tire", rot=rr))
-            w_elements.append(box([5.52, 6.78, 5.05], [10.48, 9.22, 10.95], "#tire", rot=rr))
+            w_elements.append(box([5.52 + eps_s, 5.05, 6.78], [10.48 - eps_s, 10.95, 9.22], "#tire", rot=rr))
+            w_elements.append(box([5.526 + eps_s, 6.78, 5.05], [10.474 - eps_s, 9.22, 10.95], "#tire", rot=rr))
         # True round 8-sided deep-dish alloy wheel rim (R=2.25 tx, chord=0.93 tx -> zero star spikes!)
         for idx_r, r_ang in enumerate((0.0, 45.0)):
             eps_r = 0.01 * idx_r
@@ -935,8 +1051,8 @@ def generate_models() -> None:
                     full_uv_faces=("west", "east"),
                 )
             )
-        # Center-lock chrome racing hub nut & inner spindle boss
-        w_elements.append(box([5.22, 7.20, 7.20], [10.78, 8.80, 8.80], "#chrome"))
+        # Center-lock chrome racing hub nut & inner spindle boss (strictly disjoint from 7.20..8.80 tire planes!)
+        w_elements.append(box([5.22, 7.24, 7.24], [10.78, 8.76, 8.76], "#chrome"))
         (mdir / f"{wname}.json").write_text(
             json.dumps(
                 {
@@ -974,7 +1090,7 @@ def generate_models() -> None:
             box([11.0, 4.3, 5.8], [11.8, 8.5, 10.0], "#engine"),
             box([11.75, 5.6, 7.1], [12.05, 7.2, 8.7], "#chrome"),
             # Right-side (-X) centrifugal clutch & chain guard aligned directly over right axle sprocket!
-            box([4.1, 3.8, 6.4], [5.0, 6.9, 9.9], "#chrome"),
+            box([4.1, 3.85, 6.4], [4.88, 6.9, 9.9], "#chrome"),
             # Top auxiliary fuel tank + chrome filler cap
             box([5.5, 8.8, 8.6], [10.5, 11.2, 11.4], "#frame"),
             box([7.3, 11.2, 9.4], [8.7, 11.8, 10.8], "#chrome"),
@@ -1022,145 +1138,168 @@ def generate_models() -> None:
 
     off_elements = [
         # --- Heavy 4x4 Ladder Chassis, Alloy Skidplate, Live Axles & Coil-Over Shocks (`#spring`) ---
-        obox([-6.6, 3.6, -22.2], [-4.8, 5.4, 22.2], "#frame"),
-        obox([ 4.8, 3.6, -22.2], [ 6.6, 5.4, 22.2], "#frame"),
-        obox([-6.6, 3.8,  20.0], [ 6.6, 5.6, 22.4], "#frame"),
-        obox([-6.6, 3.8, -22.4], [ 6.6, 5.6, -20.0], "#frame"),
-        obox([-6.4, 3.1,  18.0], [ 6.4, 5.0, 23.0], "#chrome", rot=("x", -18.0, [0.0, 4.1, 20.6])),
+        obox([-6.6, 3.6, -21.8], [-4.8, 5.35, 21.8], "#frame"),
+        obox([ 4.8, 3.6, -21.8], [ 6.6, 5.35, 21.8], "#frame"),
+        obox([-4.75, 3.8,  20.0], [ 4.75, 5.35, 21.8], "#frame"),
+        obox([-4.75, 3.8, -21.8], [ 4.75, 5.35, -20.0], "#frame"),
+        obox([-6.2, 3.0,  18.2], [ 6.2, 4.7, 22.8], "#chrome", rot=("x", -18.0, [0.0, 3.9, 20.5])),
         # Front & rear live axle tubes + differential pumpkins + Panhard track bars
-        obox([-10.4, 2.35,  13.95], [10.4, 3.30,  15.05], "#chrome"),
-        obox([ -2.3, 1.80,  13.30], [ 2.3, 4.10,  15.70], "#frame"),
-        obox([-10.4, 2.35, -15.05], [10.4, 3.30, -13.95], "#chrome"),
-        obox([ -2.3, 1.80, -15.70], [ 2.3, 4.10, -13.30], "#frame"),
-        obox([ -6.0, 3.10,  14.20], [ 6.0, 3.80,  14.85], "#frame", rot=("z",  5.0, [0.0, 3.45, 14.5])),
-        obox([ -6.0, 3.10, -14.85], [ 6.0, 3.80, -14.20], "#frame", rot=("z", -5.0, [0.0, 3.45, -14.5])),
+        obox([-10.4, 2.35,  13.95], [-2.35, 3.30,  15.05], "#chrome"),
+        obox([  2.35, 2.35, 13.95], [10.4,  3.30,  15.05], "#chrome"),
+        obox([ -2.3, 1.80,  13.30], [ 2.3,  4.10,  15.70], "#frame"),
+        obox([-10.4, 2.35, -15.05], [-2.35, 3.30, -13.95], "#chrome"),
+        obox([  2.35, 2.35,-15.05], [10.4,  3.30, -13.95], "#chrome"),
+        obox([ -2.3, 1.80, -15.70], [ 2.3,  4.10, -13.30], "#frame"),
         # Four long-travel helical coil-over shock absorbers (`#spring`)!
-        obox([ 7.15, 3.1,  13.85], [ 8.45, 9.9,  15.15], "#spring"),
-        obox([-8.45, 3.1,  13.85], [-7.15, 9.9,  15.15], "#spring"),
-        obox([ 7.15, 3.1, -15.15], [ 8.45, 9.9, -13.85], "#spring"),
-        obox([-8.45, 3.1, -15.15], [-7.15, 9.9, -13.85], "#spring"),
+        obox([ 7.15, 3.35,  13.85], [ 8.45, 9.9,  15.15], "#spring"),
+        obox([-8.45, 3.35,  13.85], [-7.15, 9.9,  15.15], "#spring"),
+        obox([ 7.15, 3.35, -15.15], [ 8.45, 9.9, -13.85], "#spring"),
+        obox([-8.45, 3.35, -15.15], [-7.15, 9.9, -13.85], "#spring"),
 
         # --- Wide Dual-Seat Cabin Floorpan, Rock-Slider Side Steps, Firewall & Center Console ---
-        obox([-10.8, 4.4, -8.8], [10.8, 5.4,  8.8], "#carbon"),
-        obox([-13.0, 4.1, -8.4], [-11.0, 5.2, 8.4], "#frame"),
-        obox([ 11.0, 4.1, -8.4], [ 13.0, 5.2, 8.4], "#frame"),
-        obox([-10.8, 5.4,  8.2], [10.8, 12.8, 9.2], "#frame"),
-        obox([-1.5, 5.4, -6.8], [1.5, 8.2,  7.6], "#carbon"),
-        obox([-0.4, 8.0,  1.2], [0.4, 11.0, 2.0], "#chrome", rot=("x", -12.0, [0.0, 8.0, 1.6])),
-        obox([-0.85, 10.8, 0.85], [0.85, 11.85, 2.35], "#seat", rot=("x", -12.0, [0.0, 8.0, 1.6])),
-        # 4WD low-range transfer case lever next to main shifter
-        obox([-1.25, 8.0, 2.6], [-0.75, 10.2, 3.1], "#chrome", rot=("x", -8.0, [-1.0, 8.0, 2.85])),
+        obox([-10.55, 4.4, -8.8], [10.55, 5.4,  8.15], "#carbon"),
+        obox([-13.0, 4.1, -8.4], [-11.0, 5.2, 8.2], "#frame"),
+        obox([ 11.0, 4.1, -8.4], [ 13.0, 5.2, 8.2], "#frame"),
+        obox([-10.55, 5.4,  8.2], [10.55, 9.75, 9.15], "#frame"),
+        obox([-1.45, 5.45, -6.8], [1.45, 8.2,  6.15], "#carbon"),
+        obox([-0.4, 8.25,  1.2], [0.4, 11.0, 2.0], "#chrome", rot=("x", -12.0, [0.0, 8.25, 1.6])),
+        obox([-0.85, 10.85, 0.85], [0.85, 11.85, 2.35], "#seat", rot=("x", -12.0, [0.0, 8.25, 1.6])),
+        obox([-1.25, 8.25, 2.6], [-0.75, 10.2, 3.1], "#chrome", rot=("x", -8.0, [-1.0, 8.25, 2.85])),
 
-        # --- Sculpted 4x4 Hood, 7-Slot Off-Road Grille (`#grille`), LED Headlights & Winch Bullbar ---
-        obox([-8.2,  5.6,  8.8], [ 8.2, 12.2, 22.0], "#body", tint=0),
-        obox([-7.8, 12.2,  8.8], [ 7.8, 13.4, 21.4], "#body", tint=0),
-        obox([-3.6, 13.3, 11.2], [ 3.6, 14.3, 19.4], "#carbon"),
-        obox([-3.0, 13.45, 19.1], [3.0, 14.15, 19.8], "#grille"),
+        # --- Sculpted 4x4 Hood, 7-Slot Grille, Unobstructed Headlights & Narrow Center Winch Bullbar! ---
+        obox([-8.2,  5.6,  9.2], [ 8.2, 12.2, 21.8], "#body", tint=0),
+        obox([-7.8, 12.25, 9.2], [ 7.8, 13.35, 21.4], "#body", tint=0),
+        obox([-3.6, 13.4, 11.2], [ 3.6, 14.25, 19.0], "#carbon"),
+        obox([-3.0, 13.45, 19.05], [3.0, 14.15, 19.65], "#grille"),
         # Honeycomb radiator backing + 6 painted vertical slats = authentic 7-slot off-road fascia!
-        obox([-7.8,  6.2, 21.85], [ 7.8, 12.0, 22.45], "#grille"),
-        obox([ -3.75, 6.5, 22.25], [-3.15, 11.7, 22.65], "#body", tint=0),
-        obox([ -2.35, 6.5, 22.25], [-1.75, 11.7, 22.65], "#body", tint=0),
-        obox([ -0.95, 6.5, 22.25], [-0.35, 11.7, 22.65], "#body", tint=0),
-        obox([  0.35, 6.5, 22.25], [ 0.95, 11.7, 22.65], "#body", tint=0),
-        obox([  1.75, 6.5, 22.25], [ 2.35, 11.7, 22.65], "#body", tint=0),
-        obox([  3.15, 6.5, 22.25], [ 3.75, 11.7, 22.65], "#body", tint=0),
-        # Projector xenon/LED headlights (`#headlight`) + fender-flare amber turn signals (`#amber`)!
-        obox([ 4.3,  8.3, 22.15], [ 7.1, 11.1, 22.75], "#headlight", full_uv_faces=("south", "north")),
-        obox([-7.1,  8.3, 22.15], [-4.3, 11.1, 22.75], "#headlight", full_uv_faces=("south", "north")),
-        obox([ 8.4,  8.6, 21.25], [10.8, 10.2, 21.85], "#amber", full_uv_faces=("south", "north")),
-        obox([-10.8, 8.6, 21.25], [-8.4, 10.2, 21.85], "#amber", full_uv_faces=("south", "north")),
-        # Heavy steel front bumper, electric recovery winch drum (`#chrome`/`#carbon`) & red tow hooks!
-        obox([-11.8, 4.8, 22.0], [11.8,  6.9, 23.8], "#frame"),
-        obox([ -2.8, 5.3, 22.5], [ 2.8,  7.6, 23.95], "#carbon"),
-        obox([ -2.0, 5.7, 22.7], [ 2.0,  7.2, 24.00], "#chrome"),
-        obox([  6.6, 4.9, 23.4], [ 7.6,  6.5, 24.00], "#taillight"),
-        obox([ -7.6, 4.9, 23.4], [-6.6,  6.5, 24.00], "#taillight"),
-        obox([ -6.2, 6.9, 22.6], [-5.1, 12.6, 23.6], "#frame"),
-        obox([  5.1, 6.9, 22.6], [ 6.2, 12.6, 23.6], "#frame"),
-        obox([ -6.2, 11.6, 22.6], [6.2, 12.7, 23.6], "#frame"),
+        obox([-7.9,  6.95, 21.85], [ 7.9, 12.15, 22.35], "#grille"),
+        obox([ -3.75, 7.0, 22.36], [-3.15, 11.9, 22.62], "#body", tint=0),
+        obox([ -2.35, 7.0, 22.36], [-1.75, 11.9, 22.62], "#body", tint=0),
+        obox([ -0.95, 7.0, 22.36], [-0.35, 11.9, 22.62], "#body", tint=0),
+        obox([  0.35, 7.0, 22.36], [ 0.95, 11.9, 22.62], "#body", tint=0),
+        obox([  1.75, 7.0, 22.36], [ 2.35, 11.9, 22.62], "#body", tint=0),
+        obox([  3.15, 7.0, 22.36], [ 3.75, 11.9, 22.62], "#body", tint=0),
+        # 100% Unobstructed Projector Xenon/LED Headlights (`vx = ±4.5..±7.4`) + Amber Signals!
+        obox([ 4.5,  8.4, 22.36], [ 7.4, 11.2, 22.78], "#headlight", full_uv_faces=("south", "north")),
+        obox([-7.4,  8.4, 22.36], [-4.5, 11.2, 22.78], "#headlight", full_uv_faces=("south", "north")),
+        obox([ 8.4,  8.6, 21.65], [10.8, 10.2, 22.05], "#amber", full_uv_faces=("south", "north")),
+        obox([-10.8, 8.6, 21.65], [-8.4, 10.2, 22.05], "#amber", full_uv_faces=("south", "north")),
+        # Heavy steel front bumper + Romanian front plate + NARROW center winch hoop (`vx = ±3.0..±3.85`, NEVER over headlights!)
+        obox([-11.8, 4.8, 22.0], [11.8,  6.9, 23.6], "#frame"),
+        obox([ -2.6, 5.2, 23.62], [ 2.6,  7.3, 23.85], "#carbon"),
+        obox([ -1.8, 5.55, 23.86], [ 1.8, 6.95, 24.00], "#chrome"),
+        obox([  6.4, 5.0, 23.62], [ 7.4,  6.5, 24.00], "#taillight"),
+        obox([ -7.4, 5.0, 23.62], [-6.4,  6.5, 24.00], "#taillight"),
+        obox([ -3.85, 6.95, 22.85], [-3.00, 11.8, 23.55], "#frame"),
+        obox([  3.00, 6.95, 22.85], [ 3.85, 11.8, 23.55], "#frame"),
+        obox([ -3.85, 11.82, 22.85], [3.85, 12.6, 23.55], "#frame"),
 
-        # --- Sculpted Wheel Arches (`vz_m = ±9.0..±20.2`), Fender Flares (`vx_m = ±13.0`) & Half-Doors ---
-        obox([ 8.2, 10.6,  9.0], [13.0, 12.6, 20.2], "#body", tint=0),
-        obox([-13.0, 10.6, 9.0], [-8.2, 12.6, 20.2], "#body", tint=0),
-        obox([ 8.2,  5.6,  8.2], [12.6, 10.8,  9.4], "#body", tint=0),
-        obox([-12.6, 5.6,  8.2], [-8.2, 10.8,  9.4], "#body", tint=0),
-        obox([ 8.2,  6.4, 19.8], [12.2, 11.4, 21.6], "#body", tint=0),
-        obox([-12.2, 6.4, 19.8], [-8.2, 11.4, 21.6], "#body", tint=0),
-        # Half-doors with exterior door handles & carbon rub-strips
-        obox([ 10.6, 5.4, -8.8], [12.0, 11.8,  8.4], "#body", tint=0),
-        obox([-12.0, 5.4, -8.8], [-10.6, 11.8, 8.4], "#body", tint=0),
-        obox([ 11.85, 9.8, -5.8], [12.35, 10.6, -2.8], "#chrome"),
-        obox([-12.35, 9.8, -5.8], [-11.85, 10.6, -2.8], "#chrome"),
-        obox([ 11.85, 6.4, -8.2], [12.20,  7.4,  7.8], "#carbon"),
-        obox([-12.20, 6.4, -8.2], [-11.85, 7.4,  7.8], "#carbon"),
-        obox([ 9.6, 10.6, -20.2], [13.0, 12.6, -9.0], "#body", tint=0),
-        obox([-13.0, 10.6, -20.2], [-9.6, 12.6, -9.0], "#body", tint=0),
-        obox([ 9.6,  5.4, -22.0], [12.0, 13.0, -8.8], "#body", tint=0),
-        obox([-12.0, 5.4, -22.0], [-9.6, 13.0, -8.8], "#body", tint=0),
-        obox([-9.6,  5.4, -21.8], [ 9.6,  6.8, -8.8], "#carbon"),
-        obox([-11.2, 5.4, -22.4], [11.2, 12.8, -21.0], "#body", tint=0),
-        # Rear Ruby LED Brake/Taillights (`#taillight`), Amber Turn Signals (`#amber`) & Bumper!
-        obox([ 7.6,  8.6, -22.75], [10.6, 11.8, -22.15], "#taillight", full_uv_faces=("north", "south")),
-        obox([-10.6, 8.6, -22.75], [-7.6, 11.8, -22.15], "#taillight", full_uv_faces=("north", "south")),
-        obox([ 7.6,  6.8, -22.75], [10.6,  8.5, -22.15], "#amber", full_uv_faces=("north", "south")),
-        obox([-10.6, 6.8, -22.75], [-7.6,  8.5, -22.15], "#amber", full_uv_faces=("north", "south")),
-        obox([-11.8, 4.4, -23.6], [11.8,  6.2, -22.0], "#frame"),
-        obox([ 5.2, 3.5, -23.8], [ 6.6, 4.6, -21.4], "#chrome"),
-        obox([-6.6, 3.5, -23.8], [-5.2, 4.6, -21.4], "#chrome"),
+        # --- Disjoint Sculpted Front Fenders, Half-Doors & Redesigned Rear Bodywork (Zero Z-Fighting!) ---
+        obox([ 8.25, 10.8,  9.4], [13.0, 12.6, 20.0], "#body", tint=0),
+        obox([-13.0, 10.8,  9.4], [-8.25, 12.6, 20.0], "#body", tint=0),
+        obox([ 8.25,  5.6,  8.45], [12.6, 10.75, 9.38], "#body", tint=0),
+        obox([-12.6,  5.6,  8.45], [-8.25, 10.75, 9.38], "#body", tint=0),
+        obox([ 8.25,  6.4, 20.02], [12.2, 11.4, 21.6], "#body", tint=0),
+        obox([-12.2,  6.4, 20.02], [-8.25, 11.4, 21.6], "#body", tint=0),
+        # Half-doors with exterior chrome handles & carbon rub-strips
+        obox([ 10.6, 5.45, -8.8], [12.0, 11.8,  8.4], "#body", tint=0),
+        obox([-12.0, 5.45, -8.8], [-10.6, 11.8, 8.4], "#body", tint=0),
+        obox([ 12.02, 9.8, -5.8], [12.42, 10.6, -2.8], "#chrome"),
+        obox([-12.42, 9.8, -5.8], [-12.02, 10.6, -2.8], "#chrome"),
+        obox([ 12.02, 6.4, -8.2], [12.28,  7.4,  7.8], "#carbon"),
+        obox([-12.28, 6.4, -8.2], [-12.02, 7.4,  7.8], "#carbon"),
 
-        # --- Dashboard (`#dash`), Steering Pod, Cutout Glass Windshield (`#glass`) & Wing Mirrors! ---
-        obox([-10.6, 9.8,  6.2], [10.6, 13.6, 8.4], "#seat"),
-        obox([ 2.4, 13.2,  6.2], [ 7.2, 14.7, 8.3], "#carbon"),
-        obox([ 2.8, 13.3,  6.02], [ 6.8, 14.5, 6.32], "#dash", full_uv_faces=("north", "south")),
-        obox([-2.0, 10.6,  6.05], [ 2.0, 13.1, 6.40], "#grille"),
-        obox([-8.4, 12.0,  5.75], [-3.8, 12.6, 6.25], "#chrome"),
-        obox([ 4.2, 11.95, 3.13], [5.4, 13.15, 6.6], "#chrome", rot=("x", 32.0, [4.80, 12.54, 3.13])),
-        obox([ 3.1, 5.4,  6.8], [ 4.3, 7.9,  7.6], "#chrome", rot=("x", -20.0, [3.7, 5.4, 7.2])),
-        obox([ 5.3, 5.4,  6.8], [ 6.5, 7.9,  7.6], "#chrome", rot=("x", -20.0, [5.9, 5.4, 7.2])),
-        # Co-planar -18 deg slanted A-pillars, top windshield header, cutout safety glass & twin wipers!
-        obox([ 10.2, 13.0, 6.8], [11.6, 23.4, 8.0], "#body", tint=0, rot=("x", -18.0, [0.0, 13.2, 7.4])),
-        obox([-11.6, 13.0, 6.8], [-10.2, 23.4, 8.0], "#body", tint=0, rot=("x", -18.0, [0.0, 13.2, 7.4])),
-        obox([-11.6, 22.2, 6.8], [11.6, 23.5, 8.0], "#body", tint=0, rot=("x", -18.0, [0.0, 13.2, 7.4])),
-        obox([-10.2, 13.4, 7.18], [10.2, 22.3, 7.62], "#glass", rot=("x", -18.0, [0.0, 13.2, 7.4]), full_uv_faces=("south", "north")),
-        # Twin exterior windshield wiper blades + interior rearview mirror
-        obox([ 1.2, 13.6, 8.02], [ 7.8, 14.15, 8.32], "#frame", rot=("z",  10.0, [1.2, 13.8, 8.15])),
-        obox([-7.8, 13.6, 8.02], [-1.2, 14.15, 8.32], "#frame", rot=("z",  10.0, [-7.8, 13.8, 8.15])),
-        obox([-2.0, 20.6, 4.2], [ 2.0, 21.6, 4.9], "#frame"),
-        obox([-1.8, 20.7, 4.08], [1.8, 21.5, 4.25], "#chrome"),
-        # Left & right articulated exterior off-road wing mirrors!
-        obox([ 11.5, 14.0, 6.4], [13.2, 14.7, 7.1], "#frame"),
-        obox([ 12.8, 13.4, 6.0], [14.6, 16.2, 7.2], "#body", tint=0),
-        obox([ 12.9, 13.6, 5.88], [14.4, 16.0, 6.05], "#chrome"),
-        obox([-13.2, 14.0, 6.4], [-11.5, 14.7, 7.1], "#frame"),
-        obox([-14.6, 13.4, 6.0], [-12.8, 16.2, 7.2], "#body", tint=0),
-        obox([-14.4, 13.6, 5.88], [-12.9, 16.0, 6.05], "#chrome"),
+        # --- REDESIGNED Clean 4x4 Rear Quarter Panels, Tailgate, 3-Tier LED Lamps & Spare Carrier! ---
+        obox([ 10.6,  5.6, -21.0], [12.0, 12.8, -8.85], "#body", tint=0),
+        obox([-12.0,  5.6, -21.0], [-10.6, 12.8, -8.85], "#body", tint=0),
+        obox([ 12.02, 10.6, -20.0], [13.0, 12.6, -9.0], "#body", tint=0),
+        obox([-13.0,  10.6, -20.0], [-12.02, 12.6, -9.0], "#body", tint=0),
+        obox([ 12.02, 5.6, -21.0], [12.75, 10.55, -19.8], "#body", tint=0),
+        obox([-12.75, 5.6, -21.0], [-12.02, 10.55, -19.8], "#body", tint=0),
+        obox([-10.55, 5.4, -21.0], [10.55,  6.75, -8.85], "#carbon"),
+        # Sculpted Swing-Out Tailgate (`vx = -8.15..+8.15`) + Corner D-Pillar Lamp Pods (`±8.20..±10.55`)!
+        obox([-8.15,  5.8, -22.1], [ 8.15, 12.6, -21.05], "#body", tint=0),
+        obox([-3.8,   8.1, -22.25], [ 3.8, 12.1, -22.12], "#carbon"),
+        # Heavy chrome right-side tailgate hinges + left latch handle + Romanian License Plate (`#plate_ro`)!
+        obox([-8.0,  10.6, -22.35], [-6.2, 11.6, -22.12], "#chrome"),
+        obox([-8.0,   7.0, -22.35], [-6.2,  8.0, -22.12], "#chrome"),
+        obox([ 5.6,  10.4, -22.38], [ 7.7, 11.2, -22.12], "#chrome"),
+        obox([ 3.9,   6.2, -22.34], [ 7.9,  8.0, -22.12], "#plate_ro", full_uv_faces=("north", "south")),
+        # Heavy-Duty Steel A-Frame Spare-Tire Carrier bolted straight to center of tailgate!
+        obox([-2.4,   8.8, -23.15], [ 2.4, 11.8, -22.26], "#frame"),
+        obox([-1.1,   9.6, -23.85], [ 1.1, 11.2, -23.16], "#chrome"),
+        # Corner Vertical 3-Chamber LED Tail-Lamp Pillars (Top Ruby Brake, Mid Amber Turn, Bot White Reverse)!
+        obox([ 8.20,  5.8, -22.1], [10.58, 12.8, -21.05], "#body", tint=0),
+        obox([-10.58, 5.8, -22.1], [-8.20, 12.8, -21.05], "#body", tint=0),
+        obox([ 8.45, 10.0, -22.32], [10.35, 12.3, -22.12], "#taillight", full_uv_faces=("north", "south")),
+        obox([-10.35,10.0, -22.32], [-8.45, 12.3, -22.12], "#taillight", full_uv_faces=("north", "south")),
+        obox([ 8.45,  8.2, -22.32], [10.35,  9.9, -22.12], "#amber", full_uv_faces=("north", "south")),
+        obox([-10.35, 8.2, -22.32], [-8.45,  9.9, -22.12], "#amber", full_uv_faces=("north", "south")),
+        obox([ 8.45,  6.5, -22.32], [10.35,  8.1, -22.12], "#headlight", full_uv_faces=("north", "south")),
+        obox([-10.35, 6.5, -22.32], [-8.45,  8.1, -22.12], "#headlight", full_uv_faces=("north", "south")),
+        # Stepped Off-Road Rear Steel Bumper, Corner End-Caps, Tow Hitch, Red Shackles & Dual Exhaust!
+        obox([-10.6,  4.2, -23.3], [10.6,  5.75, -21.9], "#frame"),
+        obox([ 10.62, 4.3, -23.0], [12.3,  5.75, -21.4], "#frame"),
+        obox([-12.3,  4.3, -23.0], [-10.62, 5.75, -21.4], "#frame"),
+        obox([ -1.3,  3.3, -23.6], [ 1.3,  4.18, -22.2], "#carbon"),
+        obox([  5.8,  4.4, -23.65], [ 6.7, 5.55, -23.32], "#taillight"),
+        obox([ -6.7,  4.4, -23.65], [-5.8, 5.55, -23.32], "#taillight"),
+        obox([  7.4,  3.3, -23.5], [ 8.7,  4.18, -21.2], "#chrome"),
+        obox([ -8.7,  3.3, -23.5], [-7.4,  4.18, -21.2], "#chrome"),
 
-        # --- Full-Height Overhead Safari Roll Cage (`vy_m = 23.4 -> WY = 32.3 tx`) & 4 Halogen Roof Lamps ---
-        obox([ 10.2, 12.4, -8.8], [11.4, 23.4, -7.6], "#frame"),
-        obox([-11.4, 12.4, -8.8], [-10.2, 23.4, -7.6], "#frame"),
+        # --- Dashboard (`#dash`), Steering Pod & CRYSTAL-CLEAR Open-View Windshield Frame! ---
+        obox([-10.55, 9.8,  6.35], [10.55, 13.5, 8.4], "#seat"),
+        obox([ 2.4, 13.52,  6.35], [ 7.2, 14.7, 8.3], "#carbon"),
+        obox([ 2.8, 13.55,  6.02], [ 6.8, 14.55, 6.33], "#dash", full_uv_faces=("north", "south")),
+        obox([-2.0, 10.6,  6.02], [ 2.0, 13.1, 6.33], "#grille"),
+        obox([-8.4, 12.0,  5.75], [-3.8, 12.6, 6.33], "#chrome"),
+        obox([ 4.2, 11.95, 3.13], [5.4, 13.15, 6.3], "#chrome", rot=("x", 32.0, [4.80, 12.54, 3.13])),
+        obox([ 3.1, 5.45,  6.8], [ 4.3, 7.9,  7.6], "#chrome", rot=("x", -20.0, [3.7, 5.45, 7.2])),
+        obox([ 5.3, 5.45,  6.8], [ 6.5, 7.9,  7.6], "#chrome", rot=("x", -20.0, [5.9, 5.45, 7.2])),
+        # 100% Clear Open-View Windshield Frame (-18 deg slanted A-pillars + top visor + thin chrome seal, ZERO center obstruction!)
+        obox([ 10.2, 13.5, 6.8], [11.6, 22.2, 8.0], "#body", tint=0, rot=("x", -18.0, [0.0, 13.5, 7.4])),
+        obox([-11.6, 13.5, 6.8], [-10.2, 22.2, 8.0], "#body", tint=0, rot=("x", -18.0, [0.0, 13.5, 7.4])),
+        obox([-11.6, 22.22, 6.8], [11.6, 23.5, 8.0], "#body", tint=0, rot=("x", -18.0, [0.0, 13.5, 7.4])),
+        obox([-10.18, 21.75, 7.15], [10.18, 22.20, 7.65], "#carbon", rot=("x", -18.0, [0.0, 13.5, 7.4])),
+        obox([-10.18, 13.52, 7.20], [10.18, 13.84, 7.60], "#chrome", rot=("x", -18.0, [0.0, 13.5, 7.4])),
+        # Low-profile parked wipers at cowl base + high-mounted interior mirror + exterior wing mirrors!
+        obox([ 1.2, 13.55, 8.05], [ 7.8, 13.95, 8.32], "#frame", rot=("z",  4.0, [1.2, 13.7, 8.18])),
+        obox([-7.8, 13.55, 8.05], [-1.2, 13.95, 8.32], "#frame", rot=("z",  4.0, [-7.8, 13.7, 8.18])),
+        obox([-1.8, 21.1, 4.35], [ 1.8, 21.9, 4.85], "#frame"),
+        obox([-1.6, 21.2, 4.20], [ 1.6, 21.8, 4.34], "#chrome"),
+        obox([ 11.62, 14.0, 6.4], [12.78, 14.7, 7.1], "#frame"),
+        obox([ 12.80, 13.4, 6.0], [14.6, 16.2, 7.2], "#body", tint=0),
+        obox([ 12.90, 13.6, 5.86], [14.4, 16.0, 5.99], "#chrome"),
+        obox([-12.78, 14.0, 6.4], [-11.62, 14.7, 7.1], "#frame"),
+        obox([-14.6,  13.4, 6.0], [-12.80, 16.2, 7.2], "#body", tint=0),
+        obox([-14.4,  13.6, 5.86], [-12.90, 16.0, 5.99], "#chrome"),
+
+        # --- Full-Height Overhead Safari Roll Cage (`vy_m = 23.4`) & 4 Halogen Roof Lamps ---
+        obox([ 10.2, 12.85, -8.8], [11.4, 22.18, -7.6], "#frame"),
+        obox([-11.4, 12.85, -8.8], [-10.2, 22.18, -7.6], "#frame"),
         obox([-11.4, 22.2, -8.8], [11.4, 23.4, -7.6], "#frame"),
-        obox([ 10.2, 22.2, -8.8], [11.4, 23.3,  4.4], "#frame"),
-        obox([-11.4, 22.2, -8.8], [-10.2, 23.3, 4.4], "#frame"),
-        obox([ 10.2, 12.6, -20.6], [11.3, 22.8, -8.2], "#frame", rot=("x", 32.0, [10.7, 13.0, -20.0])),
-        obox([-11.3, 12.6, -20.6], [-10.2, 22.8, -8.2], "#frame", rot=("x", 32.0, [-10.7, 13.0, -20.0])),
-        obox([ 6.1, 23.1, 3.2], [ 8.7, 24.5, 5.0], "#frame"),
-        obox([ 6.3, 23.25, 4.85], [8.5, 24.35, 5.20], "#headlight", full_uv_faces=("south", "north")),
-        obox([ 1.7, 23.1, 3.2], [ 4.3, 24.5, 5.0], "#frame"),
-        obox([ 1.9, 23.25, 4.85], [4.1, 24.35, 5.20], "#headlight", full_uv_faces=("south", "north")),
-        obox([-4.3, 23.1, 3.2], [-1.7, 24.5, 5.0], "#frame"),
-        obox([-4.1, 23.25, 4.85], [-1.9, 24.35, 5.20], "#headlight", full_uv_faces=("south", "north")),
-        obox([-8.7, 23.1, 3.2], [-6.1, 24.5, 5.0], "#frame"),
-        obox([-8.5, 23.25, 4.85], [-6.3, 24.35, 5.20], "#headlight", full_uv_faces=("south", "north")),
+        obox([ 10.2, 22.2, -7.58], [11.4, 23.3,  3.8], "#frame"),
+        obox([-11.4, 22.2, -7.58], [-10.2, 23.3, 3.8], "#frame"),
+        obox([ 10.2, 12.85, -20.6], [11.3, 22.15, -8.85], "#frame", rot=("x", 32.0, [10.7, 13.0, -20.0])),
+        obox([-11.3, 12.85, -20.6], [-10.2, 22.15, -8.85], "#frame", rot=("x", 32.0, [-10.7, 13.0, -20.0])),
+        obox([ 6.1, 23.42, 3.2], [ 8.7, 24.6, 4.85], "#frame"),
+        obox([ 6.3, 23.50, 4.86], [8.5, 24.5, 5.18], "#headlight", full_uv_faces=("south", "north")),
+        obox([ 1.7, 23.42, 3.2], [ 4.3, 24.6, 4.85], "#frame"),
+        obox([ 1.9, 23.50, 4.86], [4.1, 24.5, 5.18], "#headlight", full_uv_faces=("south", "north")),
+        obox([-4.3, 23.42, 3.2], [-1.7, 24.6, 4.85], "#frame"),
+        obox([-4.1, 23.50, 4.86], [-1.9, 24.5, 5.18], "#headlight", full_uv_faces=("south", "north")),
+        obox([-8.7, 23.42, 3.2], [-6.1, 24.6, 4.85], "#frame"),
+        obox([-8.5, 23.50, 4.86], [-6.3, 24.5, 5.18], "#headlight", full_uv_faces=("south", "north")),
 
         # --- Full-Width Twin Front Bucket Seats (`vx_m = ±4.80`, 9.4 tx world wide each!) & Rear Bench ---
-        obox([ 1.5, 5.4, -5.6], [ 8.1,  6.7,  0.8], "#seat"),
-        obox([ 1.5, 6.5, -6.8], [ 8.1, 16.0, -5.2], "#seat", rot=("x", -8.0, [4.8, 6.7, -5.6])),
-        obox([ 2.7, 15.8, -7.0], [6.9, 18.4, -5.4], "#body", tint=0),
-        obox([-8.1, 5.4, -5.6], [-1.5,  6.7,  0.8], "#seat"),
-        obox([-8.1, 6.5, -6.8], [-1.5, 16.0, -5.2], "#seat", rot=("x", -8.0, [-4.8, 6.7, -5.6])),
-        obox([-6.9, 15.8, -7.0], [-2.7, 18.4, -5.4], "#body", tint=0),
-        obox([-9.0, 6.8, -17.6], [9.0,  8.8, -12.0], "#seat"),
-        obox([-9.0, 8.8, -19.0], [9.0, 15.6, -17.2], "#seat"),
+        obox([ 1.55, 5.45, -5.6], [ 8.1,  6.7,  0.8], "#seat"),
+        obox([ 1.55, 6.72, -6.8], [ 8.1, 15.8, -5.2], "#seat", rot=("x", -8.0, [4.8, 6.72, -5.6])),
+        obox([ 2.7, 15.85, -7.0], [6.9, 18.4, -5.4], "#body", tint=0),
+        obox([-8.1, 5.45, -5.6], [-1.55,  6.7,  0.8], "#seat"),
+        obox([-8.1, 6.72, -6.8], [-1.55, 15.8, -5.2], "#seat", rot=("x", -8.0, [-4.8, 6.72, -5.6])),
+        obox([-6.9, 15.85, -7.0], [-2.7, 18.4, -5.4], "#body", tint=0),
+        obox([-9.0, 6.8, -17.1], [9.0,  8.8, -12.0], "#seat"),
+        obox([-9.0, 8.82, -19.0], [9.0, 15.6, -17.2], "#seat"),
     ]
     (mdir / "off_roader_body.json").write_text(
         json.dumps(
@@ -1170,12 +1309,12 @@ def generate_models() -> None:
                     "frame": "gokart:block/kart_frame",
                     "carbon": "gokart:block/kart_carbon",
                     "grille": "gokart:block/kart_grille",
-                    "glass": "gokart:block/kart_glass",
                     "headlight": "gokart:block/kart_headlight",
                     "taillight": "gokart:block/kart_taillight",
                     "amber": "gokart:block/kart_amber",
                     "dash": "gokart:block/kart_dash",
                     "spring": "gokart:block/kart_spring",
+                    "plate_ro": "gokart:block/plate_ro",
                     "chrome": "gokart:block/kart_chrome",
                     "seat": "gokart:block/kart_seat",
                 },
@@ -1187,79 +1326,73 @@ def generate_models() -> None:
     )
 
     # =========================================================================
-    # 6. Trail Quad Bike / ATV Body (`quad_bike_body.json`) — Realistic 4x4 ATV!
+    # 6. Trail Quad Bike / ATV Body (`quad_bike_body.json`) — Clean Headlights & Zero Overlap!
     # =========================================================================
     quad_elements = [
         # --- Tubular Cradle Frame, Front Skidplate, Double-Wishbone A-Arms & Coilover Shocks! ---
         obox([-4.2, 3.2, -16.8], [ 4.2, 4.8, 17.2], "#frame"),
-        obox([-3.8, 2.8,  13.2], [ 3.8, 4.4, 18.8], "#chrome", rot=("x", -22.0, [0.0, 3.6, 16.0])),
-        # Front upper & lower double-wishbone A-arms (`vz = +11.5`) + steering tie-rods
-        obox([ 3.4, 2.55, 10.8], [ 9.2, 3.25, 12.2], "#frame"),
-        obox([-9.2, 2.55, 10.8], [-3.4, 3.25, 12.2], "#frame"),
-        obox([ 3.6, 4.35, 10.9], [ 8.8, 5.00, 12.1], "#frame", rot=("z", -8.0, [3.6, 4.7, 11.5])),
-        obox([-8.8, 4.35, 10.9], [-3.6, 5.00, 12.1], "#frame", rot=("z",  8.0, [-3.6, 4.7, 11.5])),
-        obox([-8.6, 2.95, 10.0], [ 8.6, 3.45, 10.5], "#chrome"),
-        # Angled front coil-over suspension shocks (`#spring`) leaning from lower A-arms to shock towers!
-        obox([ 6.0, 3.2, 10.95], [ 7.2, 9.6, 12.05], "#spring", rot=("z",  22.0, [6.6, 3.2, 11.5])),
-        obox([-7.2, 3.2, 10.95], [-6.0, 9.6, 12.05], "#spring", rot=("z", -22.0, [-6.6, 3.2, 11.5])),
-        # Rear tubular swingarm, solid rear axle + central angled monoshock (`#spring`)!
-        obox([-8.6, 2.35, -12.05], [8.6, 3.20, -10.95], "#chrome"),
-        obox([ 2.4, 2.7, -12.6], [ 3.6, 4.2, -5.2], "#frame"),
-        obox([-3.6, 2.7, -12.6], [-2.4, 4.2, -5.2], "#frame"),
-        obox([-0.85, 3.2, -11.6], [0.85, 8.4, -10.3], "#spring", rot=("x", 22.0, [0.0, 3.4, -11.0])),
+        obox([-3.6, 2.75, 13.4], [ 3.6, 4.2, 18.6], "#chrome", rot=("x", -22.0, [0.0, 3.5, 16.0])),
+        obox([ 4.22, 2.55, 10.8], [ 9.2, 3.25, 12.2], "#frame"),
+        obox([-9.2,  2.55, 10.8], [-4.22, 3.25, 12.2], "#frame"),
+        obox([ 4.22, 4.35, 10.9], [ 8.8, 5.00, 12.1], "#frame", rot=("z", -8.0, [4.22, 4.7, 11.5])),
+        obox([-8.8,  4.35, 10.9], [-4.22, 5.00, 12.1], "#frame", rot=("z",  8.0, [-4.22, 4.7, 11.5])),
+        obox([-8.6, 2.95,  9.95], [ 8.6, 3.45, 10.45], "#chrome"),
+        obox([ 6.0, 3.3, 10.95], [ 7.2, 9.55, 12.05], "#spring", rot=("z",  22.0, [6.6, 3.3, 11.5])),
+        obox([-7.2, 3.3, 10.95], [-6.0, 9.55, 12.05], "#spring", rot=("z", -22.0, [-6.6, 3.3, 11.5])),
+        obox([-8.6, 2.35, -12.05], [8.6, 3.16, -10.95], "#chrome"),
+        obox([ 2.4, 2.65, -12.6], [ 3.6, 3.22, -5.2], "#frame"),
+        obox([-3.6, 2.65, -12.6], [-2.4, 3.22, -5.2], "#frame"),
+        obox([-0.85, 3.25, -11.6], [0.85, 6.75, -10.3], "#spring", rot=("x", 22.0, [0.0, 3.4, -11.0])),
 
         # --- Exposed Single/V-Twin Trail Engine, Clutch Cover & Twin Carbon-Tipped Exhausts ---
-        obox([-3.7, 3.5, -4.6], [ 3.7, 6.6,  4.8], "#frame"),
-        obox([-3.2, 6.2, -2.4], [ 3.2, 9.2,  3.6], "#chrome", rot=("x", 12.0, [0.0, 6.4, 0.6])),
-        obox([ 3.55, 3.8, -2.8], [ 4.15, 6.3, 1.8], "#carbon"),
-        obox([-4.15, 3.8, -2.8], [-3.55, 6.3, 1.8], "#chrome"),
-        # Chrome exhaust header + twin under-rack carbon-fiber mufflers with chrome tips!
-        obox([ 2.6, 5.2, -12.4], [ 3.5, 6.2,  1.2], "#chrome"),
-        obox([ 2.1, 5.1, -18.4], [ 3.8, 6.8, -12.0], "#carbon"),
-        obox([-3.8, 5.1, -18.4], [-2.1, 6.8, -12.0], "#carbon"),
-        obox([ 2.35, 5.35, -19.0], [ 3.55, 6.55, -18.3], "#chrome"),
-        obox([-3.55, 5.35, -19.0], [-2.35, 6.55, -18.3], "#chrome"),
+        obox([-3.7, 4.82, -4.6], [ 3.7, 6.75,  3.15], "#frame"),
+        obox([-3.2, 6.78, -2.4], [ 3.2, 9.2,   2.8], "#chrome", rot=("x", 10.0, [0.0, 6.8, 0.2])),
+        obox([ 3.72, 4.85, -2.8], [ 4.25, 6.6, 1.8], "#carbon"),
+        obox([-4.25, 4.85, -2.8], [-3.72, 6.6, 1.8], "#chrome"),
+        obox([ 2.1, 5.1, -18.3], [ 3.8, 6.75, -12.0], "#carbon"),
+        obox([-3.8, 5.1, -18.3], [-2.1, 6.75, -12.0], "#carbon"),
+        obox([ 2.35, 5.35, -19.0], [ 3.55, 6.55, -18.32], "#chrome"),
+        obox([-3.55, 5.35, -19.0], [-2.35, 6.55, -18.32], "#chrome"),
 
         # --- Anti-Slip Footwells, Heel Guards, Sculpted Cowling & Billet Fuel Cap ---
-        obox([ 3.8, 3.6, -5.2], [11.0, 4.5,  5.4], "#carbon"),
-        obox([-11.0, 3.6, -5.2], [-3.8, 4.5, 5.4], "#carbon"),
-        obox([ 10.2, 4.5, -5.0], [11.2, 5.8, 5.2], "#frame"),
-        obox([-11.2, 4.5, -5.0], [-10.2, 5.8, 5.2], "#frame"),
-        obox([-4.8, 6.8,  3.2], [ 4.8, 12.2, 16.8], "#body", tint=0),
-        obox([-3.6, 12.0, 3.6], [ 3.6, 12.85, 9.8], "#body", tint=0),
-        obox([-1.0, 12.75, 4.2], [1.0, 13.35, 6.0], "#chrome"),
-        # Front Honeycomb Radiator Grille (`#grille`), Projector Headlights (`#headlight`), Amber & Winch!
-        obox([-4.4, 6.2, 16.4], [ 4.4, 11.4, 18.2], "#grille"),
-        obox([ 1.6, 8.4, 17.65], [ 4.3, 10.8, 18.65], "#headlight", full_uv_faces=("south", "north")),
-        obox([-4.3, 8.4, 17.65], [-1.6, 10.8, 18.65], "#headlight", full_uv_faces=("south", "north")),
-        obox([ 4.5, 8.8, 16.65], [ 6.4, 10.2, 17.35], "#amber", full_uv_faces=("south", "north")),
-        obox([-6.4, 8.8, 16.65], [-4.5, 10.2, 17.35], "#amber", full_uv_faces=("south", "north")),
-        obox([-6.8, 4.2, 17.6], [ 6.8,  6.2, 19.5], "#frame"),
-        obox([-2.0, 4.6, 18.2], [ 2.0,  6.3, 19.85], "#chrome"),
-        obox([-3.8, 6.2, 18.4], [ 3.8, 10.6, 19.3], "#frame"),
+        obox([ 4.25, 3.6, -4.95], [10.18, 4.5,  4.75], "#carbon"),
+        obox([-10.18, 3.6, -4.95], [-4.25, 4.5, 4.75], "#carbon"),
+        obox([ 10.2, 3.6, -4.95], [11.2, 5.8, 4.75], "#frame"),
+        obox([-11.2, 3.6, -4.95], [-10.2, 5.8, 4.75], "#frame"),
+        obox([-4.8, 6.8,  3.2], [ 4.8, 12.2, 16.4], "#body", tint=0),
+        obox([-3.6, 12.22, 3.6], [ 3.6, 12.85, 9.8], "#body", tint=0),
+        obox([-1.0, 12.87, 3.6], [1.0, 13.40, 5.2], "#chrome"),
+        # Front Honeycomb Radiator Grille + 100% Unobstructed Projector Headlights (`±1.85..±4.35`) & Narrow Center Hoop!
+        obox([-4.4, 6.2, 16.42], [ 4.4, 11.4, 17.8], "#grille"),
+        obox([ 1.85, 8.4, 17.82], [ 4.35, 10.8, 18.45], "#headlight", full_uv_faces=("south", "north")),
+        obox([-4.35, 8.4, 17.82], [-1.85, 10.8, 18.45], "#headlight", full_uv_faces=("south", "north")),
+        obox([ 4.85, 8.8, 16.82], [ 6.55, 10.1, 17.35], "#amber", full_uv_faces=("south", "north")),
+        obox([-6.55, 8.8, 16.82], [-4.85, 10.1, 17.35], "#amber", full_uv_faces=("south", "north")),
+        obox([-6.8, 4.2, 17.6], [ 6.8,  6.15, 19.3], "#frame"),
+        obox([-1.8, 4.55, 19.32], [ 1.8, 6.15, 19.90], "#chrome"),
+        obox([-1.55, 6.18, 18.45], [-1.00, 10.4, 19.15], "#frame"),
+        obox([ 1.00, 6.18, 18.45], [ 1.55, 10.4, 19.15], "#frame"),
+        obox([-1.55, 10.42, 18.45], [1.55, 11.0, 19.15], "#frame"),
 
-        # --- Flared Front & Rear Off-Road Mudguards, Cargo Racks, Saddle & Ruby Taillights! ---
-        obox([ 4.6, 9.6,  5.6], [11.5, 11.4, 16.8], "#body", tint=0),
-        obox([-11.5, 9.6, 5.6], [-4.6, 11.4, 16.8], "#body", tint=0),
-        obox([ 4.6, 5.2,  4.8], [11.2, 10.0,  6.2], "#body", tint=0),
-        obox([-11.2, 5.2, 4.8], [-4.6, 10.0,  6.2], "#body", tint=0),
-        obox([ 4.6, 9.6, -16.8], [11.5, 11.4, -5.4], "#body", tint=0),
-        obox([-11.5, 9.6, -16.8], [-4.6, 11.4, -5.4], "#body", tint=0),
-        obox([ 4.6, 5.2, -6.4], [11.2, 10.0, -5.0], "#body", tint=0),
-        obox([-11.2, 5.2, -6.4], [-4.6, 10.0, -5.0], "#body", tint=0),
-        obox([-5.0, 6.8, -16.8], [ 5.0, 11.2, -10.2], "#body", tint=0),
-        # Twin rear ruby LED brake/taillights (`#taillight`) + amber side reflectors!
-        obox([ 1.8, 8.2, -17.25], [ 4.6, 10.4, -16.55], "#taillight", full_uv_faces=("north", "south")),
-        obox([-4.6, 8.2, -17.25], [-1.8, 10.4, -16.55], "#taillight", full_uv_faces=("north", "south")),
-        # Front & rear tubular steel expedition cargo racks
-        obox([-8.6, 11.6, 10.4], [ 8.6, 12.5, 16.6], "#frame"),
-        obox([-8.6, 12.5, 15.6], [ 8.6, 13.4, 16.6], "#frame"),
-        obox([-8.6, 11.6, -16.8], [8.6, 12.5, -10.4], "#frame"),
-        obox([-8.6, 12.5, -16.8], [8.6, 13.7, -15.8], "#frame"),
-        # Contoured straddle saddle + +38 deg angled handlebar steering stem
-        obox([-3.8, 6.4, -10.4], [ 3.8,  7.85, 3.6], "#seat"),
-        obox([-3.4, 7.8, -10.8], [ 3.4, 10.2, -7.8], "#seat"),
-        obox([-1.4, 11.8, 4.8], [ 1.4, 13.6, 7.2], "#frame"),
+        # --- Disjoint Flared Front & Rear Mudguards, Cargo Racks, Saddle & Ruby Taillights! ---
+        obox([ 4.82, 9.6,  6.22], [11.5, 11.4, 16.8], "#body", tint=0),
+        obox([-11.5, 9.6,  6.22], [-4.82, 11.4, 16.8], "#body", tint=0),
+        obox([ 4.82, 5.2,  4.8], [11.2, 11.4,  6.2], "#body", tint=0),
+        obox([-11.2, 5.2,  4.8], [-4.82, 11.4, 6.2], "#body", tint=0),
+        obox([ 4.82, 9.6, -16.8], [11.5, 11.4, -6.42], "#body", tint=0),
+        obox([-11.5, 9.6, -16.8], [-4.82, 11.4, -6.42], "#body", tint=0),
+        obox([ 4.82, 5.2, -6.4], [11.2, 11.4, -5.0], "#body", tint=0),
+        obox([-11.2, 5.2, -6.4], [-4.82, 11.4, -5.0], "#body", tint=0),
+        obox([-4.8, 6.8, -16.8], [ 4.8, 11.2, -10.42], "#body", tint=0),
+        obox([ 1.8, 8.2, -17.30], [ 4.5, 10.4, -16.82], "#taillight", full_uv_faces=("north", "south")),
+        obox([-4.5, 8.2, -17.30], [-1.8, 10.4, -16.82], "#taillight", full_uv_faces=("north", "south")),
+        obox([-8.6, 12.25, 10.4], [ 8.6, 12.95, 16.6], "#frame"),
+        obox([-8.6, 12.97, 15.6], [ 8.6, 13.65, 16.6], "#frame"),
+        obox([-8.6, 11.6, -16.8], [8.6, 12.45, -10.45], "#frame"),
+        obox([-8.6, 12.47, -16.8], [8.6, 13.65, -15.8], "#frame"),
+        obox([-3.8, 6.8, -10.4], [ 3.8,  7.85, 3.18], "#seat"),
+        obox([-3.4, 7.87, -10.4], [ 3.4, 10.2, -7.8], "#seat"),
+        obox([-1.4, 12.87, 5.5], [ 1.4, 13.7, 7.5], "#frame"),
         obox([-0.6, 13.85, 3.95], [0.6, 15.0, 6.8], "#chrome", rot=("x", 38.0, [0.0, 14.43, 3.95])),
     ]
     (mdir / "quad_bike_body.json").write_text(
@@ -1284,6 +1417,170 @@ def generate_models() -> None:
         + "\n"
     )
 
+    # =========================================================================
+    # 7. Romanian Police Sedan (`police_car_body.json`) — Poliția Română FiveM!
+    # =========================================================================
+    # Authored with strictly non-overlapping intervals (zero z-fighting!), open-view
+    # windshields for 1st-person patrol driving, Battenberg blue/lime door livery,
+    # Romanian `RO` license plates, MDT police laptop, and Red/Blue roof Girofar!
+    police_elements = [
+        # --- A. Underbody Chassis Rails, Floorpan, Axles & Dual Exhaust ---
+        obox([-10.2, 2.8, -8.6], [10.2, 3.9,  8.6], "#carbon"),
+        obox([-6.4,  2.8,  8.62], [ 6.4, 3.9, 21.8], "#frame"),
+        obox([-6.4,  2.8, -21.8], [ 6.4, 3.9, -8.62], "#frame"),
+        obox([-9.8,  2.15,  13.25], [9.8, 3.05,  14.35], "#chrome"),
+        obox([-9.8,  2.15, -14.35], [9.8, 3.05, -13.25], "#chrome"),
+        obox([ 5.6,  2.3, -23.6], [ 7.2, 3.3, -21.4], "#chrome"),
+        obox([-7.2,  2.3, -23.6], [-5.6, 3.3, -21.4], "#chrome"),
+
+        # --- B. Sleek Front Bumper, Splitter, Romanian Plate, Sedan Grille & Xenon Headlights ---
+        obox([-12.2, 2.9, 22.0], [12.2, 6.2, 23.5], "#body", tint=0),
+        obox([-12.4, 2.4, 21.8], [12.4, 2.88, 23.8], "#carbon"),
+        obox([ -3.8, 3.3, 23.52], [ 3.8, 5.1, 23.82], "#plate_ro", full_uv_faces=("south", "north")),
+        obox([ -7.6, 3.3, 23.52], [-4.4, 4.9, 23.72], "#grille"),
+        obox([  4.4, 3.3, 23.52], [ 7.6, 4.9, 23.72], "#grille"),
+        # Wide honeycomb sedan grille + chrome emblem bar + swept LED headlights & amber corners!
+        obox([ -5.8, 6.22, 22.1], [ 5.8,  9.8, 22.95], "#grille"),
+        obox([ -5.8, 7.85, 22.97], [5.8,  8.35, 23.18], "#chrome"),
+        obox([  5.85, 6.8, 22.05], [10.4, 9.5, 22.85], "#headlight", full_uv_faces=("south", "north")),
+        obox([-10.4,  6.8, 22.05], [-5.85, 9.5, 22.85], "#headlight", full_uv_faces=("south", "north")),
+        obox([ 10.42, 6.8, 21.6], [12.1,  9.3, 22.45], "#amber", full_uv_faces=("south", "north")),
+        obox([-12.1,  6.8, 21.6], [-10.42, 9.3, 22.45], "#amber", full_uv_faces=("south", "north")),
+
+        # --- C. Sculpted Poliția Română Hood (`#police_hood`) & Front Wheel Arches ---
+        obox([ -8.2,  6.22,  8.8], [ 8.2, 10.35, 22.0], "#body", tint=0),
+        obox([ -5.6, 10.37,  8.8], [ 5.6, 10.95, 21.8], "#police_hood", full_uv_faces=("up", "south")),
+        obox([  5.62, 10.37, 8.8], [ 8.2, 10.85, 21.8], "#body", tint=0),
+        obox([ -8.2, 10.37,  8.8], [-5.62, 10.85, 21.8], "#body", tint=0),
+        obox([  8.22, 9.4,   8.8], [12.6, 10.85, 19.0], "#body", tint=0),
+        obox([-12.6,  9.4,   8.8], [-8.22, 10.85, 19.0], "#body", tint=0),
+        obox([  8.22, 3.9,  19.02], [12.2, 10.6, 21.98], "#body", tint=0),
+        obox([-12.2,  3.9,  19.02], [-8.22, 10.6, 21.98], "#body", tint=0),
+
+        # --- D. 4-Door Poliția Română Battenberg Livery (`#police_side`), Sills & Chrome Handles ---
+        obox([ 10.22, 3.1, -8.75], [12.3,  3.95,  8.75], "#carbon"),
+        obox([-12.3,  3.1, -8.75], [-10.22, 3.95, 8.75], "#carbon"),
+        obox([ 10.22, 3.97, -8.75], [12.1, 10.9,  8.75], "#police_side", full_uv_faces=("east", "west")),
+        obox([-12.1,  3.97, -8.75], [-10.22, 10.9, 8.75], "#police_side", full_uv_faces=("east", "west")),
+        # Front & rear chrome door handles on both sides
+        obox([ 12.12, 9.2,  0.8], [12.45, 9.85,  3.2], "#chrome"),
+        obox([ 12.12, 9.2, -6.8], [12.45, 9.85, -4.4], "#chrome"),
+        obox([-12.45, 9.2,  0.8], [-12.12, 9.85, 3.2], "#chrome"),
+        obox([-12.45, 9.2, -6.8], [-12.12, 9.85, -4.4], "#chrome"),
+
+        # --- E. Open-View Sedan Greenhouse (Clear Front/Rear/Side Windows!) & Wing Mirrors ---
+        # Front slanted A-pillars (-24 deg) + thin lower chrome seal -> 100% CLEAR center windshield!
+        obox([ 10.0, 10.9, 6.8], [11.4, 19.2, 8.0], "#body", tint=0, rot=("x", -24.0, [0.0, 10.9, 7.4])),
+        obox([-11.4, 10.9, 6.8], [-10.0, 19.2, 8.0], "#body", tint=0, rot=("x", -24.0, [0.0, 10.9, 7.4])),
+        obox([ -9.98, 10.92, 7.2], [9.98, 11.25, 7.6], "#chrome", rot=("x", -24.0, [0.0, 10.9, 7.4])),
+        # Center B-pillars between front and rear side windows
+        obox([ 10.4, 10.92, -1.6], [11.5, 18.6, -0.4], "#carbon"),
+        obox([-11.5, 10.92, -1.6], [-10.4, 18.6, -0.4], "#carbon"),
+        # Rear slanted C-pillars (+26 deg) -> 100% CLEAR rear window!
+        obox([ 10.0, 10.9, -10.2], [11.4, 19.1, -9.0], "#body", tint=0, rot=("x", 26.0, [0.0, 10.9, -9.6])),
+        obox([-11.4, 10.9, -10.2], [-10.0, 19.1, -9.0], "#body", tint=0, rot=("x", 26.0, [0.0, 10.9, -9.6])),
+        # Sleek Sedan Roof Panel (`vy_m = 18.6..19.8`) + Interior Mirror + Exterior Wing Mirrors!
+        obox([-11.2, 18.62, -6.6], [11.2, 19.8,  4.2], "#body", tint=0),
+        obox([ -1.8, 17.8,  3.2], [ 1.8, 18.55, 3.8], "#frame"),
+        obox([ 11.45, 11.4, 5.6], [12.55, 12.0, 6.3], "#frame"),
+        obox([ 12.57, 11.0, 5.2], [14.2, 13.1, 6.4], "#body", tint=0),
+        obox([ 12.68, 11.15, 5.06], [14.0, 12.95, 5.19], "#chrome"),
+        obox([-12.55, 11.4, 5.6], [-11.45, 12.0, 6.3], "#frame"),
+        obox([-14.2,  11.0, 5.2], [-12.57, 13.1, 6.4], "#body", tint=0),
+        obox([-14.0,  11.15, 5.06], [-12.68, 12.95, 5.19], "#chrome"),
+
+        # --- F. Roof Emergency Girofar Lightbar (Blue Left + Speaker Center + Red Right!) ---
+        obox([ -8.4, 19.82, -2.5], [ 8.4, 20.35, -0.5], "#frame"),
+        obox([ -1.4, 20.37, -2.6], [ 1.4, 21.65, -0.4], "#grille"),
+        obox([  1.42, 20.37, -2.55], [ 8.2, 21.65, -0.45], "#siren_blue", full_uv_faces=("south", "north", "up")),
+        obox([ -8.2,  20.37, -2.55], [-1.42, 21.65, -0.45], "#siren_red", full_uv_faces=("south", "north", "up")),
+
+        # --- G. Police Cockpit: Digital Dash, MDT Police Laptop, Partition & Seats ---
+        obox([-10.18, 7.6,  6.2], [10.18, 10.9, 8.55], "#seat"),
+        obox([  2.4, 10.92, 6.2], [ 7.0, 12.1, 8.2], "#carbon"),
+        obox([  2.8, 10.95, 5.90], [ 6.6, 11.95, 6.18], "#dash", full_uv_faces=("north", "south")),
+        # Center Console + Angled Police MDT Laptop Screen (`#dash`)!
+        obox([ -1.5,  3.92, -5.8], [ 1.5,  7.58, 6.18], "#carbon"),
+        obox([ -1.8,  8.2,   4.0], [ 1.4, 10.8,  4.6], "#dash", rot=("y", 18.0, [0.0, 9.5, 4.3]), full_uv_faces=("north", "south")),
+        obox([  4.15, 10.9,  3.46], [5.35, 12.0, 6.18], "#chrome", rot=("x", 28.0, [4.75, 11.45, 3.46])),
+        # Front Patrol Bucket Seats + Protective Mesh Prisoner Partition + Rear Bench
+        obox([  1.6,  3.92, -5.2], [ 8.0,  5.4,  1.0], "#seat"),
+        obox([  1.6,  5.42, -6.4], [ 8.0, 13.8, -4.9], "#seat", rot=("x", -8.0, [4.8, 5.42, -5.2])),
+        obox([ -8.0,  3.92, -5.2], [-1.6,  5.4,  1.0], "#seat"),
+        obox([ -8.0,  5.42, -6.4], [-1.6, 13.8, -4.9], "#seat", rot=("x", -8.0, [-4.8, 5.42, -5.2])),
+        obox([ -9.8, 10.8, -7.2], [ 9.8, 17.8, -6.65], "#grille"),
+        obox([ -9.2,  4.2, -16.8], [ 9.2,  6.2, -11.2], "#seat"),
+        obox([ -9.2,  6.22, -18.2], [9.2, 12.8, -16.6], "#seat"),
+
+        # --- H. Sculpted Sedan Rear Quarters, Trunk Lid (`#police_hood`), RO Plate & LED Tail Lamps ---
+        obox([  8.22, 9.4, -19.0], [12.6, 10.9, -8.8], "#body", tint=0),
+        obox([-12.6,  9.4, -19.0], [-8.22, 10.9, -8.8], "#body", tint=0),
+        obox([  8.22, 3.9, -22.2], [12.1, 10.9, -19.02], "#body", tint=0),
+        obox([-12.1,  3.9, -22.2], [-8.22, 10.9, -19.02], "#body", tint=0),
+        obox([ -8.2,  5.8, -22.2], [ 8.2, 10.8, -8.8], "#body", tint=0),
+        obox([ -5.4, 10.82, -21.05], [5.4, 11.25, -10.4], "#police_hood", full_uv_faces=("up", "north")),
+        obox([-10.8, 10.84, -22.3], [10.8, 11.55, -21.1], "#carbon"),
+        # Wide Sedan LED Tail-Lamps, Amber Signals, Romanian Rear Plate & Rear Bumper!
+        obox([  4.8,  7.8, -22.48], [11.6, 10.3, -22.22], "#taillight", full_uv_faces=("north", "south")),
+        obox([-11.6,  7.8, -22.48], [-4.8, 10.3, -22.22], "#taillight", full_uv_faces=("north", "south")),
+        obox([  6.8,  6.4, -22.48], [11.6,  7.75, -22.22], "#amber", full_uv_faces=("north", "south")),
+        obox([-11.6,  6.4, -22.48], [-6.8,  7.75, -22.22], "#amber", full_uv_faces=("north", "south")),
+        obox([ -3.8,  6.6, -22.48], [ 3.8,  8.5, -22.22], "#plate_ro", full_uv_faces=("north", "south")),
+        obox([-12.2,  3.1, -23.4], [12.2,  5.78, -21.9], "#body", tint=0),
+        obox([-11.8,  2.5, -23.5], [11.8,  3.08, -22.0], "#carbon"),
+    ]
+    (mdir / "police_car_body.json").write_text(
+        json.dumps(
+            {
+                "textures": {
+                    "body": "gokart:block/kart_body",
+                    "frame": "gokart:block/kart_frame",
+                    "carbon": "gokart:block/kart_carbon",
+                    "grille": "gokart:block/kart_grille",
+                    "headlight": "gokart:block/kart_headlight",
+                    "taillight": "gokart:block/kart_taillight",
+                    "amber": "gokart:block/kart_amber",
+                    "dash": "gokart:block/kart_dash",
+                    "police_side": "gokart:block/police_side",
+                    "police_hood": "gokart:block/police_hood",
+                    "plate_ro": "gokart:block/plate_ro",
+                    "siren_red": "gokart:block/siren_red",
+                    "siren_blue": "gokart:block/siren_blue",
+                    "chrome": "gokart:block/kart_chrome",
+                    "seat": "gokart:block/kart_seat",
+                },
+                "elements": police_elements,
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+
+    # =========================================================================
+    # 7b. Dynamic FiveM Girofar Strobe Pods (`siren_red.json`, `siren_blue.json`)
+    # =========================================================================
+    for sname, stex in [
+        ("siren_red", "gokart:block/siren_red"),
+        ("siren_blue", "gokart:block/siren_blue"),
+    ]:
+        (mdir / f"{sname}.json").write_text(
+            json.dumps(
+                {
+                    "textures": {"siren": stex},
+                    "elements": [
+                        box(
+                            [5.5, 6.8, 6.8],
+                            [10.5, 9.2, 9.2],
+                            "#siren",
+                            full_uv_faces=("north", "south", "east", "west", "up", "down"),
+                        )
+                    ],
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+
 
 # ---------------------------------------------------------------------------
 # Item definitions (`assets/gokart/items/*.json`) & Item models
@@ -1293,6 +1590,7 @@ ITEMS = [
     "go_kart",
     "off_roader",
     "quad_bike",
+    "police_car",
     "small_engine_iron",
     "small_engine_gold",
     "small_engine_diamond",
@@ -1537,6 +1835,25 @@ def generate_recipes() -> None:
             },
             "result": {"id": "gokart:quad_bike", "count": 1},
         },
+        # 13. Romanian Police Car (`Poliția Română` — Redstone + Lapis Girofar, Iron Sedan, Diamond/Gold Engine, Racing/Sports Wheels)
+        "police_car": {
+            "type": "minecraft:crafting_shaped",
+            "category": "transportation",
+            "pattern": [
+                "RLB",
+                "III",
+                "WEW",
+            ],
+            "key": {
+                "R": "minecraft:redstone",
+                "L": "minecraft:leather",
+                "B": "minecraft:lapis_lazuli",
+                "I": "minecraft:iron_ingot",
+                "W": "gokart:racing_wheel",
+                "E": "gokart:small_engine_diamond",
+            },
+            "result": {"id": "gokart:police_car", "count": 1},
+        },
     }
 
     for name, payload in recipes.items():
@@ -1578,11 +1895,15 @@ def generate_sounds() -> None:
             "subtitle": "subtitles.gokart.refuel",
             "sounds": [{"name": "gokart:refuel", "attenuation_distance": 12, "stream": False}],
         },
+        "siren": {
+            "subtitle": "subtitles.gokart.siren",
+            "sounds": [{"name": "gokart:siren", "attenuation_distance": 56, "stream": False}],
+        },
     }
     (ASSETS / "sounds.json").write_text(json.dumps(sounds_json, indent=2) + "\n")
 
     # Skip re-encoding if all OGG files already exist unless `--force-sounds` is passed
-    ogg_names = ["engine_pulse", "horn", "drift", "boost", "wrench", "refuel"]
+    ogg_names = ["engine_pulse", "horn", "drift", "boost", "wrench", "refuel", "siren"]
     if "--force-sounds" not in sys.argv and all((sdir / f"{n}.ogg").exists() for n in ogg_names):
         return
 
@@ -1667,6 +1988,20 @@ def generate_sounds() -> None:
         sig += mask * np.sin(2 * np.pi * f * dt) * np.exp(-dt * 26.0)
     save_ogg("refuel", sig)
 
+    # 7. `siren.ogg` — Authentic European / Romanian Police Electronic Wail-Yelp Siren cycle (1.32s)
+    n = int(rate * 1.32)
+    t = np.linspace(0, 1.32, n, endpoint=False)
+    # Smooth rising-and-falling electronic police wail sweep (640 Hz -> 1280 Hz -> 640 Hz)
+    sweep = 640.0 + 640.0 * (0.5 - 0.5 * np.cos(2 * np.pi * t / 1.30))
+    phase = 2 * np.pi * np.cumsum(sweep) / rate
+    siren_wave = (
+        0.64 * np.sin(phase)
+        + 0.24 * np.sin(2.0 * phase)
+        + 0.12 * np.sin(3.0 * phase)
+    )
+    env = np.minimum(t / 0.03, 1.0) * np.minimum((1.32 - t) / 0.04, 1.0)
+    save_ogg("siren", np.tanh(siren_wave * 1.35) * env)
+
 
 # ---------------------------------------------------------------------------
 # Bilingual Localization (`en_us.json` + `ro_ro.json`)
@@ -1677,17 +2012,23 @@ def generate_lang() -> None:
     ldir.mkdir(parents=True, exist_ok=True)
 
     en_us = {
-        "gokart.mod.description": "Driveable 3D Go-Kart & 4x4 Off-Roader inspired by MrCrayfish's Vehicle Mod: Iron/Gold/Diamond engines, Standard/Sports/Racing wheels, 16-color dye painting, drift boost, fuel & tuning garage.",
+        "gokart.mod.description": "FiveM-style 3D Go-Kart, Quad Bike ATV, 4x4 Off-Roader & Romanian Police Car (Poliția Română): nighttime headlights, siren & girofar, engines, wheels, 16-color paint & tuning garage.",
         "item.gokart.go_kart": "Go-Kart",
         "item.gokart.off_roader": "4x4 Off-Roader",
         "item.gokart.quad_bike": "Quad Bike (ATV)",
+        "item.gokart.police_car": "Romanian Police Car (Poliția Română)",
         "gokart.vehicle.go_kart": "Go-Kart",
         "gokart.vehicle.off_roader": "4x4 Off-Roader",
         "gokart.vehicle.quad_bike": "Quad Bike (ATV)",
+        "gokart.vehicle.police_car": "Romanian Police Car (Poliția)",
         "gokart.tooltip.place_off_roader": "Right-click ground to deploy 4x4 Off-Roader (climbs 1-block terrain!)",
         "gokart.tooltip.place_quad_bike": "Right-click ground to deploy Quad Bike ATV (nimble 1-block trail climber!)",
+        "gokart.tooltip.place_police_car": "Right-click ground to deploy Poliția Română Patrol Car (press [H] for Siren & Girofar!)",
         "gokart.msg.placed_off_roader": "4x4 Off-Roader deployed! Right-click to drive, Wrench to tune.",
         "gokart.msg.placed_quad_bike": "Quad Bike ATV deployed! Right-click to ride, Wrench to tune.",
+        "gokart.msg.placed_police_car": "Poliția Română Patrol Car deployed! Press [H] while driving to toggle Siren & Girofar.",
+        "gokart.msg.siren_on": "POLIȚIA ROMÂNĂ — Emergency Siren & Girofar: ON",
+        "gokart.msg.siren_off": "POLIȚIA ROMÂNĂ — Emergency Siren & Girofar: OFF",
         "gokart.ui.paint_shop": "Quick Paint Shop (click swatch):",
         "item.gokart.small_engine_iron": "Small Iron Engine",
         "item.gokart.small_engine_gold": "Small Gold Engine",
@@ -1702,7 +2043,8 @@ def generate_lang() -> None:
         "subtitles.gokart.drift": "Go-Kart tires screech",
         "subtitles.gokart.boost": "Go-Kart turbo boost",
         "subtitles.gokart.wrench": "Wrench ratchets",
-        "subtitles.gokart.refuel": "Go-Kart refuels",
+        "subtitles.gokart.refuel": "Vehicle refuels",
+        "subtitles.gokart.siren": "Poliția Română siren wails",
         "gokart.engine.none": "No Engine",
         "gokart.engine.iron": "Iron Small Engine",
         "gokart.engine.gold": "Gold Small Engine",
@@ -1742,7 +2084,7 @@ def generate_lang() -> None:
         "gokart.msg.jerry_refilled": "Jerry Can refilled (%1$s / %2$s mB).",
         "gokart.msg.fuel_mode_on": "Vehicle fuel consumption: ENABLED",
         "gokart.msg.fuel_mode_off": "Vehicle fuel consumption: INFINITE FUEL",
-        "gokart.msg.kit_given": "Delivered complete Go-Kart, Quad Bike ATV & 4x4 Off-Roader Kit!",
+        "gokart.msg.kit_given": "Delivered complete Go-Kart, Quad Bike ATV, 4x4 Off-Roader & Poliția Română Kit!",
         "gokart.msg.removed_one": "Removed %1$s!",
         "gokart.msg.removed_many": "Removed %1$s vehicle(s) from the world.",
         "gokart.msg.remove_none": "No vehicle nearby to remove (use /vehicle remove all to clear all).",
@@ -1778,17 +2120,23 @@ def generate_lang() -> None:
     }
 
     ro_ro = {
-        "gokart.mod.description": "Go-Kart 3D & Off-Roader 4x4 conduse în timp real, inspirate din MrCrayfish's Vehicle Mod: motoare Fier/Aur/Diamant, roți Standard/Sport/Racing, vopsire în 16 culori, drift + boost, combustibil și garaj de tuning.",
+        "gokart.mod.description": "Vehicule 3D stil FiveM (Go-Kart, ATV Quad Bike, Off-Roader 4x4 & Mașină Poliția Română): faruri automate noaptea, girofar & sirenă, motoare, roți, vopsire în 16 culori și garaj tuning.",
         "item.gokart.go_kart": "Go-Kart",
         "item.gokart.off_roader": "Off-Roader 4x4",
         "item.gokart.quad_bike": "ATV Quad Bike",
+        "item.gokart.police_car": "Autospecială Poliția Română",
         "gokart.vehicle.go_kart": "Go-Kart",
         "gokart.vehicle.off_roader": "Off-Roader 4x4",
         "gokart.vehicle.quad_bike": "ATV Quad Bike",
+        "gokart.vehicle.police_car": "Autospecială Poliția Română",
         "gokart.tooltip.place_off_roader": "Click-dreapta pe sol pentru a plasa Off-Roader-ul 4x4 (urcă blocuri întregi!)",
         "gokart.tooltip.place_quad_bike": "Click-dreapta pe sol pentru a plasa ATV-ul Quad Bike (agil pe teren accidentat!)",
+        "gokart.tooltip.place_police_car": "Click-dreapta pe sol pentru a plasa Autospeciala Poliției Române (apasă [H] pentru Sirenă & Girofar!)",
         "gokart.msg.placed_off_roader": "Off-Roader 4x4 plasat! Click-dreapta pentru a conduce, Cheie Mecanică pentru tuning.",
         "gokart.msg.placed_quad_bike": "ATV Quad Bike plasat! Click-dreapta pentru a conduce, Cheie Mecanică pentru tuning.",
+        "gokart.msg.placed_police_car": "Autospecială Poliția Română plasată! Apasă [H] la volan pentru Sirenă & Girofar.",
+        "gokart.msg.siren_on": "POLIȚIA ROMÂNĂ — Sirenă & Girofar: PORNITE",
+        "gokart.msg.siren_off": "POLIȚIA ROMÂNĂ — Sirenă & Girofar: OPRITE",
         "gokart.ui.paint_shop": "Vopsitorie Rapidă (click pe culoare):",
         "item.gokart.small_engine_iron": "Motor Mic de Fier",
         "item.gokart.small_engine_gold": "Motor Mic de Aur",
@@ -1803,7 +2151,8 @@ def generate_lang() -> None:
         "subtitles.gokart.drift": "Anvelopele de Go-Kart scârțâie",
         "subtitles.gokart.boost": "Boost turbo de Go-Kart",
         "subtitles.gokart.wrench": "Cheie mecanică în acțiune",
-        "subtitles.gokart.refuel": "Alimentare Go-Kart",
+        "subtitles.gokart.refuel": "Alimentare vehicul",
+        "subtitles.gokart.siren": "Sirenă Poliția Română",
         "gokart.engine.none": "Fără Motor",
         "gokart.engine.iron": "Motor Mic de Fier",
         "gokart.engine.gold": "Motor Mic de Aur",
@@ -1843,7 +2192,7 @@ def generate_lang() -> None:
         "gokart.msg.jerry_refilled": "Canistră reumplută (%1$s / %2$s mB).",
         "gokart.msg.fuel_mode_on": "Consum combustibil vehicule: ACTIVAT",
         "gokart.msg.fuel_mode_off": "Consum combustibil vehicule: COMBUSTIBIL INFINIT",
-        "gokart.msg.kit_given": "Ai primit pachetul complet Go-Kart, ATV Quad Bike & Off-Roader 4x4!",
+        "gokart.msg.kit_given": "Ai primit pachetul complet Go-Kart, ATV Quad Bike, Off-Roader 4x4 & Poliția Română!",
         "gokart.msg.removed_one": "Ai șters %1$s!",
         "gokart.msg.removed_many": "Au fost șterse %1$s vehicule din lume.",
         "gokart.msg.remove_none": "Niciun vehicul în apropiere de șters (folosește /vehicle remove all pentru toate).",
@@ -1943,11 +2292,12 @@ def generate_creative_tab() -> None:
     tdir.mkdir(parents=True, exist_ok=True)
     tab = {
         "title": "Horizon Vehicles",
-        "icon": "gokart:go_kart",
+        "icon": "gokart:police_car",
         "items": [
             "gokart:go_kart",
             "gokart:quad_bike",
             "gokart:off_roader",
+            "gokart:police_car",
             "gokart:small_engine_iron",
             "gokart:small_engine_gold",
             "gokart:small_engine_diamond",
@@ -1961,17 +2311,63 @@ def generate_creative_tab() -> None:
     (tdir / "vehicles.json").write_text(json.dumps(tab, indent=2) + "\n", encoding="utf-8")
 
 
+def validate_models_no_zfighting() -> None:
+    """Verifies [-16..32] element bounds AND zero coplanar overlapping faces across all 3D models."""
+    mdir = ASSETS / "models" / "block"
+    eps = 1e-3
+    face_defs = [
+        ("west",  0, 0, 1, 2),
+        ("east",  0, 1, 1, 2),
+        ("down",  1, 0, 0, 2),
+        ("up",    1, 1, 0, 2),
+        ("north", 2, 0, 0, 1),
+        ("south", 2, 1, 0, 1),
+    ]
+    for mpath in sorted(mdir.glob("*.json")):
+        data = json.loads(mpath.read_text(encoding="utf-8"))
+        elems = data.get("elements", [])
+        for idx, el in enumerate(elems):
+            for k in ("from", "to"):
+                for c in el[k]:
+                    if c < -16.0 - 1e-5 or c > 32.0 + 1e-5:
+                        raise ValueError(f"{mpath.name} element #{idx} {k}={el[k]} exceeds [-16, 32]!")
+        # Check coplanar faces within identical rotation transform groups
+        for i in range(len(elems)):
+            for j in range(i + 1, len(elems)):
+                ei, ej = elems[i], elems[j]
+                if ei.get("rotation") != ej.get("rotation"):
+                    continue
+                for fname, axis, side, u_ax, v_ax in face_defs:
+                    fi = ei["faces"].get(fname)
+                    fj = ej["faces"].get(fname)
+                    if not fi or not fj:
+                        continue
+                    pi = ei["to" if side else "from"][axis]
+                    pj = ej["to" if side else "from"][axis]
+                    if abs(pi - pj) < eps:
+                        u0 = max(ei["from"][u_ax], ej["from"][u_ax])
+                        u1 = min(ei["to"][u_ax], ej["to"][u_ax])
+                        v0 = max(ei["from"][v_ax], ej["from"][v_ax])
+                        v1 = min(ei["to"][v_ax], ej["to"][v_ax])
+                        if (u1 - u0) > 0.02 and (v1 - v0) > 0.02:
+                            raise ValueError(
+                                f"Z-FIGHTING in {mpath.name}: elem #{i} ({fi['texture']}) & #{j} ({fj['texture']}) "
+                                f"coplanar on {fname}={pi:.3f} overlap=({u1-u0:.2f}x{v1-v0:.2f})"
+                            )
+
+
 def main() -> None:
     generate_vehicle_textures()
     generate_item_textures()
     generate_models()
+    validate_models_no_zfighting()
     generate_item_jsons()
     generate_recipes()
     generate_creative_tab()
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated all Horizon Vehicles v0.7.0 assets, 3D models, Creative Tab, sounds, recipes, and EN/RO translations.")
+    print("Generated & verified all Horizon Vehicles v0.8.0 assets, zero-zfight 3D models, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

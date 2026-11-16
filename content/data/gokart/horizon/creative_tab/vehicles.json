@@ -1,10 +1,11 @@
 {
   "title": "Horizon Vehicles",
-  "icon": "gokart:go_kart",
+  "icon": "gokart:police_car",
   "items": [
     "gokart:go_kart",
     "gokart:quad_bike",
     "gokart:off_roader",
+    "gokart:police_car",
     "gokart:small_engine_iron",
     "gokart:small_engine_gold",
     "gokart:small_engine_diamond",
