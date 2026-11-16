@@ -116,7 +116,8 @@ def generate_vehicle_textures() -> None:
         rear = [base] * (w * h)
         for y in range(h):
             for x in range(w):
-                if y >= 19 and ((x + y * 2) // 6) % 2 == 0:
+                # Mirror diagonal bands about the door seam for a downward V.
+                if y >= 19 and ((abs(x - 31.5) + (y - 19) * 2) // 6) % 2 == 0:
                     rear[y*w+x] = stripe
         for i, ch in enumerate("112"):
             for yy, row in enumerate(font[ch]):
@@ -140,6 +141,14 @@ def generate_vehicle_textures() -> None:
                 for x, bit in enumerate(row):
                     if bit == "1": pixels[(5 + y) * w + x0 + i * 4 + x] = ink
         write_png(bdir / (name + ".png"), w, h, pixels)
+
+    # Cutout side-cab extension: separate from the framed main window so the
+    # tapered front corner does not acquire artificial rectangular black borders.
+    pixels = []
+    for y in range(16):
+        for x in range(16):
+            pixels.append((180, 220, 236, 255) if (x + y == 12 and 3 <= x <= 10) else (0, 0, 0, 0))
+    write_png(bdir / "medical_corner_glass.png", 16, 16, pixels)
 
     # Different front fascia motifs; pixel textures avoid external artwork/assets.
     for name in ("medical_saj_grille", "medical_smurd_grille"):
@@ -2022,6 +2031,16 @@ def generate_models() -> None:
             obox([1.50, 8.90, -20.30], [1.75, 10.55, -4.40], "#chrome"),
             obox([-4.35, 4.40, -19.5], [-3.55, 5.35, -18.55], "#frame"),
             obox([0.55, 4.40, -19.5], [1.35, 5.35, -18.55], "#frame"),
+            # Loading guide rails on the floor and additional stretcher casters.
+            obox([-5.25, 4.38, -21.1], [-4.93, 4.53, -8.65], "#chrome"),
+            obox([1.93, 4.38, -21.1], [2.25, 4.53, -8.65], "#chrome"),
+            obox([-4.35, 4.40, -7.9], [-3.55, 5.35, -6.95], "#frame"),
+            obox([0.55, 4.40, -7.9], [1.35, 5.35, -6.95], "#frame"),
+            # Wall-mounted medical outlets and a small worktop at the bulkhead.
+            obox([-7.12, 12.55, -19.8], [-6.95, 12.85, -5.0], "#chrome"),
+            obox([-6.9, 13.15, -20.0], [-6.7, 14.0, -19.2], "#medical_yellow"),
+            obox([-6.9, 13.15, -18.8], [-6.7, 14.0, -18.0], "#medical_blue"),
+            obox([3.0, 9.1, -4.05], [9.8, 9.60, -3.68], "#chrome"),
             # Attendant seat, monitor/defibrillator, oxygen cylinder and medical bag.
             obox([7.10, 9.10, -17.1], [9.65, 10.70, -12.3], "#medical_blue"),
             obox([8.90, 10.72, -17.1], [9.65, 15.30, -12.3], "#medical_blue"),
@@ -2040,7 +2059,19 @@ def generate_models() -> None:
             # A single side window per cab door, framed by the raked A-pillar.
             obox([-11.7, 11.1, -3.45], [-10.15, 21.7, 6.9], "#glass", full_uv_faces=("east", "west")),
             obox([10.15, 11.1, -3.45], [11.7, 21.7, 6.9], "#glass", full_uv_faces=("east", "west")),
-            obox([-9.7, 8.0, 5.0], [9.7, 10.9, 5.50], "#frame"),
+            # Fill the wedge between the rectangular side glass and sloping
+            # windshield with progressively shorter transparent glazing strips.
+            *[obox([x0, 11.82, z0], [x1, y1, z1], "#corner_glass", full_uv_faces=("east", "west"))
+              for x0, x1 in ((-11.7, -10.15), (10.15, 11.7))
+              for z0, z1, y1 in ((6.91, 7.70, 18.0), (7.71, 8.50, 16.6),
+                                 (8.51, 9.30, 15.2), (9.31, 10.10, 13.8),
+                                 (10.11, 10.85, 12.4))],
+            # Dashboard shelf, instrument binnacle, centre console and two headrests.
+            obox([-9.70, 9.35, 4.0], [9.70, 10.85, 8.4], "#frame"),
+            obox([2.35, 10.87, 4.2], [7.65, 11.55, 5.6], "#dash", full_uv_faces=("up",)),
+            obox([-1.4, 7.0, 2.6], [1.4, 10.90, 6.7], "#frame"),
+            obox([3.0, 14.42, -3.35], [7.0, 16.10, -2.35], "#seat"),
+            obox([-7.0, 14.42, -3.35], [-3.0, 16.10, -2.35], "#seat"),
             obox([2.0, 4.0, -2.5], [8.0, 6.0, 2.8], "#seat"),
             obox([-8.0, 4.0, -2.5], [-2.0, 6.0, 2.8], "#seat"),
             obox([2.0, 6.02, -3.45], [8.0, 14.4, -2.55], "#seat"),
@@ -2061,6 +2092,17 @@ def generate_models() -> None:
             obox([-12.44, 4.15, -8.35], [-12.36, 4.85, 8.35], "#frame"),
             obox([12.36, 8.15, -10.9], [12.50, 8.62, -9.20], "#frame"),
             obox([-12.50, 8.15, -10.9], [-12.36, 8.62, -9.20], "#frame"),
+            # Wipers at the foot of the windshield and recessed bumper fog lights.
+            obox([-9.2, 11.15, 11.51], [-0.35, 11.48, 11.67], "#frame"),
+            obox([0.35, 11.15, 11.51], [9.2, 11.48, 11.67], "#frame"),
+            obox([-10.5, 3.75, 22.82], [-8.25, 4.80, 22.92], "#headlight"),
+            obox([8.25, 3.75, 22.82], [10.5, 4.80, 22.92], "#headlight"),
+            # Exterior sliding-door track, high rear hinges and non-slip rear step.
+            obox([12.40, 19.05, -20.8], [12.50, 19.35, -5.0], "#frame"),
+            obox([-12.50, 19.05, -20.8], [-12.40, 19.35, -5.0], "#frame"),
+            obox([-10.0, 17.20, -22.02], [-9.15, 18.10, -21.92], "#chrome"),
+            obox([9.15, 17.20, -22.02], [10.0, 18.10, -21.92], "#chrome"),
+            obox([-7.0, 2.50, -23.2], [7.0, 2.73, -22.20], "#frame"),
             # Static blue lenses and roof rails; animated blue beacons overlay when the siren is active.
             obox([-7.0, 23.12, -2.8], [7.0, 23.65, -0.8], "#frame"),
             obox([-6.8, 23.67, -2.75], [-1.0, 24.6, -0.85], "#siren_blue"),
@@ -2090,6 +2132,7 @@ def generate_models() -> None:
                          "taillight": "gokart:block/kart_taillight", "plate_ro": "gokart:block/plate_ro",
                          "siren_blue": "gokart:block/siren_blue", "glass": "gokart:block/kart_glass",
                          "seat": "gokart:block/kart_seat", "dash": "gokart:block/kart_dash",
+                         "corner_glass": "gokart:block/medical_corner_glass",
                          "amber": "gokart:block/kart_amber",
                          "medical_white": "gokart:block/medical_white", "medical_red": "gokart:block/medical_red",
                          "medical_blue": "gokart:block/medical_blue", "medical_yellow": "gokart:block/medical_yellow",
@@ -2962,7 +3005,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.12.3 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.12.4 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

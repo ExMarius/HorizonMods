@@ -68,6 +68,22 @@ class EmergencyModels(unittest.TestCase):
             self.assertTrue(any(e['to'][2] - e['from'][2] > 9 for e in windows))
         self.assertNotEqual(*grilles)
 
+    def test_cab_taper_and_medical_equipment_are_present(self):
+        for name in ('ambulance', 'smurd'):
+            model = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())
+            elements = model['elements']
+            corners = [e for e in elements if e['faces']['east']['texture'] == '#corner_glass']
+            self.assertEqual(len(corners), 10)
+            for side in (-1, 1):
+                strips = sorted((e for e in corners if (e['from'][0] > 8) == (side > 0)),
+                                key=lambda e: e['from'][2])
+                self.assertEqual(len(strips), 5)
+                for a, b in zip(strips, strips[1:]):
+                    self.assertLessEqual(b['from'][2] - a['to'][2], 0.011)
+                    self.assertGreater(a['to'][1], b['to'][1])
+            self.assertEqual(sum(e['faces']['up']['texture'] == '#medical_mattress' for e in elements), 1)
+            self.assertTrue(any(e['faces']['up']['texture'] == '#medical_red' for e in elements))
+
     def test_emergency_markings_and_opposite_side_uvs_are_present(self):
         for name in ('ambulance', 'smurd'):
             model = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())
