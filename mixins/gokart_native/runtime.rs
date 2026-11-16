@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.5.0";
+pub const VERSION: &str = "0.5.1";
 pub const DESCRIPTION: &str = "Driveable 3D Go-Kart & 4x4 Off-Roader inspired by MrCrayfish's Vehicle Mod: Iron/Gold/Diamond engines, Standard/Sports/Racing wheels, 16-color dye painting, drift + turbo boost, fuel & tuning garage.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
@@ -976,6 +976,7 @@ impl KartRuntime {
         require_fuel: bool,
     ) -> StepOutcome {
         self.tick_count = self.tick_count.wrapping_add(1);
+        let lay = self.spec.kind.layout();
         let active_input = if rider_present {
             input
         } else {

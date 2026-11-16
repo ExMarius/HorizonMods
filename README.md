@@ -1,4 +1,4 @@
-# Horizon Vehicles: Go-Kart & 4x4 Off-Roader (`gokart_native` v0.5.0)
+# Horizon Vehicles: Go-Kart & 4x4 Off-Roader (`gokart_native` v0.5.1)
 
 Mod nativ complet de **Vehicule 3D (Go-Kart full-size & 4x4 Off-Roader)** pentru **Horizon 26.3 (Launcher `0.2.69+` / Nightly)**, inspirat din celebrul [MrCrayfish's Vehicle Mod](https://github.com/MrCrayfish/MrCrayfishVehicleMod) (implementare și design 100% originale, compatibile GPL-3.0).
 
