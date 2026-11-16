@@ -1575,12 +1575,17 @@ pub(in crate::game) fn frame(game: &mut Game<'_>) {
 
         // Smooth sub-tick steering angle at display refresh rate for both steering wheel & driver IK!
         let steer_blend = 1.0 - (-22.0 * dt).exp();
-        let active_ids: Vec<(u32, f32)> =
-            c.karts.iter().map(|(&id, k)| (id, k.steer_deg)).collect();
-        c.smoothed_steer.retain(|id, _| c.karts.contains_key(id));
-        for (id, target_steer) in active_ids {
-            let entry = c.smoothed_steer.entry(id).or_insert(target_steer);
-            *entry += (target_steer - *entry) * steer_blend;
+        {
+            let ClientState {
+                karts,
+                smoothed_steer,
+                ..
+            } = &mut *c;
+            smoothed_steer.retain(|id, _| karts.contains_key(id));
+            for (&id, k) in karts.iter() {
+                let entry = smoothed_steer.entry(id).or_insert(k.steer_deg);
+                *entry += (k.steer_deg - *entry) * steer_blend;
+            }
         }
 
         let ridden_view = client_ridden_kart(game, &c);

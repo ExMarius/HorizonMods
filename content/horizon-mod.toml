@@ -1,6 +1,6 @@
 id = "gokart"
 name = "Go-Kart (MrCrayfish Vehicle Tribute)"
-version = "0.4.0"
+version = "0.4.1"
 description = "3D Go-Kart models, custom pixel-art textures, synthesized engine/horn/drift audio, crafting recipes, and EN/RO localization for the Go-Kart native mod."
 authors = ["ExMarius"]
 api = "0.2"
