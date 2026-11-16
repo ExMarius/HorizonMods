@@ -235,6 +235,38 @@ def generate_item_textures() -> None:
     ]
     grid_to_png(idir / "go_kart.png", kart_art, kart_pal)
 
+    # 1b. `off_roader.png` — Rugged 4x4 Emerald/Forest Off-Roader with Rollbar & Roof Lights!
+    off_pal = {
+        ".": T,
+        "K": (22, 24, 30, 255),     # Tire / outline black
+        "G": (62, 66, 74, 255),     # Heavy tread / bullbar / rollcage
+        "S": (196, 204, 214, 255),  # Alloy rim / chrome bullbar
+        "E": (42, 152, 72, 255),    # Forest emerald 4x4 body
+        "H": (88, 206, 112, 255),   # Body highlight
+        "D": (24, 98, 46, 255),     # Body shadow
+        "Y": (252, 214, 68, 255),   # Roof KC spotlights / headlights
+        "C": (48, 52, 60, 255),     # Seats
+    }
+    off_art = [
+        "................",
+        ".....GGGGGG.....",
+        "....GYYGGYYG....",
+        "....G..CC..G..K.",
+        "...GGCCCCCCGSKK.",
+        "..HHHHHHHHHHHHK.",
+        ".GEEEEEEEEEEEEYS",
+        "GGDEEEEEEEEEEDGG",
+        ".GGGGGGGGGGGGGG.",
+        "..KKKK....KKKK..",
+        ".KGGGGK..KGGGGK.",
+        ".KGSSGK..KGSSGK.",
+        ".KGGGGK..KGGGGK.",
+        "..KKKK....KKKK..",
+        "................",
+        "................",
+    ]
+    grid_to_png(idir / "off_roader.png", off_art, off_pal)
+
     # 2. Small Engines (`small_engine_iron.png`, `small_engine_gold.png`, `small_engine_diamond.png`)
     engine_tiers = [
         ("small_engine_iron.png",    (206, 212, 220, 255), (146, 154, 164, 255), (96, 102, 112, 255)),
@@ -715,6 +747,144 @@ def generate_models() -> None:
             + "\n"
         )
 
+    # =========================================================================
+    # 5. 4x4 Baja / Trail Off-Roader Body (`off_roader_body.json`)
+    # =========================================================================
+    # Authored around (8.0, 0.0, 8.0) in model texels (`mx = 8 + vx_m`, `my = vy_m`, `mz = 8 + vz_m`)
+    # and rendered with `OFFROADER_BODY_SCALE = [1.40, 1.35, 1.40]`:
+    #   - Every element stays strictly inside [-2.0, +26.0] ⊂ [-16.0, +32.0]!
+    #   - Scaled in world to 2.15 blocks wide x 3.05 blocks long lifted 4x4!
+    #   - Left-hand driver bucket seat at vx_m = +3.80 (VX = +5.32 tx) + right passenger seat at vx_m = -3.80!
+    def obox(vfrom, vto, tex, tint=None, rot=None, full_uv_faces=()):
+        f = [round(vfrom[0] + 8.0, 4), round(vfrom[1], 4), round(vfrom[2] + 8.0, 4)]
+        t = [round(vto[0] + 8.0, 4), round(vto[1], 4), round(vto[2] + 8.0, 4)]
+        r = None
+        if rot is not None:
+            ax, ang, orig = rot
+            r = (ax, ang, [round(orig[0] + 8.0, 4), round(orig[1], 4), round(orig[2] + 8.0, 4)])
+        return box(f, t, tex, tint=tint, rot=r, full_uv_faces=full_uv_faces)
+
+    off_elements = [
+        # --- Heavy Ladder Frame Rails, Skidplate & Solid 4x4 Axles ---
+        obox([-4.6, 3.0, -15.4], [-3.2, 4.4, 15.6], "#frame"),
+        obox([3.2, 3.0, -15.4], [4.6, 4.4, 15.6], "#frame"),
+        obox([-4.6, 3.2, 13.8], [4.6, 4.6, 15.8], "#frame"),
+        obox([-4.6, 3.2, -15.8], [4.6, 4.6, -13.8], "#frame"),
+        # Angled front alloy skidplate
+        obox([-4.4, 2.8, 12.2], [4.4, 4.2, 16.0], "#chrome", rot=("x", -18.0, [0.0, 3.5, 14.0])),
+        # Front & Rear solid 4x4 axle tubes + differential pumpkins + coil-over shocks
+        obox([-8.6, 2.35, 10.05], [8.6, 3.15, 10.95], "#chrome"),
+        obox([-1.8, 1.85, 9.6], [1.8, 3.65, 11.4], "#frame"),
+        obox([-8.6, 2.35, -10.95], [8.6, 3.15, -10.05], "#chrome"),
+        obox([-1.8, 1.85, -11.4], [1.8, 3.65, -9.6], "#frame"),
+        obox([5.6, 3.0, 10.0], [6.5, 8.2, 11.0], "#chrome"),
+        obox([-6.5, 3.0, 10.0], [-5.6, 8.2, 11.0], "#chrome"),
+        obox([5.6, 3.0, -11.0], [6.5, 8.2, -10.0], "#chrome"),
+        obox([-6.5, 3.0, -11.0], [-5.6, 8.2, -10.0], "#chrome"),
+
+        # --- Cabin Floorpan, Rock-Slider Side Steps & Center Console ---
+        obox([-7.8, 3.5, -6.2], [7.8, 4.2, 5.8], "#seat"),
+        obox([-9.4, 3.6, -5.4], [-8.0, 4.4, 5.2], "#frame"),
+        obox([8.0, 3.6, -5.4], [9.4, 4.4, 5.2], "#frame"),
+        # Center transmission tunnel + 4WD transfer shifter
+        obox([-1.1, 4.2, -5.2], [1.1, 6.2, 4.8], "#frame"),
+        obox([-0.35, 6.2, 0.8], [0.35, 8.8, 1.5], "#chrome", rot=("x", -12.0, [0.0, 6.2, 1.15])),
+        obox([-0.65, 8.6, 0.5], [0.65, 9.5, 1.8], "#seat", rot=("x", -12.0, [0.0, 6.2, 1.15])),
+
+        # --- Sculpted Paintable 4x4 Hood, 7-Slot Grille, Headlights & Bullbar ---
+        obox([-5.5, 4.4, 5.4], [5.5, 9.6, 15.2], "#body", tint=0),
+        obox([-5.2, 9.6, 5.4], [5.2, 10.6, 14.8], "#body", tint=0),
+        # Dark charcoal raised V8 power-bulge hood scoop
+        obox([-2.4, 10.5, 7.2], [2.4, 11.35, 13.4], "#frame"),
+        obox([-1.8, 10.65, 13.3], [1.8, 11.2, 13.7], "#chrome"),
+        # Front radiator grille plate + twin round LED headlights
+        obox([-5.1, 5.0, 15.15], [5.1, 9.3, 15.55], "#frame"),
+        obox([2.8, 6.6, 15.35], [4.7, 8.5, 15.85], "#chrome"),
+        obox([-4.7, 6.6, 15.35], [-2.8, 8.5, 15.85], "#chrome"),
+        # Heavy tubular front bullbar & winch bumper
+        obox([-7.8, 4.0, 15.4], [7.8, 5.6, 16.8], "#frame"),
+        obox([-4.8, 5.6, 15.9], [-4.0, 9.8, 16.7], "#frame"),
+        obox([4.0, 5.6, 15.9], [4.8, 9.8, 16.7], "#frame"),
+        obox([-4.8, 9.2, 15.9], [4.8, 10.0, 16.7], "#frame"),
+
+        # --- Muscular Flared Off-Road Wheel Arches & Half-Doors (Tintable) ---
+        # Front left/right high-clearance flared fenders (clear ±24 deg steered giant tires!)
+        obox([5.5, 8.5, 5.6], [9.8, 10.0, 14.8], "#body", tint=0),
+        obox([-9.8, 8.5, 5.6], [-5.5, 10.0, 14.8], "#body", tint=0),
+        obox([5.5, 5.2, 5.2], [9.4, 8.6, 6.3], "#frame"),
+        obox([-9.4, 5.2, 5.2], [-5.5, 8.6, 6.3], "#frame"),
+        # Sculpted cut-out off-road half-doors
+        obox([7.4, 4.2, -5.8], [8.5, 9.2, 5.6], "#body", tint=0),
+        obox([-8.5, 4.2, -5.8], [-7.4, 9.2, 5.6], "#body", tint=0),
+        # Rear body tub, flared rear fenders & tailgate
+        obox([6.8, 8.5, -15.0], [9.8, 10.0, -5.6], "#body", tint=0),
+        obox([-9.8, 8.5, -15.0], [-6.8, 10.0, -5.6], "#body", tint=0),
+        obox([6.8, 4.4, -15.4], [8.5, 10.2, -5.6], "#body", tint=0),
+        obox([-8.5, 4.4, -15.4], [-6.8, 10.2, -5.6], "#body", tint=0),
+        obox([-6.8, 4.4, -15.2], [6.8, 5.6, -5.8], "#seat"),
+        obox([-7.8, 4.4, -15.6], [7.8, 10.0, -14.6], "#body", tint=0),
+        obox([-8.2, 3.6, -16.4], [8.2, 5.0, -15.2], "#frame"),
+        # Twin rear chrome exhaust tailpipes under rear bumper
+        obox([3.6, 3.0, -17.0], [4.7, 4.0, -15.0], "#chrome"),
+        obox([-4.7, 3.0, -17.0], [-3.6, 4.0, -15.0], "#chrome"),
+
+        # --- Dashboard, Left-Side Steering Column, Pedals & Slanted Windshield Frame ---
+        obox([-7.6, 7.6, 4.0], [7.6, 10.8, 5.6], "#seat"),
+        # Left driver gauge pod & chrome steering shaft terminating at vx_m=+3.80, vy_m=11.56, vz_m=+3.43
+        obox([2.1, 10.4, 4.1], [5.5, 11.6, 5.5], "#frame"),
+        obox([3.3, 11.05, 3.43], [4.3, 12.05, 5.4], "#chrome", rot=("x", 34.0, [3.80, 11.56, 3.43])),
+        # Driver accelerator & brake pedals in left footwell
+        obox([2.4, 4.2, 4.6], [3.3, 6.2, 5.2], "#chrome", rot=("x", -20.0, [2.85, 4.2, 4.9])),
+        obox([4.2, 4.2, 4.6], [5.1, 6.2, 5.2], "#chrome", rot=("x", -20.0, [4.65, 4.2, 4.9])),
+        # Slanted A-pillar windshield frame + top header bar
+        obox([7.1, 10.2, 4.6], [8.1, 16.4, 5.5], "#body", tint=0, rot=("x", -20.0, [7.6, 10.4, 5.0])),
+        obox([-8.1, 10.2, 4.6], [-7.1, 16.4, 5.5], "#body", tint=0, rot=("x", -20.0, [-7.6, 10.4, 5.0])),
+        obox([-8.1, 15.6, 2.5], [8.1, 16.6, 3.6], "#body", tint=0),
+
+        # --- Open-Top Tubular Roll Cage & Quad Roof Off-Road Light Bar ---
+        obox([7.0, 9.8, -5.8], [7.9, 16.8, -4.9], "#frame"),
+        obox([-7.9, 9.8, -5.8], [-7.0, 16.8, -4.9], "#frame"),
+        obox([-7.9, 16.0, -5.8], [7.9, 16.9, -4.9], "#frame"),
+        obox([7.0, 16.0, -5.8], [7.9, 16.8, 3.2], "#frame"),
+        obox([-7.9, 16.0, -5.8], [-7.0, 16.8, 3.2], "#frame"),
+        # Slanted rear roll-cage downbars into bed
+        obox([7.0, 9.8, -14.2], [7.8, 16.4, -5.4], "#frame", rot=("x", 32.0, [7.4, 10.2, -13.8])),
+        obox([-7.8, 9.8, -14.2], [-7.0, 16.4, -5.4], "#frame", rot=("x", 32.0, [-7.4, 10.2, -13.8])),
+        # Quad roof spotlights on front header
+        obox([4.2, 16.6, 2.4], [6.0, 18.2, 3.7], "#chrome"),
+        obox([1.2, 16.6, 2.4], [3.0, 18.2, 3.7], "#chrome"),
+        obox([-3.0, 16.6, 2.4], [-1.2, 18.2, 3.7], "#chrome"),
+        obox([-6.0, 16.6, 2.4], [-4.2, 18.2, 3.7], "#chrome"),
+
+        # --- Twin Front Racing Bucket Seats (Left Driver vx=+3.80, Right Passenger vx=-3.80) & Rear Bench ---
+        # Left Driver Bucket Seat
+        obox([1.6, 4.2, -3.8], [6.0, 5.4, 0.2], "#seat"),
+        obox([1.6, 5.2, -4.6], [6.0, 11.8, -3.4], "#seat", rot=("x", -10.0, [3.8, 5.4, -3.8])),
+        obox([2.4, 11.6, -4.8], [5.2, 13.4, -3.6], "#body", tint=0),
+        # Right Passenger Bucket Seat
+        obox([-6.0, 4.2, -3.8], [-1.6, 5.4, 0.2], "#seat"),
+        obox([-6.0, 5.2, -4.6], [-1.6, 11.8, -3.4], "#seat", rot=("x", -10.0, [-3.8, 5.4, -3.8])),
+        obox([-5.2, 11.6, -4.8], [-2.4, 13.4, -3.6], "#body", tint=0),
+        # Elevated Rear Safari Bench in cargo bed
+        obox([-6.2, 5.6, -11.8], [6.2, 7.2, -8.2], "#seat"),
+        obox([-6.2, 7.2, -12.6], [6.2, 11.6, -11.4], "#seat"),
+    ]
+    (mdir / "off_roader_body.json").write_text(
+        json.dumps(
+            {
+                "textures": {
+                    "body": "gokart:block/kart_body",
+                    "frame": "gokart:block/kart_frame",
+                    "chrome": "gokart:block/kart_chrome",
+                    "seat": "gokart:block/kart_seat",
+                },
+                "elements": off_elements,
+            },
+            indent=2,
+        )
+        + "\n"
+    )
+
 
 # ---------------------------------------------------------------------------
 # Item definitions (`assets/gokart/items/*.json`) & Item models
@@ -722,6 +892,7 @@ def generate_models() -> None:
 
 ITEMS = [
     "go_kart",
+    "off_roader",
     "small_engine_iron",
     "small_engine_gold",
     "small_engine_diamond",
@@ -929,6 +1100,25 @@ def generate_recipes() -> None:
             },
             "result": {"id": "gokart:standard_wheel", "count": 2},
         },
+        # 11. 4x4 Off-Roader (Iron Block + Twin Leather Seats + Gold/Iron Engine + Sports Wheels)
+        "off_roader": {
+            "type": "minecraft:crafting_shaped",
+            "category": "transportation",
+            "pattern": [
+                "LGL",
+                "IBI",
+                "WEW",
+            ],
+            "key": {
+                "L": "minecraft:leather",
+                "G": "minecraft:glass_pane",
+                "I": "minecraft:iron_ingot",
+                "B": "minecraft:iron_block",
+                "W": "gokart:sports_wheel",
+                "E": "gokart:small_engine_gold",
+            },
+            "result": {"id": "gokart:off_roader", "count": 1},
+        },
     }
 
     for name, payload in recipes.items():
@@ -1069,8 +1259,13 @@ def generate_lang() -> None:
     ldir.mkdir(parents=True, exist_ok=True)
 
     en_us = {
-        "gokart.mod.description": "Driveable 3D Go-Kart inspired by MrCrayfish's Vehicle Mod: Iron/Gold/Diamond engines, Standard/Sports/Racing wheels, 16-color dye painting, drift boost, fuel & tuning garage.",
+        "gokart.mod.description": "Driveable 3D Go-Kart & 4x4 Off-Roader inspired by MrCrayfish's Vehicle Mod: Iron/Gold/Diamond engines, Standard/Sports/Racing wheels, 16-color dye painting, drift boost, fuel & tuning garage.",
         "item.gokart.go_kart": "Go-Kart",
+        "item.gokart.off_roader": "4x4 Off-Roader",
+        "gokart.vehicle.go_kart": "Go-Kart",
+        "gokart.vehicle.off_roader": "4x4 Off-Roader",
+        "gokart.tooltip.place_off_roader": "Right-click ground to deploy 4x4 Off-Roader (climbs 1-block terrain!)",
+        "gokart.msg.placed_off_roader": "4x4 Off-Roader deployed! Right-click to drive, Wrench to tune.",
         "item.gokart.small_engine_iron": "Small Iron Engine",
         "item.gokart.small_engine_gold": "Small Gold Engine",
         "item.gokart.small_engine_diamond": "Small Diamond Engine",
@@ -1157,8 +1352,13 @@ def generate_lang() -> None:
     }
 
     ro_ro = {
-        "gokart.mod.description": "Go-Kart 3D condus în timp real, inspirat din MrCrayfish's Vehicle Mod: motoare Fier/Aur/Diamant, roți Standard/Sport/Racing, vopsire în 16 culori, drift + boost, combustibil și garaj de tuning.",
+        "gokart.mod.description": "Go-Kart 3D & Off-Roader 4x4 conduse în timp real, inspirate din MrCrayfish's Vehicle Mod: motoare Fier/Aur/Diamant, roți Standard/Sport/Racing, vopsire în 16 culori, drift + boost, combustibil și garaj de tuning.",
         "item.gokart.go_kart": "Go-Kart",
+        "item.gokart.off_roader": "Off-Roader 4x4",
+        "gokart.vehicle.go_kart": "Go-Kart",
+        "gokart.vehicle.off_roader": "Off-Roader 4x4",
+        "gokart.tooltip.place_off_roader": "Click-dreapta pe sol pentru a plasa Off-Roader-ul 4x4 (urcă blocuri întregi!)",
+        "gokart.msg.placed_off_roader": "Off-Roader 4x4 plasat! Click-dreapta pentru a conduce, Cheie Mecanică pentru tuning.",
         "item.gokart.small_engine_iron": "Motor Mic de Fier",
         "item.gokart.small_engine_gold": "Motor Mic de Aur",
         "item.gokart.small_engine_diamond": "Motor Mic de Diamant",

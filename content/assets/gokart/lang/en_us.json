@@ -1,6 +1,11 @@
 {
-  "gokart.mod.description": "Driveable 3D Go-Kart inspired by MrCrayfish's Vehicle Mod: Iron/Gold/Diamond engines, Standard/Sports/Racing wheels, 16-color dye painting, drift boost, fuel & tuning garage.",
+  "gokart.mod.description": "Driveable 3D Go-Kart & 4x4 Off-Roader inspired by MrCrayfish's Vehicle Mod: Iron/Gold/Diamond engines, Standard/Sports/Racing wheels, 16-color dye painting, drift boost, fuel & tuning garage.",
   "item.gokart.go_kart": "Go-Kart",
+  "item.gokart.off_roader": "4x4 Off-Roader",
+  "gokart.vehicle.go_kart": "Go-Kart",
+  "gokart.vehicle.off_roader": "4x4 Off-Roader",
+  "gokart.tooltip.place_off_roader": "Right-click ground to deploy 4x4 Off-Roader (climbs 1-block terrain!)",
+  "gokart.msg.placed_off_roader": "4x4 Off-Roader deployed! Right-click to drive, Wrench to tune.",
   "item.gokart.small_engine_iron": "Small Iron Engine",
   "item.gokart.small_engine_gold": "Small Gold Engine",
   "item.gokart.small_engine_diamond": "Small Diamond Engine",

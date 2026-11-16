@@ -142,15 +142,22 @@ fn stack_of(item: &str, count: u32) -> ItemStack {
 }
 
 fn read_kart_spec(game: &Game<'_>, stack: &ItemStack) -> rules::KartSpec {
+    let default_kind =
+        rules::VehicleKind::from_item(&stack.item).unwrap_or(rules::VehicleKind::GoKart);
     if let Ok(Some(Tag::String(s))) = game.native_component(stack, rules::COMP_KART_DATA) {
-        rules::KartSpec::decode_component(&s.to_string_lossy())
+        let mut spec = rules::KartSpec::decode_component_for_kind(default_kind, &s.to_string_lossy());
+        spec.kind = default_kind;
+        spec
     } else {
-        rules::KartSpec::default()
+        match default_kind {
+            rules::VehicleKind::GoKart => rules::KartSpec::default(),
+            rules::VehicleKind::OffRoader => rules::KartSpec::default_off_roader(),
+        }
     }
 }
 
 fn make_kart_item(game: &Game<'_>, spec: rules::KartSpec) -> ItemStack {
-    let mut stack = stack_of(rules::ITEM_GO_KART, 1);
+    let mut stack = stack_of(spec.kind.item_id(), 1);
     let _ = game.native_set_component(
         &mut stack,
         rules::COMP_KART_DATA,
@@ -266,6 +273,7 @@ pub(in crate::game) fn items(items: &mut Vec<Item>) {
         });
     };
     push_item(items, rules::ITEM_GO_KART, 1, Rarity::Uncommon);
+    push_item(items, rules::ITEM_OFF_ROADER, 1, Rarity::Rare);
     push_item(items, rules::ITEM_ENGINE_IRON, 1, Rarity::Common);
     push_item(items, rules::ITEM_ENGINE_GOLD, 1, Rarity::Uncommon);
     push_item(items, rules::ITEM_ENGINE_DIAMOND, 1, Rarity::Rare);
@@ -307,23 +315,25 @@ pub(in crate::game) fn commands(commands: &mut Vec<NativeCommand>) {
     commands.push(NativeCommand::new("gokart paint <color:text>"));
     commands.push(NativeCommand::op("gokart kit", 2));
     commands.push(NativeCommand::op("gokart spawn", 2));
+    commands.push(NativeCommand::op("gokart spawn <vehicle:text>", 2));
     commands.push(NativeCommand::op("gokart fuel", 2));
 }
 
 // ---------------------------------------------------------------------------
-// Backing Go-Kart Entity Summoning & Identification
+// Backing Go-Kart & Off-Roader Entity Summoning & Identification
 // ---------------------------------------------------------------------------
 
-fn kart_summon_nbt() -> Compound {
+fn kart_summon_nbt(kind: rules::VehicleKind) -> Compound {
     let mut nbt = Compound::new();
     nbt.insert(JavaString::from("Silent"), Tag::Byte(1));
     nbt.insert(JavaString::from("Invulnerable"), Tag::Byte(1));
     nbt.insert(JavaString::from("PersistenceRequired"), Tag::Byte(1));
     nbt.insert(JavaString::from("Saddle"), Tag::Byte(1));
-    nbt.insert(
-        JavaString::from("Tags"),
-        Tag::List(vec![Tag::String(JavaString::from(rules::ENTITY_TAG))]),
-    );
+    let mut tags = vec![Tag::String(JavaString::from(rules::ENTITY_TAG))];
+    if kind == rules::VehicleKind::OffRoader {
+        tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_OFF_ROADER)));
+    }
+    nbt.insert(JavaString::from("Tags"), Tag::List(tags));
 
     // Minecraft 26.3 saddle equipment slot so right-click mounts cleanly
     let mut saddle_item = Compound::new();
@@ -336,7 +346,7 @@ fn kart_summon_nbt() -> Compound {
     equip.insert(JavaString::from("saddle"), Tag::Compound(saddle_item));
     nbt.insert(JavaString::from("equipment"), Tag::Compound(equip));
 
-    // Zero autonomous walk speed + 0.625 slab/stair step-up + full knockback immunity
+    // Zero autonomous walk speed + vehicle step_height (0.625 kart / 1.05 4x4!) + knockback immunity
     let attr = |id: &str, base: f64| -> Tag {
         let mut c = Compound::new();
         c.insert(JavaString::from("id"), Tag::String(JavaString::from(id)));
@@ -347,14 +357,14 @@ fn kart_summon_nbt() -> Compound {
         JavaString::from("attributes"),
         Tag::List(vec![
             attr("minecraft:movement_speed", 0.0),
-            attr("minecraft:step_height", rules::STEP_HEIGHT),
+            attr("minecraft:step_height", kind.layout().step_height),
             attr("minecraft:knockback_resistance", 1.0),
         ]),
     );
     nbt
 }
 
-fn prepare_kart_mob(game: &mut Game<'_>, entity_id: u32, yaw: f32) {
+fn prepare_kart_mob(game: &mut Game<'_>, entity_id: u32, yaw: f32, kind: rules::VehicleKind) {
     if let Some(m) = game.mobs.iter_mut().find(|m| m.id == entity_id) {
         m.ai.goals.clear();
         m.ai.targets.clear();
@@ -368,6 +378,9 @@ fn prepare_kart_mob(game: &mut Game<'_>, entity_id: u32, yaw: f32) {
     }
     if let Some(eref) = game.native_entity(entity_id) {
         game.native_entity_add_tag(eref, rules::ENTITY_TAG);
+        if kind == rules::VehicleKind::OffRoader {
+            game.native_entity_add_tag(eref, rules::ENTITY_TAG_OFF_ROADER);
+        }
         game.native_entity_set_rotation(eref, yaw, 0.0);
         game.native_entity_set_head_yaw(eref, yaw);
     }
@@ -381,8 +394,8 @@ fn spawn_kart(
     yaw: f32,
     spec: rules::KartSpec,
 ) -> Option<u32> {
-    let id = game.native_summon(dimension, "minecraft:pig", pos, kart_summon_nbt())?;
-    prepare_kart_mob(game, id, yaw);
+    let id = game.native_summon(dimension, "minecraft:pig", pos, kart_summon_nbt(spec.kind))?;
+    prepare_kart_mob(game, id, yaw, spec.kind);
     let uuid = game
         .native_entity(id)
         .and_then(|e| game.native_entity_uuid(e))
@@ -408,24 +421,35 @@ fn lookup_kart_uuid(
     }
     let eref = game.native_entity(entity_id)?;
     let uuid = game.native_entity_uuid(eref)?;
-    if st.by_uuid.contains_key(&uuid) {
+    if let Some(existing) = st.by_uuid.get(&uuid) {
+        let k = existing.spec.kind;
         st.id_to_uuid.insert(entity_id, uuid);
         prepare_kart_mob(
             game,
             entity_id,
             game.native_entity_rotation(eref).map_or(0.0, |r| r[0]),
+            k,
         );
         return Some(uuid);
     }
-    // Recover any tagged Go-Kart entity whose entry wasn't in karts.txt yet
-    if game
-        .native_entity_tags(eref)
-        .is_some_and(|tags| tags.iter().any(|t| t == rules::ENTITY_TAG))
+    // Recover any tagged Go-Kart / Off-Roader entity whose entry wasn't in karts.txt yet
+    let tags = game.native_entity_tags(eref);
+    if tags
+        .as_ref()
+        .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG))
     {
+        let is_off_roader = tags
+            .as_ref()
+            .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_OFF_ROADER));
+        let default_spec = if is_off_roader {
+            rules::KartSpec::default_off_roader()
+        } else {
+            rules::KartSpec::default()
+        };
         st.id_to_uuid.insert(entity_id, uuid);
         st.by_uuid.insert(
             uuid,
-            rules::KartRuntime::new(uuid, dimension.to_owned(), rules::KartSpec::default()),
+            rules::KartRuntime::new(uuid, dimension.to_owned(), default_spec),
         );
         st.dirty = true;
         return Some(uuid);
@@ -502,7 +526,10 @@ pub(in crate::game) fn use_item_on(
         return;
     }
     let item_id = &*stack.item;
-    if item_id != rules::ITEM_GO_KART && item_id != rules::ITEM_JERRY_CAN {
+    if item_id != rules::ITEM_GO_KART
+        && item_id != rules::ITEM_OFF_ROADER
+        && item_id != rules::ITEM_JERRY_CAN
+    {
         return;
     }
     let Some(who) = game.native_acting_player() else {
@@ -513,7 +540,7 @@ pub(in crate::game) fn use_item_on(
     };
     let st = guard.as_mut().expect("server state");
 
-    if item_id == rules::ITEM_GO_KART {
+    if item_id == rules::ITEM_GO_KART || item_id == rules::ITEM_OFF_ROADER {
         let spec = read_kart_spec(game, stack);
         let spawn_pos = [
             f64::from(pos[0] + face[0]) + 0.5,
@@ -523,13 +550,20 @@ pub(in crate::game) fn use_item_on(
         if spawn_kart(game, st, &who.dimension, spawn_pos, who.yaw, spec).is_some() {
             *claimed = true;
             if who.game_mode != 1 {
-                game.native_take_items(rules::ITEM_GO_KART, 1);
+                game.native_take_items(item_id, 1);
             }
             game.native_play_sound_in_place("gokart:wrench", spawn_pos, SOUND_PLAYERS, 0.9, 0.95);
-            let msg = tr(
-                "gokart.msg.placed",
-                "Go-Kart deployed! Right-click to drive, Wrench to tune.",
-            );
+            let msg = if spec.kind == rules::VehicleKind::OffRoader {
+                tr(
+                    "gokart.msg.placed_off_roader",
+                    "4x4 Off-Roader deployed! Right-click to drive, Wrench to tune.",
+                )
+            } else {
+                tr(
+                    "gokart.msg.placed",
+                    "Go-Kart deployed! Right-click to drive, Wrench to tune.",
+                )
+            };
             game.native_action_bar(who.uuid, Text::literal(msg).with_color(text::GREEN));
             broadcast_sync_now(game, st);
         }
@@ -700,12 +734,17 @@ pub(in crate::game) fn interact_entity(
         return;
     }
 
-    // 5. Jerry Can -> Pour fuel into Go-Kart tank!
+    // 5. Jerry Can -> Pour fuel into vehicle tank!
     if item_id == rules::ITEM_JERRY_CAN {
         *claimed = true;
         let jerry_mb = read_jerry_fuel(game, held);
-        let cur_fuel = st.by_uuid.get(&kart_uuid).map_or(0, |rt| rt.spec.fuel_mb);
-        let room = rules::KART_MAX_FUEL_MB.saturating_sub(cur_fuel);
+        let (cur_fuel, max_fuel) = st
+            .by_uuid
+            .get(&kart_uuid)
+            .map_or((0, rules::KART_MAX_FUEL_MB), |rt| {
+                (rt.spec.fuel_mb, rt.spec.max_fuel_mb())
+            });
+        let room = max_fuel.saturating_sub(cur_fuel);
         if room == 0 {
             let txt = tr("gokart.msg.tank_full", "Go-Kart fuel tank is already full!");
             game.native_action_bar(who.uuid, Text::literal(txt).with_color(text::YELLOW));
@@ -742,13 +781,18 @@ pub(in crate::game) fn interact_entity(
     // 6. Direct emergency fuel items (Coal, Charcoal, Blaze Powder/Rod, Lava Bucket)
     if let Some((restore_mb, remainder)) = rules::direct_fuel_item_mb(item_id) {
         *claimed = true;
-        let cur_fuel = st.by_uuid.get(&kart_uuid).map_or(0, |rt| rt.spec.fuel_mb);
-        if cur_fuel >= rules::KART_MAX_FUEL_MB {
+        let (cur_fuel, max_fuel) = st
+            .by_uuid
+            .get(&kart_uuid)
+            .map_or((0, rules::KART_MAX_FUEL_MB), |rt| {
+                (rt.spec.fuel_mb, rt.spec.max_fuel_mb())
+            });
+        if cur_fuel >= max_fuel {
             let txt = tr("gokart.msg.tank_full", "Go-Kart fuel tank is already full!");
             game.native_action_bar(who.uuid, Text::literal(txt).with_color(text::YELLOW));
             return;
         }
-        let added = (cur_fuel + restore_mb).min(rules::KART_MAX_FUEL_MB) - cur_fuel;
+        let added = (cur_fuel + restore_mb).min(max_fuel) - cur_fuel;
         let pct = if let Some(rt) = st.by_uuid.get_mut(&kart_uuid) {
             rt.spec.fuel_mb += added;
             rt.spec.fuel_percent()
@@ -842,6 +886,7 @@ pub(in crate::game) fn perform_command(
     if rest == "kit" {
         let items_to_give = [
             make_kart_item(game, rules::KartSpec::default()),
+            make_kart_item(game, rules::KartSpec::default_off_roader()),
             stack_of(rules::ITEM_ENGINE_GOLD, 1),
             stack_of(rules::ITEM_ENGINE_DIAMOND, 1),
             stack_of(rules::ITEM_WHEEL_SPORTS, 1),
@@ -857,31 +902,37 @@ pub(in crate::game) fn perform_command(
         }
         let msg = tr(
             "gokart.msg.kit_given",
-            "Delivered complete Go-Kart Racing & Tuning Kit!",
+            "Delivered complete Go-Kart & 4x4 Off-Roader Kit!",
         );
         game.native_tell(player.uuid, Text::literal(msg).with_color(text::GOLD));
         return;
     }
 
-    if rest == "spawn" {
+    if rest == "spawn" || rest.starts_with("spawn ") {
+        let arg = rest.strip_prefix("spawn").unwrap_or("").trim();
+        let spec = if matches!(arg, "off_roader" | "offroader" | "4x4" | "jeep") {
+            rules::KartSpec::default_off_roader()
+        } else {
+            rules::KartSpec::default()
+        };
         let yaw_rad = player.yaw.to_radians();
+        let dist = if spec.kind == rules::VehicleKind::OffRoader {
+            2.8
+        } else {
+            2.2
+        };
         let at = [
-            player.position[0] - f64::from(yaw_rad.sin()) * 2.0,
+            player.position[0] - f64::from(yaw_rad.sin()) * dist,
             player.position[1] + 0.1,
-            player.position[2] + f64::from(yaw_rad.cos()) * 2.0,
+            player.position[2] + f64::from(yaw_rad.cos()) * dist,
         ];
-        if spawn_kart(
-            game,
-            st,
-            &player.dimension,
-            at,
-            player.yaw,
-            rules::KartSpec::default(),
-        )
-        .is_some()
-        {
+        if spawn_kart(game, st, &player.dimension, at, player.yaw, spec).is_some() {
             broadcast_sync_now(game, st);
-            let msg = tr("gokart.msg.placed", "Go-Kart deployed!");
+            let msg = if spec.kind == rules::VehicleKind::OffRoader {
+                tr("gokart.msg.placed_off_roader", "4x4 Off-Roader deployed!")
+            } else {
+                tr("gokart.msg.placed", "Go-Kart deployed!")
+            };
             game.native_tell(player.uuid, Text::literal(msg).with_color(text::GREEN));
         }
         return;
@@ -974,12 +1025,15 @@ fn find_rider_uuid(
     }
     let seat_y_pig = kart_pos[1] + SEAT_HEIGHT_PIG;
     let seat_y_kart = kart_pos[1] + f64::from(rules::SEAT_ATTACH_Y) - 0.6;
+    let seat_y_off =
+        kart_pos[1] + f64::from(rules::VehicleKind::OffRoader.layout().seat_attach[1]) - 0.6;
     players.iter().find_map(|p| {
         let dx = p.position[0] - kart_pos[0];
         let dz = p.position[2] - kart_pos[2];
-        let dy_ok =
-            (p.position[1] - seat_y_kart).abs() < 0.45 || (p.position[1] - seat_y_pig).abs() < 0.45;
-        (dx * dx + dz * dz < 0.36 && dy_ok).then_some(p.uuid)
+        let dy_ok = (p.position[1] - seat_y_kart).abs() < 0.50
+            || (p.position[1] - seat_y_off).abs() < 0.50
+            || (p.position[1] - seat_y_pig).abs() < 0.50;
+        (dx * dx + dz * dz < 0.85 && dy_ok).then_some(p.uuid)
     })
 }
 
@@ -1055,6 +1109,7 @@ pub(in crate::game) fn entity_tick_pre(
         input,
         require_fuel,
     );
+    let vlay = rt.spec.kind.layout();
     let tick_count = rt.tick_count;
     let drifting = rt.drifting;
     let burnout = rt.burnout;
@@ -1071,22 +1126,20 @@ pub(in crate::game) fn entity_tick_pre(
     game.native_entity_set_velocity(eref, outcome.velocity);
 
     // Exhaust, drift screech, engine rumble & turbo boost FX at exact 3D component coords!
-    // Forward unit vector in Horizon (+Z at yaw=0, -X at yaw=90): [-sin(yaw), +cos(yaw)]
-    // Left unit vector (+X at yaw=0, +Z at yaw=90): [+cos(yaw), +sin(yaw)]
     let yaw_rad = outcome.yaw_deg.to_radians();
     let fwd_x = f64::from(-yaw_rad.sin());
     let fwd_z = f64::from(yaw_rad.cos());
     let left_x = f64::from(yaw_rad.cos());
     let left_z = f64::from(yaw_rad.sin());
 
-    let exh_z = f64::from(rules::EXHAUST_OFFSET_Z);
+    let exh_z = f64::from(vlay.exhaust_offset_z);
     let exhaust_pos = [
         pos[0] + fwd_x * exh_z,
-        pos[1] + f64::from(rules::EXHAUST_HEIGHT_Y),
+        pos[1] + f64::from(vlay.exhaust_height_y),
         pos[2] + fwd_z * exh_z,
     ];
-    let rear_z = f64::from(rules::REAR_AXLE_Z);
-    let rear_x = f64::from(rules::REAR_TRACK_HALF_X);
+    let rear_z = f64::from(vlay.rear_axle_z);
+    let rear_x = f64::from(vlay.rear_track_half_x);
     let rear_left_patch = [
         pos[0] + fwd_x * rear_z + left_x * rear_x,
         pos[1] + 0.05,
@@ -1363,8 +1416,13 @@ pub(in crate::game) fn net_from_client(
             let Some(&uuid) = st.id_to_uuid.get(&kart_id) else {
                 return;
             };
-            let cur_fuel = st.by_uuid.get(&uuid).map_or(0, |rt| rt.spec.fuel_mb);
-            if cur_fuel >= rules::KART_MAX_FUEL_MB {
+            let (cur_fuel, max_fuel) = st
+                .by_uuid
+                .get(&uuid)
+                .map_or((0, rules::KART_MAX_FUEL_MB), |rt| {
+                    (rt.spec.fuel_mb, rt.spec.max_fuel_mb())
+                });
+            if cur_fuel >= max_fuel {
                 let txt = tr("gokart.msg.tank_full", "Go-Kart fuel tank is already full!");
                 game.native_action_bar(player, Text::literal(txt).with_color(text::YELLOW));
                 return;
@@ -1390,7 +1448,8 @@ pub(in crate::game) fn net_from_client(
                 && let Some(rt) = s2.by_uuid.get_mut(&uuid)
             {
                 let before = rt.spec.fuel_mb;
-                rt.spec.fuel_mb = (before + added_mb).min(rules::KART_MAX_FUEL_MB);
+                let cap = rt.spec.max_fuel_mb();
+                rt.spec.fuel_mb = (before + added_mb).min(cap);
                 let actual = rt.spec.fuel_mb - before;
                 let pct = rt.spec.fuel_percent();
                 s2.dirty = true;
@@ -1708,13 +1767,19 @@ pub(in crate::game) fn camera_distance(game: &Game<'_>, distance: &mut f32) {
         return;
     }
     let c = lock(&CLIENT);
-    if client_ridden_kart(game, &c).is_some() {
-        *distance = c.settings.camera_distance;
+    if let Some(view) = client_ridden_kart(game, &c) {
+        *distance = if view.spec.kind == rules::VehicleKind::OffRoader {
+            c.settings
+                .camera_distance
+                .max(rules::OFF_ROADER_CAMERA_DISTANCE)
+        } else {
+            c.settings.camera_distance
+        };
     }
 }
 
 // ---------------------------------------------------------------------------
-// 3D Go-Kart Renderer (`native_mob_submit`)
+// 3D Go-Kart & 4x4 Off-Roader Renderer (`native_mob_submit`)
 // ---------------------------------------------------------------------------
 
 pub(in crate::game) fn mob_submit(
@@ -1737,11 +1802,12 @@ pub(in crate::game) fn mob_submit(
         return;
     };
     let steer_deg = smooth_steer.unwrap_or(kart.steer_deg);
+    let lay = kart.spec.kind.layout();
 
     // Claim rendering completely so the backing pig is never drawn!
     *drawn = true;
 
-    let circumference = 2.0 * std::f32::consts::PI * rules::REAR_HUB_Y;
+    let circumference = 2.0 * std::f32::consts::PI * lay.rear_hub_y;
     let bps = kart.speed_kmh / (20.0 * 3.6);
     let wheel_spin = kart.wheel_rot_deg
         + if kart.burnout {
@@ -1772,30 +1838,27 @@ pub(in crate::game) fn mob_submit(
         draw.pop();
     };
 
-    // 1. Four Articulated 16-Sided Racing Wheels — planted flat on Y = 0.000 road surface!
-    // Front wheels steer around kingpin +Y first, then roll around axle +X; rear slicks are wider.
+    // 1. Four Articulated 16-Sided Wheels — planted flat on Y = 0.000 road surface!
     let wheel_model = kart.spec.wheels.model_id();
     let wheel_mounts: [([f32; 3], [f32; 3], bool); 4] = [
-        // Front-Left & Front-Right
         (
-            [rules::FRONT_TRACK_HALF_X, rules::FRONT_HUB_Y, rules::FRONT_AXLE_Z],
-            rules::FRONT_WHEEL_SCALE,
+            [lay.front_track_half_x, lay.front_hub_y, lay.front_axle_z],
+            lay.front_wheel_scale,
             true,
         ),
         (
-            [-rules::FRONT_TRACK_HALF_X, rules::FRONT_HUB_Y, rules::FRONT_AXLE_Z],
-            rules::FRONT_WHEEL_SCALE,
+            [-lay.front_track_half_x, lay.front_hub_y, lay.front_axle_z],
+            lay.front_wheel_scale,
             true,
         ),
-        // Rear-Left & Rear-Right (compact staggered rear track!)
         (
-            [rules::REAR_TRACK_HALF_X, rules::REAR_HUB_Y, rules::REAR_AXLE_Z],
-            rules::REAR_WHEEL_SCALE,
+            [lay.rear_track_half_x, lay.rear_hub_y, lay.rear_axle_z],
+            lay.rear_wheel_scale,
             false,
         ),
         (
-            [-rules::REAR_TRACK_HALF_X, rules::REAR_HUB_Y, rules::REAR_AXLE_Z],
-            rules::REAR_WHEEL_SCALE,
+            [-lay.rear_track_half_x, lay.rear_hub_y, lay.rear_axle_z],
+            lay.rear_wheel_scale,
             false,
         ),
     ];
@@ -1827,54 +1890,84 @@ pub(in crate::game) fn mob_submit(
         }
     }
 
-    // 2. Sprung Chassis Assembly (subtle cornering body roll & turbo boost squat relative to wheels!)
+    // 2. Sprung Chassis Assembly (4x4 long-travel suspension roll on Off-Roader, taut race roll on Go-Kart!)
     draw.push();
-    let roll_deg = if kart.drifting {
-        -steer_deg * 0.14
+    let roll_mult = if kart.spec.kind == rules::VehicleKind::OffRoader {
+        1.75
     } else {
-        -steer_deg * 0.05 * (kart.speed_kmh / 60.0).min(1.0)
+        1.0
     };
-    let pitch_deg: f32 = if kart.boosting { -1.6 } else { 0.0 };
+    let roll_deg = if kart.drifting {
+        -steer_deg * 0.14 * roll_mult
+    } else {
+        -steer_deg * 0.05 * roll_mult * (kart.speed_kmh / 60.0).min(1.0)
+    };
+    let pitch_deg: f32 = if kart.boosting {
+        -1.6 * roll_mult
+    } else {
+        0.0
+    };
+    let roll_center_y = if kart.spec.kind == rules::VehicleKind::OffRoader {
+        0.34
+    } else {
+        0.18
+    };
     if roll_deg.abs() > 0.04 {
-        draw.rotate_about([0.0, 0.0, 1.0], roll_deg, [0.0, 0.16, 0.0]);
+        draw.rotate_about([0.0, 0.0, 1.0], roll_deg, [0.0, roll_center_y, 0.0]);
     }
     if pitch_deg.abs() > 0.04 {
-        draw.rotate_about([1.0, 0.0, 0.0], pitch_deg, [0.0, 0.16, rules::REAR_AXLE_Z]);
+        draw.rotate_about(
+            [1.0, 0.0, 0.0],
+            pitch_deg,
+            [0.0, roll_center_y, lay.rear_axle_z],
+        );
     }
 
-    // 2a. Slammed Spaceframe, Sculpted Nose, Tight Sidepods, Pedals, Bucket Seat & Live Rear Axle
+    // 2a. Full-Scale Chassis Body (Go-Kart 1.28x or Off-Roader 1.40x!)
     draw.push();
+    draw.scale(lay.body_scale);
     draw.translate([-0.5, 0.0, -0.5]);
-    game.native_draw_model(draw, rules::MODEL_BODY, kart.spec.paint.rgb());
+    game.native_draw_model(draw, lay.body_model, kart.spec.paint.rgb());
     draw.pop();
 
-    // 2b. Coaxial +32.0 deg 3-Spoke Sport Steering Wheel (phase-locked with driver hands IK!)
+    // 2b. Coaxial 3-Spoke Sport Steering Wheel (center on Go-Kart, left driver pod on Off-Roader!)
     draw_part_at_pivot(
         draw,
         rules::MODEL_STEERING,
-        rules::STEER_PIVOT,
+        lay.steer_pivot,
         &[
-            ([1.0, 0.0, 0.0], rules::STEER_TILT_DEG),
+            ([1.0, 0.0, 0.0], lay.steer_tilt_deg),
             ([0.0, 0.0, 1.0], -steer_deg * rules::STEER_WHEEL_TURN_MULT),
         ],
-        rules::STEER_SCALE,
+        lay.steer_scale,
         0xFFFFFF,
     );
 
-    // 2c. Rear Racing Small Engine (Iron / Gold / Diamond) flush on rear engine deck
-    if let Some(engine_model) = kart.spec.engine.model_id() {
+    // 2c. Exposed Rear Racing Small Engine on Go-Kart (Iron / Gold / Diamond)
+    if let (Some(ep), Some(engine_model)) = (lay.engine_pivot, kart.spec.engine.model_id()) {
         let vib = if kart.speed_kmh > 0.5 || kart.burnout {
             (mob.age * 1.85).sin() * 0.004
         } else {
             (mob.age * 0.7).sin() * 0.0015
         };
-        let ep = rules::ENGINE_PIVOT;
         draw_part_at_pivot(
             draw,
             engine_model,
             [ep[0] + vib, ep[1], ep[2]],
             &[],
-            rules::ENGINE_SCALE,
+            lay.engine_scale,
+            0xFFFFFF,
+        );
+    }
+
+    // 2d. Tailgate-mounted Matching Spare Wheel on 4x4 Off-Roader!
+    if let Some(sp) = lay.spare_wheel_pivot {
+        draw_part_at_pivot(
+            draw,
+            wheel_model,
+            sp,
+            &[([0.0, 1.0, 0.0], 90.0), ([0.0, 0.0, 1.0], -10.0)],
+            lay.spare_wheel_scale,
             0xFFFFFF,
         );
     }
@@ -1893,15 +1986,22 @@ struct KartDriverPose {
 
 impl BodyPose for KartDriverPose {
     fn pose(&self, _age: f32, _at_rest: &[[f32; 9]; 6], poses: &mut [[f32; 9]; 6]) -> bool {
-        let steer_deg = {
+        let (kind, steer_deg) = {
             let c = lock(&CLIENT);
-            c.smoothed_steer
+            let kview = c.karts.get(&self.entity_id).copied();
+            let vkind = kview
+                .map(|k| k.spec.kind)
+                .unwrap_or(rules::VehicleKind::GoKart);
+            let st = c
+                .smoothed_steer
                 .get(&self.entity_id)
                 .copied()
-                .or_else(|| c.karts.get(&self.entity_id).map(|k| k.steer_deg))
-                .unwrap_or(0.0)
+                .or_else(|| kview.map(|k| k.steer_deg))
+                .unwrap_or(0.0);
+            (vkind, st)
         };
-        let (right_arm, left_arm) = rules::compute_driver_ik_angles(steer_deg);
+        let lay = kind.layout();
+        let (right_arm, left_arm) = rules::compute_driver_ik_angles(kind, steer_deg);
 
         // 0: head — natural neck yaw range (±78 deg) while torso stays locked in the seat
         poses[0][4] = poses[0][4].clamp(-1.36, 1.36);
@@ -1919,11 +2019,11 @@ impl BodyPose for KartDriverPose {
         poses[3][4] = left_arm[1];
         poses[3][5] = left_arm[2];
 
-        // 4: right_leg & 5: left_leg — tucked cleanly inside the narrow footwell on the pedals!
-        poses[4][3] = -1.49;
+        // 4: right_leg & 5: left_leg — tucked cleanly inside the footwell on the pedals!
+        poses[4][3] = lay.leg_xrot;
         poses[4][4] = 0.07;
         poses[4][5] = 0.03;
-        poses[5][3] = -1.49;
+        poses[5][3] = lay.leg_xrot;
         poses[5][4] = -0.07;
         poses[5][5] = -0.03;
         true
@@ -1951,16 +2051,28 @@ fn clear_driver_pose(m: &mut Mob) {
     }
 }
 
-fn is_kart_entity(game: &Game<'_>, entity_id: u32) -> bool {
+fn entity_vehicle_kind(game: &Game<'_>, entity_id: u32) -> Option<rules::VehicleKind> {
     {
         let c = lock(&CLIENT);
-        if c.karts.contains_key(&entity_id) {
-            return true;
+        if let Some(view) = c.karts.get(&entity_id) {
+            return Some(view.spec.kind);
         }
     }
-    game.native_entity(entity_id)
-        .and_then(|e| game.native_entity_tags(e))
-        .is_some_and(|tags| tags.iter().any(|t| t == rules::ENTITY_TAG))
+    let tags = game
+        .native_entity(entity_id)
+        .and_then(|e| game.native_entity_tags(e))?;
+    if !tags.iter().any(|t| t == rules::ENTITY_TAG) {
+        return None;
+    }
+    if tags.iter().any(|t| t == rules::ENTITY_TAG_OFF_ROADER) {
+        Some(rules::VehicleKind::OffRoader)
+    } else {
+        Some(rules::VehicleKind::GoKart)
+    }
+}
+
+fn is_kart_entity(game: &Game<'_>, entity_id: u32) -> bool {
+    entity_vehicle_kind(game, entity_id).is_some()
 }
 
 pub(in crate::game) fn tick_player_model_post(game: &mut Game<'_>) {
@@ -1983,7 +2095,7 @@ pub(in crate::game) fn tick_player_model_post(game: &mut Game<'_>) {
         return;
     };
     if let Some((ride_id, yaw, prev_yaw)) = kart_yaw {
-        // Lock the seated driver's torso forward with the Go-Kart (exact Boat behavior!)
+        // Lock the seated driver's torso forward with the vehicle (exact Boat behavior!)
         pm.body_yaw = yaw;
         pm.previous_body_yaw = prev_yaw;
         ensure_driver_pose(pm, ride_id);
@@ -1999,18 +2111,15 @@ pub(in crate::game) fn position_rider(game: &mut Game<'_>) -> ControlFlow<()> {
     let Some(ride_id) = game.riding else {
         return ControlFlow::Continue(());
     };
-    if !is_kart_entity(game, ride_id) {
+    let Some(vkind) = entity_vehicle_kind(game, ride_id) else {
         return ControlFlow::Continue(());
-    }
+    };
     let Some(m) = game.mobs.iter().find(|m| m.id == ride_id && !m.removed) else {
         return ControlFlow::Continue(());
     };
+    let sa = vkind.layout().seat_attach;
     let at = mob_riders::seat(
-        [
-            0.0,
-            f64::from(rules::SEAT_ATTACH_Y),
-            f64::from(rules::SEAT_OFFSET_Z),
-        ],
+        [f64::from(sa[0]), f64::from(sa[1]), f64::from(sa[2])],
         f64::from(0.6_f32),
         m.position,
         m.yaw,
@@ -2033,20 +2142,15 @@ pub(in crate::game) fn position_riders_post(game: &mut Game<'_>) {
         }
         return;
     }
-    let attach = [
-        0.0,
-        f64::from(rules::SEAT_ATTACH_Y),
-        f64::from(rules::SEAT_OFFSET_Z),
-    ];
     for i in 0..game.mobs.len() {
         let Some(v) = game.mobs[i].extra.mount else {
             clear_driver_pose(&mut game.mobs[i]);
             continue;
         };
-        if !is_kart_entity(game, v) {
+        let Some(vkind) = entity_vehicle_kind(game, v) else {
             clear_driver_pose(&mut game.mobs[i]);
             continue;
-        }
+        };
         let Some(v_idx) = game.mobs.iter().position(|m| m.id == v) else {
             clear_driver_pose(&mut game.mobs[i]);
             continue;
@@ -2054,6 +2158,8 @@ pub(in crate::game) fn position_riders_post(game: &mut Game<'_>) {
         if v_idx == i {
             continue;
         }
+        let sa = vkind.layout().seat_attach;
+        let attach = [f64::from(sa[0]), f64::from(sa[1]), f64::from(sa[2])];
         let (pos, prev, yaw, prev_yaw, v_width) = {
             let veh = &game.mobs[v_idx];
             (
@@ -2188,7 +2294,7 @@ pub(in crate::game) fn hud(game: &mut Game<'_>, batch: &mut HudBatch, _corners: 
     let fuel_y = py + 30.0;
     game.native_fill(batch, [bar_x, fuel_y, bar_w, 6.0], 0xFF2A303C);
     if require_fuel {
-        let frac = (kart.spec.fuel_mb as f32 / rules::KART_MAX_FUEL_MB as f32).clamp(0.0, 1.0);
+        let frac = (kart.spec.fuel_mb as f32 / kart.spec.max_fuel_mb() as f32).clamp(0.0, 1.0);
         let fcol = if frac < 0.2 {
             0xFFE03430
         } else if frac < 0.5 {
@@ -2356,14 +2462,15 @@ pub(in crate::game) fn screen_render(
     );
 
     if let Some(kart) = target_kart {
+        let vname = tr(kart.spec.kind.lang_key(), kart.spec.kind.slug());
         let eng = tr(kart.spec.engine.lang_key(), kart.spec.engine.slug());
         let whl = tr(kart.spec.wheels.lang_key(), kart.spec.wheels.slug());
         let col = tr(kart.spec.paint.lang_key(), kart.spec.paint.slug());
-        let line1 = format!("{eng}  •  {whl}");
+        let line1 = format!("{vname}  •  {eng}  •  {whl}");
         let line2 = format!(
             "{col}  •  {} / {} mB ({}%)",
             kart.spec.fuel_mb,
-            rules::KART_MAX_FUEL_MB,
+            kart.spec.max_fuel_mb(),
             kart.spec.fuel_percent()
         );
         game.native_text(batch, &line1, [px + 14.0, py + 28.0], 0xFFD966, true);
@@ -2477,7 +2584,7 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
         return;
     }
     match &*stack.item {
-        rules::ITEM_GO_KART => {
+        rules::ITEM_GO_KART | rules::ITEM_OFF_ROADER => {
             let spec = read_kart_spec(game, stack);
             let eng = tr(spec.engine.lang_key(), spec.engine.slug());
             let whl = tr(spec.wheels.lang_key(), spec.wheels.slug());
@@ -2499,18 +2606,23 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
                     "gokart.tooltip.fuel",
                     "Fuel: %1$s / %2$s mB (%3$s%%)",
                     &spec.fuel_mb.to_string(),
-                    &rules::KART_MAX_FUEL_MB.to_string(),
+                    &spec.max_fuel_mb().to_string(),
                     &spec.fuel_percent().to_string(),
                 )),
                 0x70C926,
             ));
-            lines.push((
-                Text::literal(tr(
+            let hint = if spec.kind == rules::VehicleKind::OffRoader {
+                tr(
+                    "gokart.tooltip.place_off_roader",
+                    "Right-click ground to deploy 4x4 Off-Roader (climbs 1-block terrain!)",
+                )
+            } else {
+                tr(
                     "gokart.tooltip.place_hint",
                     "Right-click ground to deploy Go-Kart",
-                )),
-                0x9AA4B2,
-            ));
+                )
+            };
+            lines.push((Text::literal(hint), 0x9AA4B2));
         }
         rules::ITEM_JERRY_CAN => {
             let mb = read_jerry_fuel(game, stack);
@@ -2612,11 +2724,11 @@ pub(in crate::game) fn item_bar(
         let mb = read_jerry_fuel(game, stack);
         let fill = ((mb as f32 / rules::JERRY_MAX_FUEL_MB as f32) * 13.0).round() as i32;
         *bar = Some((fill.clamp(0, 13), 0xF8C628));
-    } else if &*stack.item == rules::ITEM_GO_KART {
+    } else if &*stack.item == rules::ITEM_GO_KART || &*stack.item == rules::ITEM_OFF_ROADER {
         let spec = read_kart_spec(game, stack);
-        if spec.fuel_mb < rules::KART_MAX_FUEL_MB {
-            let fill =
-                ((spec.fuel_mb as f32 / rules::KART_MAX_FUEL_MB as f32) * 13.0).round() as i32;
+        let cap = spec.max_fuel_mb();
+        if spec.fuel_mb < cap {
+            let fill = ((spec.fuel_mb as f32 / cap as f32) * 13.0).round() as i32;
             *bar = Some((fill.clamp(0, 13), 0x52D053));
         }
     }

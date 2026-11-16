@@ -1,44 +1,45 @@
-# Horizon Go-Kart (`gokart_native`)
+# Horizon Vehicles: Go-Kart & 4x4 Off-Roader (`gokart_native` v0.5.0)
 
-Mod nativ complet de **Go-Kart 3D** pentru **Horizon 26.3 (Launcher `0.2.69+` / Nightly)**, inspirat din celebrul [MrCrayfish's Vehicle Mod](https://github.com/MrCrayfish/MrCrayfishVehicleMod) (portare clean-room compatibilă GPL-3.0).
+Mod nativ complet de **Vehicule 3D (Go-Kart full-size & 4x4 Off-Roader)** pentru **Horizon 26.3 (Launcher `0.2.69+` / Nightly)**, inspirat din celebrul [MrCrayfish's Vehicle Mod](https://github.com/MrCrayfish/MrCrayfishVehicleMod) (implementare și design 100% originale, compatibile GPL-3.0).
 
-Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: conține atât codul nativ Rust (fizică pe două punți la 20 TPS, drift, charge-boost, HUD cu vitezometru analogic + digital, Garaj interactiv de tuning, cameră automată F5), cât și pachetul de resurse încorporat (`gokart-content.hmod` cu modele 3D, texturi pixel-art originale, sunete OGG Vorbis sintetizate, rețete Survival și localizare completă în **Română `ro_ro`** și **Engleză `en_us`**).
+Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: conține atât codul nativ Rust (fizică pe două punți la 20 TPS, drift, charge-boost, tracțiune 4x4 off-road, HUD cu vitezometru analogic + digital, Garaj interactiv de tuning, cameră inteligentă Chase + Free-Look și IK în timp real pentru mâinile șoferului pe volan), cât și pachetul de resurse încorporat (`gokart-content.hmod` cu modele 3D, texturi pixel-art originale, sunete OGG Vorbis sintetizate, rețete Survival și localizare completă în **Română `ro_ro`** și **Engleză `en_us`**).
 
 ---
 
 ## Caracteristici Principale / Features
 
-### 1. Vehicul & Piese de Tuning (`gokart:*`)
-- **Go-Kart (`gokart:go_kart`)** — Șasiu 3D compact și joasă la sol (`0.90 tx` gardă la sol), roți proporționate lipite de marginile pontonilor laterali, panouri vopsibile (`tintindex`), scaun tip scoică în care șoferul stă fixat cu mâinile pe volan (IK dinamic sincronizat cu virajul), volan cu 3 spițe înclinat la `32°` și motor posterior animat cu vibrație.
-- **3 Motoare Mici (`Small Engine`)**:
-  - `gokart:small_engine_iron` — **Motor Mic de Fier**: `52 km/h` (`14.5 blocuri/s`), cuplu echilibrat (`0.50 mB/tick`).
-  - `gokart:small_engine_gold` — **Motor Mic de Aur**: `64 km/h` (`17.8 blocuri/s`), accelerație rapidă (`0.55 mB/tick`).
-  - `gokart:small_engine_diamond` — **Motor Mic de Diamant**: `76 km/h` (`21.2 blocuri/s`), putere de curse & eficiență ridicată (`0.42 mB/tick`).
+### 1. Vehicule & Piese de Tuning (`gokart:*`)
+- **Go-Kart (`gokart:go_kart`)** — Șasiu 3D **full-size** calibrat la proporțiile reale MrCrayfish (`~1.57–1.69` blocuri lățime la anvelope × `~2.24` blocuri lungime, scală `1.28×`), pontoni laterali vopsibili (`tintindex`), scaun tip scoică central în care șoferul stă fixat cu mâinile pe volanul cu 3 spițe (`32°`, IK dinamic sincronizat cu virajul), rezervor `2.000 mB` și motor posterior animat cu vibrație.
+- **4x4 Off-Roader (`gokart:off_roader`)** — SUV off-road 4x4 original (`~2.14` blocuri lățime × `~3.05` blocuri lungime, scală `1.40×`, gardă la sol înaltă și urcare automată peste blocuri întregi `step_height = 1.05`!), bullbar din oțel cu proiectoare, roll-cage tubular cu 4 proiectoare pe plafon, roată de rezervă pe hayon, post de conducere pe partea stângă cu mâinile pe volan (IK dedicat), tracțiune superioară pe iarbă/pământ/nisip/noroi/zăpadă și rezervor dublu de `4.000 mB`!
+- **3 Motoare (`Engine Tiers`)**:
+  - `gokart:small_engine_iron` — **Motor Mic de Fier**: `52 km/h` pe Go-Kart (`47 km/h` pe Off-Roader), cuplu echilibrat.
+  - `gokart:small_engine_gold` — **Motor Mic de Aur**: `64 km/h` pe Go-Kart (`58 km/h` pe Off-Roader), accelerație rapidă.
+  - `gokart:small_engine_diamond` — **Motor Mic de Diamant**: `76 km/h` pe Go-Kart (`69 km/h` pe Off-Roader), putere maximă & eficiență ridicată.
 - **3 Tipuri de Roți (`Wheels`)**:
   - `gokart:standard_wheel` — **Roți Standard**: aderență echilibrată pe piatră, drum și pământ.
-  - `gokart:sports_wheel` — **Roți Sport**: direcție mai rapidă, aderență bună off-road și `+12%` încărcare boost din drift.
-  - `gokart:racing_wheel` — **Roți Racing Slick**: `+12%` viteză maximă pe asfalt/piatră/beton și `+25%` încărcare boost din drift (aderență mai redusă pe nisip/noroi).
-- **Vopsire în 16 Culori (`Minecraft Dyes`)** — Click-dreapta pe Go-Kart cu oricare dintre cele 16 vopsele vanilla (`minecraft:*_dye`) pentru a vopsi instant caroseria.
+  - `gokart:sports_wheel` — **Roți Sport**: direcție mai rapidă, aderență excelentă off-road și `+12%` încărcare boost din drift.
+  - `gokart:racing_wheel` — **Roți Racing Slick**: `+12%` viteză maximă pe asfalt/piatră/beton și `+25%` încărcare boost din drift.
+- **Vopsire în 16 Culori (`Minecraft Dyes`)** — Click-dreapta pe Go-Kart sau Off-Roader cu oricare dintre cele 16 vopsele vanilla (`minecraft:*_dye`) pentru a vopsi instant caroseria.
 - **Cheie Mecanică (`gokart:wrench`)**:
-  - **Click-dreapta pe Go-Kart**: deschide **Garajul Go-Kart & Setări** (demontare motor, alimentare din inventar, împachetare kart, comutare *Combustibil Infinit*, *Cameră F5 Automată*, *KM/H vs B/S*).
-  - **Click-stânga cu Cheia pe Go-Kart** (sau butonul din Garaj): strânge Go-Kartul înapoi în item (`gokart:go_kart`), păstrând intacte motorul, roțile, culoarea și nivelul de combustibil!
+  - **Click-dreapta pe vehicul**: deschide **Garajul Vehicul & Setări** (demontare motor, alimentare din inventar, împachetare vehicul, comutare *Combustibil Infinit*, *Cameră F5 Automată*, *KM/H vs B/S*).
+  - **Click-stânga cu Cheia pe vehicul** (sau butonul din Garaj): strânge Go-Kartul sau Off-Roaderul înapoi în item (`gokart:go_kart` / `gokart:off_roader`), păstrând intacte motorul, roțile, culoarea și nivelul de combustibil!
 - **Sistem de Combustibil & Canistră (`gokart:jerry_can`)**:
-  - Capacitate Canistră: `5.000 mB` (afișată cu bară grafică direct pe iconița din inventar; capacitate rezervor Go-Kart: `2.000 mB`).
-  - Click-dreapta pe Go-Kart cu Canistra (sau direct cu Cărbune, Cărbune de Lemn, Blaze Powder, Blaze Rod ori Găleată cu Lavă) pentru a alimenta.
+  - Capacitate Canistră: `5.000 mB` (rezervor Go-Kart: `2.000 mB`; rezervor 4x4 Off-Roader: `4.000 mB` — ambele vin cu **rezervorul plin** la craft/spawn!).
+  - Click-dreapta pe vehicul cu Canistra (sau direct cu Cărbune, Cărbune de Lemn, Blaze Powder, Blaze Rod ori Găleată cu Lavă) pentru a alimenta.
   - Click-dreapta cu Canistra pe **Lavă**, **Magma Block** sau **Bloc de Cărbune** în lume pentru a reumple canistra.
   - **Mod Combustibil Infinit**: poate fi activat/dezactivat oricând din panoul Garaj (`[K]`) sau prin comanda `/gokart fuel`.
 
-### 2. Fizică MrCrayfish, Controale & Cameră
-- **Geometrie autentică pe două punți (Bicycle-Axle Kinematics)** cu urcare automată peste dale și trepte (`step_height = 0.625`).
+### 2. Fizică pe Două Punți, Controale & Cameră
+- **Geometrie pe două punți (Bicycle-Axle Kinematics)** cu urcare peste dale (`step_height = 0.625` la Go-Kart) și peste **blocuri întregi de 1m** (`step_height = 1.05` la 4x4 Off-Roader!).
 - **Controale clasice**:
   - `W` / `S` — Accelerație / Frână & Marșarier
-  - `A` / `D` — Viraj stânga / dreapta (sensibil la viteză pentru stabilitate la `76 km/h`)
+  - `A` / `D` — Viraj stânga / dreapta
   - `Space` (în mers + viraj) — **Frână de mână / Drift** cu scârțâit de anvelope, fum și încărcare Mini-Turbo
-  - `W` + `Space` (pe loc) — **Burnout Charge-Boost** (roțile spate patinează pe loc și încarcă bara `BOOST`; eliberarea tastei `Space` lansează kartul cu flăcări și turbo!)
+  - `W` + `Space` (pe loc) — **Burnout Charge-Boost** (roțile spate patinează pe loc și încarcă bara `BOOST`; eliberarea tastei `Space` lansează vehiculul cu turbo!)
   - `H` — **Claxon** (`gokart:horn`, reconfigurabil în *Options > Mods > Go-Kart*)
   - `K` — **Panou Garaj & Setări** (reconfigurabil în *Options > Mods > Go-Kart*)
-  - `Shift` — Coborâre din Go-Kart (camera revine automat la First-Person)
-- **Cameră de condus inteligentă (Chase + Free-Look)**: comută automat la `4.0` blocuri în F5 la urcarea în Go-Kart, îți permite să privești liber în jur când miști mouse-ul și urmărește lin direcția/virajele Go-Kartului când lași mouse-ul nemișcat.
+  - `Shift` — Coborâre din vehicul (camera revine automat la First-Person)
+- **Cameră de condus inteligentă (Chase + Free-Look)**: comută automat în F5 la urcarea în vehicul (`4.0` blocuri pentru Go-Kart, `5.8` blocuri pentru 4x4 Off-Roader), permite rotirea liberă a camerei cu mouse-ul și urmărește lin direcția vehiculului când lași mouse-ul nemișcat.
 
 ---
 
@@ -53,6 +54,7 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
 | **Motor Mic de Aur** | `G G G` / `G E G` / `R G R` | `G` = Aur, `E` = Motor Mic de Fier, `R` = Redstone |
 | **Motor Mic de Diamant** | `D D D` / `D E D` / `B D R` | `D` = Diamant, `E` = Motor Mic de Aur, `B` = Blaze Rod, `R` = Bloc Redstone |
 | **Go-Kart** | `I _ L` / `I I I` / `W E W` | `I` = Fier, `L` = Piele, `W` = Roată Standard, `E` = Motor Mic de Fier |
+| **4x4 Off-Roader** | `B G L` / `I E I` / `W I W` | `B` = Bloc de Fier, `G` = Sticlă, `L` = Piele, `I` = Fier, `E` = Motor Mic de Aur, `W` = Roată Sport |
 | **Cheie Mecanică** | `I _ I` / `_ I _` / `_ R _` | `I` = Fier, `R` = Vopsea Roșie |
 | **Canistră Combustibil** | `_ I R` / `I C I` / `I I I` | `I` = Fier, `R` = Vopsea Roșie, `C` = Cărbune |
 
@@ -60,10 +62,10 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
 
 ## Comenzi Rapide
 
-- `/gokart kit` *(OP / Singleplayer Cheats)* — Oferă pachetul complet de testare (Go-Kart, motoare Aur/Diamant, roți Sport/Racing, Cheie Mecanică, Canistră plină și vopsele).
-- `/gokart spawn` *(OP)* — Spawnează instant un Go-Kart în fața jucătorului.
+- `/gokart kit` *(OP / Singleplayer Cheats)* — Oferă pachetul complet de testare (**Go-Kart**, **4x4 Off-Roader**, motoare Aur/Diamant, roți Sport/Racing, Cheie Mecanică, Canistră plină și vopsele).
+- `/gokart spawn` sau `/gokart spawn off_roader` *(OP)* — Spawnează instant un Go-Kart sau un 4x4 Off-Roader în fața jucătorului.
 - `/gokart fuel` *(OP)* — Comută între consum normal de combustibil și **Combustibil Infinit**.
-- `/gokart paint <culoare>` — Vopsește Go-Kartul curent/apropiat (`red`, `blue`, `yellow`, `lime`, `cyan`, `black`, `white` etc.).
+- `/gokart paint <culoare>` — Vopsește vehiculul curent/apropiat (`red`, `green`, `blue`, `yellow`, `orange`, `lime`, `cyan`, `black`, `white` etc.).
 
 ---
 
