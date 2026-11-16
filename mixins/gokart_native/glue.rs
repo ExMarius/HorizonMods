@@ -7,7 +7,7 @@ use horizon_client::{
     hud::HudBatch,
     items::ItemStack,
     lang,
-    mobs::riders as mob_riders,
+    mobs::{Mob, anim::BodyPose, riders as mob_riders},
     mod_api::{
         BlockEntityDraw, Corners, KeyCode, NativeCommand, NativeMobRender, NativeMod,
         NativeScreenView, NativeServerPlayer, ParticleOptions, ParticleType, ServerTickPhase,
@@ -18,11 +18,13 @@ use horizon_client::{
 use horizon_mods::content::{Item, Rarity};
 use horizon_world::nbt::{Compound, JavaString, Tag};
 use std::{
+    any::Any,
     collections::{BTreeMap, HashMap},
     fs,
     ops::ControlFlow,
     path::PathBuf,
-    sync::{Mutex, MutexGuard},
+    sync::{Arc, Mutex, MutexGuard},
+    time::Instant,
 };
 
 const SOUND_PLAYERS: usize = 7;
@@ -53,11 +55,17 @@ struct ClientState {
     settings: rules::ClientSettings,
     require_fuel: bool,
     karts: BTreeMap<u32, rules::ClientKartView>,
+    smoothed_steer: BTreeMap<u32, f32>,
     local_input: rules::DriveInput,
     last_sent_input: rules::DriveInput,
     heartbeat: u8,
     was_riding_kart: bool,
     restored_first_person: bool,
+    cam_kart_entity: Option<u32>,
+    visual_kart_yaw: f32,
+    last_seen_game_yaw: f32,
+    last_mouse_move: Option<Instant>,
+    last_frame_instant: Option<Instant>,
     pending_open_garage: bool,
     pending_close_garage: bool,
     pending_actions: Vec<Vec<u8>>,
@@ -75,6 +83,7 @@ static CLIENT: Mutex<ClientState> = Mutex::new(ClientState {
     },
     require_fuel: true,
     karts: BTreeMap::new(),
+    smoothed_steer: BTreeMap::new(),
     local_input: rules::DriveInput {
         throttle: 0.0,
         steer: 0.0,
@@ -88,6 +97,11 @@ static CLIENT: Mutex<ClientState> = Mutex::new(ClientState {
     heartbeat: 0,
     was_riding_kart: false,
     restored_first_person: false,
+    cam_kart_entity: None,
+    visual_kart_yaw: 0.0,
+    last_seen_game_yaw: 0.0,
+    last_mouse_move: None,
+    last_frame_instant: None,
     pending_open_garage: false,
     pending_close_garage: false,
     pending_actions: Vec::new(),
@@ -1545,14 +1559,32 @@ pub(in crate::game) fn frame(game: &mut Game<'_>) {
         return;
     }
 
-    let (open_garage, close_garage, queued_actions, to_send_input, switch_cam) = {
+    let now = Instant::now();
+    let (open_garage, close_garage, queued_actions, to_send_input, switch_cam, yaw_adjust) = {
         let mut c = lock(&CLIENT);
         ensure_client_config(&mut c);
         if c.horn_cooldown > 0 {
             c.horn_cooldown -= 1;
         }
 
-        let riding_now = client_ridden_kart(game, &c).is_some();
+        let dt = c
+            .last_frame_instant
+            .map(|prev| now.duration_since(prev).as_secs_f32().clamp(0.0005, 0.10))
+            .unwrap_or(1.0 / 60.0);
+        c.last_frame_instant = Some(now);
+
+        // Smooth sub-tick steering angle at display refresh rate for both steering wheel & driver IK!
+        let steer_blend = 1.0 - (-22.0 * dt).exp();
+        let active_ids: Vec<(u32, f32)> =
+            c.karts.iter().map(|(&id, k)| (id, k.steer_deg)).collect();
+        c.smoothed_steer.retain(|id, _| c.karts.contains_key(id));
+        for (id, target_steer) in active_ids {
+            let entry = c.smoothed_steer.entry(id).or_insert(target_steer);
+            *entry += (target_steer - *entry) * steer_blend;
+        }
+
+        let ridden_view = client_ridden_kart(game, &c);
+        let riding_now = ridden_view.is_some();
         let mut cam_change: Option<CameraType> = None;
         if riding_now && !c.was_riding_kart {
             c.was_riding_kart = true;
@@ -1564,11 +1596,66 @@ pub(in crate::game) fn frame(game: &mut Game<'_>) {
             }
         } else if !riding_now && c.was_riding_kart {
             c.was_riding_kart = false;
+            c.cam_kart_entity = None;
+            c.last_mouse_move = None;
             c.local_input = rules::DriveInput::default();
             if c.restored_first_person && game.camera_type == CameraType::ThirdPersonBack {
                 cam_change = Some(CameraType::FirstPerson);
             }
             c.restored_first_person = false;
+        }
+
+        // Authentic Go-Kart camera follow:
+        // - Free mouse look anytime you move the mouse (clamped comfortably within ±125 deg shoulder check)
+        // - 1:1 smooth camera rotation as the Go-Kart turns corners
+        // - Gentle auto-recenter behind the Go-Kart when driving and leaving the mouse untouched
+        let mut cam_yaw_delta: f32 = 0.0;
+        if let Some(kart_view) = ridden_view
+            && let Some(m) = game
+                .mobs
+                .iter()
+                .find(|m| m.id == kart_view.entity_id && !m.removed)
+        {
+            if c.cam_kart_entity != Some(kart_view.entity_id) {
+                c.cam_kart_entity = Some(kart_view.entity_id);
+                c.visual_kart_yaw = m.yaw;
+                c.last_seen_game_yaw = game.yaw;
+                c.last_mouse_move = None;
+            } else {
+                let mouse_moved = rules::wrap_degrees(game.yaw - c.last_seen_game_yaw).abs() > 0.03;
+                if mouse_moved {
+                    c.last_mouse_move = Some(now);
+                }
+                let yaw_step =
+                    rules::wrap_degrees(m.yaw - c.visual_kart_yaw) * (1.0 - (-22.0 * dt).exp());
+                c.visual_kart_yaw = rules::wrap_degrees(c.visual_kart_yaw + yaw_step);
+
+                // 1. Rotate camera smoothly with the Go-Kart's turn
+                cam_yaw_delta += yaw_step;
+                let mut next_yaw = game.yaw + cam_yaw_delta;
+
+                // 2. Smooth chase recenter when driving and mouse has been idle > 0.70 s
+                let mouse_idle = c
+                    .last_mouse_move
+                    .is_none_or(|t| now.duration_since(t).as_secs_f32() > 0.70);
+                let active_drive = kart_view.speed_kmh > 1.5
+                    || c.local_input.throttle.abs() > 0.05
+                    || c.local_input.steer.abs() > 0.05;
+                if mouse_idle && active_drive {
+                    let align_err = rules::wrap_degrees(c.visual_kart_yaw - next_yaw);
+                    let recenter = align_err * (1.0 - (-4.2 * dt).exp());
+                    cam_yaw_delta += recenter;
+                    next_yaw += recenter;
+                }
+
+                // 3. Natural cockpit shoulder-look clamp (±125 deg relative to kart nose)
+                let rel = rules::wrap_degrees(next_yaw - c.visual_kart_yaw);
+                let clamp_fix = rel.clamp(-125.0, 125.0) - rel;
+                cam_yaw_delta += clamp_fix;
+                c.last_seen_game_yaw = game.yaw + cam_yaw_delta;
+            }
+        } else {
+            c.cam_kart_entity = None;
         }
 
         c.heartbeat = c.heartbeat.wrapping_add(1);
@@ -1587,9 +1674,13 @@ pub(in crate::game) fn frame(game: &mut Game<'_>) {
         let open = std::mem::replace(&mut c.pending_open_garage, false);
         let close = std::mem::replace(&mut c.pending_close_garage, false);
         let acts = std::mem::take(&mut c.pending_actions);
-        (open, close, acts, send_pkt, cam_change)
+        (open, close, acts, send_pkt, cam_change, cam_yaw_delta)
     };
 
+    if yaw_adjust.abs() > 1e-5 {
+        game.yaw += yaw_adjust;
+        game.rope_rot_old.0 += yaw_adjust;
+    }
     if let Some(next_cam) = switch_cam {
         game.camera_type = next_cam;
     }
@@ -1604,6 +1695,7 @@ pub(in crate::game) fn frame(game: &mut Game<'_>) {
     } else if open_garage {
         let _ = game.native_mod_screen_open(rules::ID);
     }
+    tick_player_model_post(game);
 }
 
 pub(in crate::game) fn camera_distance(game: &Game<'_>, distance: &mut f32) {
@@ -1629,13 +1721,17 @@ pub(in crate::game) fn mob_submit(
     if *drawn || mob.kind != "minecraft:pig" || !game.native_on(rules::ID) {
         return;
     }
-    let view = {
+    let (view, smooth_steer) = {
         let c = lock(&CLIENT);
-        c.karts.get(&mob.id).copied()
+        (
+            c.karts.get(&mob.id).copied(),
+            c.smoothed_steer.get(&mob.id).copied(),
+        )
     };
     let Some(kart) = view else {
         return;
     };
+    let steer_deg = smooth_steer.unwrap_or(kart.steer_deg);
 
     // Claim rendering completely so the backing pig is never drawn!
     *drawn = true;
@@ -1686,7 +1782,7 @@ pub(in crate::game) fn mob_submit(
             rules::FRONT_WHEEL_SCALE,
             true,
         ),
-        // Rear-Left & Rear-Right (staggered wider rear track!)
+        // Rear-Left & Rear-Right (compact staggered rear track!)
         (
             [rules::REAR_TRACK_HALF_X, rules::REAR_HUB_Y, rules::REAR_AXLE_Z],
             rules::REAR_WHEEL_SCALE,
@@ -1710,7 +1806,7 @@ pub(in crate::game) fn mob_submit(
                 draw,
                 wheel_model,
                 pivot,
-                &[([0.0, 1.0, 0.0], kart.steer_deg), ([1.0, 0.0, 0.0], spin_now)],
+                &[([0.0, 1.0, 0.0], steer_deg), ([1.0, 0.0, 0.0], spin_now)],
                 wscale,
                 0xFFFFFF,
             );
@@ -1729,33 +1825,32 @@ pub(in crate::game) fn mob_submit(
     // 2. Sprung Chassis Assembly (subtle cornering body roll & turbo boost squat relative to wheels!)
     draw.push();
     let roll_deg = if kart.drifting {
-        -kart.steer_deg * 0.16
+        -steer_deg * 0.14
     } else {
-        -kart.steer_deg * 0.06 * (kart.speed_kmh / 60.0).min(1.0)
+        -steer_deg * 0.05 * (kart.speed_kmh / 60.0).min(1.0)
     };
-    let pitch_deg: f32 = if kart.boosting { -1.8 } else { 0.0 };
+    let pitch_deg: f32 = if kart.boosting { -1.6 } else { 0.0 };
     if roll_deg.abs() > 0.04 {
-        draw.rotate_about([0.0, 0.0, 1.0], roll_deg, [0.0, 0.20, 0.0]);
+        draw.rotate_about([0.0, 0.0, 1.0], roll_deg, [0.0, 0.16, 0.0]);
     }
     if pitch_deg.abs() > 0.04 {
-        draw.rotate_about([1.0, 0.0, 0.0], pitch_deg, [0.0, 0.20, rules::REAR_AXLE_Z]);
+        draw.rotate_about([1.0, 0.0, 0.0], pitch_deg, [0.0, 0.16, rules::REAR_AXLE_Z]);
     }
 
-    // 2a. Tubular Spaceframe, Sculpted Nose, Pontoons, Pedals, Bucket Seat & Live Rear Axle
-    // Authored around (8, 0, 8) -> translate([-0.5, 0.0, -0.5]) maps model Y=0 directly to Y=0!
+    // 2a. Slammed Spaceframe, Sculpted Nose, Tight Sidepods, Pedals, Bucket Seat & Live Rear Axle
     draw.push();
     draw.translate([-0.5, 0.0, -0.5]);
     game.native_draw_model(draw, rules::MODEL_BODY, kart.spec.paint.rgb());
     draw.pop();
 
-    // 2b. Coaxial +35.0 deg 3-Spoke Sport Steering Wheel (spins purely around tilted shaft Z!)
+    // 2b. Coaxial +32.0 deg 3-Spoke Sport Steering Wheel (phase-locked with driver hands IK!)
     draw_part_at_pivot(
         draw,
         rules::MODEL_STEERING,
         rules::STEER_PIVOT,
         &[
             ([1.0, 0.0, 0.0], rules::STEER_TILT_DEG),
-            ([0.0, 0.0, 1.0], -kart.steer_deg * 2.0),
+            ([0.0, 0.0, 1.0], -steer_deg * rules::STEER_WHEEL_TURN_MULT),
         ],
         rules::STEER_SCALE,
         0xFFFFFF,
@@ -1783,8 +1878,73 @@ pub(in crate::game) fn mob_submit(
 }
 
 // ---------------------------------------------------------------------------
-// Ergonomic Low-Slung Go-Kart Bucket Seat Rider Positioning (`mounts` & `passengers`)
+// Driver Seating, Torso Lock & Real-Time Hands-on-Steering-Wheel IK (`BodyPose`)
 // ---------------------------------------------------------------------------
+
+#[derive(Debug)]
+struct KartDriverPose {
+    entity_id: u32,
+}
+
+impl BodyPose for KartDriverPose {
+    fn pose(&self, _age: f32, _at_rest: &[[f32; 9]; 6], poses: &mut [[f32; 9]; 6]) -> bool {
+        let steer_deg = {
+            let c = lock(&CLIENT);
+            c.smoothed_steer
+                .get(&self.entity_id)
+                .copied()
+                .or_else(|| c.karts.get(&self.entity_id).map(|k| k.steer_deg))
+                .unwrap_or(0.0)
+        };
+        let (right_arm, left_arm) = rules::compute_driver_ik_angles(steer_deg);
+
+        // 0: head — natural neck yaw range (±78 deg) while torso stays locked in the seat
+        poses[0][4] = poses[0][4].clamp(-1.36, 1.36);
+
+        // 1: body — planted squarely in the bucket seat with subtle cornering lean
+        poses[1][3] = 0.0;
+        poses[1][4] = 0.0;
+        poses[1][5] = (-steer_deg * 0.12).to_radians();
+
+        // 2: right_arm & 3: left_arm — gripping the steering wheel & rotating live with steer_deg!
+        poses[2][3] = right_arm[0];
+        poses[2][4] = right_arm[1];
+        poses[2][5] = right_arm[2];
+        poses[3][3] = left_arm[0];
+        poses[3][4] = left_arm[1];
+        poses[3][5] = left_arm[2];
+
+        // 4: right_leg & 5: left_leg — tucked cleanly inside the narrow footwell on the pedals!
+        poses[4][3] = -1.49;
+        poses[4][4] = 0.07;
+        poses[4][5] = 0.03;
+        poses[5][3] = -1.49;
+        poses[5][4] = -0.07;
+        poses[5][5] = -0.03;
+        true
+    }
+}
+
+fn ensure_driver_pose(m: &mut Mob, kart_id: u32) {
+    let already = m.emote.as_ref().is_some_and(|p| {
+        let any: &dyn Any = &**p;
+        any.downcast_ref::<KartDriverPose>()
+            .is_some_and(|k| k.entity_id == kart_id)
+    });
+    if !already {
+        m.emote = Some(Arc::new(KartDriverPose { entity_id: kart_id }));
+    }
+}
+
+fn clear_driver_pose(m: &mut Mob) {
+    let ours = m.emote.as_ref().is_some_and(|p| {
+        let any: &dyn Any = &**p;
+        any.is::<KartDriverPose>()
+    });
+    if ours {
+        m.emote = None;
+    }
+}
 
 fn is_kart_entity(game: &Game<'_>, entity_id: u32) -> bool {
     {
@@ -1796,6 +1956,35 @@ fn is_kart_entity(game: &Game<'_>, entity_id: u32) -> bool {
     game.native_entity(entity_id)
         .and_then(|e| game.native_entity_tags(e))
         .is_some_and(|tags| tags.iter().any(|t| t == rules::ENTITY_TAG))
+}
+
+pub(in crate::game) fn tick_player_model_post(game: &mut Game<'_>) {
+    if !game.native_on(rules::ID) {
+        if let Some(pm) = game.player_model.as_mut() {
+            clear_driver_pose(pm);
+        }
+        return;
+    }
+    let kart_yaw = game.riding.and_then(|ride_id| {
+        if !is_kart_entity(game, ride_id) {
+            return None;
+        }
+        game.mobs
+            .iter()
+            .find(|m| m.id == ride_id && !m.removed)
+            .map(|m| (ride_id, m.yaw, m.previous_yaw))
+    });
+    let Some(pm) = game.player_model.as_mut() else {
+        return;
+    };
+    if let Some((ride_id, yaw, prev_yaw)) = kart_yaw {
+        // Lock the seated driver's torso forward with the Go-Kart (exact Boat behavior!)
+        pm.body_yaw = yaw;
+        pm.previous_body_yaw = prev_yaw;
+        ensure_driver_pose(pm, ride_id);
+    } else {
+        clear_driver_pose(pm);
+    }
 }
 
 pub(in crate::game) fn position_rider(game: &mut Game<'_>) -> ControlFlow<()> {
@@ -1834,6 +2023,9 @@ pub(in crate::game) fn position_rider(game: &mut Game<'_>) -> ControlFlow<()> {
 
 pub(in crate::game) fn position_riders_post(game: &mut Game<'_>) {
     if !game.native_on(rules::ID) {
+        for m in &mut game.mobs {
+            clear_driver_pose(m);
+        }
         return;
     }
     let attach = [
@@ -1843,12 +2035,15 @@ pub(in crate::game) fn position_riders_post(game: &mut Game<'_>) {
     ];
     for i in 0..game.mobs.len() {
         let Some(v) = game.mobs[i].extra.mount else {
+            clear_driver_pose(&mut game.mobs[i]);
             continue;
         };
         if !is_kart_entity(game, v) {
+            clear_driver_pose(&mut game.mobs[i]);
             continue;
         }
         let Some(v_idx) = game.mobs.iter().position(|m| m.id == v) else {
+            clear_driver_pose(&mut game.mobs[i]);
             continue;
         };
         if v_idx == i {
@@ -1868,6 +2063,9 @@ pub(in crate::game) fn position_riders_post(game: &mut Game<'_>) {
         let offset = mob_riders::vehicle_attachment(m, v_width);
         m.position = mob_riders::seat(attach, offset, pos, yaw);
         m.previous = mob_riders::seat(attach, offset, prev, prev_yaw);
+        m.body_yaw = yaw;
+        m.previous_body_yaw = prev_yaw;
+        ensure_driver_pose(m, v);
     }
 }
 

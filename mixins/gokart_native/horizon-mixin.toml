@@ -1,6 +1,6 @@
 [mod]
 id = "gokart_native"
-version = "0.3.1"
+version = "0.4.0"
 priority = 100
 
 # Planned and verified against Horizon Nightly 2026-11-16 (`9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0`, NATIVE_HOOKS_API = 415).
@@ -305,6 +305,16 @@ id = "position-riders"
 kind = "RETURN"
 target = "horizon_client::game::passengers::Game<'_>::position_riders"
 helper = "position_riders.rs"
+bindings = [
+  { name = "ret", ty = "()", value = "$value" },
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+]
+
+[[injection]]
+id = "tick-player-model"
+kind = "RETURN"
+target = "horizon_client::game::perspective::Game<'_>::tick_player_model"
+helper = "tick_player_model.rs"
 bindings = [
   { name = "ret", ty = "()", value = "$value" },
   { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },

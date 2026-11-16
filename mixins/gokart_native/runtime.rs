@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.3.1";
+pub const VERSION: &str = "0.4.0";
 pub const DESCRIPTION: &str = "Driveable 3D Go-Kart inspired by MrCrayfish's Vehicle Mod: Iron/Gold/Diamond engines, Standard/Sports/Racing wheels, 16-color dye painting, drift + turbo boost, fuel & tuning garage.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
@@ -65,29 +65,75 @@ pub const KART_MAX_FUEL_MB: u32 = 2_000;
 pub const JERRY_MAX_FUEL_MB: u32 = 5_000;
 pub const JERRY_DEFAULT_FUEL_MB: u32 = 2_500;
 
-// Horizon Sprint Kart unified spatial geometry (in blocks; 16 texels = 1.0 block,
+// Compact low-slung Go-Kart spatial geometry (in blocks; 16 texels = 1.0 block,
 // origin (0, 0, 0) = road surface directly beneath entity center; +X left, +Y up, +Z forward)
-pub const FRONT_AXLE_Z: f32 = 13.0 / 16.0;       // +0.8125 b
-pub const REAR_AXLE_Z: f32 = -11.0 / 16.0;       // -0.6875 b
-pub const WHEELBASE: f32 = FRONT_AXLE_Z - REAR_AXLE_Z; // 1.5000 b
-pub const FRONT_TRACK_HALF_X: f32 = 10.5 / 16.0; // ±0.65625 b
-pub const REAR_TRACK_HALF_X: f32 = 11.6 / 16.0;  // ±0.72500 b (staggered wider rear track!)
-pub const FRONT_HUB_Y: f32 = 0.196_875;          // (3.5 / 16) * 0.90 -> tire bottom at Y = 0.000
-pub const REAR_HUB_Y: f32 = 0.218_75;            // (3.5 / 16) * 1.00 -> tire bottom at Y = 0.000
-pub const FRONT_WHEEL_SCALE: [f32; 3] = [0.88, 0.90, 0.90];
-pub const REAR_WHEEL_SCALE: [f32; 3] = [1.16, 1.00, 1.00];
-pub const STEER_PIVOT: [f32; 3] = [0.0, 9.1 / 16.0, 3.6 / 16.0];
-pub const STEER_TILT_DEG: f32 = 35.0;
-pub const STEER_SCALE: [f32; 3] = [0.86, 0.86, 0.86];
-pub const ENGINE_PIVOT: [f32; 3] = [0.0, 7.6 / 16.0, -11.4 / 16.0];
-pub const ENGINE_SCALE: [f32; 3] = [0.95, 0.95, 0.95];
-pub const EXHAUST_OFFSET_Z: f32 = -18.5 / 16.0;
-pub const EXHAUST_HEIGHT_Y: f32 = 0.48;
-pub const SEAT_ATTACH_Y: f32 = 4.20 / 16.0;      // 0.2625 b (flush on bucket seat cushion!)
-pub const SEAT_OFFSET_Z: f32 = -3.0 / 16.0;      // -0.1875 b (flush against contoured backrest!)
-pub const MAX_STEER_DEG: f32 = 26.0;
+pub const FRONT_AXLE_Z: f32 = 9.0 / 16.0;        // +0.5625 b
+pub const REAR_AXLE_Z: f32 = -8.6 / 16.0;        // -0.5375 b
+pub const WHEELBASE: f32 = FRONT_AXLE_Z - REAR_AXLE_Z; // 1.1000 b (compact, nimble go-kart!)
+pub const FRONT_TRACK_HALF_X: f32 = 7.8 / 16.0;  // ±0.4875 b (tucked right beside nose/sidepods!)
+pub const REAR_TRACK_HALF_X: f32 = 8.2 / 16.0;   // ±0.5125 b (compact staggered rear track!)
+pub const FRONT_HUB_Y: f32 = 0.235;              // (4.0 / 16) * 0.94 -> tire bottom at Y = 0.000
+pub const REAR_HUB_Y: f32 = 0.250;               // (4.0 / 16) * 1.00 -> tire bottom at Y = 0.000
+pub const FRONT_WHEEL_SCALE: [f32; 3] = [0.92, 0.94, 0.94];
+pub const REAR_WHEEL_SCALE: [f32; 3] = [1.08, 1.00, 1.00];
+pub const STEER_PIVOT: [f32; 3] = [0.0, 9.85 / 16.0, 4.30 / 16.0];
+pub const STEER_TILT_DEG: f32 = 32.0;
+pub const STEER_SCALE: [f32; 3] = [0.90, 0.90, 0.90];
+pub const STEER_WHEEL_TURN_MULT: f32 = 1.8;
+pub const ENGINE_PIVOT: [f32; 3] = [0.0, 6.20 / 16.0, -8.70 / 16.0];
+pub const ENGINE_SCALE: [f32; 3] = [0.90, 0.90, 0.90];
+pub const EXHAUST_OFFSET_Z: f32 = -15.4 / 16.0;
+pub const EXHAUST_HEIGHT_Y: f32 = 0.39;
+pub const SEAT_ATTACH_Y: f32 = 3.15 / 16.0;      // 0.196875 b (deep slammed bucket seat!)
+pub const SEAT_OFFSET_Z: f32 = -1.80 / 16.0;     // -0.1125 b (flush against contoured backrest!)
+pub const MAX_STEER_DEG: f32 = 25.0;
 pub const STEP_HEIGHT: f64 = 0.625;
 pub const DEFAULT_CAMERA_DISTANCE: f32 = 4.0;
+
+/// Closed-form 3D analytic shoulder-to-steering-wheel Inverse Kinematics for the seated driver!
+/// Returns `(right_arm_euler_zyx, left_arm_euler_zyx)` as `[xrot, yrot, zrot]` in radians for
+/// Horizon's `ModelPart` (`glam::EulerRot::ZYX`), accounting for `AvatarRenderer.scale = 0.9375`.
+pub fn compute_driver_ik_angles(steer_deg: f32) -> ([f32; 3], [f32; 3]) {
+    const AVATAR_SCALE: f32 = 0.9375;
+    let rider_y_tx = SEAT_ATTACH_Y * 16.0 - 9.60; // -6.45 tx
+    let rider_z_tx = SEAT_OFFSET_Z * 16.0;        // -1.80 tx
+    let shoulder_y = (24.016 - 2.0) * AVATAR_SCALE + rider_y_tx;
+    let sh_left = [5.0 * AVATAR_SCALE, shoulder_y, rider_z_tx];
+    let sh_right = [-5.0 * AVATAR_SCALE, shoulder_y, rider_z_tx];
+
+    let tilt = STEER_TILT_DEG.to_radians();
+    let theta = (steer_deg * STEER_WHEEL_TURN_MULT).to_radians();
+    let r_grip = 2.85_f32;
+    let hub = [
+        STEER_PIVOT[0] * 16.0,
+        STEER_PIVOT[1] * 16.0 + 0.40,
+        STEER_PIVOT[2] * 16.0,
+    ];
+
+    let t_left = [
+        hub[0] + r_grip * theta.cos(),
+        hub[1] - r_grip * theta.sin() * tilt.cos(),
+        hub[2] + r_grip * theta.sin() * tilt.sin(),
+    ];
+    let t_right = [
+        hub[0] - r_grip * theta.cos(),
+        hub[1] + r_grip * theta.sin() * tilt.cos(),
+        hub[2] - r_grip * theta.sin() * tilt.sin(),
+    ];
+
+    let roll = 0.10 * theta.sin();
+    let solve = |sh: [f32; 3], target: [f32; 3]| -> [f32; 3] {
+        let dx = target[0] - sh[0];
+        let dy = target[1] - sh[1];
+        let dz = target[2] - sh[2];
+        let horiz = dx.hypot(dz);
+        let xrot = -horiz.atan2(-dy);
+        let yrot = (-dx).atan2(dz);
+        [xrot, yrot, roll]
+    };
+
+    (solve(sh_right, t_right), solve(sh_left, t_left))
+}
 
 // Client -> Server action codes (`CHAN_ACTION`)
 pub const ACT_HORN: u8 = 1;
@@ -1407,13 +1453,19 @@ mod tests {
 
     #[test]
     fn kart_spatial_geometry_places_tires_on_ground_and_aligns_cockpit() {
-        let model_wheel_radius = 3.5_f32 / 16.0;
+        let model_wheel_radius = 4.0_f32 / 16.0;
         let front_bottom = FRONT_HUB_Y - model_wheel_radius * FRONT_WHEEL_SCALE[1];
         let rear_bottom = REAR_HUB_Y - model_wheel_radius * REAR_WHEEL_SCALE[1];
         assert!(front_bottom.abs() < 1e-6, "front tires rest flat on Y=0");
         assert!(rear_bottom.abs() < 1e-6, "rear tires rest flat on Y=0");
-        assert!((WHEELBASE - 1.50).abs() < 1e-6);
+        assert!((WHEELBASE - 1.10).abs() < 1e-6);
         assert!(REAR_TRACK_HALF_X > FRONT_TRACK_HALF_X);
         assert!(STEER_PIVOT[2] > SEAT_OFFSET_Z && STEER_PIVOT[1] > SEAT_ATTACH_Y);
+
+        let (r0, l0) = compute_driver_ik_angles(0.0);
+        assert!((r0[0] - l0[0]).abs() < 1e-5, "symmetric arm pitch at 0 deg steer");
+        assert!((r0[1] + l0[1]).abs() < 1e-5, "mirror-symmetric arm yaw at 0 deg steer");
+        let (r_left, l_left) = compute_driver_ik_angles(22.0);
+        assert!(r_left[0] < l_left[0], "right hand lifts higher than left hand when steering left");
     }
 }

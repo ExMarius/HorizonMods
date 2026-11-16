@@ -9,7 +9,7 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
 ## Caracteristici Principale / Features
 
 ### 1. Vehicul & Piese de Tuning (`gokart:*`)
-- **Go-Kart (`gokart:go_kart`)** — Șasiu 3D cu panouri vopsibile (`tintindex`), scaun tip scoică, volan înclinat la `-42°` care se rotește în timp real, roți față care virează și se învârt, roți spate mai late și motor posterior animat cu vibrație.
+- **Go-Kart (`gokart:go_kart`)** — Șasiu 3D compact și joasă la sol (`0.90 tx` gardă la sol), roți proporționate lipite de marginile pontonilor laterali, panouri vopsibile (`tintindex`), scaun tip scoică în care șoferul stă fixat cu mâinile pe volan (IK dinamic sincronizat cu virajul), volan cu 3 spițe înclinat la `32°` și motor posterior animat cu vibrație.
 - **3 Motoare Mici (`Small Engine`)**:
   - `gokart:small_engine_iron` — **Motor Mic de Fier**: `52 km/h` (`14.5 blocuri/s`), cuplu echilibrat (`0.50 mB/tick`).
   - `gokart:small_engine_gold` — **Motor Mic de Aur**: `64 km/h` (`17.8 blocuri/s`), accelerație rapidă (`0.55 mB/tick`).
@@ -38,7 +38,7 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
   - `H` — **Claxon** (`gokart:horn`, reconfigurabil în *Options > Mods > Go-Kart*)
   - `K` — **Panou Garaj & Setări** (reconfigurabil în *Options > Mods > Go-Kart*)
   - `Shift` — Coborâre din Go-Kart (camera revine automat la First-Person)
-- **Cameră F5 automată la `4.0` blocuri** la urcarea în Go-Kart (configurabilă din setări / `config/gokart-client.toml`).
+- **Cameră de condus inteligentă (Chase + Free-Look)**: comută automat la `4.0` blocuri în F5 la urcarea în Go-Kart, îți permite să privești liber în jur când miști mouse-ul și urmărește lin direcția/virajele Go-Kartului când lași mouse-ul nemișcat.
 
 ---
 

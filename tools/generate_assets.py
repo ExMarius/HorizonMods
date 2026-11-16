@@ -446,111 +446,99 @@ def generate_models() -> None:
     mdir.mkdir(parents=True, exist_ok=True)
 
     # =========================================================================
-    # 1. `go_kart_body.json` — Original "Horizon Sprint Kart" Spaceframe & Body
+    # 1. `go_kart_body.json` — Compact Low-Slung Go-Kart Spaceframe & Body (v0.4.0)
     # =========================================================================
     # Canonical Vehicle Frame (16 texels = 1.0 block):
     #   Origin (0, 0, 0) = ground plane directly under kart entity center
     #   +X = Driver's LEFT, -X = Driver's RIGHT, +Y = UP, +Z = FORWARD
-    #   Front Axle Z = +13.0 tx (+0.8125 b), Front Track X = ±10.2 tx (±0.6375 b)
-    #   Rear Axle  Z = -11.0 tx (-0.6875 b), Rear Track  X = ±11.4 tx (±0.7125 b)
-    #   Driver Seat Cushion Top = +4.2 tx (+0.2625 b) at Z = -2.0 tx (-0.125 b)
-    #   Steering Wheel Hub Pivot = (0.0, 9.4, +4.6) tx, shaft angle +35.0 deg X
-    #   Rear Engine Deck Top = +3.6 tx (+0.225 b), Engine Pivot = (0.0, 7.6, -11.4) tx
+    #   Front Axle Z = +9.0 tx (+0.5625 b), Front Track X = ±7.8 tx (±0.4875 b), R = 3.76 tx
+    #   Rear Axle  Z = -8.6 tx (-0.5375 b), Rear Track  X = ±8.2 tx (±0.5125 b), R = 4.00 tx
+    #   Driver Seat Cushion Top = +3.15 tx (+0.196875 b) at Z = -1.80 tx (-0.1125 b)
+    #   Steering Wheel Hub Pivot = (0.0, 9.85, +4.30) tx, shaft angle +32.0 deg X
+    #   Rear Engine Deck Top = +2.40 tx (+0.1500 b), Engine Pivot = (0.0, 6.20, -8.70) tx
     body_elements = [
-        # --- A. Tubular Racing Spaceframe & Flat Steel Floorpan ---
-        # Central flat floorpan tray (footwell to under-seat)
-        vbox(-4.2, 1.8, -6.8,  4.2, 2.5, 16.0, "#frame"),
-        # Left & right primary longitudinal chassis frame rails
-        vbox( 3.6, 1.7, -15.8,  4.7, 2.9, 17.2, "#frame"),
-        vbox(-4.7, 1.7, -15.8, -3.6, 2.9, 17.2, "#frame"),
-        # Footwell raised side kick-plates (keeps boots tucked inside cockpit)
-        vbox( 3.8, 2.5,  6.8,  4.6, 4.4, 15.8, "#frame"),
-        vbox(-4.6, 2.5,  6.8, -3.8, 4.4, 15.8, "#frame"),
+        # --- A. Slammed Racing Floorpan & Low-Slung Tubular Frame (0.90 tx ground clearance!) ---
+        vbox(-4.5, 0.90, -4.4,  4.5, 1.75, 11.8, "#frame"),
+        # Primary left & right longitudinal chassis rails
+        vbox( 3.9, 0.95, -13.4,  5.0, 2.30, 13.8, "#frame"),
+        vbox(-5.0, 0.95, -13.4, -3.9, 2.30, 13.8, "#frame"),
+        # Footwell raised side rails (keeps driver's boots framed cleanly inside cockpit)
+        vbox( 3.9, 1.75,  4.2,  4.6, 3.70, 11.6, "#frame"),
+        vbox(-4.6, 1.75,  4.2, -3.9, 3.70, 11.6, "#frame"),
 
-        # --- B. Front Suspension Crossbeam, Exposed Spindles, Kingpin C-Yokes & Tie-Rods ---
-        # Heavy front axle beam & outer C-yoke kingpin brackets reaching out to vx = ±8.1
-        vbox(-8.0, 2.4, 12.2,  8.0, 3.6, 13.8, "#frame"),
-        vbox( 7.2, 2.0, 11.9,  8.2, 4.1, 14.1, "#chrome"),
-        vbox(-8.2, 2.0, 11.9, -7.2, 4.1, 14.1, "#chrome"),
-        # Twin chrome steering tie-rods behind front beam (connect steering pitman to spindles)
-        vbox(-7.6, 3.0, 10.9,  7.6, 3.6, 11.5, "#chrome"),
+        # --- B. Compact Front Axle Beam & Tucked Kingpin Yokes (Zero monster-truck spindle gap!) ---
+        vbox(-5.4, 2.95,  8.3,  5.4, 4.05,  9.7, "#frame"),
+        vbox( 4.5, 2.75,  8.1,  5.35, 4.35, 9.9, "#chrome"),
+        vbox(-5.35, 2.75, 8.1, -4.5, 4.35,  9.9, "#chrome"),
+        # Compact chrome steering tie-rod behind front beam
+        vbox(-5.0, 3.25,  7.2,  5.0, 3.75,  7.8, "#chrome"),
 
-        # --- C. Sculpted Swept-V Front Racing Wing, Bumper Hoop & Sloped Nassau Fairing ---
-        # Positioned 1.2 tx further forward so even at ±28 deg full steering lock there is clean daylight!
-        vbox(-6.5, 2.1, 20.8,  6.5, 3.2, 21.9, "#frame"),
-        vbox( 5.6, 2.1, 18.8, 10.6, 3.1, 19.8, "#frame", vrot=("y",  15.0, (6.0, 2.6, 19.3))),
-        vbox(-10.6, 2.1, 18.8, -5.6, 3.1, 19.8, "#frame", vrot=("y", -15.0, (-6.0, 2.6, 19.3))),
-        # Swept-V painted front aerodynamic wing blades + central nose splitter (`tint = True`)
-        vbox(-5.4, 2.4, 18.2,  5.4, 4.5, 21.5, "#body", tint=True, vrot=("x", 13.0, (0.0, 3.4, 19.8))),
-        vbox( 4.2, 2.4, 18.0, 10.8, 4.3, 20.6, "#body", tint=True, vrot=("y",  15.0, (4.8, 3.3, 19.4))),
-        vbox(-10.8, 2.4, 18.0, -4.2, 4.3, 20.6, "#body", tint=True, vrot=("y", -15.0, (-4.8, 3.3, 19.4))),
-        # Painted central nose cone wedge (`tint = True`, narrow ±4.0 tx for generous tire lock clearance!)
-        vbox(-4.0, 2.9, 12.2,  4.0, 5.6, 18.6, "#body", tint=True, vrot=("x", 15.0, (0.0, 4.2, 15.4))),
-        # Painted sloped Nassau steering cowling rising toward driver (`tint = True`)
-        vbox(-3.9, 4.4,  6.8,  3.9, 7.3, 12.8, "#body", tint=True, vrot=("x", 22.0, (0.0, 5.8,  9.8))),
-        # Front number-plate / racing crest trim strip on nose
-        vbox(-2.3, 5.5, 11.2,  2.3, 6.2, 15.6, "#chrome", vrot=("x", 17.0, (0.0, 5.8, 13.4))),
+        # --- C. Low Wrap-Around Front Bumper, Swept Front Fairing & Nassau Cowling ---
+        # Front tire spans Z = +5.24..+12.76 tx -> bumper wraps closely right in front at Z = +13.4..+15.6!
+        vbox(-5.8, 1.10, 14.5,  5.8, 2.40, 15.6, "#frame"),
+        vbox( 5.0, 1.10, 13.3,  8.8, 2.30, 14.4, "#frame", vrot=("y",  16.0, (5.4, 1.7, 13.8))),
+        vbox(-8.8, 1.10, 13.3, -5.0, 2.30, 14.4, "#frame", vrot=("y", -16.0, (-5.4, 1.7, 13.8))),
+        # Painted low front spoiler & swept corner wings (`tint = True`, framing front slicks closely!)
+        vbox(-4.8, 1.40, 13.1,  4.8, 3.55, 15.3, "#body", tint=True, vrot=("x", 12.0, (0.0, 2.5, 14.2))),
+        vbox( 3.9, 1.35, 13.0,  8.6, 3.30, 14.8, "#body", tint=True, vrot=("y",  16.0, (4.4, 2.3, 13.9))),
+        vbox(-8.6, 1.35, 13.0, -3.9, 3.30, 14.8, "#body", tint=True, vrot=("y", -16.0, (-4.4, 2.3, 13.9))),
+        # Narrowed front nose cone (`±3.70 tx` between Z=+4.8..+13.2 -> full ±25 deg tire lock clearance!)
+        vbox(-3.70, 2.10, 8.4,  3.70, 4.85, 13.5, "#body", tint=True, vrot=("x", 15.0, (0.0, 3.5, 11.0))),
+        # Sloped Nassau steering cowling rising smoothly to steering column (`tint = True`)
+        vbox(-3.75, 3.60, 4.2,  3.75, 7.00,  8.9, "#body", tint=True, vrot=("x", 25.0, (0.0, 5.3,  6.5))),
+        # Front number-plate racing crest on nose
+        vbox(-2.2, 4.75,  7.6,  2.2, 5.40, 11.5, "#chrome", vrot=("x", 18.0, (0.0, 5.1,  9.5))),
 
-        # --- D. Sculpted Aerodynamic Side Pontoons & Nerf Bars (Strictly Between Z=-5.6 and Z=+7.4) ---
-        # Steel nerf-bar outriggers supporting left & right pontoons
-        vbox( 4.6, 2.1, -4.6,  9.2, 2.8, -3.6, "#frame"),
-        vbox( 4.6, 2.1,  4.8,  9.2, 2.8,  5.8, "#frame"),
-        vbox(-9.2, 2.1, -4.6, -4.6, 2.8, -3.6, "#frame"),
-        vbox(-9.2, 2.1,  4.8, -4.6, 2.8,  5.8, "#frame"),
-        # Main painted side pontoons (`tint = True`)
-        vbox( 4.8, 2.2, -5.5,  9.6, 5.6,  6.2, "#body", tint=True),
-        vbox(-9.6, 2.2, -5.5, -4.8, 5.6,  6.2, "#body", tint=True),
-        # Angled front radiator/air-intake wedges on pontoons (`tint = True`)
-        vbox( 5.0, 2.3,  4.8,  9.3, 5.4,  7.4, "#body", tint=True, vrot=("y", -18.0, (7.0, 3.8, 6.0))),
-        vbox(-9.3, 2.3,  4.8, -5.0, 5.4,  7.4, "#body", tint=True, vrot=("y",  18.0, (-7.0, 3.8, 6.0))),
-        # Dark recessed intake grilles & outer black rub-strips on pontoons
-        vbox( 5.4, 2.7,  6.9,  8.6, 4.9,  7.5, "#seat", vrot=("y", -18.0, (7.0, 3.8, 6.0))),
-        vbox(-8.6, 2.7,  6.9, -5.4, 4.9,  7.5, "#seat", vrot=("y",  18.0, (-7.0, 3.8, 6.0))),
-        vbox( 9.4, 2.5, -5.2, 10.0, 3.9,  5.8, "#frame"),
-        vbox(-10.0, 2.5, -5.2, -9.4, 3.9, 5.8, "#frame"),
+        # --- D. Tight, Low-Slung Sidepods Hugging Front & Rear Wheels (Z = -4.25..+3.75, X = ±4.5..±7.7) ---
+        # Clean 1.15 tx clearance behind turned ±25 deg front tire & 0.35 tx arch in front of rear tire!
+        vbox( 4.5, 1.00, -4.25,  7.7, 4.70,  3.75, "#body", tint=True),
+        vbox(-7.7, 1.00, -4.25, -4.5, 4.70,  3.75, "#body", tint=True),
+        # Sculpted front intake shoulders & dark radiator grilles behind front tires
+        vbox( 4.6, 1.10,  2.55,  7.4, 4.55,  4.05, "#body", tint=True, vrot=("y", -16.0, (6.0, 2.8, 3.3))),
+        vbox(-7.4, 1.10,  2.55, -4.6, 4.55,  4.05, "#body", tint=True, vrot=("y",  16.0, (-6.0, 2.8, 3.3))),
+        vbox( 5.0, 1.50,  3.70,  7.0, 4.05,  4.15, "#seat", vrot=("y", -16.0, (6.0, 2.8, 3.3))),
+        vbox(-7.0, 1.50,  3.70, -5.0, 4.05,  4.15, "#seat", vrot=("y",  16.0, (-6.0, 2.8, 3.3))),
+        # Low-profile black side rub-skirts along outer edge of sidepods
+        vbox( 7.55, 1.10, -4.05, 8.05, 2.45,  3.55, "#frame"),
+        vbox(-8.05, 1.10, -4.05, -7.55, 2.45, 3.55, "#frame"),
+        # Inner wheel-well splash guards hugging inside of rear slicks (`vx = ±4.85..±5.45`)
+        vbox( 4.85, 1.60, -11.4, 5.45, 5.20, -5.0, "#frame"),
+        vbox(-5.45, 1.60, -11.4, -4.85, 5.20, -5.0, "#frame"),
 
-        # --- E. Ergonomic Bucket Racing Seat (Zero-Gap Flush with Seated Driver at Y=4.2, Z=-3.0) ---
-        # Molded seat pan & quilted alcantara cushion (top at exact Y = 4.2 tx)
-        vbox(-4.4, 2.5, -6.4,  4.4, 4.2,  1.8, "#seat"),
-        # Left & right hip/thigh lateral racing bolsters
-        vbox( 3.9, 3.6, -6.2,  5.3, 8.4,  1.0, "#seat"),
-        vbox(-5.3, 3.6, -6.2, -3.9, 8.4,  1.0, "#seat"),
-        # Contoured high-back bucket backrest (`-5 deg` X-recline, zero-gap flush against Z=-5.0 back!)
-        vbox(-4.3, 4.0, -6.4,  4.3, 14.2, -4.8, "#seat", vrot=("x", -5.0, (0.0, 4.2, -5.4))),
-        # Integrated upper headrest pad
-        vbox(-2.9, 13.8, -6.7, 2.9, 16.0, -5.0, "#seat", vrot=("x", -4.0, (0.0, 14.2, -5.8))),
-        # Painted fiberglass outer seat shell (`tint = True`)
-        vbox(-4.0, 4.4, -7.0,  4.0, 13.8, -6.2, "#body", tint=True, vrot=("x", -5.0, (0.0, 4.2, -5.4))),
+        # --- E. Deep Slammed Bucket Racing Seat (Cushion Top Y = 3.15 tx, Backrest Flush at Z = -3.68 tx) ---
+        vbox(-4.3, 1.75, -5.1,  4.3, 3.15,  2.3, "#seat"),
+        # Left & right deep lateral hip/thigh bolsters
+        vbox( 3.8, 2.75, -4.9,  5.0, 7.35,  1.7, "#seat"),
+        vbox(-5.0, 2.75, -4.9, -3.8, 7.35,  1.7, "#seat"),
+        # Contoured bucket backrest (`-5 deg` X-recline, inner face at Z = -3.65 flush with driver back!)
+        vbox(-4.2, 3.00, -5.1,  4.2, 13.30, -3.65, "#seat", vrot=("x", -5.0, (0.0, 3.15, -4.3))),
+        # Integrated headrest pad & painted outer fiberglass shell (`tint = True`)
+        vbox(-2.8, 12.90, -5.4, 2.8, 15.10, -3.85, "#seat", vrot=("x", -4.0, (0.0, 13.3, -4.6))),
+        vbox(-3.9, 3.40, -5.65, 3.9, 12.90, -4.95, "#body", tint=True, vrot=("x", -5.0, (0.0, 3.15, -4.3))),
 
-        # --- F. Coaxial Steering Column Tower & +35.0 deg Chrome Shaft + Footwell Pedals ---
-        # Structural steering support bulkhead under Nassau cowling
-        vbox(-1.6, 2.5,  8.0,  1.6, 6.6,  9.8, "#frame"),
-        # Chrome steering shaft: origin at exact STEER_PIVOT (0.0, 9.1, +3.6) tilted +35.0 deg X!
-        vbox(-0.65, 8.45, 3.6, 0.65, 9.75, 11.2, "#chrome", vrot=("x", 35.0, (0.0, 9.1, 3.6))),
-        # Upper column bearing collar right behind steering wheel boss
-        vbox(-1.05, 8.05, 4.2, 1.05, 10.15, 5.4, "#frame", vrot=("x", 35.0, (0.0, 9.1, 3.6))),
-        # Footwell Chrome Throttle & Brake Pedals + Heel Stops
-        vbox( 1.6, 2.5, 12.2,  3.2, 6.1, 13.0, "#chrome", vrot=("x", -18.0, (2.4, 2.8, 12.6))),
-        vbox(-3.2, 2.5, 12.2, -1.6, 6.1, 13.0, "#chrome", vrot=("x", -18.0, (-2.4, 2.8, 12.6))),
-        vbox(-3.4, 2.5, 10.6,  3.4, 3.0, 11.3, "#frame"),
+        # --- F. Coaxial +32.0 deg Steering Column & Chrome Shaft (Pivot (0.0, 9.85, +4.30)) + Pedals ---
+        vbox(-1.5, 1.75,  5.6,  1.5, 6.20,  7.4, "#frame"),
+        vbox(-0.55, 9.30, 4.30, 0.55, 10.40, 7.4, "#chrome", vrot=("x", 32.0, (0.0, 9.85, 4.30))),
+        vbox(-0.95, 8.90, 4.85, 0.95, 10.80, 5.95, "#frame", vrot=("x", 32.0, (0.0, 9.85, 4.30))),
+        # Chrome Throttle & Brake Pedals positioned right at driver's boots (`Z = +10.0 tx`)
+        vbox( 1.5, 1.75,  9.8,  3.1, 5.30, 10.6, "#chrome", vrot=("x", -18.0, (2.3, 2.0, 10.2))),
+        vbox(-3.1, 1.75,  9.8, -1.5, 5.30, 10.6, "#chrome", vrot=("x", -18.0, (-2.3, 2.0, 10.2))),
+        vbox(-3.3, 1.75,  8.5,  3.3, 2.25,  9.2, "#frame"),
 
-        # --- G. Rear Live Chrome Axle, Ventilated Brake Rotor, Chain Sprocket & Engine Deck ---
-        # Rear engine mounting deck plate (top surface at exact Y = 3.6 tx)
-        vbox(-4.6, 2.4, -15.8,  4.6, 3.6, -7.0, "#frame"),
-        # Bearing carrier blocks on frame rails at Z = -11.0
-        vbox( 3.5, 2.2, -12.1,  5.2, 4.8, -9.9, "#frame"),
-        vbox(-5.2, 2.2, -12.1, -3.5, 4.8, -9.9, "#frame"),
-        # Full-width live chrome rear axle shaft coaxial with rear wheels at (Y=3.5, Z=-11.0)!
-        vbox(-9.1, 2.95, -11.55, 9.1, 4.05, -10.45, "#chrome"),
-        # Ventilated rear brake disc + painted caliper on LEFT (+X), drive sprocket on RIGHT (-X, aligned with engine clutch!)
-        vbox( 5.6, 1.9, -12.8,  6.2, 5.3, -9.2, "#chrome"),
-        vbox( 5.3, 3.6, -9.7,   6.5, 5.7, -8.4, "#body", tint=True),
-        vbox(-4.2, 2.0, -12.6, -3.5, 5.2, -9.4, "#frame"),
-        # Rear tubular crash bar & painted rear valence panel (`tint = True`, behind Z=-14.5 rear slicks)
-        vbox(-8.8, 2.4, -18.0,  8.8, 3.8, -16.8, "#frame"),
-        vbox( 4.0, 2.4, -17.0,  4.9, 3.8, -15.4, "#frame"),
-        vbox(-4.9, 2.4, -17.0, -4.0, 3.8, -15.4, "#frame"),
-        vbox(-6.4, 2.8, -17.2,  6.4, 5.0, -15.6, "#body", tint=True),
+        # --- G. Low Rear Engine Deck (Top Y = 2.40 tx), Coaxial Live Rear Axle (Y=4.00, Z=-8.60) & Bumper ---
+        vbox(-4.5, 1.25, -13.0,  4.5, 2.40, -4.6, "#frame"),
+        # Axle bearing hangers at Z = -8.60
+        vbox( 3.8, 1.90, -9.7,  5.1, 5.10, -7.5, "#frame"),
+        vbox(-5.1, 1.90, -9.7, -3.8, 5.10, -7.5, "#frame"),
+        # Full-width live chrome rear axle coaxial with R=4.00 rear slicks at (Y=4.00, Z=-8.60)!
+        vbox(-6.4, 3.45, -9.15, 6.4, 4.55, -8.05, "#chrome"),
+        # Tucked ventilated brake rotor + painted caliper (+X) and drive sprocket (-X, under engine clutch)
+        vbox( 4.15, 2.25, -10.3, 4.70, 5.85, -6.9, "#chrome"),
+        vbox( 4.00, 4.05, -7.4,  4.85, 6.05, -6.2, "#body", tint=True),
+        vbox(-4.15, 2.35, -10.2, -3.45, 5.65, -7.0, "#frame"),
+        # Integrated rear crash bumper & painted valence right behind rear slicks (`Z = -12.8..-14.0`)
+        vbox(-7.6, 1.35, -14.0,  7.6, 2.70, -12.9, "#frame"),
+        vbox(-5.2, 1.80, -13.6,  5.2, 3.65, -12.4, "#body", tint=True),
     ]
     (mdir / "go_kart_body.json").write_text(
         json.dumps(
@@ -610,12 +598,12 @@ def generate_models() -> None:
     )
 
     # =========================================================================
-    # 3. 16-Sided Cylindrical Racing Wheels (`wheel_standard`, `wheel_sports`, `wheel_racing`)
+    # 3. 16-Sided Cylindrical Kart Wheels (`wheel_standard`, `wheel_sports`, `wheel_racing`)
     # =========================================================================
     # Authored symmetrically around (8.0, 8.0, 8.0):
-    #   - Exact outer radius R = 3.50 tx (Y in [4.50, 11.50]), half-chord = 0.72 tx
+    #   - Chunky kart slick outer radius R = 4.00 tx (Y, Z in [4.00, 12.00], 0.50 b diameter!), half-chord = 0.80 tx
     #   - 4 boxes at 0, 22.5, 45, 67.5 deg around X -> smooth closed 16-gon slick cylinder!
-    #   - Tire width X in [5.50, 10.50] (5.00 tx = ±2.50 tx from hub)
+    #   - Tire width X in [5.60, 10.40] (4.80 tx = ±2.40 tx from hub)
     #   - Recessed 8-sided alloy rim disc with centered [0,0,16,16] spoke UVs + chrome center-lock nut
     for wname, rim_tex in [
         ("wheel_standard", "gokart:block/wheel_standard"),
@@ -624,28 +612,27 @@ def generate_models() -> None:
     ]:
         w_elements = []
         for idx, ang in enumerate((0.0, 22.5, 45.0, 67.5)):
-            # Slight 0.01 tx X inset on alternating segments prevents coplanar sidewall Z-fighting!
             eps = 0.012 * idx
             r = None if ang == 0.0 else ("x", ang, [8.0, 8.0, 8.0])
             w_elements.append(
-                box([5.50 + eps, 4.50, 7.28], [10.50 - eps, 11.50, 8.72], "#tire", rot=r)
+                box([5.60 + eps, 4.00, 7.20], [10.40 - eps, 12.00, 8.80], "#tire", rot=r)
             )
             w_elements.append(
-                box([5.50 + eps, 7.28, 4.50], [10.50 - eps, 8.72, 11.50], "#tire", rot=r)
+                box([5.60 + eps, 7.20, 4.00], [10.40 - eps, 8.80, 12.00], "#tire", rot=r)
             )
-        # Recessed dark tire sidewall ring (octagonal, R=2.55 tx, chord=1.06 tx -> true circle inside tire!)
+        # Recessed dark tire sidewall ring (octagonal, R=2.95 tx, chord=1.22 tx -> true circle inside tire!)
         for r_ang in (0.0, 45.0):
             rr = None if r_ang == 0.0 else ("x", r_ang, [8.0, 8.0, 8.0])
-            w_elements.append(box([5.42, 5.45, 6.94], [10.58, 10.55, 9.06], "#tire", rot=rr))
-            w_elements.append(box([5.42, 6.94, 5.45], [10.58, 9.06, 10.55], "#tire", rot=rr))
-        # True round 8-sided deep-dish alloy wheel rim (R=1.95 tx, chord=0.81 tx -> zero star spikes!)
+            w_elements.append(box([5.52, 5.05, 6.78], [10.48, 10.95, 9.22], "#tire", rot=rr))
+            w_elements.append(box([5.52, 6.78, 5.05], [10.48, 9.22, 10.95], "#tire", rot=rr))
+        # True round 8-sided deep-dish alloy wheel rim (R=2.25 tx, chord=0.93 tx -> zero star spikes!)
         for idx_r, r_ang in enumerate((0.0, 45.0)):
             eps_r = 0.01 * idx_r
             rr = None if r_ang == 0.0 else ("x", r_ang, [8.0, 8.0, 8.0])
             w_elements.append(
                 box(
-                    [5.32 + eps_r, 6.05, 7.19],
-                    [10.68 - eps_r, 9.95, 8.81],
+                    [5.42 + eps_r, 5.75, 7.07],
+                    [10.58 - eps_r, 10.25, 8.93],
                     "#rim",
                     rot=rr,
                     full_uv_faces=("west", "east"),
@@ -653,15 +640,15 @@ def generate_models() -> None:
             )
             w_elements.append(
                 box(
-                    [5.33 + eps_r, 7.19, 6.05],
-                    [10.67 - eps_r, 8.81, 9.95],
+                    [5.43 + eps_r, 7.07, 5.75],
+                    [10.57 - eps_r, 8.93, 10.25],
                     "#rim",
                     rot=rr,
                     full_uv_faces=("west", "east"),
                 )
             )
         # Center-lock chrome racing hub nut & inner spindle boss
-        w_elements.append(box([5.10, 7.25, 7.25], [10.90, 8.75, 8.75], "#chrome"))
+        w_elements.append(box([5.22, 7.20, 7.20], [10.78, 8.80, 8.80], "#chrome"))
         (mdir / f"{wname}.json").write_text(
             json.dumps(
                 {
