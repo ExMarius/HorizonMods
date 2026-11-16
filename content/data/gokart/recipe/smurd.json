@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "transportation",
+  "pattern": [
+    "DRB",
+    "IGI",
+    "WEW"
+  ],
+  "key": {
+    "D": "minecraft:red_dye",
+    "R": "minecraft:redstone",
+    "B": "minecraft:lapis_lazuli",
+    "I": "minecraft:iron_block",
+    "G": "minecraft:glass",
+    "E": "gokart:small_engine_gold",
+    "W": "gokart:standard_wheel"
+  },
+  "result": {
+    "id": "gokart:smurd",
+    "count": 1
+  }
+}

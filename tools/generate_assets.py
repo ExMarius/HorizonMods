@@ -67,6 +67,42 @@ def grid_to_png(path: Path, art: list[str], palette: dict[str, tuple[int, int, i
 def generate_vehicle_textures() -> None:
     bdir = ASSETS / "textures" / "block"
 
+    # Reference-inspired Romanian SAJ white/orange/blue and SMURD red/yellow liveries.
+    for name, color in (("medical_white", (239, 243, 245, 255)), ("medical_red", (185, 26, 32, 255))):
+        write_png(bdir / (name + ".png"), 16, 16, [color] * 256)
+    font = {
+        "A": ("010", "101", "111", "101", "101"), "B": ("110", "101", "110", "101", "110"),
+        "U": ("101", "101", "101", "101", "111"), "L": ("100", "100", "100", "100", "111"),
+        "N": ("101", "111", "111", "111", "101"), "T": ("111", "010", "010", "010", "010"),
+        "S": ("011", "100", "010", "001", "110"), "M": ("101", "111", "111", "101", "101"),
+        "R": ("110", "101", "110", "101", "101"), "D": ("110", "101", "101", "101", "110"),
+        "1": ("010", "110", "010", "010", "111"), "2": ("110", "001", "010", "100", "111"),
+    }
+    for name, base, stripe, accent, label in (
+        ("ambulance_side", (239, 243, 245, 255), (240, 89, 26, 255), (24, 78, 166, 255), "AMBULANTA"),
+        ("smurd_side", (185, 26, 32, 255), (231, 241, 39, 255), (247, 248, 247, 255), "SMURD 112"),
+    ):
+        w, h = 64, 32
+        pix = [base] * (w * h)
+        def dot(x, y, c):
+            if 0 <= x < w and 0 <= y < h:
+                pix[y * w + x] = c
+        for y in range(20, 23):
+            for x in range(w): dot(x, y, stripe)
+        for y in range(27, 29):
+            for x in range(w): dot(x, y, accent)
+        for x in (0, 31, 63):
+            for y in range(5, 32): dot(x, y, (75, 80, 86, 255))
+        # Star-of-life impression: a blue/white six-point medical cross.
+        for y in range(9, 17):
+            for x in range(7, 15):
+                if x in (10, 11) or y in (12, 13) or abs(x - 10.5) == abs(y - 12.5): dot(x, y, accent)
+        for i, ch in enumerate(label):
+            for y, row in enumerate(font.get(ch, ("000",)*5)):
+                for x, bit in enumerate(row):
+                    if bit == "1": dot(20 + 4*i + x, 9 + y, accent)
+        write_png(bdir / (name + ".png"), w, h, pix)
+
     # 1. `kart_body.png`: Smooth automotive metallic clear-coat (neutral silver-white so `tintindex: 0`
     # multiplies cleanly with all 16 Minecraft dye colors into rich lacquered bodywork!)
     pixels = []
@@ -550,6 +586,17 @@ def generate_item_textures() -> None:
     grid_to_png(idir / "quad_bike.png", quad_art, quad_pal)
     atv_pal = {**quad_pal, "O": (55, 135, 65, 255), "H": (103, 174, 92, 255), "D": (30, 92, 41, 255)}
     grid_to_png(idir / "atv.png", quad_art, atv_pal)
+
+    # Distinct inventory icons for the two emergency vans.
+    emergency_art = ["................", "....SSSSSS......", "...KKKKKKKKKK...", "..KWWWWWWWWWWK..",
+                     "..KWWWWWWWWWWKK.", ".KWWWWWWWWWWWWWK", ".KWWWWWWWWWWWWWK", ".KWWWWWWWWWWWWWK",
+                     ".KOOOOOOOOOOOOOK", ".KWWWWWWWWWWWWWK", ".KKKKKKKKKKKKKKK", "..KKK......KKK..",
+                     ".KGGGK....KGGGK.", ".KGGGK....KGGGK.", "..KKK......KKK..", "................"]
+    for n, body, stripe in (("ambulance", (241, 243, 244, 255), (241, 93, 27, 255)),
+                            ("smurd", (188, 26, 34, 255), (230, 240, 41, 255))):
+        pal = {".": T, "S": (30, 98, 221, 255), "K": (30, 33, 39, 255),
+               "W": body, "O": stripe, "G": (95, 99, 104, 255)}
+        grid_to_png(idir / (n + ".png"), emergency_art, pal)
 
     # 1d. Romanian Police Car (`Poliția Română`) item icon (`police_car.png`)
     pol_pal = {
@@ -1781,6 +1828,81 @@ def generate_models() -> None:
         + "\n"
     )
 
+    # Romanian emergency vans share a high-roof shell; each has its own fixed livery.
+    # Narrow wheelhouse cores leave the tyres clear, with full arch liners on both sides.
+    for van_name, shell, side in (("ambulance", "medical_white", "ambulance_side"),
+                                   ("smurd", "medical_red", "smurd_side")):
+        van_elements = [
+            obox([-8.7, 2.8, -8.5], [8.7, 3.9, 8.5], "#carbon"),
+            obox([-6.1, 2.8, -21.5], [6.1, 3.9, -8.53], "#frame"),
+            obox([-6.1, 2.8, 8.53], [6.1, 3.9, 21.5], "#frame"),
+            obox([-5.8, 4.0, 8.55], [5.8, 8.72, 18.9], "#carbon"),
+            obox([-8.2, 8.75, 8.55], [8.2, 10.9, 21.5], "#shell"),
+            obox([-8.2, 4.0, 18.93], [8.2, 8.72, 21.5], "#shell"),
+            *sculpted_wheel_arch(cz=13.8, vx_in=8.22, vx_body=12.25, vx_flare=12.60,
+                vy_crown=8.75, vy_top=10.9, half_crown=2.15, slope_len=3.2, slope_deg=38,
+                vz_outer_min=8.55, vz_outer_max=21.55, vy_jamb_bot=3.1,
+                liner_x0=5.85, liner_x1=6.35, liner_y0=3.15,
+                body_tex="#shell", body_tint=None, flare_tex="#frame", flare_tint=None),
+            *sculpted_wheel_arch(cz=-13.8, vx_in=8.22, vx_body=12.25, vx_flare=12.60,
+                vy_crown=8.75, vy_top=10.9, half_crown=2.15, slope_len=3.2, slope_deg=38,
+                vz_outer_min=-21.55, vz_outer_max=-8.55, vy_jamb_bot=3.1,
+                liner_x0=6.4, liner_x1=6.9, liner_y0=3.15,
+                body_tex="#shell", body_tint=None, flare_tex="#frame", flare_tint=None),
+            obox([-6.35, 4.0, -18.95], [6.35, 8.72, -8.55], "#carbon"),
+            obox([-8.2, 4.0, -21.5], [8.2, 8.72, -18.98], "#shell"),
+            obox([-8.2, 8.75, -21.5], [8.2, 10.9, -8.55], "#shell"),
+            # Painted side panel and continuous rocker trim between the arches.
+            obox([10.0, 3.95, -8.50], [12.25, 10.90, 8.50], "#livery", full_uv_faces=("east", "west")),
+            obox([-12.25, 3.95, -8.50], [-10.0, 10.90, 8.50], "#livery", full_uv_faces=("east", "west")),
+            obox([12.27, 3.15, -8.48], [12.50, 3.92, 8.48], "#frame"),
+            obox([-12.50, 3.15, -8.48], [-12.27, 3.92, 8.48], "#frame"),
+            # Tall rear medical compartment, high roof, contrasting service doors and handles.
+            obox([10.0, 10.92, -21.5], [12.25, 22.0, -3.5], "#livery", full_uv_faces=("east", "west")),
+            obox([-12.25, 10.92, -21.5], [-10.0, 22.0, -3.5], "#livery", full_uv_faces=("east", "west")),
+            obox([-12.25, 22.02, -21.5], [12.25, 23.1, 5.5], "#shell"),
+            obox([-12.2, 10.92, -21.9], [12.2, 22.0, -21.53], "#shell"),
+            obox([-0.20, 11.0, -21.94], [0.20, 21.8, -21.92], "#frame"),
+            obox([-8.5, 13.0, -21.98], [-1.0, 18.8, -21.95], "#carbon"),
+            obox([1.0, 13.0, -21.98], [8.5, 18.8, -21.95], "#carbon"),
+            obox([-11.9, 4.0, -22.2], [-10.5, 10.5, -21.92], "#taillight"),
+            obox([10.5, 4.0, -22.2], [11.9, 10.5, -21.92], "#taillight"),
+            obox([-12.2, 2.75, -22.55], [12.2, 3.90, -21.60], "#frame"),
+            obox([-3.5, 4.0, -22.16], [3.5, 5.55, -21.92], "#plate_ro"),
+            # Front cabin: clear safety glazing, dashboard, seats, windshield pillars and wing mirrors.
+            obox([-10.0, 10.92, 5.55], [10.0, 13.0, 8.48], "#shell"),
+            obox([-10.0, 13.02, 5.55], [10.0, 21.7, 6.05], "#glass", full_uv_faces=("north", "south")),
+            obox([-11.7, 10.92, -3.45], [-10.15, 21.70, 5.5], "#glass", full_uv_faces=("east", "west")),
+            obox([10.15, 10.92, -3.45], [11.7, 21.70, 5.5], "#glass", full_uv_faces=("east", "west")),
+            obox([-12.0, 10.92, 5.53], [-10.02, 21.70, 6.10], "#shell"),
+            obox([10.02, 10.92, 5.53], [12.0, 21.70, 6.10], "#shell"),
+            obox([-9.7, 8.0, 5.0], [9.7, 10.9, 5.50], "#frame"),
+            obox([2.0, 4.0, -2.5], [8.0, 6.0, 2.8], "#seat"),
+            obox([-8.0, 4.0, -2.5], [-2.0, 6.0, 2.8], "#seat"),
+            obox([2.0, 6.02, -3.45], [8.0, 14.4, -2.55], "#seat"),
+            obox([-8.0, 6.02, -3.45], [-2.0, 14.4, -2.55], "#seat"),
+            obox([-13.6, 12.2, 3.9], [-12.1, 14.3, 5.5], "#frame"),
+            obox([12.1, 12.2, 3.9], [13.6, 14.3, 5.5], "#frame"),
+            obox([-12.2, 3.0, 21.6], [12.2, 6.2, 22.8], "#frame"),
+            obox([-6.1, 6.25, 21.6], [6.1, 10.4, 22.4], "#grille"),
+            obox([-10.9, 7.0, 21.6], [-6.2, 10.25, 22.35], "#headlight"),
+            obox([6.2, 7.0, 21.6], [10.9, 10.25, 22.35], "#headlight"),
+            obox([-3.5, 3.3, 22.82], [3.5, 5.0, 23.0], "#plate_ro"),
+            # Static blue lenses and roof rails; animated blue beacons overlay when the siren is active.
+            obox([-7.0, 23.12, -2.8], [7.0, 23.65, -0.8], "#frame"),
+            obox([-6.8, 23.67, -2.75], [-1.0, 24.6, -0.85], "#siren_blue"),
+            obox([1.0, 23.67, -2.75], [6.8, 24.6, -0.85], "#siren_blue"),
+        ]
+        (mdir / (van_name + "_body.json")).write_text(json.dumps({
+            "textures": {"shell": "gokart:block/" + shell, "livery": "gokart:block/" + side,
+                         "frame": "gokart:block/kart_frame", "carbon": "gokart:block/kart_carbon",
+                         "grille": "gokart:block/kart_grille", "headlight": "gokart:block/kart_headlight",
+                         "taillight": "gokart:block/kart_taillight", "plate_ro": "gokart:block/plate_ro",
+                         "siren_blue": "gokart:block/siren_blue", "glass": "gokart:block/kart_glass",
+                         "seat": "gokart:block/kart_seat"},
+            "elements": van_elements,
+        }, indent=2) + "\n")
+
     # =========================================================================
     # 7b. Dynamic FiveM Girofar Strobe Pods (`siren_red.json`, `siren_blue.json`)
     # =========================================================================
@@ -1816,6 +1938,8 @@ ITEMS = [
     "off_roader",
     "quad_bike",
     "atv",
+    "ambulance",
+    "smurd",
     "police_car",
     "small_engine_iron",
     "small_engine_gold",
@@ -2068,6 +2192,21 @@ def generate_recipes() -> None:
                     "E": "gokart:small_engine_gold", "W": "gokart:sports_wheel"},
             "result": {"id": "gokart:atv", "count": 1},
         },
+        "ambulance": {
+            "type": "minecraft:crafting_shaped", "category": "transportation",
+            "pattern": ["WRB", "IGI", "WEW"],
+            "key": {"W": "gokart:standard_wheel", "R": "minecraft:redstone", "B": "minecraft:lapis_lazuli",
+                    "I": "minecraft:iron_block", "G": "minecraft:glass", "E": "gokart:small_engine_gold"},
+            "result": {"id": "gokart:ambulance", "count": 1},
+        },
+        "smurd": {
+            "type": "minecraft:crafting_shaped", "category": "transportation",
+            "pattern": ["DRB", "IGI", "WEW"],
+            "key": {"D": "minecraft:red_dye", "R": "minecraft:redstone", "B": "minecraft:lapis_lazuli",
+                    "I": "minecraft:iron_block", "G": "minecraft:glass", "E": "gokart:small_engine_gold",
+                    "W": "gokart:standard_wheel"},
+            "result": {"id": "gokart:smurd", "count": 1},
+        },
         # 13. Romanian Police Car (`Poliția Română` — Redstone + Lapis Girofar, Iron Sedan, Diamond/Gold Engine, Racing/Sports Wheels)
         "police_car": {
             "type": "minecraft:crafting_shaped",
@@ -2245,11 +2384,19 @@ def generate_lang() -> None:
     ldir.mkdir(parents=True, exist_ok=True)
 
     en_us = {
-        "gokart.mod.description": "FiveM-style 3D Go-Kart, Quad Bike, Utility ATV, 4x4 Off-Roader, Poliția Română Pursuit Car: nighttime headlights, siren & girofar, engines, wheels, 16-color paint & tuning garage.",
+        "gokart.mod.description": "FiveM-style 3D Go-Kart, Quad Bike, Utility ATV, 4x4 Off-Roader, Poliția Română Pursuit Car, Ambulance & SMURD: nighttime headlights, siren & girofar, engines, wheels, 16-color paint & tuning garage.",
         "item.gokart.go_kart": "Go-Kart",
         "item.gokart.off_roader": "4x4 Off-Roader",
         "item.gokart.quad_bike": "Quad Bike (ATV)",
         "item.gokart.atv": "Utility ATV",
+        "item.gokart.ambulance": "Romanian Ambulance",
+        "gokart.vehicle.ambulance": "Romanian Ambulance",
+        "gokart.tooltip.place_ambulance": "Right-click to deploy Romanian Ambulance ([H]: sirenă / girofar)",
+        "gokart.msg.placed_ambulance": "Romanian Ambulance: Deployed!",
+        "item.gokart.smurd": "SMURD Rescue Ambulance",
+        "gokart.vehicle.smurd": "SMURD Rescue Ambulance",
+        "gokart.tooltip.place_smurd": "Right-click to deploy SMURD Rescue Ambulance ([H]: sirenă / girofar)",
+        "gokart.msg.placed_smurd": "SMURD Rescue Ambulance: Deployed!",
         "gokart.vehicle.atv": "Utility ATV",
         "gokart.tooltip.place_atv": "Right-click ground to deploy Utility ATV",
         "gokart.msg.placed_atv": "Utility ATV deployed!",
@@ -2264,8 +2411,8 @@ def generate_lang() -> None:
         "gokart.msg.placed_off_roader": "4x4 Off-Roader deployed! Right-click to drive, Wrench to tune.",
         "gokart.msg.placed_quad_bike": "Quad Bike ATV deployed! Right-click to ride, Wrench to tune.",
         "gokart.msg.placed_police_car": "Poliția Română Pursuit Sedan deployed! Press [H] while driving to toggle Siren & Girofar.",
-        "gokart.msg.siren_on": "POLIȚIA ROMÂNĂ — Emergency Siren & Girofar: ON",
-        "gokart.msg.siren_off": "POLIȚIA ROMÂNĂ — Emergency Siren & Girofar: OFF",
+        "gokart.msg.siren_on": "Emergency Siren & Girofar: ON",
+        "gokart.msg.siren_off": "Emergency Siren & Girofar: OFF",
         "gokart.ui.paint_shop": "Quick Paint Shop (click swatch):",
         "item.gokart.small_engine_iron": "Small Iron Engine",
         "item.gokart.small_engine_gold": "Small Gold Engine",
@@ -2321,7 +2468,7 @@ def generate_lang() -> None:
         "gokart.msg.jerry_refilled": "Jerry Can refilled (%1$s / %2$s mB).",
         "gokart.msg.fuel_mode_on": "Vehicle fuel consumption: ENABLED",
         "gokart.msg.fuel_mode_off": "Vehicle fuel consumption: INFINITE FUEL",
-        "gokart.msg.kit_given": "Delivered complete Go-Kart, Quad Bike, Utility ATV, 4x4 Off-Roader, Poliția Română Sedan Kit!",
+        "gokart.msg.kit_given": "Delivered complete Go-Kart, Quad Bike, Utility ATV, 4x4 Off-Roader, Poliția Română Sedan, Ambulance & SMURD Kit!",
         "gokart.msg.removed_one": "Removed %1$s!",
         "gokart.msg.removed_many": "Removed %1$s vehicle(s) from the world.",
         "gokart.msg.remove_none": "No vehicle nearby to remove (use /vehicle remove all to clear all).",
@@ -2358,11 +2505,19 @@ def generate_lang() -> None:
     }
 
     ro_ro = {
-        "gokart.mod.description": "Vehicule 3D stil FiveM (Go-Kart, ATV Quad Bike, ATV utilitar, Off-Roader 4x4, Autospecială Poliția Română): faruri automate noaptea, girofar & sirenă, motoare, roți, vopsire în 16 culori și garaj tuning.",
+        "gokart.mod.description": "Vehicule 3D stil FiveM (Go-Kart, ATV Quad Bike, ATV utilitar, Off-Roader 4x4, Autospecială Poliția Română, Ambulanță și SMURD): faruri automate noaptea, girofar & sirenă, motoare, roți, vopsire în 16 culori și garaj tuning.",
         "item.gokart.go_kart": "Go-Kart",
         "item.gokart.off_roader": "Off-Roader 4x4",
         "item.gokart.quad_bike": "ATV Quad Bike",
         "item.gokart.atv": "ATV utilitar",
+        "item.gokart.ambulance": "Ambulanță Română",
+        "gokart.vehicle.ambulance": "Ambulanță Română",
+        "gokart.tooltip.place_ambulance": "Click-dreapta pentru a plasa Ambulanță Română ([H]: sirenă / girofar)",
+        "gokart.msg.placed_ambulance": "Ambulanță Română: Plasată!",
+        "item.gokart.smurd": "Ambulanță SMURD",
+        "gokart.vehicle.smurd": "Ambulanță SMURD",
+        "gokart.tooltip.place_smurd": "Click-dreapta pentru a plasa Ambulanță SMURD ([H]: sirenă / girofar)",
+        "gokart.msg.placed_smurd": "Ambulanță SMURD: Plasată!",
         "gokart.vehicle.atv": "ATV utilitar",
         "gokart.tooltip.place_atv": "Click-dreapta pe sol pentru a plasa ATV-ul utilitar",
         "gokart.msg.placed_atv": "ATV utilitar plasat!",
@@ -2377,8 +2532,8 @@ def generate_lang() -> None:
         "gokart.msg.placed_off_roader": "Off-Roader 4x4 plasat! Click-dreapta pentru a conduce, Cheie Mecanică pentru tuning.",
         "gokart.msg.placed_quad_bike": "ATV Quad Bike plasat! Click-dreapta pentru a conduce, Cheie Mecanică pentru tuning.",
         "gokart.msg.placed_police_car": "Autospecială Poliția Română plasată! Apasă [H] la volan pentru Sirenă & Girofar.",
-        "gokart.msg.siren_on": "POLIȚIA ROMÂNĂ — Sirenă & Girofar: PORNITE",
-        "gokart.msg.siren_off": "POLIȚIA ROMÂNĂ — Sirenă & Girofar: OPRITE",
+        "gokart.msg.siren_on": "Sirenă & Girofar: PORNITE",
+        "gokart.msg.siren_off": "Sirenă & Girofar: OPRITE",
         "gokart.ui.paint_shop": "Vopsitorie Rapidă (click pe culoare):",
         "item.gokart.small_engine_iron": "Motor Mic de Fier",
         "item.gokart.small_engine_gold": "Motor Mic de Aur",
@@ -2434,7 +2589,7 @@ def generate_lang() -> None:
         "gokart.msg.jerry_refilled": "Canistră reumplută (%1$s / %2$s mB).",
         "gokart.msg.fuel_mode_on": "Consum combustibil vehicule: ACTIVAT",
         "gokart.msg.fuel_mode_off": "Consum combustibil vehicule: COMBUSTIBIL INFINIT",
-        "gokart.msg.kit_given": "Ai primit pachetul complet Go-Kart, ATV Quad Bike, ATV utilitar, Off-Roader 4x4, Autospecială Poliție!",
+        "gokart.msg.kit_given": "Ai primit pachetul complet Go-Kart, ATV Quad Bike, ATV utilitar, Off-Roader 4x4, Autospecială Poliție, Ambulanță și SMURD!",
         "gokart.msg.removed_one": "Ai șters %1$s!",
         "gokart.msg.removed_many": "Au fost șterse %1$s vehicule din lume.",
         "gokart.msg.remove_none": "Niciun vehicul în apropiere de șters (folosește /vehicle remove all pentru toate).",
@@ -2540,6 +2695,8 @@ def generate_creative_tab() -> None:
             "gokart:go_kart",
             "gokart:quad_bike",
             "gokart:atv",
+            "gokart:ambulance",
+            "gokart:smurd",
             "gokart:off_roader",
             "gokart:police_car",
             "gokart:small_engine_iron",
@@ -2611,7 +2768,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles v0.11.0 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles v0.12.0 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

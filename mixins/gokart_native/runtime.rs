@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.11.0";
+pub const VERSION: &str = "0.12.0";
 pub const DESCRIPTION: &str = "FiveM-inspired 3D Vehicles for Horizon: Go-Kart, Quad Bike ATV, 4x4 Off-Roader, Poliția Română Pursuit Sedan with sculpted wheel arches, emissive lights, dynamic night headlights, siren & girofar, and /vehicle remove.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
@@ -19,6 +19,8 @@ pub const SERVER_CONFIG_FILE: &str = "gokart-server.toml";
 /// Entity tags attached to every summoned backing `minecraft:pig` representing a mod vehicle.
 pub const ENTITY_TAG: &str = "gokart_vehicle";
 pub const ENTITY_TAG_OFF_ROADER: &str = "gokart_off_roader";
+pub const ENTITY_TAG_AMBULANCE: &str = "gokart_ambulance";
+pub const ENTITY_TAG_SMURD: &str = "gokart_smurd";
 pub const ENTITY_TAG_ATV: &str = "gokart_atv";
 pub const ENTITY_TAG_QUAD_BIKE: &str = "gokart_quad_bike";
 pub const ENTITY_TAG_POLICE_CAR: &str = "gokart_police_car";
@@ -27,6 +29,8 @@ pub const ENTITY_TAG_DACIA_LOGAN: &str = "gokart_dacia_logan";
 // Custom items
 pub const ITEM_GO_KART: &str = "gokart:go_kart";
 pub const ITEM_OFF_ROADER: &str = "gokart:off_roader";
+pub const ITEM_AMBULANCE: &str = "gokart:ambulance";
+pub const ITEM_SMURD: &str = "gokart:smurd";
 pub const ITEM_ATV: &str = "gokart:atv";
 pub const ITEM_QUAD_BIKE: &str = "gokart:quad_bike";
 pub const ITEM_POLICE_CAR: &str = "gokart:police_car";
@@ -47,6 +51,8 @@ pub const COMP_JERRY_FUEL: &str = "gokart:jerry_fuel";
 // Standalone 3D block models baked via `native_standalone_models`
 pub const MODEL_BODY: &str = "gokart:block/go_kart_body";
 pub const MODEL_OFF_ROADER_BODY: &str = "gokart:block/off_roader_body";
+pub const MODEL_AMBULANCE_BODY: &str = "gokart:block/ambulance_body";
+pub const MODEL_SMURD_BODY: &str = "gokart:block/smurd_body";
 pub const MODEL_ATV_BODY: &str = "gokart:block/atv_body";
 pub const MODEL_QUAD_BIKE_BODY: &str = "gokart:block/quad_bike_body";
 pub const MODEL_POLICE_CAR_BODY: &str = "gokart:block/police_car_body";
@@ -62,11 +68,13 @@ pub const MODEL_ENGINE_IRON: &str = "gokart:block/engine_iron";
 pub const MODEL_ENGINE_GOLD: &str = "gokart:block/engine_gold";
 pub const MODEL_ENGINE_DIAMOND: &str = "gokart:block/engine_diamond";
 
-pub const STANDALONE_MODELS: [&str; 15] = [
+pub const STANDALONE_MODELS: [&str; 17] = [
     MODEL_BODY,
     MODEL_OFF_ROADER_BODY,
     MODEL_QUAD_BIKE_BODY,
     MODEL_ATV_BODY,
+    MODEL_AMBULANCE_BODY,
+    MODEL_SMURD_BODY,
     MODEL_POLICE_CAR_BODY,
     MODEL_STEERING,
     MODEL_QUAD_HANDLEBARS,
@@ -136,6 +144,8 @@ pub enum VehicleKind {
     OffRoader,
     QuadBike,
     Atv,
+    Ambulance,
+    Smurd,
     PoliceCar,
     DaciaLoganPolice,
 }
@@ -181,6 +191,8 @@ impl VehicleKind {
             Self::OffRoader => 1,
             Self::QuadBike => 2,
             Self::Atv => 5,
+            Self::Ambulance => 6,
+            Self::Smurd => 7,
             Self::PoliceCar => 3,
             Self::DaciaLoganPolice => 4,
         }
@@ -191,6 +203,8 @@ impl VehicleKind {
             1 => Self::OffRoader,
             2 => Self::QuadBike,
             5 => Self::Atv,
+            6 => Self::Ambulance,
+            7 => Self::Smurd,
             3 => Self::PoliceCar,
             4 => Self::PoliceCar,
             _ => Self::GoKart,
@@ -201,12 +215,18 @@ impl VehicleKind {
         matches!(self, Self::PoliceCar | Self::DaciaLoganPolice)
     }
 
+    pub fn is_emergency(self) -> bool {
+        self.is_police() || matches!(self, Self::Ambulance | Self::Smurd)
+    }
+
     pub fn slug(self) -> &'static str {
         match self {
             Self::GoKart => "go_kart",
             Self::OffRoader => "off_roader",
             Self::QuadBike => "quad_bike",
             Self::Atv => "atv",
+            Self::Ambulance => "ambulance",
+            Self::Smurd => "smurd",
             Self::PoliceCar => "police_car",
             Self::DaciaLoganPolice => "dacia_logan_police",
         }
@@ -217,6 +237,8 @@ impl VehicleKind {
             "off_roader" | "offroader" | "4x4" | "jeep" => Self::OffRoader,
             "quad_bike" | "quadbike" | "quad" => Self::QuadBike,
             "atv" | "utility_atv" => Self::Atv,
+            "ambulance" | "ambulanta" | "salvare" => Self::Ambulance,
+            "smurd" => Self::Smurd,
             "police_car" | "policecar" | "police" | "politia" | "politie" | "bmw" => Self::PoliceCar,
             "dacia_logan_police" | "dacia_logan" | "dacia" | "logan" | "logan_politie" | "logan_police" => {
                 Self::PoliceCar
@@ -231,6 +253,8 @@ impl VehicleKind {
             ITEM_OFF_ROADER => Some(Self::OffRoader),
             ITEM_QUAD_BIKE => Some(Self::QuadBike),
             ITEM_ATV => Some(Self::Atv),
+            ITEM_AMBULANCE => Some(Self::Ambulance),
+            ITEM_SMURD => Some(Self::Smurd),
             ITEM_POLICE_CAR => Some(Self::PoliceCar),
             _ => None,
         }
@@ -242,6 +266,8 @@ impl VehicleKind {
             Self::OffRoader => ITEM_OFF_ROADER,
             Self::QuadBike => ITEM_QUAD_BIKE,
             Self::Atv => ITEM_ATV,
+            Self::Ambulance => ITEM_AMBULANCE,
+            Self::Smurd => ITEM_SMURD,
             Self::PoliceCar => ITEM_POLICE_CAR,
             Self::DaciaLoganPolice => ITEM_DACIA_LOGAN_POLICE,
         }
@@ -253,6 +279,8 @@ impl VehicleKind {
             Self::OffRoader => "gokart.vehicle.off_roader",
             Self::QuadBike => "gokart.vehicle.quad_bike",
             Self::Atv => "gokart.vehicle.atv",
+            Self::Ambulance => "gokart.vehicle.ambulance",
+            Self::Smurd => "gokart.vehicle.smurd",
             Self::PoliceCar => "gokart.vehicle.police_car",
             Self::DaciaLoganPolice => "gokart.vehicle.dacia_logan_police",
         }
@@ -264,7 +292,7 @@ impl VehicleKind {
             Self::QuadBike | Self::Atv => QUAD_BIKE_MAX_FUEL_MB,
             Self::OffRoader => OFF_ROADER_MAX_FUEL_MB,
             Self::DaciaLoganPolice => DACIA_LOGAN_MAX_FUEL_MB,
-            Self::PoliceCar => POLICE_CAR_MAX_FUEL_MB,
+            Self::PoliceCar | Self::Ambulance | Self::Smurd => POLICE_CAR_MAX_FUEL_MB,
         }
     }
 
@@ -364,6 +392,8 @@ impl VehicleKind {
                 default_cam_dist: QUAD_BIKE_CAMERA_DISTANCE,
             },
             Self::Atv => VehicleLayout { body_model: MODEL_ATV_BODY, ..Self::QuadBike.layout() },
+            Self::Ambulance => VehicleLayout { body_model: MODEL_AMBULANCE_BODY, default_cam_dist: 7.0, ..Self::PoliceCar.layout() },
+            Self::Smurd => VehicleLayout { body_model: MODEL_SMURD_BODY, default_cam_dist: 7.0, ..Self::PoliceCar.layout() },
             Self::PoliceCar => VehicleLayout {
                 body_model: MODEL_POLICE_CAR_BODY,
                 // 34.8 tx (2.17 b) wide x 66.4 tx (4.15 b) long Poliția Română patrol sedan!
@@ -1021,6 +1051,14 @@ impl KartSpec {
         Self { kind: VehicleKind::Atv, paint: PaintColor::Green, ..Self::default_quad_bike() }
     }
 
+    pub fn default_ambulance() -> Self {
+        Self { kind: VehicleKind::Ambulance, paint: PaintColor::White, ..Self::default_police_car() }
+    }
+
+    pub fn default_smurd() -> Self {
+        Self { kind: VehicleKind::Smurd, paint: PaintColor::Red, ..Self::default_police_car() }
+    }
+
     pub fn default_police_car() -> Self {
         Self {
             kind: VehicleKind::PoliceCar,
@@ -1047,6 +1085,8 @@ impl KartSpec {
             VehicleKind::OffRoader => Self::default_off_roader(),
             VehicleKind::QuadBike => Self::default_quad_bike(),
             VehicleKind::Atv => Self::default_atv(),
+            VehicleKind::Ambulance => Self::default_ambulance(),
+            VehicleKind::Smurd => Self::default_smurd(),
             VehicleKind::PoliceCar => Self::default_police_car(),
             VehicleKind::DaciaLoganPolice => Self::default_dacia_logan(),
         }
@@ -1986,6 +2026,27 @@ mod tests {
     }
 
     #[test]
+    fn emergency_vans_round_trip_and_use_distinct_models() {
+        for kind in [VehicleKind::Ambulance, VehicleKind::Smurd] {
+            assert_eq!(VehicleKind::from_code(kind.code()), kind);
+            assert_eq!(VehicleKind::from_slug(kind.slug()), kind);
+            assert_eq!(VehicleKind::from_item(kind.item_id()), Some(kind));
+            assert!(kind.is_emergency());
+            let spec = KartSpec::default_for_kind(kind);
+            assert_eq!(KartSpec::decode_component(&spec.encode_component()), spec);
+            let view = ClientKartView {
+                entity_id: 42, spec, steer_deg: 0.0, wheel_rot_deg: 0.0,
+                speed_kmh: 0.0, boost_charge: 0.0, drifting: false,
+                burnout: false, boosting: false, siren_on: true,
+            };
+            let (_, decoded) = decode_sync_packet(&encode_sync_packet(false, &[view])).unwrap();
+            assert_eq!(decoded[0].spec.kind, kind);
+            assert!(decoded[0].siren_on);
+        }
+        assert_ne!(VehicleKind::Ambulance.layout().body_model, VehicleKind::Smurd.layout().body_model);
+    }
+
+    #[test]
     fn utility_atv_is_distinct_and_round_trips() {
         let spec = KartSpec::default_atv();
         assert_eq!(VehicleKind::from_item(ITEM_ATV), Some(VehicleKind::Atv));
@@ -2011,6 +2072,8 @@ mod tests {
             VehicleKind::OffRoader,
             VehicleKind::QuadBike,
             VehicleKind::Atv,
+            VehicleKind::Ambulance,
+            VehicleKind::Smurd,
             VehicleKind::PoliceCar,
             VehicleKind::DaciaLoganPolice,
         ] {
