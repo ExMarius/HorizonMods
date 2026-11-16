@@ -25,6 +25,7 @@ run_tests() {
 package_all() {
     echo "==> Generating deterministic assets & translations..."
     python3 tools/generate_assets.py
+    python3 -m unittest discover -s tests -v
 
     echo "==> Packaging content mod (.hmod) and native bundle (.hnmod)..."
     python3 - <<'PY'
@@ -66,7 +67,7 @@ dist_hmod.write_bytes(embedded_hmod.read_bytes())
 
 # 2. Build native `.hnmod` (exact `horizon-mods/native/tools/native.py` schema 1 format)
 mod_id = "gokart_native"
-version = "0.10.1"
+version = "0.10.2"
 native_manifest = {
     "schema": 1,
     "id": mod_id,

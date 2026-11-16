@@ -1,4 +1,4 @@
-# Horizon Vehicles: Go-Kart, ATV Quad Bike, 4x4 Off-Roader, Poliția Română (`gokart_native` v0.10.1)
+# Horizon Vehicles: Go-Kart, ATV Quad Bike, 4x4 Off-Roader, Poliția Română (`gokart_native` v0.10.2)
 
 Mod nativ **FiveM-style de Vehicule 3D** pentru **Horizon 26.3 (Launcher `0.2.69+` / Nightly)**: **Go-Kart**, **ATV Quad Bike**, **Off-Roader 4x4**, **Autospecială Poliția Română (Pursuit Sedan)** — cu aripi 3D poligonale curbate în 5 segmente pe conturul roții + contra-aripi interioare și praguri continue de la roți la roți, girofar Red/Blue dinamic + sirenă pe tasta `[H]`, faruri emisive (`light_emission: 15`) + blocuri reale `minecraft:light` noaptea, categorie dedicată **Horizon Vehicles** în Creative Inventory și modele 3D verificate fără z-fighting.
 
@@ -10,7 +10,7 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
 
 ### 1. Cele 5 Vehicule & Piese de Tuning (`gokart:*`)
 - **Go-Kart (`gokart:go_kart`)** — Șasiu 3D **full-size** calibrat la proporțiile reale MrCrayfish (`~1.57–1.69` blocuri lățime × `~2.24` blocuri lungime, scală `1.28×`), pontoni laterali vopsibili, scaun tip scoică central cu IK dinamic pe volan, rezervor `2.000 mB` și motor posterior animat cu vibrație.
-- **ATV Quad Bike (`gokart:quad_bike`)** — ATV agil de traseu cu ghidon articulat `quad_handlebars` + handguards, șa centrală, suspensie vizibilă cu arcuri elicoidale, portbagaje față/spate și urcare peste blocuri întregi (`step_height = 1.05`, rezervor `2.800 mB`).
+- **ATV Quad Bike (`gokart:quad_bike`)** — ATV agil de traseu cu ghidon articulat `quad_handlebars` + handguards, șa centrală, suspensie vizibilă cu arcuri elicoidale, portbagaje tubulare deschise față/spate, apărători de noroi și margini ranforsate și urcare peste blocuri întregi (`step_height = 1.05`, rezervor `2.800 mB`).
 - **4x4 Off-Roader (`gokart:off_roader`)** — SUV off-road 4x4 (`~2.14` blocuri lățime × `~3.05` blocuri lungime, `step_height = 1.05`), aripi trapezoidale 3D evazate cu contra-aripi + praguri rock-slider continue de la roată la roată, bullbar îngust central cu troliu, roll-cage cu 4 proiectoare pe plafon, roată de rezervă pe hayon și rezervor `4.000 mB`.
 - **Autospecială Poliția Română — Pursuit Sedan (`gokart:police_car`)** — Sedan sportiv de intervenție cu grilă dublă și stroboscoape integrate, aripi curbate în 5 segmente cu contra-aripi + praguri aero și linie mediană continuă de la roți la roți, plafon conectat cu antenă shark-fin, colantare Battenberg albastru/galben-neon `POLIȚIA`, plăcuțe `RO`, laptop MDT în bord și **girofar aerodinamic Red/Blue + sirenă pe `[H]`** (`4.500 mB`).
 - **3 Motoare (`Engine Tiers`)**:

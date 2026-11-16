@@ -1190,7 +1190,7 @@ def generate_models() -> None:
 
             b0, b1 = bx(vx_in, vx_body)
             br0, br1 = bx(vx_in + 0.03, vx_body - 0.025)
-            f0, f1 = bx(vx_body + 0.02, vx_flare)
+            f0, f1 = bx(vx_body - 0.03, vx_flare)
             l0, l1 = bx(liner_x0, liner_x1)
             tub0, tub1 = bx(liner_x1 + 0.03, vx_body - 0.38)
 
@@ -1206,17 +1206,17 @@ def generate_models() -> None:
 
             # 2. Top horizontal arch crown + proud 3D outward fender flare lip
             elems.append(obox([b0, vy_crown, z_r_crown], [b1, vy_top, z_f_crown], body_tex, tint=body_tint))
-            elems.append(obox([f0, vy_crown + 0.03, z_r_crown + 0.02], [f1, vy_crown + lip_thick, z_f_crown - 0.02], flare_tex, tint=flare_tint))
+            elems.append(obox([f0, vy_crown + 0.03, z_r_crown - 0.12], [f1, vy_crown + lip_thick, z_f_crown + 0.12], flare_tex, tint=flare_tint))
 
             # 3. Deep-backed Front-upper sloped eyebrow (`+slope_deg`) + continuous 3D flare lip
             f_rot = ("x", slope_deg, [0.0, vy_crown, z_f_crown])
-            elems.append(obox([br0, vy_crown, z_f_crown], [br1, vy_crown + rot_h, z_f_crown + slope_len + 0.28], body_tex, tint=body_tint, rot=f_rot))
-            elems.append(obox([f0, vy_crown + 0.02, z_f_crown + 0.03], [f1, vy_crown + lip_thick, z_f_crown + slope_len + 0.06], flare_tex, tint=flare_tint, rot=f_rot))
+            elems.append(obox([br0, vy_crown, z_f_crown - rot_h * math.tan(rad) - 0.06], [br1, vy_crown + rot_h, z_f_crown + slope_len + 0.28], body_tex, tint=body_tint, rot=f_rot))
+            elems.append(obox([f0, vy_crown + 0.02, z_f_crown - 0.12], [f1, vy_crown + lip_thick, z_f_crown + slope_len + 0.18], flare_tex, tint=flare_tint, rot=f_rot))
 
             # 4. Deep-backed Rear-upper sloped eyebrow (`-slope_deg`) + continuous 3D flare lip
             r_rot = ("x", -slope_deg, [0.0, vy_crown, z_r_crown])
-            elems.append(obox([br0, vy_crown, z_r_crown - slope_len - 0.28], [br1, vy_crown + rot_h, z_r_crown], body_tex, tint=body_tint, rot=r_rot))
-            elems.append(obox([f0, vy_crown + 0.02, z_r_crown - slope_len - 0.06], [f1, vy_crown + lip_thick, z_r_crown - 0.03], flare_tex, tint=flare_tint, rot=r_rot))
+            elems.append(obox([br0, vy_crown, z_r_crown - slope_len - 0.28], [br1, vy_crown + rot_h, z_r_crown + rot_h * math.tan(rad) + 0.06], body_tex, tint=body_tint, rot=r_rot))
+            elems.append(obox([f0, vy_crown + 0.02, z_r_crown - slope_len - 0.18], [f1, vy_crown + lip_thick, z_r_crown + 0.12], flare_tex, tint=flare_tint, rot=r_rot))
 
             # 5. Zero-Gap Stepped Spandrels & Full Vertical Jambs at exact `vx_body` (disjoint Z intervals!)
             z_f_mid = round((z_f_crown + z_f_open) * 0.5, 3)
@@ -1225,24 +1225,24 @@ def generate_models() -> None:
             if vz_outer_max > z_f_crown + 0.08:
                 z1 = min(vz_outer_max, z_f_mid)
                 if z1 > z_f_crown + 0.05 and vy_top > y_sp_hi + 0.05:
-                    elems.append(obox([b0, y_sp_hi, z_f_crown + 0.02], [b1, vy_top, z1 - 0.01], body_tex, tint=body_tint))
+                    elems.append(obox([b0, y_sp_hi, z_f_crown], [b1, vy_top, z1], body_tex, tint=body_tint))
                 z2 = min(vz_outer_max, z_f_open)
                 if z2 > z_f_mid + 0.05 and vy_top > y_sp_mid + 0.05:
-                    elems.append(obox([b0, y_sp_mid, z_f_mid + 0.01], [b1, vy_top, z2 - 0.01], body_tex, tint=body_tint))
+                    elems.append(obox([b0, y_sp_mid, z_f_mid], [b1, vy_top, z2], body_tex, tint=body_tint))
             if vz_outer_max > z_f_open + 0.05:
-                elems.append(obox([b0, vy_jamb_bot, z_f_open + 0.01], [b1, vy_top, vz_outer_max], body_tex, tint=body_tint))
+                elems.append(obox([b0, vy_jamb_bot, z_f_open], [b1, vy_top, vz_outer_max], body_tex, tint=body_tint))
                 elems.append(obox([f0, vy_jamb_bot + 0.06, z_f_open + 0.02], [f1, y_arch_corner + 0.32, min(vz_outer_max - 0.03, z_f_open + 0.68)], flare_tex, tint=flare_tint))
 
             z_r_mid = round((z_r_crown + z_r_open) * 0.5, 3)
             if vz_outer_min < z_r_crown - 0.08:
                 zr1 = max(vz_outer_min, z_r_mid)
                 if z_r_crown - 0.05 > zr1 and vy_top > y_sp_hi + 0.05:
-                    elems.append(obox([b0, y_sp_hi, zr1 + 0.01], [b1, vy_top, z_r_crown - 0.02], body_tex, tint=body_tint))
+                    elems.append(obox([b0, y_sp_hi, zr1], [b1, vy_top, z_r_crown], body_tex, tint=body_tint))
                 zr2 = max(vz_outer_min, z_r_open)
                 if z_r_mid - 0.05 > zr2 and vy_top > y_sp_mid + 0.05:
-                    elems.append(obox([b0, y_sp_mid, zr2 + 0.01], [b1, vy_top, z_r_mid - 0.01], body_tex, tint=body_tint))
+                    elems.append(obox([b0, y_sp_mid, zr2], [b1, vy_top, z_r_mid], body_tex, tint=body_tint))
             if vz_outer_min < z_r_open - 0.05:
-                elems.append(obox([b0, vy_jamb_bot, vz_outer_min], [b1, vy_top, z_r_open - 0.01], body_tex, tint=body_tint))
+                elems.append(obox([b0, vy_jamb_bot, vz_outer_min], [b1, vy_top, z_r_open], body_tex, tint=body_tint))
                 elems.append(obox([f0, vy_jamb_bot + 0.06, max(vz_outer_min + 0.03, z_r_open - 0.68)], [f1, y_arch_corner + 0.32, z_r_open - 0.02], flare_tex, tint=flare_tint))
 
         return elems
@@ -1501,10 +1501,30 @@ def generate_models() -> None:
         obox([-4.8, 6.8, -16.8], [ 4.8, 11.2, -10.42], "#body", tint=0),
         obox([ 1.8, 8.2, -17.30], [ 4.5, 10.4, -16.82], "#taillight", full_uv_faces=("north", "south")),
         obox([-4.5, 8.2, -17.30], [-1.8, 10.4, -16.82], "#taillight", full_uv_faces=("north", "south")),
-        obox([-8.6, 12.25, 10.4], [ 8.6, 12.95, 16.6], "#frame"),
-        obox([-8.6, 12.97, 15.6], [ 8.6, 13.65, 16.6], "#frame"),
-        obox([-8.6, 11.6, -16.8], [8.6, 12.45, -10.45], "#frame"),
-        obox([-8.6, 12.47, -16.8], [8.6, 13.65, -15.8], "#frame"),
+        # Layered fender edge caps and dark flexible mud flaps distinguish the utility ATV.
+        obox([ 10.35, 11.42, 6.35], [11.50, 11.88, 16.65], "#frame"),
+        obox([-11.50, 11.42, 6.35], [-10.35, 11.88, 16.65], "#frame"),
+        obox([ 10.35, 11.42, -16.65], [11.50, 11.88, -6.55], "#frame"),
+        obox([-11.50, 11.42, -16.65], [-10.35, 11.88, -6.55], "#frame"),
+        obox([ 8.50, 7.15, 6.23], [11.35, 9.58, 6.65], "#carbon"),
+        obox([-11.35, 7.15, 6.23], [-8.50, 9.58, 6.65], "#carbon"),
+        obox([ 8.50, 7.15, -6.85], [11.35, 9.58, -6.43], "#carbon"),
+        obox([-11.35, 7.15, -6.85], [-8.50, 9.58, -6.43], "#carbon"),
+        # Open tubular front and rear racks: side rails, crossbars and supports.
+        obox([-8.6, 12.25, 10.4], [-7.85, 12.95, 16.6], "#frame"),
+        obox([ 7.85, 12.25, 10.4], [ 8.6, 12.95, 16.6], "#frame"),
+        obox([-7.82, 12.25, 10.4], [7.82, 12.95, 11.15], "#frame"),
+        obox([-7.82, 12.25, 15.85], [7.82, 12.95, 16.6], "#frame"),
+        obox([-0.35, 12.25, 11.18], [0.35, 12.95, 15.82], "#frame"),
+        obox([-8.6, 11.6, -16.8], [-7.85, 12.45, -10.45], "#frame"),
+        obox([ 7.85, 11.6, -16.8], [8.6, 12.45, -10.45], "#frame"),
+        obox([-7.82, 11.6, -16.8], [7.82, 12.45, -16.05], "#frame"),
+        obox([-7.82, 11.6, -11.2], [7.82, 12.45, -10.45], "#frame"),
+        obox([-0.35, 11.6, -16.02], [0.35, 12.45, -11.23], "#frame"),
+        obox([-7.4, 11.42, 11.1], [-6.6, 12.23, 12.0], "#frame"),
+        obox([6.6, 11.42, 11.1], [7.4, 12.23, 12.0], "#frame"),
+        obox([-7.4, 11.42, 15.0], [-6.6, 12.23, 15.8], "#frame"),
+        obox([6.6, 11.42, 15.0], [7.4, 12.23, 15.8], "#frame"),
         obox([-3.8, 6.8, -10.4], [ 3.8,  7.85, 3.18], "#seat"),
         obox([-3.4, 7.87, -10.4], [ 3.4, 10.2, -7.8], "#seat"),
         obox([-1.4, 12.87, 5.5], [ 1.4, 13.7, 7.5], "#frame"),
@@ -2527,7 +2547,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles v0.10.1 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles v0.10.2 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":
