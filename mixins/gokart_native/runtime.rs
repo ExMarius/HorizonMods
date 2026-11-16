@@ -1,9 +1,9 @@
-//! Pure-Rust rules, physics, tuning, fuel, persistence, and network codecs for
-//! the Horizon Go-Kart mod (`gokart`), inspired by MrCrayfish's Vehicle Mod.
-//!
-//! This module intentionally depends only on `std` so it can be unit-tested
-//! standalone via `cargo test` as well as compiled directly into `horizon-client`
-//! as `crate::game::gokart`.
+// Pure-Rust rules, physics, tuning, fuel, persistence, and network codecs for
+// the Horizon Go-Kart mod (`gokart`), inspired by MrCrayfish's Vehicle Mod.
+//
+// This module intentionally depends only on `std` so it can be unit-tested
+// standalone via `cargo test` as well as compiled directly into `horizon-client`
+// as `crate::game::gokart`.
 
 use std::collections::BTreeMap;
 
