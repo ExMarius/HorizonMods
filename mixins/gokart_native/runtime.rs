@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.3.0";
+pub const VERSION: &str = "0.3.1";
 pub const DESCRIPTION: &str = "Driveable 3D Go-Kart inspired by MrCrayfish's Vehicle Mod: Iron/Gold/Diamond engines, Standard/Sports/Racing wheels, 16-color dye painting, drift + turbo boost, fuel & tuning garage.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
