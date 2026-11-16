@@ -70,7 +70,8 @@ def generate_vehicle_textures() -> None:
     # Reference-inspired Romanian SAJ white/orange/blue and SMURD red/yellow liveries.
     for name, color in (("medical_white", (239, 243, 245, 255)), ("medical_red", (185, 26, 32, 255)),
                         ("medical_orange", (241, 92, 25, 255)), ("medical_blue", (25, 75, 172, 255)),
-                        ("medical_yellow", (230, 242, 35, 255))):
+                        ("medical_yellow", (230, 242, 35, 255)), ("medical_mattress", (101, 172, 179, 255)),
+                        ("medical_floor", (100, 122, 146, 255))):
         write_png(bdir / (name + ".png"), 16, 16, [color] * 256)
     font = {
         "A": ("010", "101", "111", "101", "101"), "B": ("110", "101", "110", "101", "110"),
@@ -1847,6 +1848,38 @@ def generate_models() -> None:
         + "\n"
     )
 
+    def medical_side_panels(obox):
+        # Cropped UVs retain one continuous graphic across the four pieces around each window.
+        result = []
+        for sign in (-1, 1):
+            for z0, z1, y0, y1 in ((-21.5, -11.6, 10.92, 22.0),
+                                    (-11.6, -4.6, 10.92, 13.0),
+                                    (-11.6, -4.6, 18.6, 22.0),
+                                    (-4.6, -3.5, 10.92, 22.0)):
+                x0, x1 = ((10.0, 12.25) if sign == 1 else (-12.25, -10.0))
+                part = obox([x0, y0, z0], [x1, y1, z1], "#shell")
+                u0, u1 = (z0 + 21.5) / 18 * 16, (z1 + 21.5) / 18 * 16
+                v0, v1 = (22.0 - y1) / 11.08 * 16, (22.0 - y0) / 11.08 * 16
+                face = "east" if sign == 1 else "west"
+                if sign < 0:
+                    u0, u1 = 16 - u1, 16 - u0
+                part["faces"][face] = {"texture": "#livery" if sign == 1 else "#livery_reverse",
+                                        "uv": [round(u0, 3), round(v0, 3), round(u1, 3), round(v1, 3)]}
+                result.append(part)
+        return result
+
+    def medical_window_frames(obox):
+        result = []
+        for x0, x1 in ((12.27, 12.38), (-12.38, -12.27)):
+            result.extend((
+                obox([x0, 13.0, -11.6], [x1, 13.30, -4.6], "#frame"),
+                obox([x0, 18.30, -11.6], [x1, 18.6, -4.6], "#frame"),
+                obox([x0, 13.32, -11.6], [x1, 18.28, -11.3], "#frame"),
+                obox([x0, 13.32, -4.9], [x1, 18.28, -4.6], "#frame"),
+                obox([x0, 13.32, -11.28], [x1, 18.28, -4.92], "#glass", full_uv_faces=("east", "west")),
+            ))
+        return result
+
     # Romanian emergency vans share a high-roof shell; each has its own fixed livery.
     # Narrow wheelhouse cores leave the tyres clear, with full arch liners on both sides.
     for van_name, shell, side, stripe, accent in (
@@ -1875,9 +1908,10 @@ def generate_models() -> None:
                 vz_outer_min=-21.55, vz_outer_max=-8.55, vy_jamb_bot=3.1,
                 liner_x0=6.4, liner_x1=6.9, liner_y0=3.15,
                 body_tex="#shell", body_tint=None, flare_tex="#frame", flare_tint=None),
-            obox([-6.35, 4.0, -18.95], [6.35, 8.72, -8.55], "#carbon"),
-            obox([-8.2, 4.0, -21.5], [8.2, 8.72, -18.98], "#shell"),
-            obox([-8.2, 8.75, -21.5], [8.2, 10.9, -8.55], "#shell"),
+            # Flat patient-compartment floor: the old full-height solid block here
+            # filled the entire cabin and made a stretcher impossible to see.
+            obox([-6.35, 3.92, -21.30], [6.35, 4.36, -8.55], "#medical_floor"),
+            obox([-8.2, 4.0, -21.50], [8.2, 10.90, -21.32], "#shell"),
             # Painted side panel and continuous rocker trim between the arches.
             obox([10.0, 3.95, -8.50], [12.25, 10.90, 8.50], "#shell"),
             obox([-12.25, 3.95, -8.50], [-10.0, 10.90, 8.50], "#shell"),
@@ -1894,26 +1928,68 @@ def generate_models() -> None:
             obox([12.27, 3.15, -8.48], [12.50, 3.92, 8.48], "#frame"),
             obox([-12.50, 3.15, -8.48], [-12.27, 3.92, 8.48], "#frame"),
             # Tall rear medical compartment, high roof, contrasting service doors and handles.
-            obox([10.0, 10.92, -21.5], [12.25, 22.0, -3.5], "#livery", full_uv_faces=("east", "west")),
-            obox([-12.25, 10.92, -21.5], [-10.0, 22.0, -3.5], "#livery", full_uv_faces=("east", "west")),
-            # Rectangular privacy window on the treatment compartment, below the title.
-            obox([12.27, 13.0, -11.6], [12.38, 18.6, -4.6], "#frame"),
-            obox([-12.38, 13.0, -11.6], [-12.27, 18.6, -4.6], "#frame"),
-            obox([12.40, 13.35, -11.2], [12.46, 18.25, -5.0], "#glass", full_uv_faces=("east", "west")),
-            obox([-12.46, 13.35, -11.2], [-12.40, 18.25, -5.0], "#glass", full_uv_faces=("east", "west")),
+            # The patient windows are real openings in the wall, not dark boxes
+            # on top of a solid slab. Each cropped panel keeps the livery UV aligned.
+            *medical_side_panels(obox),
+            # Gasket on all four sides and cutout glazing; no solid panel behind it.
+            *medical_window_frames(obox),
             obox([-12.25, 22.02, -21.5], [12.25, 23.1, 5.5], "#shell"),
-            obox([-12.2, 10.92, -21.9], [12.2, 22.0, -21.53], "#shell"),
+            # Twin rear doors, built around actual glazed apertures.
+            obox([-12.2, 10.92, -21.90], [12.2, 12.98, -21.53], "#shell"),
+            obox([-12.2, 18.82, -21.90], [12.2, 22.0, -21.53], "#shell"),
+            obox([-12.2, 13.0, -21.90], [-8.52, 18.8, -21.53], "#shell"),
+            obox([-0.98, 13.0, -21.90], [0.98, 18.8, -21.53], "#shell"),
+            obox([8.52, 13.0, -21.90], [12.2, 18.8, -21.53], "#shell"),
+            obox([-8.50, 13.0, -21.88], [-1.0, 18.8, -21.58], "#glass", full_uv_faces=("north", "south")),
+            obox([1.0, 13.0, -21.88], [8.50, 18.8, -21.58], "#glass", full_uv_faces=("north", "south")),
             obox([-10.25, 6.1, -22.08], [10.25, 10.85, -22.03], "#rear_livery", full_uv_faces=("north", "south")),
             obox([-0.20, 11.0, -21.94], [0.20, 21.8, -21.92], "#frame"),
             obox([-12.0, 9.45, -21.96], [12.0, 10.12, -21.93], "#stripe"),
             obox([-1.0, 7.05, -22.00], [-0.4, 8.7, -21.96], "#chrome"),
             obox([0.4, 7.05, -22.00], [1.0, 8.7, -21.96], "#chrome"),
-            obox([-8.5, 13.0, -21.98], [-1.0, 18.8, -21.95], "#carbon"),
-            obox([1.0, 13.0, -21.98], [8.5, 18.8, -21.95], "#carbon"),
+
             obox([-11.9, 4.0, -22.2], [-10.5, 10.5, -21.92], "#taillight"),
             obox([10.5, 4.0, -22.2], [11.9, 10.5, -21.92], "#taillight"),
             obox([-12.2, 2.75, -22.55], [12.2, 3.90, -21.60], "#frame"),
             obox([-3.5, 4.0, -22.16], [3.5, 5.55, -21.92], "#plate_ro"),
+            # Patient compartment: wipe-clean floor, front bulkhead and ceiling lights.
+            obox([-6.30, 4.38, -8.52], [6.30, 4.65, -3.65], "#medical_floor"),
+            obox([-9.90, 4.38, -3.62], [9.90, 21.90, -3.48], "#medical_white"),
+            obox([-8.9, 21.70, -19.5], [-6.6, 21.90, -7.0], "#headlight"),
+            obox([6.6, 21.70, -19.5], [8.9, 21.90, -7.0], "#headlight"),
+            # Low storage cabinetry, upper cupboards and metallic handles.
+            obox([-9.90, 8.9, -20.75], [-7.20, 12.5, -4.05], "#medical_white"),
+            obox([-9.90, 17.4, -20.75], [-7.85, 20.35, -4.05], "#medical_white"),
+            obox([-7.83, 18.1, -19.4], [-7.72, 19.75, -15.5], "#medical_blue"),
+            obox([-7.83, 18.1, -14.9], [-7.72, 19.75, -11.0], "#medical_blue"),
+            obox([-7.83, 18.1, -10.4], [-7.72, 19.75, -6.5], "#medical_blue"),
+            obox([-7.18, 11.4, -18.5], [-7.06, 11.7, -16.2], "#chrome"),
+            obox([-7.18, 11.4, -13.4], [-7.06, 11.7, -11.1], "#chrome"),
+            # Retractable wheeled stretcher: base, crossed legs, mattress, raised
+            # headrest, side safety rails and two yellow patient restraints.
+            obox([-4.40, 4.68, -20.85], [1.40, 5.05, -3.90], "#frame"),
+            obox([-4.05, 5.08, -18.5], [-3.40, 8.25, -17.9], "#chrome", rot=("x", 20.0, [0, 5.08, -18.2])),
+            obox([0.40, 5.08, -18.5], [1.05, 8.25, -17.9], "#chrome", rot=("x", 20.0, [0, 5.08, -18.2])),
+            obox([-4.05, 5.08, -7.20], [-3.40, 8.25, -6.60], "#chrome", rot=("x", -20.0, [0, 5.08, -6.9])),
+            obox([0.40, 5.08, -7.20], [1.05, 8.25, -6.60], "#chrome", rot=("x", -20.0, [0, 5.08, -6.9])),
+            obox([-4.45, 8.30, -20.80], [1.45, 8.88, -3.90], "#frame"),
+            obox([-4.15, 8.90, -20.55], [1.15, 9.75, -4.15], "#medical_mattress"),
+            obox([-4.15, 9.77, -6.40], [1.15, 10.20, -4.25], "#medical_white"),
+            obox([-4.50, 9.78, -16.30], [1.50, 9.98, -15.70], "#medical_yellow"),
+            obox([-4.50, 9.78, -10.90], [1.50, 9.98, -10.30], "#medical_yellow"),
+            obox([-4.75, 8.90, -20.30], [-4.50, 10.55, -4.40], "#chrome"),
+            obox([1.50, 8.90, -20.30], [1.75, 10.55, -4.40], "#chrome"),
+            obox([-4.35, 4.40, -19.5], [-3.55, 5.35, -18.55], "#frame"),
+            obox([0.55, 4.40, -19.5], [1.35, 5.35, -18.55], "#frame"),
+            # Attendant seat, monitor/defibrillator, oxygen cylinder and medical bag.
+            obox([7.10, 9.10, -17.1], [9.65, 10.70, -12.3], "#medical_blue"),
+            obox([8.90, 10.72, -17.1], [9.65, 15.30, -12.3], "#medical_blue"),
+            obox([7.0, 13.20, -7.10], [9.80, 16.10, -5.90], "#frame"),
+            obox([7.25, 13.48, -7.14], [9.55, 15.80, -7.12], "#dash", full_uv_faces=("north", "south")),
+            obox([7.40, 9.0, -20.40], [9.0, 14.0, -19.15], "#medical_white"),
+            obox([7.70, 14.02, -20.1], [8.70, 14.60, -19.45], "#chrome"),
+            obox([7.20, 10.85, -11.55], [9.40, 12.80, -9.25], "#medical_red"),
+            obox([7.70, 12.82, -11.10], [8.90, 13.20, -9.70], "#frame"),
             # Front cabin: clear safety glazing, dashboard, seats, windshield pillars and wing mirrors.
             obox([-10.0, 10.92, 5.55], [10.0, 13.0, 8.48], "#shell"),
             # Raked windscreen and matching A-pillars, all attached to the roof.
@@ -1944,9 +2020,6 @@ def generate_models() -> None:
             obox([-6.8, 23.67, -2.75], [-1.0, 24.6, -0.85], "#siren_blue"),
             obox([1.0, 23.67, -2.75], [6.8, 24.6, -0.85], "#siren_blue"),
         ]
-        for element in van_elements:
-            if element["from"][0] == -4.25 and element["to"][0] == -2.0 and element["faces"]["west"]["texture"] == "#livery":
-                element["faces"]["west"]["texture"] = "#livery_reverse"
         (mdir / (van_name + "_body.json")).write_text(json.dumps({
             "textures": {"shell": "gokart:block/" + shell, "livery": "gokart:block/" + side,
                          "livery_reverse": "gokart:block/" + side + "_reverse",
@@ -1957,7 +2030,10 @@ def generate_models() -> None:
                          "grille": "gokart:block/kart_grille", "headlight": "gokart:block/kart_headlight",
                          "taillight": "gokart:block/kart_taillight", "plate_ro": "gokart:block/plate_ro",
                          "siren_blue": "gokart:block/siren_blue", "glass": "gokart:block/kart_glass",
-                         "seat": "gokart:block/kart_seat"},
+                         "seat": "gokart:block/kart_seat", "dash": "gokart:block/kart_dash",
+                         "medical_white": "gokart:block/medical_white", "medical_red": "gokart:block/medical_red",
+                         "medical_blue": "gokart:block/medical_blue", "medical_yellow": "gokart:block/medical_yellow",
+                         "medical_mattress": "gokart:block/medical_mattress", "medical_floor": "gokart:block/medical_floor"},
             "elements": van_elements,
         }, indent=2) + "\n")
 
@@ -2826,7 +2902,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles v0.12.1 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.12.2 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

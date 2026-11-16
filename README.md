@@ -15,6 +15,7 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
 - **4x4 Off-Roader (`gokart:off_roader`)** — SUV off-road 4x4 (`~2.14` blocuri lățime × `~3.05` blocuri lungime, `step_height = 1.05`), aripi trapezoidale 3D evazate cu contra-aripi + praguri rock-slider continue de la roată la roată, bullbar îngust central cu troliu, roll-cage cu 4 proiectoare pe plafon, roată de rezervă pe hayon și rezervor `4.000 mB`.
 - **Ambulanță Română (`gokart:ambulance`)** — autospecială albă cu bandă portocalie, simbol medical și girofar albastru.
 - **Ambulanță SMURD (`gokart:smurd`)** — autospecială roșie cu bandă galbenă și girofar albastru. Ambele folosesc `[H]` pentru sirenă.
+  - Compartimentul medical include targă, dulapuri, monitor, oxigen, scaun și geamuri decupate. Aceste detalii sunt statice: ușile nu se deschid, iar targa nu poate fi folosită pentru transportul unui jucător.
 - **Autospecială Poliția Română — Pursuit Sedan (`gokart:police_car`)** — Sedan sportiv de intervenție cu grilă dublă și stroboscoape integrate, aripi curbate în 5 segmente cu contra-aripi + praguri aero și linie mediană continuă de la roți la roți, plafon conectat cu antenă shark-fin, colantare Battenberg albastru/galben-neon `POLIȚIA`, plăcuțe `RO`, laptop MDT în bord și **girofar aerodinamic Red/Blue + sirenă pe `[H]`** (`4.500 mB`).
 - **3 Motoare (`Engine Tiers`)**:
   - `gokart:small_engine_iron` — **Motor Mic de Fier**: `52 km/h` pe Go-Kart (`47 km/h` pe Off-Roader), cuplu echilibrat.
