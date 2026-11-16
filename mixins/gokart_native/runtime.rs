@@ -9,20 +9,22 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.5.1";
-pub const DESCRIPTION: &str = "Driveable 3D Go-Kart & 4x4 Off-Roader inspired by MrCrayfish's Vehicle Mod: Iron/Gold/Diamond engines, Standard/Sports/Racing wheels, 16-color dye painting, drift + turbo boost, fuel & tuning garage.";
+pub const VERSION: &str = "0.6.0";
+pub const DESCRIPTION: &str = "Driveable full-scale 3D Go-Kart, Quad Bike ATV & 4x4 Off-Roader inspired by MrCrayfish's Vehicle Mod: Iron/Gold/Diamond engines, Standard/Sports/Racing wheels, 16-color paint shop, drift + turbo boost, fuel & tuning garage.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
 pub const CLIENT_CONFIG_FILE: &str = "gokart-client.toml";
 pub const SERVER_CONFIG_FILE: &str = "gokart-server.toml";
 
-/// Entity tag attached to every summoned backing `minecraft:pig` that represents a Go-Kart or Off-Roader.
+/// Entity tags attached to every summoned backing `minecraft:pig` representing a mod vehicle.
 pub const ENTITY_TAG: &str = "gokart_vehicle";
 pub const ENTITY_TAG_OFF_ROADER: &str = "gokart_off_roader";
+pub const ENTITY_TAG_QUAD_BIKE: &str = "gokart_quad_bike";
 
 // Custom items
 pub const ITEM_GO_KART: &str = "gokart:go_kart";
 pub const ITEM_OFF_ROADER: &str = "gokart:off_roader";
+pub const ITEM_QUAD_BIKE: &str = "gokart:quad_bike";
 pub const ITEM_ENGINE_IRON: &str = "gokart:small_engine_iron";
 pub const ITEM_ENGINE_GOLD: &str = "gokart:small_engine_gold";
 pub const ITEM_ENGINE_DIAMOND: &str = "gokart:small_engine_diamond";
@@ -39,6 +41,7 @@ pub const COMP_JERRY_FUEL: &str = "gokart:jerry_fuel";
 // Standalone 3D block models baked via `native_standalone_models`
 pub const MODEL_BODY: &str = "gokart:block/go_kart_body";
 pub const MODEL_OFF_ROADER_BODY: &str = "gokart:block/off_roader_body";
+pub const MODEL_QUAD_BIKE_BODY: &str = "gokart:block/quad_bike_body";
 pub const MODEL_STEERING: &str = "gokart:block/go_kart_steering_wheel";
 pub const MODEL_WHEEL_STANDARD: &str = "gokart:block/wheel_standard";
 pub const MODEL_WHEEL_SPORTS: &str = "gokart:block/wheel_sports";
@@ -47,9 +50,10 @@ pub const MODEL_ENGINE_IRON: &str = "gokart:block/engine_iron";
 pub const MODEL_ENGINE_GOLD: &str = "gokart:block/engine_gold";
 pub const MODEL_ENGINE_DIAMOND: &str = "gokart:block/engine_diamond";
 
-pub const STANDALONE_MODELS: [&str; 9] = [
+pub const STANDALONE_MODELS: [&str; 10] = [
     MODEL_BODY,
     MODEL_OFF_ROADER_BODY,
+    MODEL_QUAD_BIKE_BODY,
     MODEL_STEERING,
     MODEL_WHEEL_STANDARD,
     MODEL_WHEEL_SPORTS,
@@ -66,43 +70,47 @@ pub const CHAN_SYNC: &str = "gokart:sync";
 
 // Fuel capacities (millibuckets)
 pub const KART_MAX_FUEL_MB: u32 = 2_000;
+pub const QUAD_BIKE_MAX_FUEL_MB: u32 = 3_000;
 pub const OFF_ROADER_MAX_FUEL_MB: u32 = 4_000;
 pub const JERRY_MAX_FUEL_MB: u32 = 5_000;
 pub const JERRY_DEFAULT_FUEL_MB: u32 = 2_500;
 
-// Full-scale Go-Kart spatial geometry (1.5-block class matching MrCrayfish GoKartEntity 1.5F scale,
-// with tires tucked snugly beside the wide sidepods and planted flat on Y = 0.000!)
-pub const KART_BODY_SCALE: [f32; 3] = [1.28, 1.20, 1.28];
-pub const FRONT_AXLE_Z: f32 = (9.0 * 1.28) / 16.0;    // +0.7200 b (+11.52 tx)
-pub const REAR_AXLE_Z: f32 = (-8.6 * 1.28) / 16.0;    // -0.6880 b (-11.01 tx)
-pub const WHEELBASE: f32 = FRONT_AXLE_Z - REAR_AXLE_Z; // 1.4080 b (22.53 tx)
-pub const FRONT_TRACK_HALF_X: f32 = 9.98 / 16.0;      // ±0.62375 b (snug beside ±9.86 tx sidepods!)
-pub const REAR_TRACK_HALF_X: f32 = 10.50 / 16.0;      // ±0.65625 b (outer span 1.69 blocks!)
-pub const FRONT_HUB_Y: f32 = 0.280;                   // (4.0 / 16) * 1.12 -> tire bottom at Y = 0.000
-pub const REAR_HUB_Y: f32 = 0.300;                    // (4.0 / 16) * 1.20 -> tire bottom at Y = 0.000
-pub const FRONT_WHEEL_SCALE: [f32; 3] = [1.08, 1.12, 1.12];
-pub const REAR_WHEEL_SCALE: [f32; 3] = [1.26, 1.20, 1.20];
-pub const STEER_PIVOT: [f32; 3] = [0.0, (9.85 * 1.20) / 16.0, (4.30 * 1.28) / 16.0];
-pub const STEER_TILT_DEG: f32 = 32.0;
-pub const STEER_SCALE: [f32; 3] = [1.08, 1.08, 1.08];
+// Steve-calibrated Full-Size Racing Go-Kart geometry (1.86b wide x 3.14b long caroserie,
+// outer tire walls at ±14.40 tx FLUSH with sidepods & front aero fairing!)
+pub const KART_BODY_SCALE: [f32; 3] = [1.18, 1.14, 1.18];
+pub const FRONT_AXLE_Z: f32 = (11.2 * 1.18) / 16.0;    // +0.8260 b (+13.216 tx)
+pub const REAR_AXLE_Z: f32 = (-11.4 * 1.18) / 16.0;    // -0.84075 b (-13.452 tx)
+pub const WHEELBASE: f32 = FRONT_AXLE_Z - REAR_AXLE_Z; // 1.66675 b (26.668 tx)
+pub const FRONT_TRACK_HALF_X: f32 = 11.64 / 16.0;      // ±0.7275 b (outer tire wall ±14.40 tx == sidepod!)
+pub const REAR_TRACK_HALF_X: f32 = 12.16 / 16.0;       // ±0.7600 b (outer tire wall ±15.38 tx == rear bumper!)
+pub const FRONT_HUB_Y: f32 = 0.295;                    // (4.0 / 16) * 1.18 -> flat on Y = 0.000
+pub const REAR_HUB_Y: f32 = 0.320;                     // (4.0 / 16) * 1.28 -> flat on Y = 0.000
+pub const FRONT_WHEEL_SCALE: [f32; 3] = [1.15, 1.18, 1.18];
+pub const REAR_WHEEL_SCALE: [f32; 3] = [1.34, 1.28, 1.28];
+pub const STEER_PIVOT: [f32; 3] = [0.0, (10.50 * 1.14) / 16.0, (2.95 * 1.18) / 16.0];
+pub const STEER_TILT_DEG: f32 = 30.0;
+pub const STEER_SCALE: [f32; 3] = [1.14, 1.14, 1.14];
 pub const STEER_WHEEL_TURN_MULT: f32 = 1.8;
-pub const ENGINE_PIVOT: [f32; 3] = [0.0, (6.20 * 1.20) / 16.0, (-8.70 * 1.28) / 16.0];
-pub const ENGINE_SCALE: [f32; 3] = [1.12, 1.12, 1.12];
-pub const EXHAUST_OFFSET_Z: f32 = (-15.4 * 1.28) / 16.0;
-pub const EXHAUST_HEIGHT_Y: f32 = 0.46;
-pub const SEAT_ATTACH_Y: f32 = (3.15 * 1.20) / 16.0;  // 0.23625 b (flush on full-scale bucket seat!)
-pub const SEAT_OFFSET_Z: f32 = (-1.80 * 1.28) / 16.0; // -0.1440 b (flush against backrest!)
+pub const ENGINE_PIVOT: [f32; 3] = [0.0, (6.50 * 1.14) / 16.0, (-11.6 * 1.18) / 16.0];
+pub const ENGINE_SCALE: [f32; 3] = [1.18, 1.18, 1.18];
+pub const EXHAUST_OFFSET_Z: f32 = (-18.4 * 1.18) / 16.0;
+pub const EXHAUST_HEIGHT_Y: f32 = 0.48;
+pub const SEAT_ATTACH_Y: f32 = (3.30 * 1.14) / 16.0;   // 0.235125 b (3.76 tx cushion top)
+pub const SEAT_OFFSET_Z: f32 = (-3.80 * 1.18) / 16.0;  // -0.28025 b (-4.484 tx, 18.9 tx legroom!)
 pub const MAX_STEER_DEG: f32 = 25.0;
 pub const STEP_HEIGHT: f64 = 0.625;
-pub const OFF_ROADER_STEP_HEIGHT: f64 = 1.05;
-pub const DEFAULT_CAMERA_DISTANCE: f32 = 4.2;
-pub const OFF_ROADER_CAMERA_DISTANCE: f32 = 5.8;
+pub const QUAD_BIKE_STEP_HEIGHT: f64 = 1.02;
+pub const OFF_ROADER_STEP_HEIGHT: f64 = 1.06;
+pub const DEFAULT_CAMERA_DISTANCE: f32 = 4.5;
+pub const QUAD_BIKE_CAMERA_DISTANCE: f32 = 4.9;
+pub const OFF_ROADER_CAMERA_DISTANCE: f32 = 6.4;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum VehicleKind {
     #[default]
     GoKart,
     OffRoader,
+    QuadBike,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -137,16 +145,34 @@ pub struct VehicleLayout {
 }
 
 impl VehicleKind {
+    pub fn code(self) -> u8 {
+        match self {
+            Self::GoKart => 0,
+            Self::OffRoader => 1,
+            Self::QuadBike => 2,
+        }
+    }
+
+    pub fn from_code(code: u8) -> Self {
+        match code & 0x3 {
+            1 => Self::OffRoader,
+            2 => Self::QuadBike,
+            _ => Self::GoKart,
+        }
+    }
+
     pub fn slug(self) -> &'static str {
         match self {
             Self::GoKart => "go_kart",
             Self::OffRoader => "off_roader",
+            Self::QuadBike => "quad_bike",
         }
     }
 
     pub fn from_slug(s: &str) -> Self {
         match s.trim() {
             "off_roader" | "offroader" => Self::OffRoader,
+            "quad_bike" | "quadbike" | "atv" | "quad" => Self::QuadBike,
             _ => Self::GoKart,
         }
     }
@@ -155,6 +181,7 @@ impl VehicleKind {
         match item {
             ITEM_GO_KART => Some(Self::GoKart),
             ITEM_OFF_ROADER => Some(Self::OffRoader),
+            ITEM_QUAD_BIKE => Some(Self::QuadBike),
             _ => None,
         }
     }
@@ -163,6 +190,7 @@ impl VehicleKind {
         match self {
             Self::GoKart => ITEM_GO_KART,
             Self::OffRoader => ITEM_OFF_ROADER,
+            Self::QuadBike => ITEM_QUAD_BIKE,
         }
     }
 
@@ -170,12 +198,14 @@ impl VehicleKind {
         match self {
             Self::GoKart => "gokart.vehicle.go_kart",
             Self::OffRoader => "gokart.vehicle.off_roader",
+            Self::QuadBike => "gokart.vehicle.quad_bike",
         }
     }
 
     pub fn max_fuel_mb(self) -> u32 {
         match self {
             Self::GoKart => KART_MAX_FUEL_MB,
+            Self::QuadBike => QUAD_BIKE_MAX_FUEL_MB,
             Self::OffRoader => OFF_ROADER_MAX_FUEL_MB,
         }
     }
@@ -197,7 +227,7 @@ impl VehicleKind {
                 steer_pivot: STEER_PIVOT,
                 steer_tilt_deg: STEER_TILT_DEG,
                 steer_scale: STEER_SCALE,
-                steer_grip_radius_tx: 3.40,
+                steer_grip_radius_tx: 3.53,
                 engine_pivot: Some(ENGINE_PIVOT),
                 engine_scale: ENGINE_SCALE,
                 spare_wheel_pivot: None,
@@ -205,39 +235,69 @@ impl VehicleKind {
                 exhaust_offset_z: EXHAUST_OFFSET_Z,
                 exhaust_height_y: EXHAUST_HEIGHT_Y,
                 seat_attach: [0.0, SEAT_ATTACH_Y, SEAT_OFFSET_Z],
-                leg_xrot: -1.49,
+                leg_xrot: -1.48,
                 max_steer_deg: MAX_STEER_DEG,
                 step_height: STEP_HEIGHT,
                 default_cam_dist: DEFAULT_CAMERA_DISTANCE,
             },
             Self::OffRoader => VehicleLayout {
                 body_model: MODEL_OFF_ROADER_BODY,
-                body_scale: [1.40, 1.35, 1.40],
-                front_axle_z: (10.5 * 1.40) / 16.0, // +0.91875 b (+14.70 tx)
-                rear_axle_z: (-10.5 * 1.40) / 16.0, // -0.91875 b (-14.70 tx)
-                wheelbase: (21.0 * 1.40) / 16.0,    // 1.8375 b (29.40 tx)
-                front_track_half_x: 13.60 / 16.0,   // ±0.850 b (2.14 blocks total tire span!)
-                rear_track_half_x: 13.60 / 16.0,
-                front_hub_y: 0.360,                 // (4.0 / 16) * 1.44 -> flat on Y = 0.000!
-                rear_hub_y: 0.360,
-                front_wheel_scale: [1.48, 1.44, 1.44],
-                rear_wheel_scale: [1.48, 1.44, 1.44],
-                // Left-hand driver bucket seat (+5.32 tx) & matching left steering column!
-                steer_pivot: [5.32 / 16.0, 15.60 / 16.0, 4.80 / 16.0],
-                steer_tilt_deg: 34.0,
-                steer_scale: [1.08, 1.08, 1.08],
-                steer_grip_radius_tx: 3.40,
-                engine_pivot: None, // V8 engine sits under the sculpted power-bulge front hood!
+                // 36.9 tx (2.31 b) wide x 67.6 tx (4.225 b) long x 2.10 b tall — real MrCrayfish 4x4 scale!
+                body_scale: [1.42, 1.38, 1.42],
+                front_axle_z: (14.5 * 1.42) / 16.0, // +1.2869 b (+20.59 tx, centered in front arch!)
+                rear_axle_z: (-14.5 * 1.42) / 16.0, // -1.2869 b (-20.59 tx, centered in rear arch!)
+                wheelbase: (29.0 * 1.42) / 16.0,    // 2.5738 b (41.18 tx)
+                front_track_half_x: 14.74 / 16.0,   // outer tire wall at ±18.46 tx == fender flare!
+                rear_track_half_x: 14.74 / 16.0,
+                front_hub_y: 0.390,                 // (4.0 / 16) * 1.56 -> flat on Y = 0.000!
+                rear_hub_y: 0.390,
+                front_wheel_scale: [1.55, 1.56, 1.56],
+                rear_wheel_scale: [1.55, 1.56, 1.56],
+                // Left-hand driver bucket seat (+6.816 tx) & matching left steering column!
+                steer_pivot: [6.816 / 16.0, 17.30 / 16.0, 4.45 / 16.0],
+                steer_tilt_deg: 32.0,
+                steer_scale: [1.16, 1.16, 1.16],
+                steer_grip_radius_tx: 3.58,
+                engine_pivot: None,
                 engine_scale: [1.0, 1.0, 1.0],
-                spare_wheel_pivot: Some([0.0, 10.6 / 16.0, -22.6 / 16.0]),
-                spare_wheel_scale: [1.10, 1.18, 1.18],
-                exhaust_offset_z: (-17.0 * 1.40) / 16.0,
-                exhaust_height_y: 0.30,
-                seat_attach: [5.32 / 16.0, 7.30 / 16.0, -2.85 / 16.0],
-                leg_xrot: -1.40,
+                spare_wheel_pivot: Some([0.0, 14.6 / 16.0, -33.2 / 16.0]),
+                spare_wheel_scale: [1.26, 1.32, 1.32],
+                exhaust_offset_z: (-23.8 * 1.42) / 16.0,
+                exhaust_height_y: 0.34,
+                seat_attach: [6.816 / 16.0, 9.108 / 16.0, -3.550 / 16.0],
+                leg_xrot: -1.42,
                 max_steer_deg: 24.0,
                 step_height: OFF_ROADER_STEP_HEIGHT,
                 default_cam_dist: OFF_ROADER_CAMERA_DISTANCE,
+            },
+            Self::QuadBike => VehicleLayout {
+                body_model: MODEL_QUAD_BIKE_BODY,
+                // 28.5 tx (1.78 b) wide x 47.1 tx (2.95 b) long straddle-seat 4x4 ATV!
+                body_scale: [1.24, 1.22, 1.24],
+                front_axle_z: (11.5 * 1.24) / 16.0, // +0.89125 b (+14.26 tx)
+                rear_axle_z: (-11.5 * 1.24) / 16.0, // -0.89125 b (-14.26 tx)
+                wheelbase: (23.0 * 1.24) / 16.0,    // 1.7825 b (28.52 tx)
+                front_track_half_x: 10.95 / 16.0,   // outer tire wall at ±14.26 tx == mudguard!
+                rear_track_half_x: 10.95 / 16.0,
+                front_hub_y: 0.340,                 // (4.0 / 16) * 1.36 -> flat on Y = 0.000!
+                rear_hub_y: 0.340,
+                front_wheel_scale: [1.38, 1.36, 1.36],
+                rear_wheel_scale: [1.38, 1.36, 1.36],
+                steer_pivot: [0.0, 17.60 / 16.0, 4.90 / 16.0],
+                steer_tilt_deg: 38.0,
+                steer_scale: [1.10, 1.10, 1.10],
+                steer_grip_radius_tx: 3.42,
+                engine_pivot: None,
+                engine_scale: [1.0, 1.0, 1.0],
+                spare_wheel_pivot: None,
+                spare_wheel_scale: [1.0, 1.0, 1.0],
+                exhaust_offset_z: (-18.5 * 1.24) / 16.0,
+                exhaust_height_y: 0.44,
+                seat_attach: [0.0, 9.40 / 16.0, -3.10 / 16.0],
+                leg_xrot: -1.16,
+                max_steer_deg: 28.0,
+                step_height: QUAD_BIKE_STEP_HEIGHT,
+                default_cam_dist: QUAD_BIKE_CAMERA_DISTANCE,
             },
         }
     }
@@ -795,6 +855,24 @@ impl KartSpec {
         }
     }
 
+    pub fn default_quad_bike() -> Self {
+        Self {
+            kind: VehicleKind::QuadBike,
+            engine: EngineTier::Iron,
+            wheels: WheelType::Sports,
+            paint: PaintColor::Orange,
+            fuel_mb: QUAD_BIKE_MAX_FUEL_MB,
+        }
+    }
+
+    pub fn default_for_kind(kind: VehicleKind) -> Self {
+        match kind {
+            VehicleKind::GoKart => Self::default(),
+            VehicleKind::OffRoader => Self::default_off_roader(),
+            VehicleKind::QuadBike => Self::default_quad_bike(),
+        }
+    }
+
     pub fn max_fuel_mb(&self) -> u32 {
         self.kind.max_fuel_mb()
     }
@@ -821,10 +899,7 @@ impl KartSpec {
     }
 
     pub fn decode_component_for_kind(default_kind: VehicleKind, s: &str) -> Self {
-        let mut spec = match default_kind {
-            VehicleKind::GoKart => Self::default(),
-            VehicleKind::OffRoader => Self::default_off_roader(),
-        };
+        let mut spec = Self::default_for_kind(default_kind);
         let mut raw_fuel: Option<u32> = None;
         for part in s.split(';') {
             let Some((k, v)) = part.split_once('=') else {
@@ -986,7 +1061,7 @@ impl KartRuntime {
         // 1. Steering angle smoothing (speed-sensitive max angle for high-speed stability)
         let max_top = self.spec.engine.max_speed_bps().max(0.725);
         let speed_ratio = (self.forward_speed.abs() / max_top).clamp(0.0, 1.25);
-        let dynamic_max_steer = MAX_STEER_DEG * (1.0 - 0.32 * speed_ratio.min(1.0));
+        let dynamic_max_steer = lay.max_steer_deg * (1.0 - 0.32 * speed_ratio.min(1.0));
         let target_steer = active_input.steer.clamp(-1.0, 1.0) * dynamic_max_steer;
         let steer_step = self.spec.wheels.steer_rate_deg();
         if (target_steer - self.steer_deg).abs() <= steer_step {
@@ -1054,13 +1129,14 @@ impl KartRuntime {
         };
 
         // 5. Longitudinal Throttle / Brake / Reverse Acceleration
+        let is_trail_4x4 = matches!(self.spec.kind, VehicleKind::OffRoader | VehicleKind::QuadBike);
         let surf_factor = if in_water {
-            if self.spec.kind == VehicleKind::OffRoader { 0.68 } else { 0.42 }
-        } else if self.spec.kind == VehicleKind::OffRoader {
+            if is_trail_4x4 { 0.68 } else { 0.42 }
+        } else if is_trail_4x4 {
             match surface {
-                SurfaceKind::Road => 0.96,
-                SurfaceKind::Dirt => 1.04,
-                SurfaceKind::Loose => 0.98,
+                SurfaceKind::Road => 0.98,
+                SurfaceKind::Dirt => 1.05,
+                SurfaceKind::Loose => 0.99,
                 SurfaceKind::Ice => 0.92,
             }
         } else {
@@ -1142,8 +1218,8 @@ impl KartRuntime {
         let desired_vx = fwd_x * self.forward_speed;
         let desired_vz = fwd_z * self.forward_speed;
         let base_grip = self.spec.wheels.lateral_grip(surface, self.drifting);
-        let grip = if self.spec.kind == VehicleKind::OffRoader && !self.drifting {
-            base_grip.max(0.68)
+        let grip = if is_trail_4x4 && !self.drifting {
+            base_grip.max(0.70)
         } else {
             base_grip
         };
@@ -1270,7 +1346,7 @@ pub fn encode_sync_packet(require_fuel: bool, karts: &[ClientKartView]) -> Vec<u
         let flags = u8::from(k.drifting)
             | (u8::from(k.burnout) << 1)
             | (u8::from(k.boosting) << 2)
-            | (u8::from(k.spec.kind == VehicleKind::OffRoader) << 3);
+            | ((k.spec.kind.code() & 0x3) << 3);
         out.push(flags);
     }
     out
@@ -1300,11 +1376,7 @@ pub fn decode_sync_packet(data: &[u8]) -> Option<(bool, Vec<ClientKartView>)> {
         let speed_kmh = u16::from_le_bytes([s[13], s[14]]) as f32 / 10.0;
         let boost_charge = s[15] as f32 / 255.0;
         let flags = s[16];
-        let kind = if (flags & 8) != 0 {
-            VehicleKind::OffRoader
-        } else {
-            VehicleKind::GoKart
-        };
+        let kind = VehicleKind::from_code((flags >> 3) & 0x3);
         karts.push(ClientKartView {
             entity_id,
             spec: KartSpec {

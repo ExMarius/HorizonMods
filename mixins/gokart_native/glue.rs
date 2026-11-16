@@ -149,10 +149,7 @@ fn read_kart_spec(game: &Game<'_>, stack: &ItemStack) -> rules::KartSpec {
         spec.kind = default_kind;
         spec
     } else {
-        match default_kind {
-            rules::VehicleKind::GoKart => rules::KartSpec::default(),
-            rules::VehicleKind::OffRoader => rules::KartSpec::default_off_roader(),
-        }
+        rules::KartSpec::default_for_kind(default_kind)
     }
 }
 
@@ -274,6 +271,7 @@ pub(in crate::game) fn items(items: &mut Vec<Item>) {
     };
     push_item(items, rules::ITEM_GO_KART, 1, Rarity::Uncommon);
     push_item(items, rules::ITEM_OFF_ROADER, 1, Rarity::Rare);
+    push_item(items, rules::ITEM_QUAD_BIKE, 1, Rarity::Uncommon);
     push_item(items, rules::ITEM_ENGINE_IRON, 1, Rarity::Common);
     push_item(items, rules::ITEM_ENGINE_GOLD, 1, Rarity::Uncommon);
     push_item(items, rules::ITEM_ENGINE_DIAMOND, 1, Rarity::Rare);
@@ -330,8 +328,14 @@ fn kart_summon_nbt(kind: rules::VehicleKind) -> Compound {
     nbt.insert(JavaString::from("PersistenceRequired"), Tag::Byte(1));
     nbt.insert(JavaString::from("Saddle"), Tag::Byte(1));
     let mut tags = vec![Tag::String(JavaString::from(rules::ENTITY_TAG))];
-    if kind == rules::VehicleKind::OffRoader {
-        tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_OFF_ROADER)));
+    match kind {
+        rules::VehicleKind::OffRoader => {
+            tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_OFF_ROADER)));
+        }
+        rules::VehicleKind::QuadBike => {
+            tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_QUAD_BIKE)));
+        }
+        rules::VehicleKind::GoKart => {}
     }
     nbt.insert(JavaString::from("Tags"), Tag::List(tags));
 
@@ -378,8 +382,14 @@ fn prepare_kart_mob(game: &mut Game<'_>, entity_id: u32, yaw: f32, kind: rules::
     }
     if let Some(eref) = game.native_entity(entity_id) {
         game.native_entity_add_tag(eref, rules::ENTITY_TAG);
-        if kind == rules::VehicleKind::OffRoader {
-            game.native_entity_add_tag(eref, rules::ENTITY_TAG_OFF_ROADER);
+        match kind {
+            rules::VehicleKind::OffRoader => {
+                game.native_entity_add_tag(eref, rules::ENTITY_TAG_OFF_ROADER);
+            }
+            rules::VehicleKind::QuadBike => {
+                game.native_entity_add_tag(eref, rules::ENTITY_TAG_QUAD_BIKE);
+            }
+            rules::VehicleKind::GoKart => {}
         }
         game.native_entity_set_rotation(eref, yaw, 0.0);
         game.native_entity_set_head_yaw(eref, yaw);
@@ -438,11 +448,16 @@ fn lookup_kart_uuid(
         .as_ref()
         .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG))
     {
-        let is_off_roader = tags
+        let default_spec = if tags
             .as_ref()
-            .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_OFF_ROADER));
-        let default_spec = if is_off_roader {
+            .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_OFF_ROADER))
+        {
             rules::KartSpec::default_off_roader()
+        } else if tags
+            .as_ref()
+            .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_QUAD_BIKE))
+        {
+            rules::KartSpec::default_quad_bike()
         } else {
             rules::KartSpec::default()
         };
@@ -526,10 +541,8 @@ pub(in crate::game) fn use_item_on(
         return;
     }
     let item_id = &*stack.item;
-    if item_id != rules::ITEM_GO_KART
-        && item_id != rules::ITEM_OFF_ROADER
-        && item_id != rules::ITEM_JERRY_CAN
-    {
+    let is_vehicle_item = rules::VehicleKind::from_item(item_id).is_some();
+    if !is_vehicle_item && item_id != rules::ITEM_JERRY_CAN {
         return;
     }
     let Some(who) = game.native_acting_player() else {
@@ -540,7 +553,7 @@ pub(in crate::game) fn use_item_on(
     };
     let st = guard.as_mut().expect("server state");
 
-    if item_id == rules::ITEM_GO_KART || item_id == rules::ITEM_OFF_ROADER {
+    if is_vehicle_item {
         let spec = read_kart_spec(game, stack);
         let spawn_pos = [
             f64::from(pos[0] + face[0]) + 0.5,
@@ -553,16 +566,19 @@ pub(in crate::game) fn use_item_on(
                 game.native_take_items(item_id, 1);
             }
             game.native_play_sound_in_place("gokart:wrench", spawn_pos, SOUND_PLAYERS, 0.9, 0.95);
-            let msg = if spec.kind == rules::VehicleKind::OffRoader {
-                tr(
+            let msg = match spec.kind {
+                rules::VehicleKind::OffRoader => tr(
                     "gokart.msg.placed_off_roader",
                     "4x4 Off-Roader deployed! Right-click to drive, Wrench to tune.",
-                )
-            } else {
-                tr(
+                ),
+                rules::VehicleKind::QuadBike => tr(
+                    "gokart.msg.placed_quad_bike",
+                    "Quad Bike ATV deployed! Right-click to ride, Wrench to tune.",
+                ),
+                rules::VehicleKind::GoKart => tr(
                     "gokart.msg.placed",
                     "Go-Kart deployed! Right-click to drive, Wrench to tune.",
-                )
+                ),
             };
             game.native_action_bar(who.uuid, Text::literal(msg).with_color(text::GREEN));
             broadcast_sync_now(game, st);
@@ -886,6 +902,7 @@ pub(in crate::game) fn perform_command(
     if rest == "kit" {
         let items_to_give = [
             make_kart_item(game, rules::KartSpec::default()),
+            make_kart_item(game, rules::KartSpec::default_quad_bike()),
             make_kart_item(game, rules::KartSpec::default_off_roader()),
             stack_of(rules::ITEM_ENGINE_GOLD, 1),
             stack_of(rules::ITEM_ENGINE_DIAMOND, 1),
@@ -902,7 +919,7 @@ pub(in crate::game) fn perform_command(
         }
         let msg = tr(
             "gokart.msg.kit_given",
-            "Delivered complete Go-Kart & 4x4 Off-Roader Kit!",
+            "Delivered Go-Kart, Quad Bike ATV & 4x4 Off-Roader Kit!",
         );
         game.native_tell(player.uuid, Text::literal(msg).with_color(text::GOLD));
         return;
@@ -912,14 +929,16 @@ pub(in crate::game) fn perform_command(
         let arg = rest.strip_prefix("spawn").unwrap_or("").trim();
         let spec = if matches!(arg, "off_roader" | "offroader" | "4x4" | "jeep") {
             rules::KartSpec::default_off_roader()
+        } else if matches!(arg, "quad_bike" | "quadbike" | "quad" | "atv") {
+            rules::KartSpec::default_quad_bike()
         } else {
             rules::KartSpec::default()
         };
         let yaw_rad = player.yaw.to_radians();
-        let dist = if spec.kind == rules::VehicleKind::OffRoader {
-            2.8
-        } else {
-            2.2
+        let dist = match spec.kind {
+            rules::VehicleKind::OffRoader => 3.2,
+            rules::VehicleKind::QuadBike => 2.5,
+            rules::VehicleKind::GoKart => 2.4,
         };
         let at = [
             player.position[0] - f64::from(yaw_rad.sin()) * dist,
@@ -928,10 +947,14 @@ pub(in crate::game) fn perform_command(
         ];
         if spawn_kart(game, st, &player.dimension, at, player.yaw, spec).is_some() {
             broadcast_sync_now(game, st);
-            let msg = if spec.kind == rules::VehicleKind::OffRoader {
-                tr("gokart.msg.placed_off_roader", "4x4 Off-Roader deployed!")
-            } else {
-                tr("gokart.msg.placed", "Go-Kart deployed!")
+            let msg = match spec.kind {
+                rules::VehicleKind::OffRoader => {
+                    tr("gokart.msg.placed_off_roader", "4x4 Off-Roader deployed!")
+                }
+                rules::VehicleKind::QuadBike => {
+                    tr("gokart.msg.placed_quad_bike", "Quad Bike ATV deployed!")
+                }
+                rules::VehicleKind::GoKart => tr("gokart.msg.placed", "Go-Kart deployed!"),
             };
             game.native_tell(player.uuid, Text::literal(msg).with_color(text::GREEN));
         }
@@ -1027,13 +1050,16 @@ fn find_rider_uuid(
     let seat_y_kart = kart_pos[1] + f64::from(rules::SEAT_ATTACH_Y) - 0.6;
     let seat_y_off =
         kart_pos[1] + f64::from(rules::VehicleKind::OffRoader.layout().seat_attach[1]) - 0.6;
+    let seat_y_quad =
+        kart_pos[1] + f64::from(rules::VehicleKind::QuadBike.layout().seat_attach[1]) - 0.6;
     players.iter().find_map(|p| {
         let dx = p.position[0] - kart_pos[0];
         let dz = p.position[2] - kart_pos[2];
-        let dy_ok = (p.position[1] - seat_y_kart).abs() < 0.50
-            || (p.position[1] - seat_y_off).abs() < 0.50
-            || (p.position[1] - seat_y_pig).abs() < 0.50;
-        (dx * dx + dz * dz < 0.85 && dy_ok).then_some(p.uuid)
+        let dy_ok = (p.position[1] - seat_y_kart).abs() < 0.55
+            || (p.position[1] - seat_y_off).abs() < 0.55
+            || (p.position[1] - seat_y_quad).abs() < 0.55
+            || (p.position[1] - seat_y_pig).abs() < 0.55;
+        (dx * dx + dz * dz < 1.15 && dy_ok).then_some(p.uuid)
     })
 }
 
@@ -1478,6 +1504,39 @@ pub(in crate::game) fn net_from_client(
                 broadcast_sync_now(game, st);
             }
         }
+        code @ 20..=35 => {
+            let paint = rules::PaintColor::from_code(code - 20);
+            let Some(kart_id) = target_arg.or_else(|| nearest_kart_id(game, st, &who, 6.0)) else {
+                return;
+            };
+            let Some(&uuid) = st.id_to_uuid.get(&kart_id) else {
+                return;
+            };
+            let dye_id = format!("minecraft:{}_dye", paint.slug());
+            let free_paint = who.game_mode == 1 || who.permission >= 2;
+            drop(guard);
+            let mut can_paint = free_paint;
+            if !can_paint {
+                game.native_as_player(player, |g| {
+                    if g.native_take_items(&dye_id, 1) > 0 {
+                        can_paint = true;
+                    }
+                });
+            }
+            if can_paint
+                && let Some(mut g2) = server_state(game)
+                && let Some(s2) = g2.as_mut()
+                && let Some(rt) = s2.by_uuid.get_mut(&uuid)
+            {
+                rt.spec.paint = paint;
+                s2.dirty = true;
+                game.native_play_sound_in_place("gokart:wrench", who.position, SOUND_PLAYERS, 0.8, 1.25);
+                let cname = tr(paint.lang_key(), paint.slug());
+                let txt = tr1("gokart.msg.painted", "Painted %1$s!", &cname);
+                game.native_action_bar(player, Text::literal(txt).with_color(paint.rgb()));
+                broadcast_sync_now(game, s2);
+            }
+        }
         _ => {}
     }
 }
@@ -1768,13 +1827,10 @@ pub(in crate::game) fn camera_distance(game: &Game<'_>, distance: &mut f32) {
     }
     let c = lock(&CLIENT);
     if let Some(view) = client_ridden_kart(game, &c) {
-        *distance = if view.spec.kind == rules::VehicleKind::OffRoader {
-            c.settings
-                .camera_distance
-                .max(rules::OFF_ROADER_CAMERA_DISTANCE)
-        } else {
-            c.settings.camera_distance
-        };
+        *distance = c
+            .settings
+            .camera_distance
+            .max(view.spec.kind.layout().default_cam_dist);
     }
 }
 
@@ -1892,10 +1948,10 @@ pub(in crate::game) fn mob_submit(
 
     // 2. Sprung Chassis Assembly (4x4 long-travel suspension roll on Off-Roader, taut race roll on Go-Kart!)
     draw.push();
-    let roll_mult = if kart.spec.kind == rules::VehicleKind::OffRoader {
-        1.75
-    } else {
-        1.0
+    let roll_mult = match kart.spec.kind {
+        rules::VehicleKind::OffRoader => 1.75,
+        rules::VehicleKind::QuadBike => 1.45,
+        rules::VehicleKind::GoKart => 1.0,
     };
     let roll_deg = if kart.drifting {
         -steer_deg * 0.14 * roll_mult
@@ -1907,10 +1963,10 @@ pub(in crate::game) fn mob_submit(
     } else {
         0.0
     };
-    let roll_center_y = if kart.spec.kind == rules::VehicleKind::OffRoader {
-        0.34
-    } else {
-        0.18
+    let roll_center_y = match kart.spec.kind {
+        rules::VehicleKind::OffRoader => 0.36,
+        rules::VehicleKind::QuadBike => 0.30,
+        rules::VehicleKind::GoKart => 0.18,
     };
     if roll_deg.abs() > 0.04 {
         draw.rotate_about([0.0, 0.0, 1.0], roll_deg, [0.0, roll_center_y, 0.0]);
@@ -2066,6 +2122,8 @@ fn entity_vehicle_kind(game: &Game<'_>, entity_id: u32) -> Option<rules::Vehicle
     }
     if tags.iter().any(|t| t == rules::ENTITY_TAG_OFF_ROADER) {
         Some(rules::VehicleKind::OffRoader)
+    } else if tags.iter().any(|t| t == rules::ENTITY_TAG_QUAD_BIKE) {
+        Some(rules::VehicleKind::QuadBike)
     } else {
         Some(rules::VehicleKind::GoKart)
     }
@@ -2349,8 +2407,8 @@ fn garage_layout(
     c: &ClientState,
     target_kart: Option<rules::ClientKartView>,
 ) -> ([f32; 4], Vec<GarageButton>) {
-    let pw = 256.0;
-    let ph = 188.0;
+    let pw = 264.0;
+    let ph = if target_kart.is_some() { 236.0 } else { 188.0 };
     let px = ((client_size[0] - pw) * 0.5).max(8.0);
     let py = ((client_size[1] - ph) * 0.5).max(8.0);
 
@@ -2360,34 +2418,54 @@ fn garage_layout(
     let bw = pw - 28.0;
     let mut btns = Vec::new();
 
+    let mut y_cursor = py + 62.0;
     if target_kart.is_some() {
         btns.push(GarageButton {
             id: 1,
-            rect: [bx, py + 62.0, (bw - 6.0) * 0.5, 18.0],
-            label: tr("gokart.ui.btn_pickup", "Pack Go-Kart to Item"),
+            rect: [bx, y_cursor, (bw - 6.0) * 0.5, 18.0],
+            label: tr("gokart.ui.btn_pickup", "Pack Vehicle to Item"),
             accent: 0xFF2E7D32,
         });
         btns.push(GarageButton {
             id: 2,
-            rect: [bx + (bw + 6.0) * 0.5, py + 62.0, (bw - 6.0) * 0.5, 18.0],
+            rect: [bx + (bw + 6.0) * 0.5, y_cursor, (bw - 6.0) * 0.5, 18.0],
             label: tr("gokart.ui.btn_eject_engine", "Remove Engine"),
             accent: 0xFFB86B1E,
         });
+        y_cursor += 22.0;
         btns.push(GarageButton {
             id: 3,
-            rect: [bx, py + 84.0, bw, 18.0],
+            rect: [bx, y_cursor, bw, 18.0],
             label: tr("gokart.ui.btn_refuel", "Refuel from Inventory"),
             accent: 0xFF2E54C4,
         });
+        y_cursor += 22.0;
+        // 16-color Quick Paint Shop swatches (2 rows x 8 colors, id = 100..115)
+        let sw = (bw - 7.0 * 4.0) / 8.0;
+        for code in 0_u8..16_u8 {
+            let col = usize::from(code % 8);
+            let row = usize::from(code / 8);
+            let sx = bx + (col as f32) * (sw + 4.0);
+            let sy = y_cursor + (row as f32) * 16.0;
+            let rgb = rules::PaintColor::from_code(code).rgb();
+            btns.push(GarageButton {
+                id: 100 + u8::from(code),
+                rect: [sx, sy, sw, 13.0],
+                label: String::new(),
+                accent: 0xFF00_0000 | rgb,
+            });
+        }
+        y_cursor += 36.0;
     }
 
     let fuel_state = if c.require_fuel { &on_txt } else { &off_txt };
     btns.push(GarageButton {
         id: 4,
-        rect: [bx, py + 108.0, bw, 18.0],
+        rect: [bx, y_cursor, bw, 18.0],
         label: tr1("gokart.ui.btn_fuel_toggle", "Require Fuel: %1$s", fuel_state),
         accent: if c.require_fuel { 0xFF3A4454 } else { 0xFF189C9D },
     });
+    y_cursor += 22.0;
 
     let cam_state = if c.settings.auto_third_person {
         &on_txt
@@ -2396,7 +2474,7 @@ fn garage_layout(
     };
     btns.push(GarageButton {
         id: 5,
-        rect: [bx, py + 130.0, (bw - 6.0) * 0.5, 18.0],
+        rect: [bx, y_cursor, (bw - 6.0) * 0.5, 18.0],
         label: tr1("gokart.ui.btn_cam_toggle", "Auto F5: %1$s", cam_state),
         accent: 0xFF3A4454,
     });
@@ -2404,14 +2482,15 @@ fn garage_layout(
     let unit_str = if c.settings.speed_kmh { "KM/H" } else { "B/S" };
     btns.push(GarageButton {
         id: 6,
-        rect: [bx + (bw + 6.0) * 0.5, py + 130.0, (bw - 6.0) * 0.5, 18.0],
+        rect: [bx + (bw + 6.0) * 0.5, y_cursor, (bw - 6.0) * 0.5, 18.0],
         label: tr1("gokart.ui.btn_unit_toggle", "Unit: %1$s", unit_str),
         accent: 0xFF3A4454,
     });
+    y_cursor += 22.0;
 
     btns.push(GarageButton {
         id: 7,
-        rect: [bx, py + 154.0, bw, 18.0],
+        rect: [bx, y_cursor, bw, 18.0],
         label: tr("gokart.ui.btn_close", "Close [ESC]"),
         accent: 0xFF562828,
     });
@@ -2568,6 +2647,11 @@ pub(in crate::game) fn screen_mouse(
                 7 => {
                     c.pending_close_garage = true;
                 }
+                code @ 100..=115 => {
+                    let mut p = vec![20 + (code - 100)];
+                    p.extend_from_slice(&target_id.to_le_bytes());
+                    c.pending_actions.push(p);
+                }
                 _ => {}
             }
             break;
@@ -2584,7 +2668,7 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
         return;
     }
     match &*stack.item {
-        rules::ITEM_GO_KART | rules::ITEM_OFF_ROADER => {
+        rules::ITEM_GO_KART | rules::ITEM_OFF_ROADER | rules::ITEM_QUAD_BIKE => {
             let spec = read_kart_spec(game, stack);
             let eng = tr(spec.engine.lang_key(), spec.engine.slug());
             let whl = tr(spec.wheels.lang_key(), spec.wheels.slug());
@@ -2611,16 +2695,19 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
                 )),
                 0x70C926,
             ));
-            let hint = if spec.kind == rules::VehicleKind::OffRoader {
-                tr(
+            let hint = match spec.kind {
+                rules::VehicleKind::OffRoader => tr(
                     "gokart.tooltip.place_off_roader",
                     "Right-click ground to deploy 4x4 Off-Roader (climbs 1-block terrain!)",
-                )
-            } else {
-                tr(
+                ),
+                rules::VehicleKind::QuadBike => tr(
+                    "gokart.tooltip.place_quad_bike",
+                    "Right-click ground to deploy Quad Bike ATV (nimble 1-block trail climber!)",
+                ),
+                rules::VehicleKind::GoKart => tr(
                     "gokart.tooltip.place_hint",
                     "Right-click ground to deploy Go-Kart",
-                )
+                ),
             };
             lines.push((Text::literal(hint), 0x9AA4B2));
         }
@@ -2724,7 +2811,7 @@ pub(in crate::game) fn item_bar(
         let mb = read_jerry_fuel(game, stack);
         let fill = ((mb as f32 / rules::JERRY_MAX_FUEL_MB as f32) * 13.0).round() as i32;
         *bar = Some((fill.clamp(0, 13), 0xF8C628));
-    } else if &*stack.item == rules::ITEM_GO_KART || &*stack.item == rules::ITEM_OFF_ROADER {
+    } else if rules::VehicleKind::from_item(&stack.item).is_some() {
         let spec = read_kart_spec(game, stack);
         let cap = spec.max_fuel_mb();
         if spec.fuel_mb < cap {
