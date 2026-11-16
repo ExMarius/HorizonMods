@@ -1,5 +1,6 @@
 """Geometry and texture regressions for the emergency vans."""
 import json
+import math
 import unittest
 from pathlib import Path
 
@@ -44,6 +45,28 @@ class EmergencyModels(unittest.TestCase):
             self.assertFalse(any(e['faces']['up']['texture'] == '#carbon' and
                                  e['from'][0] < 7 < e['to'][0] and e['from'][1] < 7 < e['to'][1] and
                                  e['from'][2] < -4 < e['to'][2] for e in elements))
+
+    def test_raked_pillars_reach_roof_and_vans_have_distinct_fronts(self):
+        grilles = []
+        for name in ('ambulance', 'smurd'):
+            model = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())
+            grilles.append(model['textures']['van_grille'])
+            pillars = [e for e in model['elements'] if e.get('rotation', {}).get('angle') == -30.0
+                       and e['faces']['up']['texture'] == '#shell']
+            self.assertEqual(len(pillars), 2)
+            for e in pillars:
+                r = e['rotation']
+                angle = math.radians(r['angle'])
+                oy, oz = r['origin'][1:]
+                y, z = e['to'][1], e['to'][2]
+                top_y = oy + math.cos(angle) * (y - oy) - math.sin(angle) * (z - oz)
+                top_z = oz + math.sin(angle) * (y - oy) + math.cos(angle) * (z - oz)
+                self.assertGreaterEqual(top_y, 22.02)
+                self.assertLessEqual(top_z, 14.0)  # front edge of the roof, in model coordinates
+            windows = [e for e in model['elements'] if e['faces']['east']['texture'] == '#glass'
+                       and e['from'][0] > 20 and e['from'][1] > 13]
+            self.assertTrue(any(e['to'][2] - e['from'][2] > 9 for e in windows))
+        self.assertNotEqual(*grilles)
 
     def test_emergency_markings_and_opposite_side_uvs_are_present(self):
         for name in ('ambulance', 'smurd'):
