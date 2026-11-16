@@ -2556,7 +2556,7 @@ pub(in crate::game) fn mob_submit(
     if matches!(kart.spec.kind, rules::VehicleKind::Ambulance | rules::VehicleKind::Smurd) && kart.siren_on {
         let side = if ((mob.age * 0.65) as i32).rem_euclid(2) == 0 { 1.0 } else { -1.0 };
         draw_part_at_pivot(draw, rules::MODEL_SIREN_BLUE,
-            [side * 5.2 / 16.0, 33.1 / 16.0, -2.5 / 16.0], &[], [1.15, 0.75, 1.15], 0xFFFFFF);
+            [side * 5.1 / 16.0, 35.3 / 16.0, -2.97 / 16.0], &[], [1.15, 0.75, 1.15], 0xFFFFFF);
     }
 
     // 2e. FiveM Alternating Red & Blue Girofar + Grille Strobe Flashers on Romanian Police Cars!

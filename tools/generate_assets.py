@@ -68,7 +68,9 @@ def generate_vehicle_textures() -> None:
     bdir = ASSETS / "textures" / "block"
 
     # Reference-inspired Romanian SAJ white/orange/blue and SMURD red/yellow liveries.
-    for name, color in (("medical_white", (239, 243, 245, 255)), ("medical_red", (185, 26, 32, 255))):
+    for name, color in (("medical_white", (239, 243, 245, 255)), ("medical_red", (185, 26, 32, 255)),
+                        ("medical_orange", (241, 92, 25, 255)), ("medical_blue", (25, 75, 172, 255)),
+                        ("medical_yellow", (230, 242, 35, 255))):
         write_png(bdir / (name + ".png"), 16, 16, [color] * 256)
     font = {
         "A": ("010", "101", "111", "101", "101"), "B": ("110", "101", "110", "101", "110"),
@@ -87,21 +89,38 @@ def generate_vehicle_textures() -> None:
         def dot(x, y, c):
             if 0 <= x < w and 0 <= y < h:
                 pix[y * w + x] = c
-        for y in range(20, 23):
-            for x in range(w): dot(x, y, stripe)
-        for y in range(27, 29):
-            for x in range(w): dot(x, y, accent)
-        for x in (0, 31, 63):
-            for y in range(5, 32): dot(x, y, (75, 80, 86, 255))
+        # Textures are for the upper rear body only; reflective stripes are geometry
+        # so they remain continuous across doors and wheel arches.
+        for x in (0, 63):
+            for y in range(0, 32): dot(x, y, (120, 125, 130, 255))
         # Star-of-life impression: a blue/white six-point medical cross.
-        for y in range(9, 17):
+        for y in range(10, 18):
             for x in range(7, 15):
-                if x in (10, 11) or y in (12, 13) or abs(x - 10.5) == abs(y - 12.5): dot(x, y, accent)
+                if x in (10, 11) or y in (12, 13) or abs(x - 10.5) == abs(y - 13.5): dot(x, y, accent)
         for i, ch in enumerate(label):
             for y, row in enumerate(font.get(ch, ("000",)*5)):
                 for x, bit in enumerate(row):
-                    if bit == "1": dot(20 + 4*i + x, 9 + y, accent)
+                    if bit == "1": dot(20 + 4*i + x, 2 + y, accent)
         write_png(bdir / (name + ".png"), w, h, pix)
+        # Opposite block faces reverse the horizontal UV axis. Mirror the source
+        # to keep the medical name readable on both sides of the van.
+        write_png(bdir / (name + "_reverse.png"), w, h,
+                  [pix[y * w + (w - 1 - x)] for y in range(h) for x in range(w)])
+
+        # Rear reflective chevrons with the Romanian emergency number.
+        rear = [base] * (w * h)
+        for y in range(h):
+            for x in range(w):
+                if y >= 19 and ((x + y * 2) // 6) % 2 == 0:
+                    rear[y*w+x] = stripe
+        for i, ch in enumerate("112"):
+            for yy, row in enumerate(font[ch]):
+                for xx, bit in enumerate(row):
+                    if bit == "1":
+                        for dy in range(2):
+                            for dx in range(2):
+                                rear[(4 + yy*2 + dy)*w + 22 + i*8 + xx*2 + dx] = accent
+        write_png(bdir / (name + "_rear.png"), w, h, rear)
 
     # 1. `kart_body.png`: Smooth automotive metallic clear-coat (neutral silver-white so `tintindex: 0`
     # multiplies cleanly with all 16 Minecraft dye colors into rich lacquered bodywork!)
@@ -1830,14 +1849,21 @@ def generate_models() -> None:
 
     # Romanian emergency vans share a high-roof shell; each has its own fixed livery.
     # Narrow wheelhouse cores leave the tyres clear, with full arch liners on both sides.
-    for van_name, shell, side in (("ambulance", "medical_white", "ambulance_side"),
-                                   ("smurd", "medical_red", "smurd_side")):
+    for van_name, shell, side, stripe, accent in (
+        ("ambulance", "medical_white", "ambulance_side", "medical_orange", "medical_blue"),
+        ("smurd", "medical_red", "smurd_side", "medical_yellow", "medical_white"),
+    ):
         van_elements = [
             obox([-8.7, 2.8, -8.5], [8.7, 3.9, 8.5], "#carbon"),
             obox([-6.1, 2.8, -21.5], [6.1, 3.9, -8.53], "#frame"),
             obox([-6.1, 2.8, 8.53], [6.1, 3.9, 21.5], "#frame"),
             obox([-5.8, 4.0, 8.55], [5.8, 8.72, 18.9], "#carbon"),
             obox([-8.2, 8.75, 8.55], [8.2, 10.9, 21.5], "#shell"),
+            # Cover the rotated arch backing at hood height; no angular peaks
+            # should protrude above the bonnet when viewed from the side.
+            obox([-12.25, 10.92, 8.56], [12.25, 11.80, 21.55], "#shell"),
+            obox([-6.0, 11.82, 10.0], [6.0, 12.25, 21.45], "#shell"),
+            obox([-5.0, 12.27, 18.0], [5.0, 12.45, 21.40], "#stripe"),
             obox([-8.2, 4.0, 18.93], [8.2, 8.72, 21.5], "#shell"),
             *sculpted_wheel_arch(cz=13.8, vx_in=8.22, vx_body=12.25, vx_flare=12.60,
                 vy_crown=8.75, vy_top=10.9, half_crown=2.15, slope_len=3.2, slope_deg=38,
@@ -1853,16 +1879,35 @@ def generate_models() -> None:
             obox([-8.2, 4.0, -21.5], [8.2, 8.72, -18.98], "#shell"),
             obox([-8.2, 8.75, -21.5], [8.2, 10.9, -8.55], "#shell"),
             # Painted side panel and continuous rocker trim between the arches.
-            obox([10.0, 3.95, -8.50], [12.25, 10.90, 8.50], "#livery", full_uv_faces=("east", "west")),
-            obox([-12.25, 3.95, -8.50], [-10.0, 10.90, 8.50], "#livery", full_uv_faces=("east", "west")),
+            obox([10.0, 3.95, -8.50], [12.25, 10.90, 8.50], "#shell"),
+            obox([-12.25, 3.95, -8.50], [-10.0, 10.90, 8.50], "#shell"),
+            # Continuous reflective bands, following both door panels and fenders.
+            obox([12.27, 9.45, -21.45], [12.34, 10.12, 21.45], "#stripe"),
+            obox([-12.34, 9.45, -21.45], [-12.27, 10.12, 21.45], "#stripe"),
+            obox([12.27, 7.10, -8.48], [12.34, 7.55, 8.48], "#accent"),
+            obox([-12.34, 7.10, -8.48], [-12.27, 7.55, 8.48], "#accent"),
+            # Sliding rear door & driver-door shut lines, and flush handles.
+            obox([12.35, 4.10, -3.63], [12.41, 10.85, -3.48], "#frame"),
+            obox([-12.41, 4.10, -3.63], [-12.35, 10.85, -3.48], "#frame"),
+            obox([12.35, 8.10, -2.7], [12.51, 8.55, -1.1], "#frame"),
+            obox([-12.51, 8.10, -2.7], [-12.35, 8.55, -1.1], "#frame"),
             obox([12.27, 3.15, -8.48], [12.50, 3.92, 8.48], "#frame"),
             obox([-12.50, 3.15, -8.48], [-12.27, 3.92, 8.48], "#frame"),
             # Tall rear medical compartment, high roof, contrasting service doors and handles.
             obox([10.0, 10.92, -21.5], [12.25, 22.0, -3.5], "#livery", full_uv_faces=("east", "west")),
             obox([-12.25, 10.92, -21.5], [-10.0, 22.0, -3.5], "#livery", full_uv_faces=("east", "west")),
+            # Rectangular privacy window on the treatment compartment, below the title.
+            obox([12.27, 13.0, -11.6], [12.38, 18.6, -4.6], "#frame"),
+            obox([-12.38, 13.0, -11.6], [-12.27, 18.6, -4.6], "#frame"),
+            obox([12.40, 13.35, -11.2], [12.46, 18.25, -5.0], "#glass", full_uv_faces=("east", "west")),
+            obox([-12.46, 13.35, -11.2], [-12.40, 18.25, -5.0], "#glass", full_uv_faces=("east", "west")),
             obox([-12.25, 22.02, -21.5], [12.25, 23.1, 5.5], "#shell"),
             obox([-12.2, 10.92, -21.9], [12.2, 22.0, -21.53], "#shell"),
+            obox([-10.25, 6.1, -22.08], [10.25, 10.85, -22.03], "#rear_livery", full_uv_faces=("north", "south")),
             obox([-0.20, 11.0, -21.94], [0.20, 21.8, -21.92], "#frame"),
+            obox([-12.0, 9.45, -21.96], [12.0, 10.12, -21.93], "#stripe"),
+            obox([-1.0, 7.05, -22.00], [-0.4, 8.7, -21.96], "#chrome"),
+            obox([0.4, 7.05, -22.00], [1.0, 8.7, -21.96], "#chrome"),
             obox([-8.5, 13.0, -21.98], [-1.0, 18.8, -21.95], "#carbon"),
             obox([1.0, 13.0, -21.98], [8.5, 18.8, -21.95], "#carbon"),
             obox([-11.9, 4.0, -22.2], [-10.5, 10.5, -21.92], "#taillight"),
@@ -1871,11 +1916,13 @@ def generate_models() -> None:
             obox([-3.5, 4.0, -22.16], [3.5, 5.55, -21.92], "#plate_ro"),
             # Front cabin: clear safety glazing, dashboard, seats, windshield pillars and wing mirrors.
             obox([-10.0, 10.92, 5.55], [10.0, 13.0, 8.48], "#shell"),
-            obox([-10.0, 13.02, 5.55], [10.0, 21.7, 6.05], "#glass", full_uv_faces=("north", "south")),
-            obox([-11.7, 10.92, -3.45], [-10.15, 21.70, 5.5], "#glass", full_uv_faces=("east", "west")),
-            obox([10.15, 10.92, -3.45], [11.7, 21.70, 5.5], "#glass", full_uv_faces=("east", "west")),
-            obox([-12.0, 10.92, 5.53], [-10.02, 21.70, 6.10], "#shell"),
-            obox([10.02, 10.92, 5.53], [12.0, 21.70, 6.10], "#shell"),
+            # Raked windscreen and matching A-pillars, all attached to the roof.
+            obox([-10.0, 11.05, 8.05], [10.0, 22.3, 8.55], "#glass", rot=("x", -18.0, [0, 11.05, 8.30]), full_uv_faces=("north", "south")),
+            obox([-12.0, 11.05, 8.05], [-10.02, 22.3, 8.55], "#shell", rot=("x", -18.0, [0, 11.05, 8.30])),
+            obox([10.02, 11.05, 8.05], [12.0, 22.3, 8.55], "#shell", rot=("x", -18.0, [0, 11.05, 8.30])),
+            # A single side window per cab door, framed by the raked A-pillar.
+            obox([-11.7, 11.1, -3.45], [-10.15, 21.7, 5.55], "#glass", full_uv_faces=("east", "west")),
+            obox([10.15, 11.1, -3.45], [11.7, 21.7, 5.55], "#glass", full_uv_faces=("east", "west")),
             obox([-9.7, 8.0, 5.0], [9.7, 10.9, 5.50], "#frame"),
             obox([2.0, 4.0, -2.5], [8.0, 6.0, 2.8], "#seat"),
             obox([-8.0, 4.0, -2.5], [-2.0, 6.0, 2.8], "#seat"),
@@ -1888,13 +1935,24 @@ def generate_models() -> None:
             obox([-10.9, 7.0, 21.6], [-6.2, 10.25, 22.35], "#headlight"),
             obox([6.2, 7.0, 21.6], [10.9, 10.25, 22.35], "#headlight"),
             obox([-3.5, 3.3, 22.82], [3.5, 5.0, 23.0], "#plate_ro"),
+            obox([-5.8, 7.0, 22.42], [5.8, 7.35, 22.52], "#chrome"),
+            obox([-5.8, 8.1, 22.42], [5.8, 8.45, 22.52], "#chrome"),
+            obox([-5.8, 9.2, 22.42], [5.8, 9.55, 22.52], "#chrome"),
+            obox([-1.0, 8.5, 22.54], [1.0, 9.4, 22.70], "#chrome"),
             # Static blue lenses and roof rails; animated blue beacons overlay when the siren is active.
             obox([-7.0, 23.12, -2.8], [7.0, 23.65, -0.8], "#frame"),
             obox([-6.8, 23.67, -2.75], [-1.0, 24.6, -0.85], "#siren_blue"),
             obox([1.0, 23.67, -2.75], [6.8, 24.6, -0.85], "#siren_blue"),
         ]
+        for element in van_elements:
+            if element["from"][0] == -4.25 and element["to"][0] == -2.0 and element["faces"]["west"]["texture"] == "#livery":
+                element["faces"]["west"]["texture"] = "#livery_reverse"
         (mdir / (van_name + "_body.json")).write_text(json.dumps({
             "textures": {"shell": "gokart:block/" + shell, "livery": "gokart:block/" + side,
+                         "livery_reverse": "gokart:block/" + side + "_reverse",
+                         "rear_livery": "gokart:block/" + side + "_rear",
+                         "stripe": "gokart:block/" + stripe, "accent": "gokart:block/" + accent,
+                         "chrome": "gokart:block/kart_chrome",
                          "frame": "gokart:block/kart_frame", "carbon": "gokart:block/kart_carbon",
                          "grille": "gokart:block/kart_grille", "headlight": "gokart:block/kart_headlight",
                          "taillight": "gokart:block/kart_taillight", "plate_ro": "gokart:block/plate_ro",
@@ -2768,7 +2826,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles v0.12.0 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles v0.12.1 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

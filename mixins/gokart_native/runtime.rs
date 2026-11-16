@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.12.0";
+pub const VERSION: &str = "0.12.1";
 pub const DESCRIPTION: &str = "FiveM-inspired 3D Vehicles for Horizon: Go-Kart, Quad Bike ATV, 4x4 Off-Roader, Poliția Română Pursuit Sedan with sculpted wheel arches, emissive lights, dynamic night headlights, siren & girofar, and /vehicle remove.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
@@ -392,8 +392,24 @@ impl VehicleKind {
                 default_cam_dist: QUAD_BIKE_CAMERA_DISTANCE,
             },
             Self::Atv => VehicleLayout { body_model: MODEL_ATV_BODY, ..Self::QuadBike.layout() },
-            Self::Ambulance => VehicleLayout { body_model: MODEL_AMBULANCE_BODY, default_cam_dist: 7.0, ..Self::PoliceCar.layout() },
-            Self::Smurd => VehicleLayout { body_model: MODEL_SMURD_BODY, default_cam_dist: 7.0, ..Self::PoliceCar.layout() },
+            // Both emergency vans share a longer wheelbase and taller cab than the sedan.
+            // Keep the wheel pivots derived from the body-model axle centres (±13.8 texels).
+            Self::Ambulance | Self::Smurd => VehicleLayout {
+                body_model: if self == Self::Ambulance { MODEL_AMBULANCE_BODY } else { MODEL_SMURD_BODY },
+                body_scale: [1.30, 1.45, 1.65],
+                front_axle_z: (13.8 * 1.65) / 16.0,
+                rear_axle_z: (-13.8 * 1.65) / 16.0,
+                wheelbase: (27.6 * 1.65) / 16.0,
+                front_track_half_x: 12.66 / 16.0,
+                rear_track_half_x: 12.66 / 16.0,
+                steer_pivot: [6.5 / 16.0, 15.4 / 16.0, 6.5 / 16.0],
+                seat_attach: [6.5 / 16.0, 8.0 / 16.0, -1.0 / 16.0],
+                exhaust_offset_z: (-22.6 * 1.65) / 16.0,
+                nose_light_dist: 2.42,
+                max_steer_deg: 23.0,
+                default_cam_dist: 7.5,
+                ..Self::PoliceCar.layout()
+            },
             Self::PoliceCar => VehicleLayout {
                 body_model: MODEL_POLICE_CAR_BODY,
                 // 34.8 tx (2.17 b) wide x 66.4 tx (4.15 b) long Poliția Română patrol sedan!
@@ -2032,6 +2048,10 @@ mod tests {
             assert_eq!(VehicleKind::from_slug(kind.slug()), kind);
             assert_eq!(VehicleKind::from_item(kind.item_id()), Some(kind));
             assert!(kind.is_emergency());
+            let layout = kind.layout();
+            assert!((layout.front_axle_z - 13.8 * layout.body_scale[2] / 16.0).abs() < 1e-6);
+            assert!((layout.rear_axle_z + 13.8 * layout.body_scale[2] / 16.0).abs() < 1e-6);
+            assert!((layout.wheelbase - (layout.front_axle_z - layout.rear_axle_z)).abs() < 1e-6);
             let spec = KartSpec::default_for_kind(kind);
             assert_eq!(KartSpec::decode_component(&spec.encode_component()), spec);
             let view = ClientKartView {
