@@ -548,6 +548,8 @@ def generate_item_textures() -> None:
         "................",
     ]
     grid_to_png(idir / "quad_bike.png", quad_art, quad_pal)
+    atv_pal = {**quad_pal, "O": (55, 135, 65, 255), "H": (103, 174, 92, 255), "D": (30, 92, 41, 255)}
+    grid_to_png(idir / "atv.png", quad_art, atv_pal)
 
     # 1d. Romanian Police Car (`Poliția Română`) item icon (`police_car.png`)
     pol_pal = {
@@ -1552,6 +1554,46 @@ def generate_models() -> None:
         + "\n"
     )
 
+    # Separate utility ATV, inspired by the original Vehicle Mod's broad fenders,
+    # central saddle, rear luggage rail and distinctive full-width front brush guard.
+    atv_elements = [
+        obox([-4.2, 3.2, -16.8], [4.2, 5.0, 17.2], "#frame"),
+        obox([-8.6, 2.55, 11.0], [8.6, 3.25, 12.0], "#chrome"),
+        obox([-8.6, 2.55, -12.0], [8.6, 3.25, -11.0], "#chrome"),
+        obox([-3.4, 5.02, -5.3], [3.4, 8.1, 5.5], "#frame"),
+        obox([-4.5, 8.15, 4.4], [4.5, 11.0, 15.8], "#body", tint=0),
+        obox([-4.5, 8.15, -16.0], [4.5, 10.5, -9.8], "#body", tint=0),
+        obox([-3.5, 8.15, -9.75], [3.5, 10.0, 4.35], "#seat"),
+        obox([-3.15, 10.02, -9.5], [3.15, 10.65, -3.8], "#seat"),
+        obox([4.55, 9.0, 6.3], [11.5, 10.8, 16.6], "#body", tint=0),
+        obox([-11.5, 9.0, 6.3], [-4.55, 10.8, 16.6], "#body", tint=0),
+        obox([4.55, 9.0, -16.6], [11.5, 10.8, -6.3], "#body", tint=0),
+        obox([-11.5, 9.0, -16.6], [-4.55, 10.8, -6.3], "#body", tint=0),
+        obox([4.55, 4.0, -5.9], [10.4, 5.0, 5.9], "#carbon"),
+        obox([-10.4, 4.0, -5.9], [-4.55, 5.0, 5.9], "#carbon"),
+        obox([-4.4, 6.0, 15.82], [4.4, 10.8, 17.2], "#grille"),
+        obox([1.5, 8.1, 17.22], [4.1, 10.3, 17.65], "#headlight"),
+        obox([-4.1, 8.1, 17.22], [-1.5, 10.3, 17.65], "#headlight"),
+        obox([-7.7, 5.4, 18.0], [7.7, 6.3, 19.0], "#frame"),
+        obox([-7.7, 9.1, 18.0], [7.7, 10.0, 19.0], "#frame"),
+        obox([-7.7, 6.32, 18.0], [-6.8, 9.08, 19.0], "#frame"),
+        obox([6.8, 6.32, 18.0], [7.7, 9.08, 19.0], "#frame"),
+        obox([-7.4, 11.0, -16.4], [-6.7, 12.2, -8.8], "#frame"),
+        obox([6.7, 11.0, -16.4], [7.4, 12.2, -8.8], "#frame"),
+        obox([-6.68, 11.5, -16.4], [6.68, 12.2, -15.7], "#frame"),
+        obox([2.0, 8.0, -16.4], [4.3, 9.8, -16.05], "#taillight"),
+        obox([-4.3, 8.0, -16.4], [-2.0, 9.8, -16.05], "#taillight"),
+        obox([-1.4, 11.02, 5.5], [1.4, 11.7, 7.5], "#frame"),
+        obox([-0.6, 11.72, 3.95], [0.6, 15.0, 6.8], "#chrome", rot=("x", 38.0, [0.0, 14.43, 3.95])),
+    ]
+    (mdir / "atv_body.json").write_text(json.dumps({
+        "textures": {"body": "gokart:block/kart_body", "frame": "gokart:block/kart_frame",
+                     "carbon": "gokart:block/kart_carbon", "chrome": "gokart:block/kart_chrome",
+                     "grille": "gokart:block/kart_grille", "seat": "gokart:block/kart_seat",
+                     "headlight": "gokart:block/kart_headlight", "taillight": "gokart:block/kart_taillight"},
+        "elements": atv_elements,
+    }, indent=2) + "\n")
+
     # =========================================================================
     # 7. Romanian Police Pursuit Sedan (`police_car_body.json`) — Poliția Română!
     # =========================================================================
@@ -1615,6 +1657,11 @@ def generate_models() -> None:
         # Flush Poliția Română Battenberg doors (`vx = ±12.25` matching front/rear fenders 1:1!)
         obox([ 10.20, 3.57, -8.50], [12.25, 10.90, 8.50], "#police_side", full_uv_faces=("east", "west")),
         obox([-12.25, 3.57, -8.50], [-10.20, 10.90, 8.50], "#police_side", full_uv_faces=("east", "west")),
+        # Door shut lines align with the B pillar and the rear quarter window.
+        obox([12.255, 3.95, -0.12], [12.265, 9.95, 0.12], "#frame"),
+        obox([-12.265, 3.95, -0.12], [-12.255, 9.95, 0.12], "#frame"),
+        obox([12.255, 3.95, -8.30], [12.265, 9.95, -8.12], "#frame"),
+        obox([-12.265, 3.95, -8.30], [-12.255, 9.95, -8.12], "#frame"),
         # Sculpted 3D shoulder character crease + front & rear chrome door handles
         obox([ 12.27, 9.98, -8.45], [12.42, 10.42, 8.45], "#body", tint=0),
         obox([-12.42, 9.98, -8.45], [-12.27, 10.42, 8.45], "#body", tint=0),
@@ -1632,10 +1679,10 @@ def generate_models() -> None:
         obox([  1.0, 11.02, 7.95], [ 7.6, 11.35, 8.30], "#frame", rot=("z", 3.0, [1.0, 11.15, 8.1])),
         obox([ -7.6, 11.02, 7.95], [-1.0, 11.35, 8.30], "#frame", rot=("z", 3.0, [-7.6, 11.15, 8.1])),
         # Gloss-black center B-pillars + rear-door Hofmeister divider + full window chrome beltline!
-        obox([ 10.45, 10.92, -1.5], [11.45, 18.60, -0.3], "#carbon"),
-        obox([-11.45, 10.92, -1.5], [-10.45, 18.60, -0.3], "#carbon"),
-        obox([ 10.55, 11.08, -10.8], [11.35, 18.60, -10.1], "#carbon"),
-        obox([-11.35, 11.08, -10.8], [-10.55, 18.60, -10.1], "#carbon"),
+        obox([ 10.45, 10.92, -0.5], [11.45, 18.60, 0.7], "#carbon"),
+        obox([-11.45, 10.92, -0.5], [-10.45, 18.60, 0.7], "#carbon"),
+        obox([ 10.55, 11.08, -8.0], [11.35, 18.60, -7.3], "#carbon"),
+        obox([-11.35, 11.08, -8.0], [-10.55, 18.60, -7.3], "#carbon"),
         obox([ 11.48, 10.92, -8.4], [12.18, 11.24,  6.6], "#chrome"),
         obox([-12.18, 10.92, -8.4], [-11.48, 11.24, 6.6], "#chrome"),
         # Slanted C-pillars (+26 deg) at `vz = -15.80` -> encloses the ENTIRE 3-seat rear passenger cabin!
@@ -1667,21 +1714,21 @@ def generate_models() -> None:
         obox([ -1.8,  8.2,   4.0], [ 1.4, 10.8,  4.6], "#dash", rot=("y", 18.0, [0.0, 9.5, 4.3]), full_uv_faces=("north", "south")),
         obox([  4.15, 10.9,  3.46], [5.35, 12.0, 6.18], "#chrome", rot=("x", 28.0, [4.75, 11.45, 3.46])),
         # Front Patrol Bucket Seats + Protective Mesh Partition + Open Rear Footwell & 3-Place Rear Bench!
-        obox([  1.6,  3.92, -3.4], [ 8.0,  5.4,  1.8], "#seat"),
-        obox([  1.6,  5.42, -4.6], [ 8.0, 13.8, -3.1], "#seat", rot=("x", -8.0, [4.8, 5.42, -3.4])),
-        obox([  2.8, 13.85, -4.7], [ 6.8, 15.9, -3.3], "#seat"),
-        obox([ -8.0,  3.92, -3.4], [-1.6,  5.4,  1.8], "#seat"),
-        obox([ -8.0,  5.42, -4.6], [-1.6, 13.8, -3.1], "#seat", rot=("x", -8.0, [-4.8, 5.42, -3.4])),
-        obox([ -6.8, 13.85, -4.7], [-2.8, 15.9, -3.3], "#seat"),
-        obox([ -9.8, 10.8, -5.5], [ 9.8, 17.8, -5.0], "#grille"),
+        obox([  1.6,  3.92, -2.400], [ 8.0,  5.4, 2.800], "#seat"),
+        obox([  1.6,  5.42, -3.600], [ 8.0, 13.8, -2.100], "#seat", rot=("x", -8.0, [4.8, 5.42, -2.400])),
+        obox([  2.8, 13.85, -3.700], [ 6.8, 15.9, -2.300], "#seat"),
+        obox([ -8.0,  3.92, -2.400], [-1.6,  5.4, 2.800], "#seat"),
+        obox([ -8.0,  5.42, -3.600], [-1.6, 13.8, -2.100], "#seat", rot=("x", -8.0, [-4.8, 5.42, -2.400])),
+        obox([ -6.8, 13.85, -3.700], [-2.8, 15.9, -2.300], "#seat"),
+        obox([ -9.3, 10.8, -4.500], [ 9.3, 16.8, -4.000], "#grille"),
         # Rear floor carpet (`vz = -14.5..-4.15`) + 3-seat rear bench (inboard of rear wheelhouses!) + 3 headrests!
         obox([ -6.70, 3.92, -14.5], [ 6.70, 4.35, -4.15], "#carbon"),
-        obox([ -6.70, 4.38, -14.4], [ 6.70, 7.80, -9.10], "#seat"),
-        obox([ -9.60, 9.35, -15.6], [ 9.60, 13.6, -14.1], "#seat", rot=("x", -8.0, [0.0, 9.35, -14.4])),
-        obox([ -6.70, 7.82, -15.4], [ 6.70, 9.33, -14.1], "#seat"),
-        obox([  4.8, 13.65, -15.8], [ 8.2, 15.5, -14.5], "#seat"),
-        obox([ -1.6, 13.65, -15.8], [ 1.6, 15.1, -14.5], "#seat"),
-        obox([ -8.2, 13.65, -15.8], [-4.8, 15.5, -14.5], "#seat"),
+        obox([ -6.70, 4.38, -12.400], [ 6.70, 7.80, -7.100], "#seat"),
+        obox([ -9.60, 9.35, -13.600], [ 9.60, 13.6, -12.100], "#seat", rot=("x", -8.0, [0.0, 9.35, -12.400])),
+        obox([ -6.70, 7.82, -13.400], [ 6.70, 9.33, -12.100], "#seat"),
+        obox([  4.8, 13.65, -13.800], [ 8.2, 15.5, -12.500], "#seat"),
+        obox([ -1.6, 13.65, -13.800], [ 1.6, 15.1, -12.500], "#seat"),
+        obox([ -8.2, 13.65, -13.800], [-4.8, 15.5, -12.500], "#seat"),
 
         # --- H. Zero-Gap Rear Wheel Arches, Rear Trunk (`vz = -22.2..-15.65`), Spoiler & L-LED Tail Lamps! ---
         *sculpted_wheel_arch(
@@ -1768,6 +1815,7 @@ ITEMS = [
     "go_kart",
     "off_roader",
     "quad_bike",
+    "atv",
     "police_car",
     "small_engine_iron",
     "small_engine_gold",
@@ -2013,6 +2061,13 @@ def generate_recipes() -> None:
             },
             "result": {"id": "gokart:quad_bike", "count": 1},
         },
+        "atv": {
+            "type": "minecraft:crafting_shaped", "category": "transportation",
+            "pattern": ["BLB", "IEI", "W W"],
+            "key": {"B": "minecraft:iron_ingot", "L": "minecraft:leather", "I": "minecraft:iron_bars",
+                    "E": "gokart:small_engine_gold", "W": "gokart:sports_wheel"},
+            "result": {"id": "gokart:atv", "count": 1},
+        },
         # 13. Romanian Police Car (`Poliția Română` — Redstone + Lapis Girofar, Iron Sedan, Diamond/Gold Engine, Racing/Sports Wheels)
         "police_car": {
             "type": "minecraft:crafting_shaped",
@@ -2190,10 +2245,14 @@ def generate_lang() -> None:
     ldir.mkdir(parents=True, exist_ok=True)
 
     en_us = {
-        "gokart.mod.description": "FiveM-style 3D Go-Kart, Quad Bike ATV, 4x4 Off-Roader, Poliția Română Pursuit Car: nighttime headlights, siren & girofar, engines, wheels, 16-color paint & tuning garage.",
+        "gokart.mod.description": "FiveM-style 3D Go-Kart, Quad Bike, Utility ATV, 4x4 Off-Roader, Poliția Română Pursuit Car: nighttime headlights, siren & girofar, engines, wheels, 16-color paint & tuning garage.",
         "item.gokart.go_kart": "Go-Kart",
         "item.gokart.off_roader": "4x4 Off-Roader",
         "item.gokart.quad_bike": "Quad Bike (ATV)",
+        "item.gokart.atv": "Utility ATV",
+        "gokart.vehicle.atv": "Utility ATV",
+        "gokart.tooltip.place_atv": "Right-click ground to deploy Utility ATV",
+        "gokart.msg.placed_atv": "Utility ATV deployed!",
         "item.gokart.police_car": "Poliția Română Pursuit Sedan",
         "gokart.vehicle.go_kart": "Go-Kart",
         "gokart.vehicle.off_roader": "4x4 Off-Roader",
@@ -2262,7 +2321,7 @@ def generate_lang() -> None:
         "gokart.msg.jerry_refilled": "Jerry Can refilled (%1$s / %2$s mB).",
         "gokart.msg.fuel_mode_on": "Vehicle fuel consumption: ENABLED",
         "gokart.msg.fuel_mode_off": "Vehicle fuel consumption: INFINITE FUEL",
-        "gokart.msg.kit_given": "Delivered complete Go-Kart, Quad Bike ATV, 4x4 Off-Roader, Poliția Română Sedan Kit!",
+        "gokart.msg.kit_given": "Delivered complete Go-Kart, Quad Bike, Utility ATV, 4x4 Off-Roader, Poliția Română Sedan Kit!",
         "gokart.msg.removed_one": "Removed %1$s!",
         "gokart.msg.removed_many": "Removed %1$s vehicle(s) from the world.",
         "gokart.msg.remove_none": "No vehicle nearby to remove (use /vehicle remove all to clear all).",
@@ -2299,10 +2358,14 @@ def generate_lang() -> None:
     }
 
     ro_ro = {
-        "gokart.mod.description": "Vehicule 3D stil FiveM (Go-Kart, ATV Quad Bike, Off-Roader 4x4, Autospecială Poliția Română): faruri automate noaptea, girofar & sirenă, motoare, roți, vopsire în 16 culori și garaj tuning.",
+        "gokart.mod.description": "Vehicule 3D stil FiveM (Go-Kart, ATV Quad Bike, ATV utilitar, Off-Roader 4x4, Autospecială Poliția Română): faruri automate noaptea, girofar & sirenă, motoare, roți, vopsire în 16 culori și garaj tuning.",
         "item.gokart.go_kart": "Go-Kart",
         "item.gokart.off_roader": "Off-Roader 4x4",
         "item.gokart.quad_bike": "ATV Quad Bike",
+        "item.gokart.atv": "ATV utilitar",
+        "gokart.vehicle.atv": "ATV utilitar",
+        "gokart.tooltip.place_atv": "Click-dreapta pe sol pentru a plasa ATV-ul utilitar",
+        "gokart.msg.placed_atv": "ATV utilitar plasat!",
         "item.gokart.police_car": "Autospecială Poliția Română (Sedan)",
         "gokart.vehicle.go_kart": "Go-Kart",
         "gokart.vehicle.off_roader": "Off-Roader 4x4",
@@ -2371,7 +2434,7 @@ def generate_lang() -> None:
         "gokart.msg.jerry_refilled": "Canistră reumplută (%1$s / %2$s mB).",
         "gokart.msg.fuel_mode_on": "Consum combustibil vehicule: ACTIVAT",
         "gokart.msg.fuel_mode_off": "Consum combustibil vehicule: COMBUSTIBIL INFINIT",
-        "gokart.msg.kit_given": "Ai primit pachetul complet Go-Kart, ATV Quad Bike, Off-Roader 4x4, Autospecială Poliție!",
+        "gokart.msg.kit_given": "Ai primit pachetul complet Go-Kart, ATV Quad Bike, ATV utilitar, Off-Roader 4x4, Autospecială Poliție!",
         "gokart.msg.removed_one": "Ai șters %1$s!",
         "gokart.msg.removed_many": "Au fost șterse %1$s vehicule din lume.",
         "gokart.msg.remove_none": "Niciun vehicul în apropiere de șters (folosește /vehicle remove all pentru toate).",
@@ -2476,6 +2539,7 @@ def generate_creative_tab() -> None:
         "items": [
             "gokart:go_kart",
             "gokart:quad_bike",
+            "gokart:atv",
             "gokart:off_roader",
             "gokart:police_car",
             "gokart:small_engine_iron",
@@ -2547,7 +2611,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles v0.10.2 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles v0.11.0 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

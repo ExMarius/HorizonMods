@@ -277,6 +277,7 @@ pub(in crate::game) fn items(items: &mut Vec<Item>) {
     push_item(items, rules::ITEM_GO_KART, 1, Rarity::Uncommon);
     push_item(items, rules::ITEM_OFF_ROADER, 1, Rarity::Rare);
     push_item(items, rules::ITEM_QUAD_BIKE, 1, Rarity::Uncommon);
+    push_item(items, rules::ITEM_ATV, 1, Rarity::Uncommon);
     push_item(items, rules::ITEM_POLICE_CAR, 1, Rarity::Epic);
     push_item(items, rules::ITEM_ENGINE_IRON, 1, Rarity::Common);
     push_item(items, rules::ITEM_ENGINE_GOLD, 1, Rarity::Uncommon);
@@ -359,6 +360,9 @@ fn kart_summon_nbt(kind: rules::VehicleKind) -> Compound {
         rules::VehicleKind::QuadBike => {
             tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_QUAD_BIKE)));
         }
+        rules::VehicleKind::Atv => {
+            tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_ATV)));
+        }
         rules::VehicleKind::PoliceCar => {
             tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_POLICE_CAR)));
         }
@@ -418,6 +422,9 @@ fn prepare_kart_mob(game: &mut Game<'_>, entity_id: u32, yaw: f32, kind: rules::
             }
             rules::VehicleKind::QuadBike => {
                 game.native_entity_add_tag(eref, rules::ENTITY_TAG_QUAD_BIKE);
+            }
+            rules::VehicleKind::Atv => {
+                game.native_entity_add_tag(eref, rules::ENTITY_TAG_ATV);
             }
             rules::VehicleKind::PoliceCar => {
                 game.native_entity_add_tag(eref, rules::ENTITY_TAG_POLICE_CAR);
@@ -489,6 +496,11 @@ fn lookup_kart_uuid(
             .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_OFF_ROADER))
         {
             rules::KartSpec::default_off_roader()
+        } else if tags
+            .as_ref()
+            .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_ATV))
+        {
+            rules::KartSpec::default_atv()
         } else if tags
             .as_ref()
             .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_QUAD_BIKE))
@@ -624,6 +636,7 @@ pub(in crate::game) fn use_item_on(
                     "gokart.msg.placed_quad_bike",
                     "Quad Bike ATV deployed! Right-click to ride, Wrench to tune.",
                 ),
+                rules::VehicleKind::Atv => tr("gokart.msg.placed_atv", "Utility ATV deployed!"),
                 rules::VehicleKind::PoliceCar => tr(
                     "gokart.msg.placed_police_car",
                     "Poliția Română Patrol Car deployed! Press [H] while driving for Siren & Girofar.",
@@ -945,6 +958,7 @@ fn vehicle_kind_from_tags(tags: &[String]) -> Option<rules::VehicleKind> {
             rules::ENTITY_TAG
                 | rules::ENTITY_TAG_OFF_ROADER
                 | rules::ENTITY_TAG_QUAD_BIKE
+                | rules::ENTITY_TAG_ATV
                 | rules::ENTITY_TAG_POLICE_CAR
                 | rules::ENTITY_TAG_DACIA_LOGAN
         )
@@ -954,6 +968,8 @@ fn vehicle_kind_from_tags(tags: &[String]) -> Option<rules::VehicleKind> {
     }
     if tags.iter().any(|t| t == rules::ENTITY_TAG_OFF_ROADER) {
         Some(rules::VehicleKind::OffRoader)
+    } else if tags.iter().any(|t| t == rules::ENTITY_TAG_ATV) {
+        Some(rules::VehicleKind::Atv)
     } else if tags.iter().any(|t| t == rules::ENTITY_TAG_QUAD_BIKE) {
         Some(rules::VehicleKind::QuadBike)
     } else if tags.iter().any(|t| t == rules::ENTITY_TAG_POLICE_CAR) {
@@ -1197,6 +1213,7 @@ pub(in crate::game) fn perform_command(
         let items_to_give = [
             make_kart_item(game, rules::KartSpec::default()),
             make_kart_item(game, rules::KartSpec::default_quad_bike()),
+            make_kart_item(game, rules::KartSpec::default_atv()),
             make_kart_item(game, rules::KartSpec::default_off_roader()),
             make_kart_item(game, rules::KartSpec::default_police_car()),
             stack_of(rules::ITEM_ENGINE_GOLD, 1),
@@ -1224,7 +1241,9 @@ pub(in crate::game) fn perform_command(
         let arg = rest.strip_prefix("spawn").unwrap_or("").trim();
         let spec = if matches!(arg, "off_roader" | "offroader" | "4x4" | "jeep") {
             rules::KartSpec::default_off_roader()
-        } else if matches!(arg, "quad_bike" | "quadbike" | "quad" | "atv") {
+        } else if matches!(arg, "atv" | "utility_atv") {
+            rules::KartSpec::default_atv()
+        } else if matches!(arg, "quad_bike" | "quadbike" | "quad") {
             rules::KartSpec::default_quad_bike()
         } else if matches!(arg, "police_car" | "policecar" | "police" | "politia" | "politie" | "bmw") {
             rules::KartSpec::default_police_car()
@@ -1236,7 +1255,7 @@ pub(in crate::game) fn perform_command(
             rules::VehicleKind::OffRoader
             | rules::VehicleKind::PoliceCar
             | rules::VehicleKind::DaciaLoganPolice => 3.2,
-            rules::VehicleKind::QuadBike => 2.5,
+            rules::VehicleKind::QuadBike | rules::VehicleKind::Atv => 2.5,
             rules::VehicleKind::GoKart => 2.4,
         };
         let at = [
@@ -1253,6 +1272,7 @@ pub(in crate::game) fn perform_command(
                 rules::VehicleKind::QuadBike => {
                     tr("gokart.msg.placed_quad_bike", "Quad Bike ATV deployed!")
                 }
+                rules::VehicleKind::Atv => tr("gokart.msg.placed_atv", "Utility ATV deployed!"),
                 rules::VehicleKind::PoliceCar => {
                     tr("gokart.msg.placed_police_car", "Poliția Română Patrol Car deployed!")
                 }
@@ -1298,7 +1318,7 @@ pub(in crate::game) fn perform_command(
     game.native_tell(
         player.uuid,
         Text::literal(
-            "/vehicle [remove | remove all | clear | spawn [go_kart|quad_bike|off_roader|police] | pack | kit | fuel | paint <color>]",
+            "/vehicle [remove | remove all | clear | spawn [go_kart|quad_bike|atv|off_roader|police] | pack | kit | fuel | paint <color>]",
         )
         .with_color(text::YELLOW),
     );
@@ -2412,7 +2432,7 @@ pub(in crate::game) fn mob_submit(
     draw.push();
     let roll_mult = match kart.spec.kind {
         rules::VehicleKind::OffRoader => 1.75,
-        rules::VehicleKind::QuadBike => 1.45,
+        rules::VehicleKind::QuadBike | rules::VehicleKind::Atv => 1.45,
         rules::VehicleKind::DaciaLoganPolice => 1.42,
         rules::VehicleKind::PoliceCar => 1.30,
         rules::VehicleKind::GoKart => 1.0,
@@ -2429,7 +2449,7 @@ pub(in crate::game) fn mob_submit(
     };
     let roll_center_y = match kart.spec.kind {
         rules::VehicleKind::OffRoader => 0.36,
-        rules::VehicleKind::QuadBike => 0.30,
+        rules::VehicleKind::QuadBike | rules::VehicleKind::Atv => 0.30,
         rules::VehicleKind::DaciaLoganPolice => 0.30,
         rules::VehicleKind::PoliceCar => 0.28,
         rules::VehicleKind::GoKart => 0.18,
@@ -2453,7 +2473,7 @@ pub(in crate::game) fn mob_submit(
     draw.pop();
 
     // 2b. Coaxial Sport Steering Wheel (Go-Kart / 4x4) OR Dedicated ATV T-Handlebars (Quad Bike)!
-    if kart.spec.kind == rules::VehicleKind::QuadBike {
+    if matches!(kart.spec.kind, rules::VehicleKind::QuadBike | rules::VehicleKind::Atv) {
         draw_part_at_pivot(
             draw,
             lay.steer_model,
@@ -3200,6 +3220,7 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
         rules::ITEM_GO_KART
         | rules::ITEM_OFF_ROADER
         | rules::ITEM_QUAD_BIKE
+        | rules::ITEM_ATV
         | rules::ITEM_POLICE_CAR
         | rules::ITEM_DACIA_LOGAN_POLICE => {
             let spec = read_kart_spec(game, stack);
@@ -3237,6 +3258,7 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
                     "gokart.tooltip.place_quad_bike",
                     "Right-click ground to deploy Quad Bike ATV (nimble 1-block trail climber!)",
                 ),
+                rules::VehicleKind::Atv => tr("gokart.tooltip.place_atv", "Right-click ground to deploy Utility ATV"),
                 rules::VehicleKind::PoliceCar => tr(
                     "gokart.tooltip.place_police_car",
                     "Right-click ground to deploy Poliția Română Patrol Car ([H] toggles Siren & Girofar!)",
