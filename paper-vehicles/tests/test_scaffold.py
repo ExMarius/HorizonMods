@@ -16,6 +16,13 @@ class PaperScaffold(unittest.TestCase):
         for _, model in entries:
             self.assertTrue((ROOT / f'content/assets/gokart/models/block/{model}.json').is_file(), model)
 
+    def test_city_bus_staged_with_its_own_mit_license(self):
+        staged = PAPER / 'asset-src/city_bus'
+        original = ROOT / 'third_party/city_vehicles'
+        for name in ('bus.obj', 'bus_wheel.obj', 'yellow_bus.png', 'bus_wheel.png', 'LICENSE'):
+            self.assertEqual((staged / name).read_bytes(), (original / name).read_bytes())
+        self.assertIn('Permission is hereby granted', (staged / 'LICENSE').read_text())
+
     def test_reference_is_not_a_build_source_or_resource_pack(self):
         reference = ROOT / 'third_party/paper_vehicle_reference'
         self.assertTrue((reference / 'LICENSE').is_file())

@@ -19,4 +19,4 @@ credit field despite the repository's GPLv3 license: those assets remain out
 until their reuse terms are clarified. Do not erase or replace the original
 credit to work around this. Absence of that note is not, by itself, proof of
 permission for each dependency. FoundationGames City Vehicles has a separate
-MIT license; its bus is not currently included in this plugin or a resource pack.
+MIT license. The bus source files and MIT license are staged in `asset-src/city_bus/`; they are not currently included in the plugin jar or a resource pack.
