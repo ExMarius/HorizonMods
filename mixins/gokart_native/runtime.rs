@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.13.11";
+pub const VERSION: &str = "0.13.12";
 pub const DESCRIPTION: &str = "FiveM-inspired 3D Vehicles for Horizon: Go-Kart, Quad Bike ATV, 4x4 Off-Roader, Poliția Română Pursuit Sedan with sculpted wheel arches, emissive lights, dynamic night headlights, siren & girofar, and /vehicle remove.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
@@ -183,6 +183,16 @@ pub enum VehicleKind {
     PoliceCar,
     DaciaLoganPolice,
 }
+
+/// Preliminary coordinates for the unregistered minibus prototype, in model
+/// texels relative to its center. These identify decorative cushion positions;
+/// they are not an active mount system and must be validated in-game.
+pub const PROTOTYPE_MINIBUS_SEATS_TEXELS: [[f32; 3]; 4] = [
+    [5.0, 5.85, 2.8],   // driver, front right in model coordinates
+    [-5.0, 5.85, 2.8],  // front passenger
+    [5.0, 5.85, -4.7],  // rear right
+    [-5.0, 5.85, -4.7], // rear left
+];
 
 /// Experimental server-side bookkeeping for a future multi-seat integration.
 /// This does not mount, move, render or persist players; the Horizon integration
@@ -2066,6 +2076,17 @@ mod tests {
             let (_, decoded) = decode_sync_packet(&encode_sync_packet(false, &[view])).unwrap();
             assert_eq!(decoded[0].spec.kind, kind);
             assert!(!kind.is_emergency());
+        }
+    }
+
+    #[test]
+    fn minibus_prototype_seat_coordinates_are_distinct() {
+        let seats = super::PROTOTYPE_MINIBUS_SEATS_TEXELS;
+        assert_eq!(seats.len(), 4);
+        for (i, seat) in seats.iter().enumerate() {
+            assert!(seat.iter().all(|v| v.is_finite()));
+            assert!(seat[0].abs() < 9.9 && seat[2].abs() < 8.4);
+            assert!(seats[..i].iter().all(|previous| previous != seat));
         }
     }
 
