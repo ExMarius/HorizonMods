@@ -2130,15 +2130,15 @@ def generate_models() -> None:
             obox([-8.19, 8.39, -20.75], [-6.96, 8.55, -8.58], "#medical_floor"),
             obox([6.96, 8.39, -20.75], [8.19, 8.55, -8.58], "#medical_floor"),
             # Cabinet pedestal in front of the rear wheelhouse, down to the floor.
-            obox([-9.90, 4.38, -8.52], [-7.20, 8.87, -4.05], "#medical_white"),
+            obox([-8.19, 4.36, -8.55], [-6.96, 8.55, -4.05], "#medical_white"),
             # Low storage cabinetry, upper cupboards and metallic handles.
-            obox([-9.90, 8.9, -20.75], [-7.20, 12.5, -4.05], "#medical_white"),
-            obox([-9.90, 17.4, -20.75], [-7.85, 20.35, -4.05], "#medical_white"),
+            obox([-8.19, 8.55, -20.75], [-6.96, 12.5, -4.05], "#medical_white"),
+            obox([-10.0, 17.4, -20.75], [-7.85, 20.35, -4.05], "#medical_white"),
             obox([-7.83, 18.1, -19.4], [-7.72, 19.75, -15.5], "#medical_blue"),
             obox([-7.83, 18.1, -14.9], [-7.72, 19.75, -11.0], "#medical_blue"),
             obox([-7.83, 18.1, -10.4], [-7.72, 19.75, -6.5], "#medical_blue"),
-            obox([-7.18, 11.4, -18.5], [-7.06, 11.7, -16.2], "#chrome"),
-            obox([-7.18, 11.4, -13.4], [-7.06, 11.7, -11.1], "#chrome"),
+            obox([-6.96, 11.4, -18.5], [-6.84, 11.7, -16.2], "#chrome"),
+            obox([-6.96, 11.4, -13.4], [-6.84, 11.7, -11.1], "#chrome"),
             # Retractable wheeled stretcher: base, crossed legs, mattress, raised
             # headrest, side safety rails and two yellow patient restraints.
             obox([-4.40, 4.68, -20.85], [1.40, 5.05, -3.90], "#frame"),
@@ -2153,45 +2153,47 @@ def generate_models() -> None:
             obox([-4.50, 9.78, -10.90], [1.50, 9.98, -10.30], "#medical_yellow"),
             obox([-4.75, 8.90, -20.30], [-4.50, 10.55, -4.40], "#chrome"),
             obox([1.50, 8.90, -20.30], [1.75, 10.55, -4.40], "#chrome"),
-            obox([-4.35, 4.40, -19.5], [-3.55, 5.35, -18.55], "#frame"),
-            obox([0.55, 4.40, -19.5], [1.35, 5.35, -18.55], "#frame"),
+            obox([-4.35, 4.36, -19.5], [-3.55, 4.68, -18.55], "#frame"),
+            obox([0.55, 4.36, -19.5], [1.35, 4.68, -18.55], "#frame"),
             # Loading guide rails on the floor and additional stretcher casters.
-            obox([-5.25, 4.38, -21.1], [-4.93, 4.53, -8.65], "#chrome"),
-            obox([1.93, 4.38, -21.1], [2.25, 4.53, -8.65], "#chrome"),
-            obox([-4.35, 4.40, -7.9], [-3.55, 5.35, -6.95], "#frame"),
-            obox([0.55, 4.40, -7.9], [1.35, 5.35, -6.95], "#frame"),
+            obox([-5.25, 4.36, -21.1], [-4.93, 4.53, -8.65], "#chrome"),
+            obox([1.93, 4.36, -21.1], [2.25, 4.53, -8.65], "#chrome"),
+            obox([-4.35, 4.36, -7.9], [-3.55, 4.68, -6.95], "#frame"),
+            obox([0.55, 4.36, -7.9], [1.35, 4.68, -6.95], "#frame"),
             # Two low loading stops sit outside the stretcher frame, on the rails.
-            obox([-5.25, 4.55, -20.8], [-4.93, 4.93, -20.2], "#frame"),
-            obox([1.93, 4.55, -20.8], [2.25, 4.93, -20.2], "#frame"),
+            obox([-5.25, 4.53, -20.8], [-4.93, 4.93, -20.2], "#frame"),
+            obox([1.93, 4.53, -20.8], [2.25, 4.93, -20.2], "#frame"),
             # Small anti-slip threshold between the rear doors and the aisle.
-            obox([-6.35, 4.38, -21.28], [6.35, 4.52, -21.13], "#chrome"),
+            obox([-6.35, 4.36, -21.28], [6.35, 4.52, -21.13], "#chrome"),
             # Wall-mounted medical outlets and a small worktop at the bulkhead.
-            obox([-7.12, 12.55, -19.8], [-6.95, 12.85, -5.0], "#chrome"),
-            obox([-6.9, 13.15, -20.0], [-6.7, 14.0, -19.2], "#medical_yellow"),
-            obox([-6.9, 13.15, -18.8], [-6.7, 14.0, -18.0], "#medical_blue"),
+            obox([-8.15, 12.50, -19.8], [-6.96, 12.70, -5.0], "#chrome"),
+            obox([-7.16, 12.70, -19.8], [-6.96, 13.55, -19.2], "#medical_yellow"),
+            obox([-7.16, 12.70, -18.8], [-6.96, 13.55, -18.0], "#medical_blue"),
             obox([3.0, 9.1, -4.05], [9.8, 9.60, -3.68], "#chrome"),
-            # Attendant seat, monitor/defibrillator, oxygen cylinder and medical bag.
-            obox([4.30, 9.10, -16.9], [9.65, 10.35, -12.5], "#attendant"),
-            obox([8.75, 10.37, -16.9], [9.65, 15.40, -12.5], "#attendant"),
-            obox([8.85, 15.42, -15.8], [9.60, 17.00, -13.6], "#attendant"),
-            obox([6.96, 8.57, -15.9], [8.50, 9.08, -13.4], "#frame"),
-            obox([4.32, 10.37, -16.88], [4.62, 11.10, -12.52], "#frame"),
-            obox([4.65, 10.37, -14.90], [8.65, 10.51, -14.50], "#medical_yellow"),
+            # The seat sits inboard of the wheelhouse liner: neither cushion nor
+            # back cuts into the arch, and its pedestal reaches the aisle floor.
+            # Monitor/defibrillator, oxygen cylinder and medical bag.
+            obox([2.05, 9.10, -16.9], [6.28, 10.35, -12.5], "#attendant"),
+            obox([5.40, 10.35, -16.9], [6.28, 15.40, -12.5], "#attendant"),
+            obox([5.50, 15.40, -15.8], [6.18, 17.00, -13.6], "#attendant"),
+            obox([4.70, 4.36, -15.9], [5.90, 9.10, -13.4], "#frame"),
+            obox([2.05, 10.35, -16.88], [2.30, 11.10, -12.52], "#frame"),
+            obox([2.32, 10.35, -14.90], [5.35, 10.49, -14.50], "#medical_yellow"),
             obox([7.0, 13.20, -7.10], [9.80, 16.10, -5.90], "#frame"),
-            obox([6.97, 13.48, -6.95], [6.99, 15.80, -6.05], "#dash", full_uv_faces=("east", "west")),
-            obox([7.00, 8.57, -20.40], [8.10, 13.57, -19.15], "#medical_white"),
-            obox([7.15, 13.59, -20.1], [7.95, 14.17, -19.45], "#chrome"),
-            obox([7.00, 8.57, -11.55], [8.15, 10.52, -9.25], "#medical_red"),
-            obox([7.20, 10.54, -11.10], [7.95, 10.92, -9.70], "#frame"),
+            obox([6.98, 13.48, -6.95], [7.00, 15.80, -6.05], "#dash", full_uv_faces=("east", "west")),
+            obox([7.00, 8.55, -20.40], [8.10, 13.57, -19.15], "#medical_white"),
+            obox([7.15, 13.57, -20.1], [7.95, 14.17, -19.45], "#chrome"),
+            obox([7.00, 8.55, -11.55], [8.15, 10.52, -9.25], "#medical_red"),
+            obox([7.20, 10.52, -11.10], [7.95, 10.92, -9.70], "#frame"),
             # Cabinet door joints, disinfectant storage, seat pedestal and a
             # ceiling handrail: arranged clear of the stretcher's patient area.
-            obox([-7.19, 9.1, -15.1], [-7.10, 12.3, -14.95], "#frame"),
-            obox([-7.19, 9.1, -10.0], [-7.10, 12.3, -9.85], "#frame"),
-            obox([7.15, 10.72, -12.25], [7.40, 13.20, -12.0], "#chrome"),
-            obox([7.15, 13.22, -18.0], [7.40, 13.50, -12.0], "#chrome"),
+            obox([-6.96, 9.1, -15.1], [-6.92, 12.3, -14.95], "#frame"),
+            obox([-6.96, 9.1, -10.0], [-6.92, 12.3, -9.85], "#frame"),
+            # Bracket anchors the monitor to the front bulkhead.
+            obox([9.30, 14.0, -5.90], [9.70, 14.50, -3.62], "#chrome"),
             obox([3.50, 21.25, -20.3], [3.80, 21.55, -5.1], "#chrome"),
-            obox([3.50, 20.8, -19.9], [3.8, 21.23, -19.6], "#chrome"),
-            obox([3.50, 20.8, -5.8], [3.8, 21.23, -5.5], "#chrome"),
+            obox([3.50, 21.55, -19.9], [3.8, 22.02, -19.6], "#chrome"),
+            obox([3.50, 21.55, -5.8], [3.8, 22.02, -5.5], "#chrome"),
             # Front cabin. The windscreen and A-pillars use one rotation;
             # glazing is thin and its stepped edge remains behind that plane.
             obox([-10.0, 11.05, 15.00], [10.0, 23.6, 15.50], "#glass", rot=("x", -30.0, [0, 11.05, 15.25]), full_uv_faces=("north", "south")),
@@ -3269,7 +3271,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.13.3 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.13.4 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

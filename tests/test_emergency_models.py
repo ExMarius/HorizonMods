@@ -62,14 +62,14 @@ class EmergencyModels(unittest.TestCase):
             # not floating over its outside edge.
             shelf = next(e for e in floors if e['from'][0] == 14.96 and e['to'][0] == 16.19)
             bag = next(e for e in elements if e['faces']['up']['texture'] == '#medical_red' and
-                       e['from'][1] == 8.57)
+                       e['from'][1] == 8.55)
             cylinder = next(e for e in elements if e['faces']['up']['texture'] == '#medical_white' and
-                            e['from'][1] == 8.57)
+                            e['from'][1] == 8.55 and e['from'][0] > 14)
             for item in (bag, cylinder):
                 for axis in (0, 2):
                     self.assertLessEqual(shelf['from'][axis], item['from'][axis])
                     self.assertGreaterEqual(shelf['to'][axis], item['to'][axis])
-                self.assertAlmostEqual(item['from'][1] - shelf['to'][1], 0.02)
+                self.assertAlmostEqual(item['from'][1], shelf['to'][1])
 
     def test_raked_pillars_reach_roof_and_vans_have_distinct_fronts(self):
         grilles = []
@@ -223,6 +223,36 @@ class EmergencyModels(unittest.TestCase):
             self.assertLess(cushion['from'][2], mattress['to'][2])
             self.assertGreater(cushion['to'][2], mattress['from'][2])
             self.assertGreater(back['to'][1], cushion['to'][1] + 5)
+
+    def test_attendant_seat_has_clearance_and_supported_joints(self):
+        for name in ('ambulance', 'smurd'):
+            elements = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())['elements']
+            seat = [e for e in elements if e['faces']['up']['texture'] == '#attendant']
+            seat.sort(key=lambda e: e['from'][1])
+            cushion, back, headrest = seat
+            self.assertEqual(cushion['to'][1], back['from'][1])
+            self.assertEqual(back['to'][1], headrest['from'][1])
+            # Unlike the old seat, no cushion/back/headrest intersects ANY
+            # axis-aligned model component, including wheelhouse and shell.
+            for part in seat:
+                for other in elements:
+                    if other is part or other.get('rotation'):
+                        continue
+                    overlap = [min(part['to'][i], other['to'][i]) -
+                               max(part['from'][i], other['from'][i]) for i in range(3)]
+                    self.assertFalse(all(v > 0.0001 for v in overlap),
+                                     (name, part['from'], other['faces']['up']['texture'], other['from']))
+                # Rear arch's rotated pieces rotate around X only; their X
+                # bounds remain unchanged, so the seat must clear those too.
+                for other in elements:
+                    rot = other.get('rotation', {})
+                    if rot.get('axis') == 'x' and other['from'][2] < 0 and other['to'][1] < 12:
+                        self.assertTrue(part['to'][0] <= other['from'][0] or
+                                        part['from'][0] >= other['to'][0], (name, other))
+            pedestal = next(e for e in elements if e['faces']['up']['texture'] == '#frame' and
+                            e['from'] == [12.7, 4.36, -7.9] and e['to'] == [13.9, 9.1, -5.4])
+            self.assertEqual(pedestal['to'][1], cushion['from'][1])
+            self.assertEqual(pedestal['from'][1], 4.36)
 
     def test_emergency_markings_and_opposite_side_uvs_are_present(self):
         for name in ('ambulance', 'smurd'):
