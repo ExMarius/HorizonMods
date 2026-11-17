@@ -1,0 +1,14 @@
+name: HorizonVehiclesPaper
+version: '${version}'
+main: ro.exmarius.horizonvehicles.HorizonVehiclesPlugin
+api-version: '1.21.4'
+description: Development scaffold for the Horizon Vehicles Paper port.
+author: ExMarius
+commands:
+  hvehicle:
+    description: View the development vehicle catalog.
+    usage: /hvehicle list
+    permission: horizonvehicles.admin
+permissions:
+  horizonvehicles.admin:
+    default: op
