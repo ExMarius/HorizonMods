@@ -128,6 +128,24 @@ def generate_vehicle_textures() -> None:
                                 rear[(4 + yy*2 + dy)*w + 22 + i*8 + xx*2 + dx] = accent
         write_png(bdir / (name + "_rear.png"), w, h, rear)
 
+    for service, label, base, ink in (
+        ("ambulance", "AMBULANTA", (239, 243, 245, 255), (24, 78, 166, 255)),
+        ("smurd", "SMURD 112", (185, 26, 32, 255), (247, 248, 247, 255)),
+    ):
+        w, h = 128, 16
+        pixels = [base] * (w * h)
+        start = (w - len(label) * 8 + 2) // 2
+        for i, ch in enumerate(label):
+            for yy, row in enumerate(font.get(ch, ("000",) * 5)):
+                for xx, bit in enumerate(row):
+                    if bit == "1":
+                        for dy in range(2):
+                            for dx in range(2):
+                                pixels[(3 + 2*yy + dy)*w + start + 8*i + 2*xx + dx] = ink
+        write_png(bdir / (service + "_sign.png"), w, h, pixels)
+        write_png(bdir / (service + "_sign_reverse.png"), w, h,
+                  [pixels[y*w + w - 1 - x] for y in range(h) for x in range(w)])
+
     # Large service markings on each bonnet, distinct from the red/yellow rear chevrons.
     for name, base, ink, label in (
         ("medical_saj_hood", (239, 243, 245, 255), (24, 78, 166, 255), "AMBULANTA"),
@@ -1948,7 +1966,7 @@ def generate_models() -> None:
     )
 
     def medical_side_panels(obox):
-        # Cropped UVs retain one continuous graphic across the four pieces around each window.
+        # Solid body around the window; the separate sign above it has one continuous UV.
         result = []
         for sign in (-1, 1):
             for z0, z1, y0, y1 in ((-21.5, -14.5, 10.92, 22.0),
@@ -1956,15 +1974,7 @@ def generate_models() -> None:
                                     (-14.5, -4.6, 18.6, 22.0),
                                     (-4.6, -3.5, 10.92, 22.0)):
                 x0, x1 = ((10.0, 12.25) if sign == 1 else (-12.25, -10.0))
-                part = obox([x0, y0, z0], [x1, y1, z1], "#shell")
-                u0, u1 = (z0 + 21.5) / 18 * 16, (z1 + 21.5) / 18 * 16
-                v0, v1 = (22.0 - y1) / 11.08 * 16, (22.0 - y0) / 11.08 * 16
-                face = "east" if sign == 1 else "west"
-                if sign < 0:
-                    u0, u1 = 16 - u1, 16 - u0
-                part["faces"][face] = {"texture": "#livery" if sign == 1 else "#livery_reverse",
-                                        "uv": [round(u0, 3), round(v0, 3), round(u1, 3), round(v1, 3)]}
-                result.append(part)
+                result.append(obox([x0, y0, z0], [x1, y1, z1], "#shell"))
         return result
 
     def medical_window_frames(obox):
@@ -1994,20 +2004,20 @@ def generate_models() -> None:
             # Cover the rotated arch backing at hood height; no angular peaks
             # should protrude above the bonnet when viewed from the side.
             obox([-12.25, 10.92, 8.56], [12.25, 11.80, 21.55], "#shell"),
-            obox([-6.0, 11.82, 10.0], [6.0, 12.25, 21.45], "#shell"),
-            obox([-5.0, 12.27, 18.0], [5.0, 12.45, 21.40], "#stripe"),
-            obox([-5.3, 12.27, 11.9], [5.3, 12.40, 17.95], "#hood_mark", full_uv_faces=("up",)),
+            obox([-11.9, 11.82, 15.55], [11.9, 12.05, 21.45], "#shell"),
+            obox([-5.0, 12.07, 19.5], [5.0, 12.20, 21.40], "#stripe"),
+            obox([-5.3, 12.07, 16.0], [5.3, 12.20, 19.45], "#hood_mark", full_uv_faces=("up",)),
             obox([-8.2, 4.0, 18.93], [8.2, 8.72, 21.5], "#shell"),
-            *sculpted_wheel_arch(cz=13.8, vx_in=8.22, vx_body=12.25, vx_flare=12.60,
-                vy_crown=8.75, vy_top=10.9, half_crown=2.15, slope_len=3.2, slope_deg=38,
+            *sculpted_wheel_arch(cz=13.8, vx_in=8.22, vx_body=12.25, vx_flare=12.40,
+                vy_crown=7.85, vy_top=10.9, half_crown=1.15, slope_len=3.1, slope_deg=38,
                 vz_outer_min=8.55, vz_outer_max=21.55, vy_jamb_bot=3.1,
                 liner_x0=5.85, liner_x1=6.35, liner_y0=3.15,
-                body_tex="#shell", body_tint=None, flare_tex="#frame", flare_tint=None),
-            *sculpted_wheel_arch(cz=-13.8, vx_in=8.22, vx_body=12.25, vx_flare=12.60,
-                vy_crown=8.75, vy_top=10.9, half_crown=2.15, slope_len=3.2, slope_deg=38,
+                body_tex="#shell", body_tint=None, flare_tex="#shell", flare_tint=None),
+            *sculpted_wheel_arch(cz=-13.8, vx_in=8.22, vx_body=12.25, vx_flare=12.40,
+                vy_crown=7.85, vy_top=10.9, half_crown=1.15, slope_len=3.1, slope_deg=38,
                 vz_outer_min=-21.55, vz_outer_max=-8.55, vy_jamb_bot=3.1,
                 liner_x0=6.4, liner_x1=6.9, liner_y0=3.15,
-                body_tex="#shell", body_tint=None, flare_tex="#frame", flare_tint=None),
+                body_tex="#shell", body_tint=None, flare_tex="#shell", flare_tint=None),
             # Flat patient-compartment floor: the old full-height solid block here
             # filled the entire cabin and made a stretcher impossible to see.
             obox([-6.35, 3.92, -21.30], [6.35, 4.36, -8.55], "#medical_floor"),
@@ -2038,14 +2048,16 @@ def generate_models() -> None:
             # The patient windows are real openings in the wall, not dark boxes
             # on top of a solid slab. Each cropped panel keeps the livery UV aligned.
             *medical_side_panels(obox),
+            obox([12.27, 19.0, -20.8], [12.34, 21.70, -4.2], "#side_sign", full_uv_faces=("east",)),
+            obox([-12.34, 19.0, -20.8], [-12.27, 21.70, -4.2], "#side_sign_reverse", full_uv_faces=("west",)),
             # Gasket on all four sides and cutout glazing; no solid panel behind it.
             *medical_window_frames(obox),
             # Three-piece crowned van roof: lower outer shoulders and central crown.
-            obox([-12.25, 22.02, -21.5], [-10.25, 22.64, 6.0], "#shell"),
-            obox([-10.25, 22.02, -21.5], [10.25, 23.1, 6.0], "#shell"),
-            obox([10.25, 22.02, -21.5], [12.25, 22.64, 6.0], "#shell"),
+            obox([-12.25, 22.02, -21.5], [-10.25, 22.64, 10.0], "#shell"),
+            obox([-10.25, 22.02, -21.5], [10.25, 23.1, 10.0], "#shell"),
+            obox([10.25, 22.02, -21.5], [12.25, 22.64, 10.0], "#shell"),
             # Rounded/stepped transition down into the windscreen header.
-            obox([-11.7, 21.65, 6.02], [11.7, 22.70, 7.15], "#shell", rot=("x", -20.0, [0, 21.65, 6.02])),
+            obox([-11.7, 21.65, 10.02], [11.7, 22.70, 11.15], "#shell", rot=("x", -20.0, [0, 21.65, 10.02])),
             # Twin rear doors, built around actual glazed apertures.
             obox([-12.2, 10.92, -21.90], [12.2, 12.98, -21.53], "#shell"),
             obox([-12.2, 18.82, -21.90], [12.2, 22.0, -21.53], "#shell"),
@@ -2126,21 +2138,21 @@ def generate_models() -> None:
             obox([3.50, 20.8, -19.9], [3.8, 21.23, -19.6], "#chrome"),
             obox([3.50, 20.8, -5.8], [3.8, 21.23, -5.5], "#chrome"),
             # Front cabin: clear safety glazing, dashboard, seats, windshield pillars and wing mirrors.
-            obox([-10.0, 11.84, 5.55], [10.0, 13.0, 11.85], "#shell"),
+            obox([-10.0, 11.84, 9.55], [10.0, 13.0, 15.55], "#shell"),
             # Raked windscreen and matching A-pillars, all attached to the roof.
-            obox([-10.0, 11.05, 11.00], [10.0, 23.6, 11.50], "#glass", rot=("x", -30.0, [0, 11.05, 11.25]), full_uv_faces=("north", "south")),
-            obox([-12.0, 11.05, 11.00], [-10.02, 23.6, 11.50], "#shell", rot=("x", -30.0, [0, 11.05, 11.25])),
-            obox([10.02, 11.05, 11.00], [12.0, 23.6, 11.50], "#shell", rot=("x", -30.0, [0, 11.05, 11.25])),
+            obox([-10.0, 11.05, 15.00], [10.0, 23.6, 15.50], "#glass", rot=("x", -30.0, [0, 11.05, 15.25]), full_uv_faces=("north", "south")),
+            obox([-12.0, 11.05, 15.00], [-10.02, 23.6, 15.50], "#shell", rot=("x", -30.0, [0, 11.05, 15.25])),
+            obox([10.02, 11.05, 15.00], [12.0, 23.6, 15.50], "#shell", rot=("x", -30.0, [0, 11.05, 15.25])),
             # A single side window per cab door, framed by the raked A-pillar.
-            obox([-11.7, 11.1, -3.45], [-10.15, 21.7, 6.9], "#glass", full_uv_faces=("east", "west")),
-            obox([10.15, 11.1, -3.45], [11.7, 21.7, 6.9], "#glass", full_uv_faces=("east", "west")),
+            obox([-11.7, 11.1, -3.45], [-10.15, 21.7, 10.9], "#glass", full_uv_faces=("east", "west")),
+            obox([10.15, 11.1, -3.45], [11.7, 21.7, 10.9], "#glass", full_uv_faces=("east", "west")),
             # Fill the wedge between the rectangular side glass and sloping
             # windshield with progressively shorter transparent glazing strips.
             *[obox([x0, 11.82, z0], [x1, y1, z1], "#corner_glass", full_uv_faces=("east", "west"))
               for x0, x1 in ((-11.7, -10.15), (10.15, 11.7))
-              for z0, z1, y1 in ((6.91, 7.70, 18.0), (7.71, 8.50, 16.6),
-                                 (8.51, 9.30, 15.2), (9.31, 10.10, 13.8),
-                                 (10.11, 10.85, 12.4))],
+              for z0, z1, y1 in ((10.91, 11.70, 18.0), (11.71, 12.50, 16.6),
+                                 (12.51, 13.30, 15.2), (13.31, 14.10, 13.8),
+                                 (14.11, 14.85, 12.4))],
             # Dashboard shelf, instrument binnacle, centre console and two headrests.
             obox([-9.70, 9.35, 4.0], [9.70, 10.85, 8.4], "#frame"),
             obox([2.35, 10.87, 4.2], [7.65, 11.55, 5.6], "#dash", full_uv_faces=("up",)),
@@ -2168,8 +2180,8 @@ def generate_models() -> None:
             obox([6.65, 7.1, 21.6], [11.25, 10.55, 22.35], "#van_lamp", full_uv_faces=("north", "south")),
             obox([-3.5, 3.3, 22.96], [3.5, 5.0, 23.12], "#plate_ro"),
             # Swept corner lamps wrap onto the front fender instead of ending at the grille.
-            obox([12.35, 7.15, 19.45], [12.43, 10.30, 21.48], "#headlight", full_uv_faces=("east", "west")),
-            obox([-12.43, 7.15, 19.45], [-12.35, 10.30, 21.48], "#headlight", full_uv_faces=("east", "west")),
+            obox([12.35, 7.60, 20.20], [12.43, 10.15, 21.48], "#van_lamp", full_uv_faces=("east", "west")),
+            obox([-12.43, 7.60, 20.20], [-12.35, 10.15, 21.48], "#van_lamp", full_uv_faces=("east", "west")),
             obox([12.45, 7.22, 20.80], [12.52, 8.00, 21.45], "#amber"),
             obox([-12.52, 7.22, 20.80], [-12.45, 8.00, 21.45], "#amber"),
             obox([12.36, 4.15, -8.35], [12.44, 4.85, 8.35], "#frame"),
@@ -2177,13 +2189,13 @@ def generate_models() -> None:
             obox([12.36, 8.15, -10.9], [12.50, 8.62, -9.20], "#frame"),
             obox([-12.50, 8.15, -10.9], [-12.36, 8.62, -9.20], "#frame"),
             # Wipers at the foot of the windshield and recessed bumper fog lights.
-            obox([-9.2, 11.15, 11.51], [-0.35, 11.48, 11.67], "#frame"),
-            obox([0.35, 11.15, 11.51], [9.2, 11.48, 11.67], "#frame"),
+            obox([-9.2, 11.15, 15.51], [-0.35, 11.48, 15.67], "#frame"),
+            obox([0.35, 11.15, 15.51], [9.2, 11.48, 15.67], "#frame"),
             obox([-10.5, 3.75, 22.82], [-8.25, 4.80, 22.92], "#headlight"),
             obox([8.25, 3.75, 22.82], [10.5, 4.80, 22.92], "#headlight"),
             # Exterior sliding-door track, high rear hinges and non-slip rear step.
-            obox([12.40, 19.05, -20.8], [12.50, 19.35, -5.0], "#frame"),
-            obox([-12.50, 19.05, -20.8], [-12.40, 19.35, -5.0], "#frame"),
+            obox([12.40, 12.52, -20.8], [12.50, 12.82, -5.0], "#frame"),
+            obox([-12.50, 12.52, -20.8], [-12.40, 12.82, -5.0], "#frame"),
             obox([-10.0, 17.20, -22.02], [-9.15, 18.10, -21.92], "#chrome"),
             obox([9.15, 17.20, -22.02], [10.0, 18.10, -21.92], "#chrome"),
             obox([-7.0, 2.50, -23.2], [7.0, 2.73, -22.20], "#frame"),
@@ -2194,17 +2206,11 @@ def generate_models() -> None:
             obox([-10.0, 23.12, -20.9], [-8.0, 23.95, -19.5], "#siren_blue"),
             obox([8.0, 23.12, -20.9], [10.0, 23.95, -19.5], "#siren_blue"),
         ]
-        if van_name == "smurd":
-            # Geometric reflective heartbeat, kept below the window and above the wheel opening.
-            for x0, x1 in ((12.46, 12.54), (-12.54, -12.46)):
-                van_elements.extend((
-                    obox([x0, 10.20, -8.2], [x1, 10.55, -5.5], "#stripe"),
-                    obox([x0, 10.20, -5.55], [x1, 10.55, -2.8], "#stripe", rot=("x", -38.0, [0, 10.20, -5.55])),
-                    obox([x0, 11.87, -3.38], [x1, 12.22, -0.75], "#stripe", rot=("x", 38.0, [0, 11.87, -3.38])),
-                ))
         (mdir / (van_name + "_body.json")).write_text(json.dumps({
             "textures": {"shell": "gokart:block/" + shell, "livery": "gokart:block/" + side,
                          "livery_reverse": "gokart:block/" + side + "_reverse",
+                         "side_sign": "gokart:block/" + van_name + "_sign",
+                         "side_sign_reverse": "gokart:block/" + van_name + "_sign_reverse",
                          "rear_livery": "gokart:block/" + side + "_rear",
                          "stripe": "gokart:block/" + stripe, "accent": "gokart:block/" + accent,
                          "chrome": "gokart:block/kart_chrome",
@@ -3092,7 +3098,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.12.5 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.12.6 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":
