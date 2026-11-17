@@ -28,5 +28,11 @@ tasks.processResources {
     filesMatching("plugin.yml") { expand("version" to project.version) }
     from("LICENSE") { rename { "LICENSE.txt" } }
     from("THIRD-PARTY.md")
+    // Bundle the MIT bus sources with the JAR; these are not yet a resource pack.
+    from("asset-src/city_bus") {
+        into("source-assets/city_bus")
+        include("bus.obj", "bus_wheel.obj", "yellow_bus.png", "bus_wheel.png",
+                "yellow_bus_frame.json", "LICENSE", "README.md")
+    }
 }
 tasks.jar { archiveBaseName.set("HorizonVehiclesPaper") }

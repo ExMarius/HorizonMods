@@ -47,8 +47,9 @@ el include și vehicule/componente cu mențiune ARR și trimite la resurse exter
 
 ## Primul model: City Bus
 
-Modelul și texturile sursă MIT sunt copiate în `asset-src/city_bus/`. Nu sunt
-încă convertite în resource pack și nu sunt incluse în JAR. Formatul OBJ nu este
+Modelul și texturile sursă MIT sunt copiate în `asset-src/city_bus/` și
+împachetate în JAR la `source-assets/city_bus/`, împreună cu licența. Aceste
+surse nu sunt încă un resource pack și nu sunt redate în joc. Formatul OBJ nu este
 acceptat direct de un client vanilla Paper 1.21.4; portul necesită o conversie
 reală și testare vizuală, nu redenumirea fișierului.
 
