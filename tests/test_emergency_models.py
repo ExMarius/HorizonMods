@@ -185,8 +185,8 @@ class EmergencyModels(unittest.TestCase):
         floors = [e for e in elements if e['faces']['up']['texture'] == '#floor']
         self.assertEqual(len(floors), 1)
         floor = floors[0]
-        seats = [e for e in elements if e['faces']['up']['texture'] == '#seat' and abs(e['from'][1] - 4.42) < 0.001]
-        self.assertEqual(len(seats), 2)
+        seats = [e for e in elements if e['faces']['up']['texture'] == '#seat' and abs(e['from'][1] - 4.40) < 0.001]
+        self.assertEqual(len(seats), 4)
         for seat in seats:
             self.assertLess(abs(seat['from'][1] - floor['to'][1]), 0.03)
             for axis in (0, 2):
@@ -195,6 +195,31 @@ class EmergencyModels(unittest.TestCase):
             point = [(seat['from'][0]+seat['to'][0])/2, 7.0, (seat['from'][2]+seat['to'][2])/2]
             self.assertFalse(any(e['faces']['up']['texture'] == '#red' and not e.get('rotation') and
                                  all(e['from'][i] < point[i] < e['to'][i] for i in range(3)) for e in elements))
+
+    def test_fire_crew_seats_clear_cab_and_join_floor(self):
+        elements = json.loads((ROOT / 'content/assets/gokart/models/block/fire_truck_body.json').read_text())['elements']
+        seats = [e for e in elements if e['faces']['up']['texture'] == '#seat']
+        self.assertEqual(len(seats), 12)
+        floor = next(e for e in elements if e['faces']['up']['texture'] == '#floor')
+        cushions = [e for e in seats if e['from'][1] == 4.40]
+        self.assertEqual(len(cushions), 4)
+        self.assertEqual(len({e['from'][2] for e in cushions}), 2)
+        for seat in seats:
+            for other in elements:
+                if seat is other or other.get('rotation'):
+                    continue
+                overlap = [min(seat['to'][i], other['to'][i]) -
+                           max(seat['from'][i], other['from'][i]) for i in range(3)]
+                self.assertFalse(all(v > 0.0001 for v in overlap), (seat, other))
+        for cushion in cushions:
+            self.assertEqual(cushion['from'][1], floor['to'][1])
+            back = next(e for e in seats if e['from'][0] == cushion['from'][0] and
+                        e['to'][0] == cushion['to'][0] and e['to'][2] == cushion['from'][2])
+            self.assertEqual(back['from'][1], cushion['to'][1])
+            self.assertTrue(any(e['from'][1] == back['to'][1] and
+                                e['from'][2] == back['from'][2] and e['to'][2] == back['to'][2]
+                                and e['from'][0] >= back['from'][0] and e['to'][0] <= back['to'][0]
+                                for e in seats))
 
     def test_static_blue_beacons_have_expected_bounds_and_uv(self):
         for name, key, y0, y1, z0, z1 in (('ambulance', '#siren_blue', 23.67, 24.6, -2.75, -0.85),

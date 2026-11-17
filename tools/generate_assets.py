@@ -2311,40 +2311,44 @@ def generate_models() -> None:
         obox([-12.25, 3.95, -8.50], [-10.0, 10.90, 5.70], "#red"),
         obox([10.0, 3.95, -8.50], [12.25, 10.90, 5.70], "#red"),
         # Equipment compartment: separate closed shutters on the side surfaces.
-        obox([-12.25, 10.92, -21.5], [12.25, 22.0, -3.8], "#red"),
-        obox([-12.25, 22.02, -21.5], [12.25, 23.0, -3.8], "#red"),
+        obox([-12.25, 10.92, -21.5], [12.25, 22.0, -9.0], "#red"),
+        obox([-12.25, 22.02, -21.5], [12.25, 23.0, -9.0], "#red"),
         *[obox([x0, 11.55, z0], [x1, 19.95, z1], "#shutter", full_uv_faces=("east", "west"))
           for x0,x1 in ((-12.36,-12.27),(12.27,12.36))
-          for z0,z1 in ((-20.8,-14.1),(-13.4,-5.0))],
+          for z0,z1 in ((-20.8,-14.1),(-13.4,-9.8))],
         *[obox([x0, 12.15, z0], [x1, 12.45, z1], "#frame")
           for x0,x1 in ((-12.40,-12.37),(12.37,12.40))
-          for z0,z1 in ((-18.6,-16.4),(-10.7,-8.5))],
+          for z0,z1 in ((-18.6,-16.4),(-12.7,-10.5))],
         *[obox([x0, 9.45, -21.45], [x1, 10.12, 18.65], "#yellow")
           for x0,x1 in ((-12.34,-12.27),(12.27,12.34))],
         # Crew cab: broad vertical windscreen and two side glazing openings.
-        obox([-12.2, 10.92, -3.75], [-10.0, 13.35, 18.75], "#red"),
-        obox([10.0, 10.92, -3.75], [12.2, 13.35, 18.75], "#red"),
+        obox([-12.2, 10.92, -9.0], [-10.0, 13.35, 18.75], "#red"),
+        obox([10.0, 10.92, -9.0], [12.2, 13.35, 18.75], "#red"),
         obox([-10.0, 10.92, 15.4], [10.0, 13.35, 18.75], "#red"),
-        # Cab floor ends before the front wheelhouses. It supports both seats.
-        obox([-9.90, 3.92, -3.70], [9.90, 4.40, 5.65], "#floor"),
-        obox([-12.2, 21.50, -3.75], [12.2, 22.50, 18.75], "#red"),
+        # Continuous cab floor ends before the front wheelhouses and supports both rows.
+        obox([-9.90, 3.92, -9.0], [9.90, 4.40, 5.65], "#floor"),
+        obox([-12.2, 21.50, -9.0], [12.2, 22.50, 18.75], "#red"),
         obox([-12.0, 13.37, 18.5], [-10.6, 21.48, 18.75], "#red"),
         obox([10.6, 13.37, 18.5], [12.0, 21.48, 18.75], "#red"),
         obox([-10.58, 13.40, 18.51], [10.58, 21.45, 18.69], "#glass", full_uv_faces=("north", "south")),
-        *[obox([x0, 13.40, -3.7], [x1, 21.45, -3.1], "#red")
+        *[obox([x0, 13.40, -8.95], [x1, 21.45, -8.35], "#red")
           for x0,x1 in ((-12.2,-12.0),(12.0,12.2))],
         *[obox([x0, 13.40, 5.0], [x1, 21.45, 5.55], "#red")
           for x0,x1 in ((-12.2,-12.0),(12.0,12.2))],
         *[obox([x0, 13.42, z0], [x1, 21.40, z1], "#glass", full_uv_faces=("east", "west"))
           for x0,x1 in ((-12.15,-12.05),(12.05,12.15))
-          for z0,z1 in ((-3.05,4.95),(5.60,18.45))],
+          for z0,z1 in ((-8.30,4.95),(5.60,18.45))],
         # Cab seats and dark dashboard, behind the windshield.
-        obox([-9.5, 11.0, 12.0], [9.5, 12.45, 15.35], "#frame"),
-        # Two distinct front seats with supports on the cab floor; the former
-        # second row was embedded in the engine/wheelhouse and has been removed.
-        *[obox([x0, 4.42, -2.5], [x1, 6.0, 2.8], "#seat") for x0,x1 in ((-8,-2),(2,8))],
-        *[obox([x0, 6.02, -3.35], [x1, 14.40, -2.55], "#seat") for x0,x1 in ((-8,-2),(2,8))],
-        *[obox([x0, 14.42, -3.30], [x1, 16.10, -2.35], "#seat") for x0,x1 in ((-7,-3),(3,7))],
+        obox([-9.5, 11.0, 12.0], [9.5, 12.45, 15.40], "#frame"),
+        obox([-5.80, 3.90, 11.0], [5.80, 11.0, 15.40], "#frame"),
+        # Four independently separated seats. The crew row occupies the
+        # extended cab, ahead of the rear wheelhouse and equipment bulkhead.
+        *[obox([x0, 4.40, z0], [x1, 6.0, z1], "#seat")
+          for x0,x1 in ((-8,-2),(2,8)) for z0,z1 in ((-2.5,2.8),(-7.85,-4.10))],
+        *[obox([x0, 6.0, z0], [x1, 14.40, z1], "#seat")
+          for x0,x1 in ((-8,-2),(2,8)) for z0,z1 in ((-3.35,-2.50),(-8.70,-7.85))],
+        *[obox([x0, 14.40, z0], [x1, 16.10, z1], "#seat")
+          for x0,x1 in ((-7,-3),(3,7)) for z0,z1 in ((-3.35,-2.50),(-8.70,-7.85))],
         # Flat truck nose with grille, rectangular lamps, bumper and plate.
         obox([-12.15, 3.0, 18.8], [12.15, 5.8, 20.0], "#frame"),
         obox([-12.15, 10.92, 18.77], [12.15, 13.33, 19.0], "#red"),
@@ -2352,7 +2356,7 @@ def generate_models() -> None:
         obox([-11.55, 6.15, 18.8], [-8.0, 10.7, 19.25], "#lamp", full_uv_faces=("south",)),
         obox([8.0, 6.15, 18.8], [11.55, 10.7, 19.25], "#lamp", full_uv_faces=("south",)),
         obox([-3.3, 3.6, 20.02], [3.3, 5.15, 20.18], "#plate"),
-        *[obox([x0, 11.1, -3.5], [x1, 13.0, 4.8], tex, full_uv_faces=(face,))
+        *[obox([x0, 11.1, -8.8], [x1, 13.0, 4.8], tex, full_uv_faces=(face,))
           for x0,x1,tex,face in ((12.37,12.43,"#sign","east"),(-12.43,-12.37,"#sign_reverse","west"))],
         *[obox([x0, 11.2, 10.0], [x1, 14.0, 12.0], "#frame") for x0,x1 in ((-13.5,-12.3),(12.3,13.5))],
         # Rear warning chevrons and pump-control impression on the tail.
@@ -3271,7 +3275,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.13.4 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.13.5 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":
