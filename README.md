@@ -37,7 +37,7 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
   - **Mod Combustibil Infinit**: poate fi activat/dezactivat oricând din panoul Garaj (`[K]`) sau prin comanda `/gokart fuel`.
 
 ### 2. Fizică pe Două Punți, Controale & Cameră
-- **Geometrie pe două punți (Bicycle-Axle Kinematics)** cu urcare peste dale (`step_height = 0.625` la Go-Kart) și peste **blocuri întregi de 1m** (`step_height = 1.05` la 4x4 Off-Roader!).
+- **Geometrie pe două punți (Bicycle-Axle Kinematics)**. Înălțimea de urcare este configurată la 1,02–1,06 blocuri pentru toate vehiculele; comportamentul efectiv trebuie verificat în joc.
 - **Controale clasice**:
   - `W` / `S` — Accelerație / Frână & Marșarier
   - `A` / `D` — Viraj stânga / dreapta
@@ -82,13 +82,30 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
 
 ## Instalare & Compilare
 
-### Instalare în Horizon Launcher (`0.2.69+`, canal Nightly)
-1. Folosește fișierul pre-împachetat `dist/gokart_native.hnmod` (conține automat și resursele `.hmod` încorporate).
-2. În Horizon Launcher, construiește/instalează bundle-ul nativ:
-   ```bash
-   horizon-launcher native-build dist/gokart_native.hnmod --trust-native-code
-   ```
-   *(Alternativ, direct din directorul sursă al mixin-ului: `horizon-launcher native-build mixins/gokart_native --trust-native-code`.)*
+### Compatibilitate cu Horizon Launcher
+
+**Modul acesta folosește formatul nativ vechi `horizon-mixin.toml`.** Launcher
+0.2.70 respinge acest format cu `unsupported package path horizon-mixin.toml`;
+modul nu a fost încă migrat și testat în noul format `.hmod` nativ. Schimbarea
+numelui fișierului sau folosirea pachetului vechi `.hnmod` nu repară acest lucru.
+
+O soluție temporară de încercat este launcherul oficial **0.2.69**, care încă
+recunoaște formatul vechi. Fă mai întâi o copie de siguranță a instanței/lumilor;
+folosește o copie separată a launcherului și nu accepta actualizarea la 0.2.70
+pentru această probă. Nu am putut verifica instalarea pe Windows sau lansarea
+jocului în acest mediu.
+
+- [Launcher 0.2.69 portabil Windows x64](https://github.com/horizon-rust/horizon/releases/download/launcher%400.2.69/horizon-launcher-windows-x64.zip)
+- În **Add a native mod from GitHub**, introdu:
+  `https://github.com/ExMarius/HorizonMods/tree/arena/fb5f91ff-horizonmods`
+- Construiește modul cu opțiunea de încredere pentru cod nativ.
+
+**Atenție:** codul launcherului 0.2.69 urmărește branch-ul implicit al repo-ului
+pentru butonul Update când un mod este instalat dintr-un commit, nu neapărat
+branch-ul din linkul original. Pentru a lua versiunea de pe acest branch,
+readaugă explicit linkul de mai sus în loc să presupui că Update îl urmărește.
+
+Alternativ, pentru 0.2.69 CLI: `horizon-launcher native-build dist/gokart_native.hnmod --trust-native-code`.
 
 ### Dezvoltare & Testare Locală
 ```bash
