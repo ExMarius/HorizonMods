@@ -3495,6 +3495,8 @@ def main() -> None:
     generate_vehicle_textures()
     generate_item_textures()
     generate_models()
+    from import_quaternius import export
+    export(write_png)
     validate_models_no_zfighting()
     generate_item_jsons()
     generate_recipes()
@@ -3502,7 +3504,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.13.10 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.13.11 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.13.10";
+pub const VERSION: &str = "0.13.11";
 pub const DESCRIPTION: &str = "FiveM-inspired 3D Vehicles for Horizon: Go-Kart, Quad Bike ATV, 4x4 Off-Roader, Poliția Română Pursuit Sedan with sculpted wheel arches, emissive lights, dynamic night headlights, siren & girofar, and /vehicle remove.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
@@ -95,6 +95,25 @@ pub const STANDALONE_MODELS: [&str; 23] = [
     MODEL_ENGINE_IRON,
     MODEL_ENGINE_GOLD,
     MODEL_ENGINE_DIAMOND,
+];
+
+pub const SUPERCAR_PAINT_MODELS: [&str; 16] = [
+    "gokart:block/supercar_mesh_00",
+    "gokart:block/supercar_mesh_01",
+    "gokart:block/supercar_mesh_02",
+    "gokart:block/supercar_mesh_03",
+    "gokart:block/supercar_mesh_04",
+    "gokart:block/supercar_mesh_05",
+    "gokart:block/supercar_mesh_06",
+    "gokart:block/supercar_mesh_07",
+    "gokart:block/supercar_mesh_08",
+    "gokart:block/supercar_mesh_09",
+    "gokart:block/supercar_mesh_10",
+    "gokart:block/supercar_mesh_11",
+    "gokart:block/supercar_mesh_12",
+    "gokart:block/supercar_mesh_13",
+    "gokart:block/supercar_mesh_14",
+    "gokart:block/supercar_mesh_15",
 ];
 
 // Mod network channels
@@ -580,11 +599,20 @@ impl VehicleKind {
                 default_cam_dist: 8.0,
                 ..Self::Ambulance.layout()
             },
-            Self::StreetCoupe | Self::MuscleCar | Self::Supercar | Self::CitySuv | Self::Taxi => VehicleLayout {
+            // Imported mesh fenders are narrower and lower than the generic sedan.
+            // Keep all four replaceable wheels independent for steering/spin.
+            Self::Supercar => VehicleLayout {
+                body_model: "gokart:block/supercar_body",
+                front_track_half_x: 13.70 / 16.0,
+                rear_track_half_x: 13.23 / 16.0,
+                front_wheel_scale: [0.70, 1.24, 1.24],
+                rear_wheel_scale: [0.70, 1.24, 1.24],
+                ..Self::PoliceCar.layout()
+            },
+            Self::StreetCoupe | Self::MuscleCar | Self::CitySuv | Self::Taxi => VehicleLayout {
                 body_model: match self {
                     Self::StreetCoupe => "gokart:block/street_coupe_body",
                     Self::MuscleCar => "gokart:block/muscle_car_body",
-                    Self::Supercar => "gokart:block/supercar_body",
                     Self::CitySuv => "gokart:block/city_suv_body",
                     Self::Taxi => "gokart:block/taxi_body",
                     _ => unreachable!(),

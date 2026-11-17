@@ -301,6 +301,9 @@ pub(in crate::game) fn standalone_models(models: &mut Vec<String>) {
     for m in rules::STANDALONE_MODELS {
         models.push(m.into());
     }
+    for m in rules::SUPERCAR_PAINT_MODELS {
+        models.push(m.into());
+    }
 }
 
 pub(in crate::game) fn listed(mods: &mut Vec<NativeMod>) {
@@ -2557,7 +2560,12 @@ pub(in crate::game) fn mob_submit(
     draw.push();
     draw.scale(lay.body_scale);
     draw.translate([-0.5, 0.0, -0.5]);
-    game.native_draw_model(draw, lay.body_model, kart.spec.paint.rgb());
+    let body_model = if kart.spec.kind == rules::VehicleKind::Supercar {
+        rules::SUPERCAR_PAINT_MODELS[usize::from(kart.spec.paint.code())]
+    } else {
+        lay.body_model
+    };
+    game.native_draw_model(draw, body_model, kart.spec.paint.rgb());
     draw.pop();
 
     // 2b. Coaxial Sport Steering Wheel (Go-Kart / 4x4) OR Dedicated ATV T-Handlebars (Quad Bike)!

@@ -12,7 +12,10 @@ class StreetCars(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn('gokart:' + name, creative['items'])
                 model = json.loads((ROOT / f'assets/gokart/models/block/{name}_body.json').read_text())
-                self.assertGreater(len(model['elements']), 25)
+                if name == 'supercar':
+                    self.assertEqual(model['loader'], 'neoforge:obj')
+                else:
+                    self.assertGreater(len(model['elements']), 25)
                 self.assertNotIn('siren_red', model['textures'])
                 recipe = json.loads((ROOT / f'data/gokart/recipe/{name}.json').read_text())
                 self.assertEqual(recipe['result']['id'], 'gokart:' + name)
@@ -22,7 +25,7 @@ class StreetCars(unittest.TestCase):
                     self.assertIn('item.gokart.' + name, translations)
 
     def test_sports_coupes_have_raked_windscreens_and_roofs(self):
-        for name in ('street_coupe', 'supercar'):
+        for name in ('street_coupe',):
             elements = json.loads((ROOT / f'assets/gokart/models/block/{name}_body.json').read_text())['elements']
             glass = [e for e in elements if e['faces']['up']['texture'] == '#glass']
             windscreens = [e for e in glass if e.get('rotation', {}).get('angle', 0) < -20]
@@ -33,7 +36,7 @@ class StreetCars(unittest.TestCase):
     def test_glass_is_above_doors_and_clear_of_seats(self):
         def overlaps(a, b):
             return all(min(a['to'][i], b['to'][i]) - max(a['from'][i], b['from'][i]) > 0.001 for i in range(3))
-        for name in CARS:
+        for name in (n for n in CARS if n != 'supercar'):
             model = json.loads((ROOT / f'assets/gokart/models/block/{name}_body.json').read_text())
             elements = model['elements']
             glass = [e for e in elements if e['faces']['up']['texture'] in ('#glass', '#side_glass')]
