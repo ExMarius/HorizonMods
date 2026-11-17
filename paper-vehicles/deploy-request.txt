@@ -1,1 +1,1 @@
-Cerere utilizator: livrare JAR de dezvoltare; fără restart.
+Cerere utilizator: reluare cu diagnostic sigur, fără restart.

@@ -17,6 +17,7 @@ from pathlib import Path
 HOST = 'zara.hidencloud.com'
 PORT = 2022
 TARGET = 'plugins/HorizonVehiclesPaper-dev.jar'
+STAGE = 'configuration'
 
 
 def fingerprint(key):
@@ -54,26 +55,31 @@ def transfer(sftp, local_path):
 
 def main():
     import paramiko
+    global STAGE
     if len(sys.argv) != 2:
         raise ValueError('Expected one JAR path')
     path = Path(sys.argv[1])
     if not path.is_file() or path.suffix != '.jar':
         raise ValueError('The plugin JAR was not found')
-    username = os.environ['SFTP_USERNAME']
-    password = os.environ['SFTP_PASSWORD']
-    expected = os.environ['SFTP_HOST_KEY_SHA256'].strip()
+    username = os.environ.get('SFTP_USERNAME', '')
+    password = os.environ.get('SFTP_PASSWORD', '')
+    expected = os.environ.get('SFTP_HOST_KEY_SHA256', '').strip()
     if not username or not password or not expected.startswith('SHA256:'):
         raise ValueError('SFTP settings are incomplete')
+    STAGE = 'network'
     with socket.create_connection((HOST, PORT), timeout=20) as sock:
         transport = paramiko.Transport(sock)
         try:
             transport.start_client(timeout=20)
             # Verify independently obtained host key BEFORE sending credentials.
+            STAGE = 'host_key'
             if not hmac.compare_digest(fingerprint(transport.get_remote_server_key()), expected):
                 raise ValueError('SFTP host key fingerprint mismatch; upload stopped before authentication')
+            STAGE = 'authentication'
             transport.auth_password(username, password, fallback=False)
             if not transport.is_authenticated():
                 raise ValueError('SFTP authentication failed')
+            STAGE = 'upload'
             with paramiko.SFTPClient.from_transport(transport) as sftp:
                 transfer(sftp, path)
         finally:
@@ -86,5 +92,7 @@ if __name__ == '__main__':
         main()
     except Exception as exc:
         # Exceptions from network libraries may contain sensitive values.
-        print('Livrare anulată:', type(exc).__name__, file=sys.stderr)
+        # GitHub surfaces this annotation through its API without exposing logs.
+        # Only fixed stage labels and the exception class are reported.
+        print(f'::error title=Livrare SFTP anulată::Etapă: {STAGE}; tip: {type(exc).__name__}', file=sys.stderr)
         sys.exit(1)
