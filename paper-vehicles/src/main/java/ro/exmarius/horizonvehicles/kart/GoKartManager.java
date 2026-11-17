@@ -1,6 +1,10 @@
 package ro.exmarius.horizonvehicles.kart;
 
 import io.papermc.paper.entity.TeleportFlag;
+import com.mrcrayfish.vehicle.paper.physics.VehicleCollisionMover;
+import com.mrcrayfish.vehicle.paper.vehicle.LandVehicleSpec;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.util.Vector;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -33,6 +37,8 @@ public final class GoKartManager implements Listener {
                 entity.setInvisible(true); entity.setSmall(true); entity.setGravity(false);
                 entity.setInvulnerable(true); entity.setSilent(true); entity.setPersistent(false);
                 entity.setRemoveWhenFarAway(false);
+                var scale = entity.getAttribute(Attribute.SCALE);
+                if (scale != null) scale.setBaseValue(0.0625);
             });
             hitbox = root.getWorld().spawn(root, Interaction.class, entity -> {
                 entity.setInteractionWidth(1.8f); entity.setInteractionHeight(1.3f);
@@ -91,7 +97,14 @@ public final class GoKartManager implements Listener {
     }
     public void removeAll() { karts.forEach(Kart::remove); karts.clear(); }
 
-    private static Location seatLocation(Location root) { return root.clone().add(0, 0.05, 0); }
+    private static Location seatLocation(Location root) {
+        LandVehicleSpec.Point p = LandVehicleSpec.GO_KART.seats().stream()
+                .filter(LandVehicleSpec.Seat::driver).findFirst().orElseThrow().sourceOffset();
+        double angle = Math.toRadians(root.getYaw());
+        return root.clone().add(p.x() * Math.cos(angle) - p.z() * Math.sin(angle),
+                p.y() + LandVehicleSpec.RIDER_HEIGHT_CORRECTION - 0.7 * 0.0625,
+                p.x() * Math.sin(angle) + p.z() * Math.cos(angle));
+    }
 
     /** Coarse conservative occupancy check; refuses unloaded chunks and blocks other than passable ones. */
     private static boolean clear(Location location) {
@@ -109,7 +122,7 @@ public final class GoKartManager implements Listener {
 
     private static final class Kart {
         Location root; final GoKartRig rig; final ArmorStand seat; final Interaction hitbox;
-        final GoKartMotion motion; double fallVelocity;
+        final GoKartMotion motion; double fallVelocity; boolean onGround = true;
         Kart(Location root, GoKartRig rig, ArmorStand seat, Interaction hitbox) {
             this.root = root.clone(); this.rig = rig; this.seat = seat; this.hitbox = hitbox;
             this.motion = new GoKartMotion(root.getYaw());
@@ -120,25 +133,26 @@ public final class GoKartManager implements Listener {
             int throttle = input == null ? 0 : (input.isForward() ? 1 : 0) - (input.isBackward() ? 1 : 0);
             int steering = input == null ? 0 : (input.isRight() ? 1 : 0) - (input.isLeft() ? 1 : 0);
             var step = motion.tick(throttle, steering, input != null && input.isJump());
-            Location next = root.clone().add(step.dx(), 0, step.dz());
-            next.setYaw((float) step.yawDegrees());
-            if (!clear(next)) {
-                Location raised = next.clone().add(0, 1, 0);
-                if (clear(raised) && clear(root.clone().add(0, 1, 0))) next = raised;
-                else { next = root.clone(); next.setYaw((float) step.yawDegrees()); motion.stop(); }
-            }
+            LandVehicleSpec spec = LandVehicleSpec.GO_KART;
             fallVelocity = Math.max(-0.45, fallVelocity - .04);
-            Location down = next.clone().add(0, fallVelocity, 0);
-            if (clear(down)) next = down;
-            else {
-                // Descend in small increments to stop just above the surface.
-                for (int i = 0; i < 9; i++) {
-                    Location probe = next.clone().add(0, -.05, 0);
-                    if (!clear(probe)) break;
-                    next = probe;
+            Vector requested = new Vector(step.dx(), fallVelocity, step.dz());
+            // Never cause chunk loads from collision sampling at a chunk boundary.
+            Location end = root.clone().add(requested);
+            for (double x : new double[]{-2, 2}) for (double z : new double[]{-2, 2}) {
+                Location p = end.clone().add(x, 0, z);
+                if (!root.getWorld().isChunkLoaded(p.getBlockX() >> 4, p.getBlockZ() >> 4)) {
+                    motion.stop(); return;
                 }
-                fallVelocity = 0;
             }
+            var result = VehicleCollisionMover.move(root.getWorld(), root, requested, onGround,
+                    spec.entityWidth(), spec.entityHeight(), spec.stepHeight(), false);
+            Vector actual = result.movement();
+            Location next = root.clone().add(actual);
+            next.setYaw((float) step.yawDegrees());
+            onGround = result.onGround();
+            if (result.verticalCollision()) fallVelocity = 0;
+            if (Math.abs(actual.getX() - requested.getX()) > 0.001
+                    || Math.abs(actual.getZ() - requested.getZ()) > 0.001) motion.stop();
             Location seatTarget = seatLocation(next);
             if (!seat.teleport(seatTarget, TeleportFlag.EntityState.RETAIN_PASSENGERS)) { motion.stop(); return; }
             root = next; hitbox.teleport(root); rig.move(root);

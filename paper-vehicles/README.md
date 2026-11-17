@@ -96,3 +96,13 @@ sunt păstrate în `go_kart_parts.json`, fără rotunjirea unghiurilor. Pack-ul 
 în jurul pivotului sursă. `GoKartMotion` modelează separat accelerația, frâna,
 virarea și consumul. Aceste componente sunt legate experimental de comenzi, scaun,
 coliziuni aproximative și livrarea pack-ului, dar nu au fost verificate în joc.
+
+### Preluare din proiectul Paper existent
+
+Prototipul folosește acum direct `LandVehicleSpec.GO_KART` din proiectul Paper
+preluat pentru pozițiile caroseriei, roților, volanului, motorului și șoferului,
+precum și `VehicleCollisionMover` pentru coliziuni și urcarea treptelor. Modelul
+este cel Horizon propriu, deci pozițiile preluate necesită calibrare vizuală;
+nu este încă rig-ul sau motorul complet `LandVehicle` al proiectului sursă.
+Condusul și rezervorul rămân implementări experimentale separate. Aceste modificări
+nu au fost încă verificate în joc.
