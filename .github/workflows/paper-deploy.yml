@@ -37,5 +37,6 @@ jobs:
         env:
           SFTP_USERNAME: ${{ secrets.HIDENCLOUD_SFTP_USERNAME }}
           SFTP_PASSWORD: ${{ secrets.HIDENCLOUD_SFTP_PASSWORD }}
+          SFTP_PRIVATE_KEY: ${{ secrets.HIDENCLOUD_SFTP_PRIVATE_KEY }}
           SFTP_HOST_KEY_SHA256: ${{ secrets.HIDENCLOUD_SFTP_HOST_KEY_SHA256 }}
         run: python3 paper-vehicles/deploy/upload.py paper-vehicles/build/libs/HorizonVehiclesPaper-0.1.0-dev.jar

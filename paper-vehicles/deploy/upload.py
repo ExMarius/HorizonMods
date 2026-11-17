@@ -2,12 +2,13 @@
 """Upload the development JAR only after authenticating a pinned SSH host key.
 
 Requires environment variables: SFTP_USERNAME, SFTP_PASSWORD and
-SFTP_HOST_KEY_SHA256. Never prints credentials. Does not run remote commands,
+SFTP_HOST_KEY_SHA256 and either SFTP_PRIVATE_KEY or SFTP_PASSWORD. Never prints credentials. Does not run remote commands,
 restart the server, modify worlds, or remove an existing plugin.
 """
 import base64
 import hashlib
 import hmac
+import io
 import os
 import socket
 import sys
@@ -64,13 +65,14 @@ def main():
         raise ValueError('The plugin JAR was not found')
     username = os.environ.get('SFTP_USERNAME', '')
     password = os.environ.get('SFTP_PASSWORD', '')
+    private_key = os.environ.get('SFTP_PRIVATE_KEY', '')
     expected = os.environ.get('SFTP_HOST_KEY_SHA256', '').strip()
     STAGE = 'username_missing'
     if not username:
         raise ValueError('SFTP username is missing')
-    STAGE = 'password_missing'
-    if not password:
-        raise ValueError('SFTP password is missing')
+    STAGE = 'credential_missing'
+    if not private_key and not password:
+        raise ValueError('SFTP credential is missing')
     STAGE = 'fingerprint_missing_or_invalid'
     if not expected.startswith('SHA256:'):
         raise ValueError('SFTP host fingerprint is missing or invalid')
@@ -84,7 +86,11 @@ def main():
             if not hmac.compare_digest(fingerprint(transport.get_remote_server_key()), expected):
                 raise ValueError('SFTP host key fingerprint mismatch; upload stopped before authentication')
             STAGE = 'authentication'
-            transport.auth_password(username, password, fallback=False)
+            if private_key:
+                key = paramiko.Ed25519Key.from_private_key(io.StringIO(private_key))
+                transport.auth_publickey(username, key)
+            else:
+                transport.auth_password(username, password, fallback=False)
             if not transport.is_authenticated():
                 raise ValueError('SFTP authentication failed')
             STAGE = 'upload'

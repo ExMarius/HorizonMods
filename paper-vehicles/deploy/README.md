@@ -12,8 +12,9 @@ Configurează **GitHub Actions repository secrets**, niciodată în chat sau în
 repo:
 
 - `HIDENCLOUD_SFTP_USERNAME`: utilizatorul SFTP din panel.
-- `HIDENCLOUD_SFTP_PASSWORD`: parola SFTP. Dacă panelul permite un utilizator
-  separat cu acces limitat, este mai sigur decât parola contului principal.
+- `HIDENCLOUD_SFTP_PRIVATE_KEY`: cheia SSH **privată ED25519** (preferată);
+  adaugă doar cheia publică în panel. Alternativ, `HIDENCLOUD_SFTP_PASSWORD`
+  este parola SFTP. Dacă ambele există, este folosită doar cheia privată.
 - `HIDENCLOUD_SFTP_HOST_KEY_SHA256`: amprenta SSH ED25519 în format `SHA256:…`,
   **confirmată independent de HidenCloud**. Rezultatul `ssh-keyscan` din
   workflow-ul de diagnostic este doar o observație, nu o sursă de încredere.
