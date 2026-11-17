@@ -21,13 +21,22 @@ class StreetCars(unittest.TestCase):
                     translations = json.loads((ROOT / f'assets/gokart/lang/{lang}.json').read_text())
                     self.assertIn('item.gokart.' + name, translations)
 
+    def test_sports_coupes_have_raked_windscreens_and_roofs(self):
+        for name in ('street_coupe', 'supercar'):
+            elements = json.loads((ROOT / f'assets/gokart/models/block/{name}_body.json').read_text())['elements']
+            glass = [e for e in elements if e['faces']['up']['texture'] == '#glass']
+            windscreens = [e for e in glass if e.get('rotation', {}).get('angle', 0) < -20]
+            self.assertEqual(len(windscreens), 1, name)
+            self.assertTrue(any(e.get('rotation', {}).get('angle', 0) > 20 for e in glass), name)
+            self.assertTrue(any(e['faces']['up']['texture'] == '#seat' for e in elements), name)
+
     def test_glass_is_above_doors_and_clear_of_seats(self):
         def overlaps(a, b):
             return all(min(a['to'][i], b['to'][i]) - max(a['from'][i], b['from'][i]) > 0.001 for i in range(3))
         for name in CARS:
             model = json.loads((ROOT / f'assets/gokart/models/block/{name}_body.json').read_text())
             elements = model['elements']
-            glass = [e for e in elements if e['faces']['up']['texture'] == '#glass']
+            glass = [e for e in elements if e['faces']['up']['texture'] in ('#glass', '#side_glass')]
             seats = [e for e in elements if e['faces']['up']['texture'] == '#seat']
             self.assertGreaterEqual(len(glass), 4, name)
             self.assertTrue(all(e['from'][1] > 10.2 for e in glass), name)

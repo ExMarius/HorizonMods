@@ -7,6 +7,7 @@
     "chrome": "gokart:block/kart_chrome",
     "grille": "gokart:block/kart_grille",
     "glass": "gokart:block/medical_glass",
+    "side_glass": "gokart:block/medical_corner_glass",
     "headlight": "gokart:block/kart_headlight",
     "taillight": "gokart:block/kart_taillight"
   },

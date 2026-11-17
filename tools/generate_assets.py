@@ -1916,10 +1916,99 @@ def generate_models() -> None:
             e += [obox([-2.5,roof_y+0.81,-3], [2.5,roof_y+2.0,-1], "#headlight")]
         else:
             e += [obox([-8,10.3,-22], [8,10.8,-21], "#carbon")]
+        if name in ("supercar", "street_coupe"):
+            # Separate two-seat fastback architecture inspired by real mid-engine
+            # wedge/coupe proportions, not the upright four-door vehicle above.
+            is_wedge = name == "supercar"
+            roof = 16.3 if is_wedge else 17.6
+            slope = -35.0 if is_wedge else -29.0
+            rear_slope = 37.0 if is_wedge else 29.0
+            front_height = (roof - 10.3) / math.cos(math.radians(slope))
+            rear_height = (roof - 10.3) / math.cos(math.radians(rear_slope))
+            roof_front = 8.0 + math.sin(math.radians(slope)) * front_height
+            roof_back = -14.2 + math.sin(math.radians(rear_slope)) * rear_height
+            e = [
+                # Undertray and sill; the central panels meet the arch backing.
+                obox([-10, 2.8, -8.55], [10, 3.9, 8.55], "#carbon"),
+                obox([-8.20, 3.90, -21.7], [8.20, 10.2, -8.55], "#body", tint=True),
+                obox([-8.20, 3.90, 8.55], [8.20, 10.2, 21.7], "#body", tint=True),
+                obox([-12.25, 3.9, -8.55], [-10, 10.2, 8.55], "#body", tint=True),
+                obox([10, 3.9, -8.55], [12.25, 10.2, 8.55], "#body", tint=True),
+                # Low wide nose and rear: distinct narrow light signature and
+                # separate air inlets, not a single featureless flat slab.
+                obox([-12.1, 3.0, 21.7], [12.1, 6.1, 23.0], "#body", tint=True),
+                obox([-12.1, 6.1, 21.7], [12.1, 9.7, 22.0], "#carbon"),
+                obox([-11.9, 9.7, 21.7], [11.9, 10.2, 22.0], "#body", tint=True),
+                obox([-11.5, 8.15, 22.01], [-6.3, 9.45, 22.15], "#headlight"),
+                obox([6.3, 8.15, 22.01], [11.5, 9.45, 22.15], "#headlight"),
+                obox([-5.9, 6.45, 22.01], [5.9, 8.25, 22.15], "#grille"),
+                obox([-11.8, 2.5, 22], [11.8, 2.98, 23.35], "#carbon"),
+                obox([-12.1, 3, -23.0], [12.1, 6.1, -21.7], "#body", tint=True),
+                obox([-12.1, 6.1, -22.0], [12.1, 9.7, -21.7], "#carbon"),
+                obox([-11.9, 9.7, -22.0], [11.9, 10.2, -21.7], "#body", tint=True),
+                obox([-11.4, 8.3, -22.16], [-4.4, 9.4, -22.01], "#taillight"),
+                obox([4.4, 8.3, -22.16], [11.4, 9.4, -22.01], "#taillight"),
+                obox([-2.5, 4.0, -23.14], [2.5, 5.2, -23.01], "#chrome"),
+                obox([-10.6, 2.45, -23.2], [10.6, 2.98, -22.0], "#carbon"),
+                # Recessed floor, dash, centre tunnel, bucket seats and headrests.
+                obox([-9.8, 7.8, 5.3], [9.8, 10.2, 7.7], "#seat"),
+                obox([-1.2, 3.91, -4.0], [1.2, 6.1, 5.2], "#carbon"),
+                obox([-8.2, 3.91, -2.8], [-2.0, 5.4, 2.5], "#seat"),
+                obox([2.0, 3.91, -2.8], [8.2, 5.4, 2.5], "#seat"),
+                obox([-8.2, 5.4, -4.0], [-2.0, 13.1, -2.8], "#seat"),
+                obox([2.0, 5.4, -4.0], [8.2, 13.1, -2.8], "#seat"),
+                obox([-6.9, 13.11, -3.95], [-3.3, 14.6, -2.85], "#seat"),
+                obox([3.3, 13.11, -3.95], [6.9, 14.6, -2.85], "#seat"),
+                # Windscreen and A-pillars share a pivot, giving an actual
+                # raked windscreen. Roof ends follow their rotated top edge.
+                obox([-9.0, 10.3, 7.91], [9.0, 10.3+front_height, 8.09], "#glass", rot=("x", slope, [0, 10.3, 8]), full_uv_faces=("north", "south")),
+                obox([-10, 10.3, 7.7], [-9.02, 10.3+front_height, 8.3], "#body", tint=True, rot=("x", slope, [0, 10.3, 8])),
+                obox([9.02, 10.3, 7.7], [10, 10.3+front_height, 8.3], "#body", tint=True, rot=("x", slope, [0, 10.3, 8])),
+                obox([-9.0, 10.3, -14.29], [9.0, 10.3+rear_height, -14.11], "#glass", rot=("x", rear_slope, [0, 10.3, -14.2]), full_uv_faces=("north", "south")),
+                obox([-10, 10.3, -14.5], [-9.02, 10.3+rear_height, -13.9], "#body", tint=True, rot=("x", rear_slope, [0, 10.3, -14.2])),
+                obox([9.02, 10.3, -14.5], [10, 10.3+rear_height, -13.9], "#body", tint=True, rot=("x", rear_slope, [0, 10.3, -14.2])),
+                obox([-10.0, roof, roof_back-0.1], [10.0, roof+0.75, roof_front+0.1], "#body", tint=True),
+                obox([-12.46, 3.25, -8.5], [-12.26, 3.85, 8.5], "#carbon"),
+                obox([12.26, 3.25, -8.5], [12.46, 3.85, 8.5], "#carbon"),
+                obox([-12.4, 8.8, 0.0], [-12.26, 9.3, 2.2], "#chrome"),
+                obox([12.26, 8.8, 0.0], [12.4, 9.3, 2.2], "#chrome"),
+                obox([-13.7, 10.3, 5.0], [-11.0, 11.1, 5.9], "#frame"),
+                obox([11.0, 10.3, 5.0], [13.7, 11.1, 5.9], "#frame"),
+                obox([-14, 10.3, 4.8], [-13.7, 11.7, 6.1], "#body", tint=True),
+                obox([13.7, 10.3, 4.8], [14, 11.7, 6.1], "#body", tint=True),
+            ]
+            # Side glazing is built from separated horizontal bands following
+            # the trapezoid. It stays inboard of both slanted pillars.
+            for side in (-1, 1):
+                x0, x1 = ((-9.01, -8.91) if side < 0 else (8.91, 9.01))
+                for band in range(4):
+                    y0 = 10.35 + band * (roof-10.45)/4
+                    y1 = 10.35 + (band+1) * (roof-10.45)/4
+                    front = 8 + math.tan(math.radians(slope))*(y1-10.3)-0.65
+                    back = -14.2 + math.tan(math.radians(rear_slope))*(y1-10.3)+0.65
+                    e.append(obox([x0, y0, back], [x1, y1, front], "#side_glass", full_uv_faces=("east", "west")))
+            for axle in (-13.8, 13.8):
+                e.extend(sculpted_wheel_arch(cz=axle, vx_in=8.22, vx_body=12.25, vx_flare=12.55,
+                    vy_crown=8.75, vy_top=10.2, half_crown=2.15, slope_len=3.2, slope_deg=38.0,
+                    vz_outer_min=(-21.7 if axle < 0 else 8.55), vz_outer_max=(-8.55 if axle < 0 else 21.7),
+                    vy_jamb_bot=3, liner_x0=6.9, liner_x1=7.6, liner_y0=3.15,
+                    body_tex="#body", body_tint=True, flare_tex="#body", flare_tint=True))
+            if is_wedge:
+                # Mid-engine deck, side intakes and low rear wing distinguish
+                # the supercar from the smoother sports coupe.
+                e += [obox([-6.8, 10.21, -20.8], [6.8, 10.55, -15.0], "#carbon"),
+                      obox([-12.42, 5.0, -8.4], [-12.26, 8.1, -5.0], "#grille"),
+                      obox([12.26, 5.0, -8.4], [12.42, 8.1, -5.0], "#grille"),
+                      obox([-9.0, 10.21, -22.0], [-8.2, 11.4, -21.0], "#carbon"),
+                      obox([8.2, 10.21, -22.0], [9.0, 11.4, -21.0], "#carbon"),
+                      obox([-10.2, 11.4, -22.0], [10.2, 11.9, -20.7], "#carbon")]
+            else:
+                e += [obox([-5.9, 10.21, 10.0], [5.9, 10.55, 19.8], "#body", tint=True),
+                      obox([-9.3, 10.21, -21.8], [9.3, 10.65, -20.4], "#body", tint=True)]
         (mdir / (name + "_body.json")).write_text(json.dumps({"textures": {
             "body": "gokart:block/kart_body", "frame": "gokart:block/kart_frame", "carbon": "gokart:block/kart_carbon",
             "seat": "gokart:block/kart_seat", "chrome": "gokart:block/kart_chrome", "grille": "gokart:block/kart_grille",
-            "glass": "gokart:block/medical_glass", "headlight": "gokart:block/kart_headlight", "taillight": "gokart:block/kart_taillight"}, "elements": e}, indent=2) + "\n")
+            "glass": "gokart:block/medical_glass", "side_glass": "gokart:block/medical_corner_glass", "headlight": "gokart:block/kart_headlight", "taillight": "gokart:block/kart_taillight"}, "elements": e}, indent=2) + "\n")
 
     # =========================================================================
     # 7. Romanian Police Pursuit Sedan (`police_car_body.json`) — Poliția Română!
@@ -3413,7 +3502,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.13.9 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.13.10 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

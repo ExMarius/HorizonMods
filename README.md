@@ -133,3 +133,5 @@ Distribuit sub **GNU General Public License v3.0 (`GPL-3.0-or-later`)**. Inspira
 ### Original street cars (0.13.8)
 
 Five original block-built cars inspired by urban driving games are available in the creative tab, `/vehicle kit` and as craftable items: `street_coupe`, `muscle_car`, `supercar`, `city_suv`, and `taxi`. Spawn with `/vehicle spawn <name>` (operator permission required). These are original models, not imported GTA assets. Their visuals and driving still require in-game validation. The current native implementation supports only the driver; decorative seats are not multiplayer passenger seats.
+
+The 0.13.10 sports-coupe revisions use real-world sports car proportions as references, including the [Lamborghini Huracán](https://www.caranddriver.com/lamborghini/huracan) and [Porsche 911](https://www.caranddriver.com/porsche/911/specs/2024/porsche_911_porsche-911-coupe_2024). They are original block-model interpretations, not replicas or imported assets. The other three street cars have not yet received this fastback redesign.
