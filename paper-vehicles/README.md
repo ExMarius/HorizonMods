@@ -79,3 +79,13 @@ Geometria, UV-urile, transparența, animația și performanța trebuie verificat
 Livrarea opțională prin GitHub Actions este documentată în
 `deploy/README.md`: este dezactivată până la o cerere explicită și configurarea
 secretelor și a amprentei confirmate de HidenCloud. Nu repornește serverul.
+
+## Go-Kart: prima portare
+
+`tools/compile_go_kart.py` construiește un pack experimental din modelele și
+texturile proprii Horizon: caroserie, roți, volan și motor. Cuburile cu unghiuri
+neacceptate de Minecraft 1.21.4 sunt separate pe pivoti; datele lor precise
+sunt păstrate în `go_kart_parts.json`, fără rotunjirea unghiurilor. Pack-ul e
+în JAR, dar rendererul Paper încă nu desenează acele părți și nu sunt integrate
+condusul, scaunul, combustibilul sau coliziunile. Nu este încă un vehicul
+jucabil. Emisia luminii nu este implementată de formatul vanilla folosit.

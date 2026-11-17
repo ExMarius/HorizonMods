@@ -43,4 +43,19 @@ class BundledBusAssetsTest {
             assertTrue(seen.contains("LICENSE-city-bus.txt"));
         }
     }
+    @Test
+    void goKartPackIsBundledForFutureRenderer() throws Exception {
+        try (var stream = getClass().getResourceAsStream("/resource-packs/go-kart-experimental.zip")) {
+            assertNotNull(stream);
+            var seen = new java.util.HashSet<String>();
+            try (var zip = new java.util.zip.ZipInputStream(stream)) {
+                java.util.zip.ZipEntry entry;
+                while ((entry = zip.getNextEntry()) != null) seen.add(entry.getName());
+            }
+            assertTrue(seen.contains("pack.mcmeta"));
+            assertTrue(seen.contains("go_kart_parts.json"));
+            assertTrue(seen.contains("assets/horizonvehicles/textures/item/kart_body.png"));
+            assertTrue(seen.contains("LICENSE.txt"));
+        }
+    }
 }

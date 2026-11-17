@@ -32,7 +32,19 @@ val buildCityBusPack by tasks.registering(Exec::class) {
     commandLine("python3", "tools/compile_city_bus.py", pack.get().asFile.absolutePath)
 }
 
+val buildGoKartPack by tasks.registering(Exec::class) {
+    inputs.dir("../content/assets/gokart/models/block")
+    inputs.dir("../content/assets/gokart/textures/block")
+    inputs.file("tools/compile_go_kart.py")
+    inputs.file("../LICENSE")
+    val pack = layout.buildDirectory.file("generated/go-kart-experimental.zip")
+    outputs.file(pack)
+    commandLine("python3", "tools/compile_go_kart.py", pack.get().asFile.absolutePath)
+}
+
 tasks.processResources {
+    dependsOn(buildGoKartPack)
+    from(buildGoKartPack) { into("resource-packs") }
     dependsOn(buildCityBusPack)
     from(buildCityBusPack) { into("resource-packs") }
     inputs.property("version", project.version)
