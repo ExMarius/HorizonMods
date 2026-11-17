@@ -155,6 +155,57 @@ pub enum VehicleKind {
     DaciaLoganPolice,
 }
 
+/// Experimental server-side bookkeeping for a future multi-seat integration.
+/// This does not mount, move, render or persist players; the Horizon integration
+/// must only commit a reservation after its mount operation has succeeded.
+#[derive(Debug, Default)]
+pub struct SeatReservations {
+    occupied: BTreeMap<(u128, u8), u128>,
+}
+
+impl SeatReservations {
+    pub fn occupant(&self, vehicle: u128, seat: u8) -> Option<u128> {
+        self.occupied.get(&(vehicle, seat)).copied()
+    }
+
+    pub fn seat_of(&self, player: u128) -> Option<(u128, u8)> {
+        self.occupied.iter().find_map(|(&seat, &occupant)| (occupant == player).then_some(seat))
+    }
+
+    /// Reserves one known seat after a successful mount. A conflicting seat or
+    /// a player already assigned elsewhere is rejected without modifying state.
+    /// `seat_count` comes from the validated layout, not from a client packet.
+    pub fn reserve(&mut self, vehicle: u128, seat: u8, seat_count: u8, player: u128) -> bool {
+        if seat >= seat_count || vehicle == 0 || player == 0 {
+            return false;
+        }
+        if let Some(current) = self.seat_of(player) {
+            return current == (vehicle, seat);
+        }
+        if self.occupied.contains_key(&(vehicle, seat)) {
+            return false;
+        }
+        self.occupied.insert((vehicle, seat), player);
+        true
+    }
+
+    /// Release on dismount, disconnect or death. Returns the old assignment.
+    pub fn release_player(&mut self, player: u128) -> Option<(u128, u8)> {
+        let seat = self.seat_of(player)?;
+        self.occupied.remove(&seat);
+        Some(seat)
+    }
+
+    /// Remove all assignments on despawn; caller is responsible for safely
+    /// dismounting and placing these players before removing their seat entities.
+    pub fn release_vehicle(&mut self, vehicle: u128) -> Vec<u128> {
+        let players = self.occupied.iter().filter_map(|(&(v, _), &player)|
+            (v == vehicle).then_some(player)).collect();
+        self.occupied.retain(|&(v, _), _| v != vehicle);
+        players
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct VehicleLayout {
     pub body_model: &'static str,
@@ -1831,6 +1882,26 @@ impl ClientSettings {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn future_seat_reservations_are_exclusive_and_releasable() {
+        let mut seats = super::SeatReservations::default();
+        assert!(!seats.reserve(0, 0, 4, 1));
+        assert!(!seats.reserve(1, 4, 4, 1));
+        assert!(!seats.reserve(1, 0, 4, 0));
+        assert!(seats.reserve(1, 0, 4, 10));
+        assert!(seats.reserve(1, 0, 4, 10)); // idempotent retry
+        assert!(!seats.reserve(1, 0, 4, 11)); // occupied
+        assert!(!seats.reserve(2, 0, 4, 10)); // player already aboard
+        assert!(seats.reserve(1, 3, 4, 11));
+        assert!(seats.reserve(2, 1, 2, 12));
+        assert_eq!(seats.release_player(10), Some((1, 0)));
+        assert_eq!(seats.release_player(10), None);
+        assert!(seats.reserve(2, 0, 2, 10));
+        assert_eq!(seats.release_vehicle(1), vec![11]);
+        assert_eq!(seats.seat_of(11), None);
+        assert_eq!(seats.occupant(2, 0), Some(10));
+        assert_eq!(seats.occupant(2, 1), Some(12));
+    }
     use super::*;
 
     #[test]
