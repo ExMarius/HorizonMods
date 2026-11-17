@@ -9,3 +9,9 @@ textures, sounds, deployment configuration, or resource pack are included.
 Some code references original assets; do not activate it unchanged without
 reviewing dependencies, attribution, and asset rights. This snapshot does not
 represent a claim that its features have been tested in this repository.
+
+The reference tests and `tools/build_resource_pack.py` were obtained from the
+same repository at revision `f52426454e69407e7f16c7e8eb20ff5a511c318d`.
+They are archived for analysis and are not executed in the new plugin build.
+The builder expects its upstream repository layout and upstream assets, which
+are deliberately not copied into this reference snapshot.

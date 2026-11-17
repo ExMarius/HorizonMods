@@ -10,7 +10,11 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
+
+tasks.test { useJUnitPlatform() }
 
 java { toolchain.languageVersion.set(JavaLanguageVersion.of(21)) }
 tasks.withType<JavaCompile>().configureEach {
@@ -20,6 +24,7 @@ tasks.withType<JavaCompile>().configureEach {
 tasks.processResources {
     inputs.property("version", project.version)
     filesMatching("plugin.yml") { expand("version" to project.version) }
-    from("../LICENSE") { rename { "LICENSE.txt" } }
+    from("LICENSE") { rename { "LICENSE.txt" } }
+    from("THIRD-PARTY.md")
 }
 tasks.jar { archiveBaseName.set("HorizonVehiclesPaper") }

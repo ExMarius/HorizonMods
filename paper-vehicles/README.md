@@ -36,3 +36,13 @@ JAR-ul de dezvoltare este disponibil 14 zile ca artifact al rulării. Este doar
 scheletul descris mai sus, **nu un plugin cu vehicule funcționale**. Dacă
 workflow-ul sau permisiunile repository-ului nu permit rularea, nu există un
 build verificat până când eroarea nu este rezolvată.
+
+## Import selectiv al codului
+
+Primele clase independente de input/tuning/indicator de combustibil și testul
+indicatorului provin din pluginul Paper al lui ExMarius/MrCrayfish și sunt
+incluse în build, dar nu sunt încă legate de un vehicul. `LICENSE` conține
+textul complet GPLv3; `THIRD-PARTY.md` documentează sursa și excepțiile. Codul
+și testele rămase și generatorul de pack sunt păstrate ca referință, fără a le
+activa și fără resursele originale. Nu rulăm generatorul original nefiltrat:
+el include și vehicule/componente cu mențiune ARR și trimite la resurse externe.
