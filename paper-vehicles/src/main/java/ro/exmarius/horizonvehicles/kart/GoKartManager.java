@@ -1,6 +1,6 @@
 package ro.exmarius.horizonvehicles.kart;
 
-import com.destroystokyo.paper.entity.TeleportFlag;
+import io.papermc.paper.entity.TeleportFlag;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.World;

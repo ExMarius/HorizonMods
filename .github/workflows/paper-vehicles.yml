@@ -33,7 +33,12 @@ jobs:
       - name: Offline asset and catalog checks
         run: python3 -m unittest discover -s paper-vehicles/tests -v
       - name: Build Paper development plugin
-        run: ./paper-vehicles/gradlew -p paper-vehicles build
+        run: |
+          set -o pipefail
+          ./paper-vehicles/gradlew -p paper-vehicles build 2>&1 | tee /tmp/paper-build.log || {
+            python3 -c "from pathlib import Path; lines=Path('/tmp/paper-build.log').read_text().splitlines(); print('::error::' + ' | '.join(line.replace('%','%25').replace('\r','%0D').replace('\n','%0A') for line in lines[-30:])[:10000])"
+            exit 1
+          }
       - name: Upload development jar
         uses: actions/upload-artifact@v4
         with:
