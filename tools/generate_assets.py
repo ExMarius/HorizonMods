@@ -2473,73 +2473,6 @@ def generate_models() -> None:
             "elements": van_elements,
         }, indent=2) + "\n")
 
-    # WIP: original Minecraft-style passenger minibus inspired by the proportions
-    # of MrCrayfish's Mini Bus. It is intentionally NOT registered for spawning:
-    # passenger mounting/synchronization and in-game fit must be finished first.
-    minibus = [
-        obox([-10.0, 2.8, -8.50], [10.0, 3.90, 8.50], "#frame"),
-        obox([-8.20, 3.90, -21.90], [8.20, 10.20, -8.55], "#body", tint=True),
-        obox([-8.20, 3.90, 8.55], [8.20, 10.20, 21.90], "#body", tint=True),
-        obox([-12.25, 3.90, -8.50], [-10.0, 10.20, 8.50], "#body", tint=True),
-        obox([10.0, 3.90, -8.50], [12.25, 10.20, 8.50], "#body", tint=True),
-        # Cabin floor and dashboard, between the wheel tubs.
-        obox([-9.95, 3.92, -8.4], [9.95, 4.45, 8.4], "#floor"),
-        obox([-9.90, 8.00, 5.60], [9.90, 10.17, 8.48], "#frame"),
-        obox([2.0, 10.19, 5.8], [7.5, 10.72, 8.35], "#dash", full_uv_faces=("up",)),
-        # Beltline and roof; glazing remains in openings instead of intersecting walls.
-        obox([-12.20, 10.22, -21.85], [-10.05, 12.0, 15.5], "#body", tint=True),
-        obox([10.05, 10.22, -21.85], [12.20, 12.0, 15.5], "#body", tint=True),
-        obox([-12.20, 21.35, -21.85], [12.20, 22.20, 15.50], "#body", tint=True),
-        obox([-12.20, 12.02, 15.20], [-10.75, 21.33, 15.50], "#body", tint=True),
-        obox([10.75, 12.02, 15.20], [12.20, 21.33, 15.50], "#body", tint=True),
-        obox([-10.73, 12.05, 15.24], [10.73, 21.30, 15.42], "#glass", full_uv_faces=("north", "south")),
-        obox([-12.20, 12.02, -21.85], [-10.75, 21.33, -21.55], "#body", tint=True),
-        obox([10.75, 12.02, -21.85], [12.20, 21.33, -21.55], "#body", tint=True),
-        obox([-10.73, 12.05, -21.79], [10.73, 21.30, -21.61], "#glass", full_uv_faces=("north", "south")),
-        # Split bumper, grille, lenses and license plate on front and rear.
-        obox([-12.2, 3.0, 21.90], [12.2, 6.05, 23.00], "#body", tint=True),
-        obox([-12.2, 3.0, -23.00], [12.2, 6.05, -21.90], "#body", tint=True),
-        obox([-7.0, 6.20, 21.91], [7.0, 8.45, 22.08], "#grille"),
-        obox([-11.7, 8.50, 21.91], [-7.3, 10.10, 22.08], "#headlight"),
-        obox([7.3, 8.50, 21.91], [11.7, 10.10, 22.08], "#headlight"),
-        obox([-11.7, 8.50, -22.08], [-7.3, 10.10, -21.91], "#taillight"),
-        obox([7.3, 8.50, -22.08], [11.7, 10.10, -21.91], "#taillight"),
-        obox([-2.8, 3.55, 23.01], [2.8, 4.9, 23.15], "#plate_ro"),
-        obox([-10.8, 2.50, 22.1], [10.8, 2.98, 23.20], "#frame"),
-        # Mirrors on short arms; clear of windows.
-        obox([-13.3, 10.50, 7.0], [-12.26, 11.00, 7.5], "#frame"),
-        obox([12.26, 10.50, 7.0], [13.3, 11.00, 7.5], "#frame"),
-        obox([-14.0, 10.30, 6.8], [-13.3, 12.0, 8.0], "#frame"),
-        obox([13.3, 10.30, 6.8], [14.0, 12.0, 8.0], "#frame"),
-    ]
-    for axle in (-13.8, 13.8):
-        minibus.extend(sculpted_wheel_arch(cz=axle, vx_in=8.22, vx_body=12.25, vx_flare=12.55,
-            vy_crown=8.75, vy_top=10.20, half_crown=2.15, slope_len=3.20, slope_deg=38,
-            vz_outer_min=(-21.90 if axle < 0 else 8.55), vz_outer_max=(-8.55 if axle < 0 else 21.90),
-            vy_jamb_bot=3.05, liner_x0=6.90, liner_x1=7.60, liner_y0=3.15,
-            body_tex="#body", body_tint=True, flare_tex="#body", flare_tint=True))
-    # Three individually framed side windows on each side.
-    for x0, x1 in ((-12.18, -12.02), (12.02, 12.18)):
-        for z0, z1 in ((-20.1, -13.9), (-13.0, -5.2), (-4.3, 13.8)):
-            minibus.append(obox([x0, 12.08, z0], [x1, 21.20, z1], "#glass", full_uv_faces=("east", "west")))
-        for z0, z1 in ((-21.5, -20.15), (-13.85, -13.05), (-5.15, -4.35), (13.85, 15.15)):
-            minibus.append(obox([x0, 12.02, z0], [x1, 21.33, z1], "#body", tint=True))
-    # Four intended seating positions; decorative until multiplayer seats exist.
-    for x0, x1 in ((-8.0, -2.0), (2.0, 8.0)):
-        for front in (-2.5, 5.0):
-            minibus.extend([
-                obox([x0, 4.46, front-4.4], [x1, 5.85, front], "#seat"),
-                obox([x0, 5.86, front-5.5], [x1, 13.8, front-4.42], "#seat"),
-                obox([x0+1.1, 13.82, front-5.5], [x1-1.1, 15.2, front-4.42], "#seat"),
-            ])
-    (mdir / "prototype_minibus_body.json").write_text(json.dumps({"textures": {
-        "body": "gokart:block/kart_body", "frame": "gokart:block/kart_frame",
-        "floor": "gokart:block/medical_floor", "glass": "gokart:block/medical_glass",
-        "seat": "gokart:block/kart_seat", "dash": "gokart:block/kart_dash",
-        "carbon": "gokart:block/kart_carbon", "grille": "gokart:block/kart_grille",
-        "headlight": "gokart:block/kart_headlight", "taillight": "gokart:block/kart_taillight",
-        "plate_ro": "gokart:block/plate_ro"}, "elements": minibus}, indent=2) + "\n")
-
     # Independent cab-over fire engine, inspired by Romanian ISU pumpers.
     # Equipment shutters, pump gauges and roof ladder are static visual details.
     fire = [
@@ -3564,6 +3497,8 @@ def main() -> None:
     generate_models()
     from import_quaternius import export
     export(write_png)
+    from import_city_bus import export as export_city_bus
+    export_city_bus()
     validate_models_no_zfighting()
     generate_item_jsons()
     generate_recipes()
@@ -3571,7 +3506,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.13.12 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.13.13 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

@@ -1,30 +1,22 @@
-# Mini Bus prototype — not a playable vehicle
+# Bus prototype — not yet a playable vehicle
 
-The first planned vehicle is an original Minecraft-style compact minibus,
-inspired by the general category and proportions of the MrCrayfish Vehicle
-Mod Mini Bus. No model, texture, or code from the reference mod is copied.
-The other proposed vehicles are a dune buggy, a compact sports coupe and a
-small pickup. Work on them has not started.
+The first vehicle is being developed using the Minecraft Blockbench bus from
+FoundationGames' [City Vehicles Example Addon](https://github.com/FoundationGames/City-Vehicles-Example-Addon),
+licensed MIT (see `third_party/city_vehicles/`). It is a large three-axle bus,
+not an exact replica of the MrCrayfish minibus. The source OBJ geometry and
+texture are retained; `tools/import_city_bus.py` resizes the body and maps the
+texture into a Horizon OBJ model. This replaces the previous procedurally
+created prototype. The original six wheels are provided as reference, not yet
+wired into the vehicle renderer.
 
-`prototype_minibus_body.json` is generated from `tools/generate_assets.py`.
-It is deliberately not registered as a standalone model, item, creative-tab
-entry, command or recipe: it has not passed in-game review and passenger seats
-cannot yet be used. Four approximate cushion coordinates relative to the model
-center are recorded in `PROTOTYPE_MINIBUS_SEATS_TEXELS`; they are not mount
-positions, a synchronization mechanism or proof of player clearance.
+This model remains unregistered: it cannot be crafted or spawned yet. It has
+not been checked in game. Further work is needed to match all six animated
+wheels and all intended seats to the adapted model, to implement multiplayer
+mounts, add physically accurate lighting, driver visibility, item, recipe,
+translations, fuel and driving characteristics, and to test block steps and
+multiplayer. `SeatReservations` is not an actual mounting system. A mass
+parameter is not yet present in the current physics.
 
-Before this vehicle can be released: implement and validate authoritative
-multi-seat mounting and positioning (see `passenger-seating.md`), player-size
-clearance and dismounts, speed/fuel/step height, item/recipe/localization,
-wheel/steering alignment, and a real two-client test. Current physics derives
-acceleration and top speed primarily from the engine tier; it does not expose a
-vehicle-mass parameter. Do not claim a mass simulation or 1-block climbing
-works until implemented and verified in the game.
-
-## Reference inspection
-
-- [MrCrayfish Vehicle Mod: Mini Bus](https://github.com/MrCrayfish/MrCrayfishVehicleMod/blob/master/src/main/java/com/mrcrayfish/vehicle/entity/vehicle/EntityMiniBus.java) and [SeatTracker](https://github.com/MrCrayfish/MrCrayfishVehicleMod/blob/master/src/main/java/com/mrcrayfish/vehicle/common/SeatTracker.java): separate properties for vehicle and a server-synchronized UUID-to-seat mapping.
-- [MTS Official Pack](https://github.com/DonBruce64/MTSOfficialPack): separate JSON definitions for vehicle parts and seats; viewed for the data-driven organization, not copied.
-- [Ultimate Car Mod EntityVehicleBase](https://github.com/henkelmax/ultimate-car-mod/blob/master/src/main/java/de/maxhenkel/car/entity/car/base/EntityVehicleBase.java): the vehicle limits passengers and positions each rider relative to the vehicle; this depends on Minecraft/Forge entity APIs unavailable in the same form in our Horizon glue.
-
-Reference inspection does not mean the multiplayer behavior has been ported.
+The [MrCrayfish Mini Bus model](https://github.com/MrCrayfish/MrCrayfishVehicleMod/blob/918cefe5f1e49168ac329efbca103f39070a0323/src/main/resources/assets/vehicle/models/vehicle/mini_bus/body.json)
+explicitly says "All Rights Reserved" in its model credit even though the mod's
+code is GPL; it was inspected but its model and textures were not copied.

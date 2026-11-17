@@ -1,0 +1,32 @@
+# City Vehicles example bus model
+
+Source: FoundationGames, [City Vehicles Example Addon for Automobility](https://github.com/FoundationGames/City-Vehicles-Example-Addon), revision `15bb7cd8ebbc940d241c90027420f2baccd887b8`.
+
+The source assets here are the original Blockbench-exported Minecraft bus body,
+wheel, and textures from `assets/cityvehicles/models/entity/bus*`. They are
+provided under the upstream MIT license in `LICENSE`. The car frame properties
+are upstream `data/cityvehicles/automobility/automobile_frame/yellow_bus.json`.
+
+`tools/import_city_bus.py` rescales the original bus body and changes its material
+references for the Horizon OBJ loader; it does not modify the shapes or UVs.
+The upstream six-wheel model is retained for reference; the WIP prototype is
+not registered or playable because this mod currently animates only four wheels
+and has no passenger-seat integration. No claim of in-game compatibility.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

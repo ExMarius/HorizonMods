@@ -3,19 +3,20 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+ASSETS = ROOT / 'content/assets/gokart'
 
 class MinibusPrototype(unittest.TestCase):
-    def test_model_has_bounded_emissive_lamps_and_four_cushions(self):
-        model = json.loads((ROOT / 'content/assets/gokart/models/block/prototype_minibus_body.json').read_text())
-        parts = model['elements']
-        seats = [e for e in parts if e['faces']['up']['texture'] == '#seat'
-                 and e['from'][1] == 4.46]
-        self.assertEqual(len(seats), 4)
-        lights = [e for e in parts if e['faces']['up']['texture'] in ('#headlight', '#taillight')]
-        self.assertEqual(len(lights), 4)
-        self.assertTrue(all(e.get('light_emission') == 15 for e in lights))
-        self.assertTrue(all(-16 <= c <= 32 for e in parts for key in ('from','to') for c in e[key]))
-        self.assertIn('gokart:block/medical_glass', model['textures'].values())
+    def test_imported_model_and_texture_references(self):
+        model = json.loads((ASSETS / 'models/block/prototype_minibus_body.json').read_text())
+        self.assertEqual(model['loader'], 'neoforge:obj')
+        self.assertTrue(model['flip_v'])
+        self.assertEqual(model['model'], 'gokart:models/block/prototype_city_bus.obj')
+        obj = (ASSETS / 'models/block/prototype_city_bus.obj').read_text()
+        self.assertIn('mtllib prototype_city_bus.mtl', obj)
+        self.assertIn('usemtl bus', obj)
+        self.assertGreater(sum(line.startswith('f ') for line in obj.splitlines()), 100)
+        self.assertEqual((ASSETS / 'textures/block/prototype_city_bus.png').read_bytes(),
+                         (ROOT / 'third_party/city_vehicles/yellow_bus.png').read_bytes())
 
     def test_prototype_is_not_exposed_as_a_finished_vehicle(self):
         runtime = (ROOT / 'mixins/gokart_native/runtime.rs').read_text()
