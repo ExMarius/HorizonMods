@@ -4,32 +4,34 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GoKartMotionTest {
-    @Test void acceleratesAndBrakesWithinLimits() {
-        GoKartMotion motion = new GoKartMotion(0);
-        GoKartMotion.Step step = null;
-        for (int i = 0; i < 100; i++) step = motion.tick(1, 0, false);
-        assertEquals(0.35, step.speed(), 1e-9);
-        assertEquals(0, step.dx(), 1e-9);
-        assertTrue(step.fuel() < GoKartMotion.CAPACITY);
-        for (int i = 0; i < 30; i++) step = motion.tick(0, 0, true);
-        assertEquals(0, step.speed(), 1e-9);
+    private GoKartMotion.Step step(GoKartMotion m, int throttle, int steering, boolean brake) {
+        return m.tick(throttle, steering, brake, true, .99, 1);
     }
-
-    @Test void reverseChangesSteeringDirectionAndStopPreventsDrift() {
-        GoKartMotion forward = new GoKartMotion(0), reverse = new GoKartMotion(0);
-        assertTrue(forward.tick(1, 1, false).yawDegrees() > 0);
-        assertTrue(reverse.tick(-1, 1, false).yawDegrees() < 0);
-        forward.stop();
-        assertEquals(0, forward.tick(0, 0, false).speed());
-    }
-
-    @Test void emptyTankCannotAccelerateAndRefuelIsBounded() {
+    @Test void acceleratesBrakesAndBurnsFuel() {
         GoKartMotion motion = new GoKartMotion(0);
-        for (int i = 0; i < 25001; i++) motion.tick(1, 0, false);
-        motion.stop();
-        assertEquals(0, motion.tick(1, 0, false).speed());
+        GoKartMotion.Step state = null;
+        for (int i = 0; i < 100; i++) state = step(motion, 1, 0, false);
+        assertTrue(state.speed() > 0);
+        assertTrue(state.speed() <= .9 + 1e-8);
+        assertEquals(0, state.dx(), 1e-8);
+        assertTrue(state.fuel() < GoKartMotion.CAPACITY);
+        double before = state.speed();
+        for (int i = 0; i < 30; i++) state = step(motion, 0, 0, true);
+        assertTrue(state.speed() < before);
+    }
+    @Test void reversingTurnsOppositeAndStopPreventsDrift() {
+        GoKartMotion f = new GoKartMotion(0), r = new GoKartMotion(0);
+        GoKartMotion.Step fs = null, rs = null;
+        for (int i = 0; i < 20; i++) { fs = step(f, 1, 1, false); rs = step(r, -1, 1, false); }
+        assertTrue(fs.yawDegrees() * rs.yawDegrees() < 0);
+        f.stop();
+        assertEquals(0, step(f, 0, 0, false).speed(), 1e-8);
+    }
+    @Test void noEngineForceInAirAndRefuelIsBounded() {
+        GoKartMotion motion = new GoKartMotion(0);
+        assertEquals(0, motion.tick(1, 0, false, false, 0, 1).speed(), 1e-8);
         assertThrows(IllegalArgumentException.class, () -> motion.refuel(Double.NaN));
         motion.refuel(1000);
-        assertTrue(motion.tick(1, 0, false).speed() > 0);
+        assertTrue(step(motion, 1, 0, false).speed() > 0);
     }
 }

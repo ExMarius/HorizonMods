@@ -104,5 +104,11 @@ preluat pentru pozițiile caroseriei, roților, volanului, motorului și șoferu
 precum și `VehicleCollisionMover` pentru coliziuni și urcarea treptelor. Modelul
 este cel Horizon propriu, deci pozițiile preluate necesită calibrare vizuală;
 nu este încă rig-ul sau motorul complet `LandVehicle` al proiectului sursă.
-Condusul și rezervorul rămân implementări experimentale separate. Aceste modificări
+Condusul folosește o adaptare selectivă a formulelor din `LandVehicle`, inclusiv frecare, tracțiune și virare pe osii; boost-ul și unele detalii ale rezervorului rămân neportate. Aceste modificări
 nu au fost încă verificate în joc.
+
+### Restart la actualizări
+
+Livrarea scrie un marker SHA-256 după upload, iar watcherul pluginului anunță și
+execută `restart` după 5 secunde. Vezi `deploy/README.md` pentru condiția de
+primă activare și limitările serverului.

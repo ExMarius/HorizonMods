@@ -33,7 +33,7 @@ jobs:
         run: |
           python3 -m unittest discover -s paper-vehicles/tests -v
           ./paper-vehicles/gradlew -p paper-vehicles build
-      - name: Upload verified JAR without restarting server
+      - name: Upload verified JAR and request restart
         env:
           SFTP_USERNAME: ${{ secrets.HIDENCLOUD_SFTP_USERNAME }}
           SFTP_PASSWORD: ${{ secrets.HIDENCLOUD_SFTP_PASSWORD }}

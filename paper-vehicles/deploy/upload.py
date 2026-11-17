@@ -3,7 +3,8 @@
 
 Requires environment variables: SFTP_USERNAME, SFTP_PASSWORD and
 either SFTP_PRIVATE_KEY or SFTP_PASSWORD. Never prints credentials. Does not run remote commands,
-restart the server, modify worlds, or remove an existing plugin.
+send remote commands or modify worlds. After verification it requests a restart
+through the plugin watcher, matching the original Paper plugin.
 """
 import base64
 import hashlib
@@ -20,6 +21,8 @@ PORT = 2022
 # Trust-on-first-use: observed via GitHub's SFTP host check, not verified by provider.
 HOST_KEY_SHA256 = 'SHA256:phWPoAg3Zy1vnk1M1VJBUFGfvS/r0R+7pN8Al82o1IQ'
 TARGET = 'plugins/HorizonVehiclesPaper-dev.jar'
+DATA_DIR = 'plugins/HorizonVehiclesPaper'
+RESTART_MARKER = DATA_DIR + '/.restart-request'
 STAGE = 'configuration'
 
 
@@ -78,6 +81,39 @@ def transfer(sftp, local_path):
             pass
 
 
+def request_restart(sftp, local_path):
+    """Publish the new JAR digest only after transfer has succeeded."""
+    global STAGE
+    STAGE = 'restart_directory'
+    try:
+        sftp.stat(DATA_DIR)
+    except FileNotFoundError:
+        sftp.mkdir(DATA_DIR)
+    digest = hashlib.sha256(Path(local_path).read_bytes()).hexdigest().encode('ascii') + b'\n'
+    temporary = f'{DATA_DIR}/.restart-upload-{uuid.uuid4().hex}.tmp'
+    try:
+        STAGE = 'restart_marker_upload'
+        sftp.putfo(io.BytesIO(digest), temporary, file_size=len(digest), confirm=True)
+        with sftp.open(temporary, 'rb') as remote:
+            if remote.read() != digest:
+                raise ValueError('Restart marker verification failed')
+        STAGE = 'restart_marker_install'
+        try:
+            sftp.stat(RESTART_MARKER)
+        except FileNotFoundError:
+            sftp.rename(temporary, RESTART_MARKER)
+        else:
+            try:
+                sftp.posix_rename(temporary, RESTART_MARKER)
+            except OSError:
+                sftp.remove(RESTART_MARKER)
+                sftp.rename(temporary, RESTART_MARKER)
+    finally:
+        try:
+            sftp.remove(temporary)
+        except OSError:
+            pass
+
 def main():
     import paramiko
     global STAGE
@@ -117,9 +153,10 @@ def main():
             STAGE = 'upload'
             with paramiko.SFTPClient.from_transport(transport) as sftp:
                 transfer(sftp, path)
+                request_restart(sftp, path)
         finally:
             transport.close()
-    print('JAR încărcat și verificat. Serverul NU a fost repornit.')
+    print('JAR verificat și cerere de restart publicată. Restartul necesită watcherul deja activ pe server.')
 
 
 if __name__ == '__main__':

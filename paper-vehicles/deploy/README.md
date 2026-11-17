@@ -1,29 +1,22 @@
-# Livrare SFTP controlată — versiune de dezvoltare
+# Livrare și restart automat — plugin Paper experimental
 
-Workflow-ul `paper-deploy.yml` construiește și testează proiectul de pe branch,
-compară amprenta SSH observată anterior **înainte** de autentificare, apoi încarcă exclusiv
-`plugins/HorizonVehiclesPaper-dev.jar`. Verifică SHA-256 la upload, folosește
-fișier temporar. Dacă înlocuirea atomică nu este suportată, păstrează vechiul
-JAR ca backup `.bak` și încearcă revenirea în caz de eșec; există un scurt interval
-între redenumiri, deci serverul nu trebuie repornit în timpul livrării. Nu execută comenzi pe server, nu schimbă alte pluginuri, lumea sau
-configurația și nu repornește serverul. JAR-ul este doar un schelet: nu există
-încă vehicule jucabile.
+La cerere, workflow-ul `paper-deploy.yml` construiește și testează pluginul,
+verifică amprenta SFTP și încarcă JAR-ul verificat în `plugins/`. La fiecare
+livrare reușită, publică în folderul pluginului o cerere cu SHA-256-ul JAR-ului.
+Watcherul din plugin anunță jucătorii și execută comanda de consolă `restart`
+după 5 secunde, ca în proiectul Paper original. O cerere pentru JAR-ul deja
+încărcat este consumată fără restart, pentru a preveni buclele. Dacă comanda
+nu este disponibilă sau serverul nu repornește automat după oprire, este nevoie
+de intervenție în panel. **Prima activare necesită un restart inițial** dacă
+versiunea care rulează nu are watcherul: SFTP nu poate executa comenzi la distanță.
+Un marker scris la prima instalare este consumat la pornire, fără un al doilea restart.
 
-Configurează **GitHub Actions repository secrets**, niciodată în chat sau în
-repo:
+Înlocuirea se face atomic unde este disponibilă. În caz contrar, JAR-ul vechi
+este redenumit într-un backup `.bak`, apoi JAR-ul nou este instalat; la eșec se
+încearcă revenirea. Există un scurt interval între cele două redenumiri; nu
+reporni serverul în timpul uploadului. O copie backup este păstrată pe server.
 
-- `HIDENCLOUD_SFTP_USERNAME`: utilizatorul SFTP din panel.
-- `HIDENCLOUD_SFTP_PRIVATE_KEY`: cheia SSH **privată ED25519** (preferată);
-  adaugă doar cheia publică în panel. Alternativ, `HIDENCLOUD_SFTP_PASSWORD`
-  este parola SFTP. Dacă ambele există, este folosită doar cheia privată.
-- Amprenta serverului este fixată în `upload.py` la valoarea observată de pe
-  GitHub Actions. Aceasta este trust-on-first-use și nu a fost confirmată
-  independent de HidenCloud; la o schimbare a cheii, livrarea se oprește.
-
-Odată configurate, declanșează `workflow_dispatch` pe branch; dacă GitHub nu
-permite dispatch pentru un workflow absent pe branch-ul implicit, o schimbare
-explicită în `paper-vehicles/deploy-request.txt` declanșează același job.
-Workflow-ul nu rulează la orice push sau la pull request. Păstrează secretul
-limitat la repo și rotește accesul compromis. Acest flux nu a fost încă testat
-cu serverul real și poate eșua dacă SFTP nu permite citire/rename atomic sau
-acces la directorul `plugins`.
+Autentificarea folosește secretele GitHub Actions `HIDENCLOUD_SFTP_USERNAME`
+și `HIDENCLOUD_SFTP_PRIVATE_KEY` sau `HIDENCLOUD_SFTP_PASSWORD`. Amprenta hostului
+este fixată pe baza valorii observate (TOFU), nu confirmată independent. Nu pune
+secrete în repo. Livrarea atinge doar JAR-ul, backup-ul și markerul acestui plugin.

@@ -2,6 +2,8 @@ package ro.exmarius.horizonvehicles.kart;
 
 import io.papermc.paper.entity.TeleportFlag;
 import com.mrcrayfish.vehicle.paper.physics.VehicleCollisionMover;
+import com.mrcrayfish.vehicle.paper.physics.SurfaceProfile;
+import com.mrcrayfish.vehicle.paper.mechanic.WheelType;
 import com.mrcrayfish.vehicle.paper.vehicle.LandVehicleSpec;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.util.Vector;
@@ -131,8 +133,23 @@ public final class GoKartManager implements Listener {
             Player driver = seat.getPassengers().stream().filter(Player.class::isInstance).map(Player.class::cast).findFirst().orElse(null);
             var input = driver == null ? null : driver.getCurrentInput();
             int throttle = input == null ? 0 : (input.isForward() ? 1 : 0) - (input.isBackward() ? 1 : 0);
-            int steering = input == null ? 0 : (input.isRight() ? 1 : 0) - (input.isLeft() ? 1 : 0);
-            var step = motion.tick(throttle, steering, input != null && input.isJump());
+            int steering = input == null ? 0 : (input.isLeft() ? 1 : 0) - (input.isRight() ? 1 : 0);
+            double friction = 0, traction = 0;
+            int contacts = 0;
+            double yaw = Math.toRadians(root.getYaw());
+            for (LandVehicleSpec.Wheel wheel : LandVehicleSpec.GO_KART.wheels()) {
+                double x = wheel.contactX() * Math.cos(yaw) - wheel.contactZ() * Math.sin(yaw);
+                double z = wheel.contactX() * Math.sin(yaw) + wheel.contactZ() * Math.cos(yaw);
+                Location contact = root.clone().add(x, wheel.contactY() - .2, z);
+                if (!root.getWorld().isChunkLoaded(contact.getBlockX() >> 4, contact.getBlockZ() >> 4)) { motion.stop(); return; }
+                SurfaceProfile surface = SurfaceProfile.at(contact.getBlock());
+                if (surface.friction() == 0) continue;
+                friction += surface.friction() * WheelType.STANDARD.surfaceModifier(surface.category());
+                traction += surface.tractionFactor(); contacts++;
+            }
+            if (contacts == 0) traction = 1;
+            else { friction /= contacts; traction /= contacts; }
+            var step = motion.tick(throttle, steering, input != null && input.isJump(), onGround, friction, traction);
             LandVehicleSpec spec = LandVehicleSpec.GO_KART;
             fallVelocity = Math.max(-0.45, fallVelocity - .04);
             Vector requested = new Vector(step.dx(), fallVelocity, step.dz());

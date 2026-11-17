@@ -10,6 +10,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import ro.exmarius.horizonvehicles.kart.GoKartManager;
+import ro.exmarius.horizonvehicles.restart.DeployRestartWatcher;
+import java.nio.file.Files;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.util.HexFormat;
@@ -21,12 +23,20 @@ public final class HorizonVehiclesPlugin extends JavaPlugin implements CommandEx
     private static final UUID PACK_ID = UUID.fromString("fc7756ca-6d5a-45be-9c32-caa85c873088");
     private GoKartManager karts;
     private String packHash;
+    private DeployRestartWatcher restartWatcher;
 
     @Override public void onEnable() {
         try (InputStream stream = getResource("resource-packs/go-kart-experimental.zip")) {
             if (stream == null) throw new IllegalStateException("Go-Kart pack not bundled");
             packHash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(stream.readAllBytes()));
         } catch (Exception error) { throw new IllegalStateException("Cannot load Go-Kart pack", error); }
+        try {
+            String loadedHash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(getFile().toPath())));
+            restartWatcher = new DeployRestartWatcher(this, loadedHash);
+            restartWatcher.start();
+        } catch (Exception error) {
+            throw new IllegalStateException("Cannot enable deploy restart watcher", error);
+        }
         karts = new GoKartManager(this);
         var command = getCommand("hvehicle");
         if (command == null) throw new IllegalStateException("Missing hvehicle command");
@@ -37,7 +47,7 @@ public final class HorizonVehiclesPlugin extends JavaPlugin implements CommandEx
         getLogger().warning("Go-Kart prototype: experimental and not yet validated in game; vehicles are not persistent.");
     }
 
-    @Override public void onDisable() { if (karts != null) karts.removeAll(); }
+    @Override public void onDisable() { if (restartWatcher != null) restartWatcher.stop(); if (karts != null) karts.removeAll(); }
 
     @EventHandler public void onJoin(PlayerJoinEvent event) {
         getServer().getScheduler().runTaskLater(this, () -> {
