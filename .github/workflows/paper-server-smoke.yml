@@ -21,7 +21,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: python3 -m pip install Pillow==11.3.0
       - run: ./paper-vehicles/gradlew -p paper-vehicles build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install offline test client
+        run: npm install --prefix /tmp/horizon-bot mineflayer@4.39.0
       - name: Start disposable Paper server and exercise plugin
+        env:
+          NODE_PATH: /tmp/horizon-bot/node_modules
         run: |
           set -o pipefail
           python3 paper-vehicles/tools/smoke_paper.py paper-vehicles/build/libs/HorizonVehiclesPaper-0.1.0-dev.jar 2>&1 | tee /tmp/paper-smoke.log || {

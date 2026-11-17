@@ -39,7 +39,7 @@ def main(jar):
         (root / 'eula.txt').write_text('eula=true\n')
         (root / 'start.sh').write_text('#!/bin/sh\necho restarted > restart.success\n')
         (root / 'start.sh').chmod(0o755)
-        (root / 'server.properties').write_text('online-mode=false\nserver-port=0\nspawn-protection=0\nview-distance=3\nsimulation-distance=3\n')
+        (root / 'server.properties').write_text('online-mode=false\nserver-port=25565\nspawn-protection=0\nview-distance=3\nsimulation-distance=3\n')
         plugins = root / 'plugins'
         plugins.mkdir()
         shutil.copyfile(jar, plugins / 'HorizonVehiclesPaper-dev.jar')
@@ -72,6 +72,11 @@ def main(jar):
                     raise RuntimeError('Restart watcher did not consume matching digest')
                 if '[HorizonVehiclesPaper] Disabling' in text:
                     raise RuntimeError('Plugin disabled during startup')
+                # Give the offline test player OP before login. The bot checks
+                # entity creation and mounting, not textures or driving.
+                proc.stdin.write('op SmokeBot\n'); proc.stdin.flush()
+                bot = Path(__file__).with_name('smoke_player.cjs').resolve()
+                subprocess.run(['node', str(bot)], check=True, timeout=60)
                 # A different digest must issue the same restart command as the
                 # upstream plugin. Our dummy start.sh records the invocation.
                 marker.write_text('f' * 64 + '\n')
@@ -83,7 +88,7 @@ def main(jar):
                 text = logpath.read_text(errors='replace')
                 if 'Update detected; requesting server restart' not in text:
                     raise RuntimeError('Restart watcher did not announce the update')
-                print(f'Paper 1.21.4 build {build["id"]}: plugin loaded, command responded, stale marker consumed and update triggered restart script.')
+                print(f'Paper 1.21.4 build {build["id"]}: plugin loaded, offline client mounted, stale marker consumed and update triggered restart script.')
             except Exception:
                 print(logpath.read_text(errors='replace')[-30000:], file=sys.stderr)
                 raise
