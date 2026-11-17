@@ -46,6 +46,31 @@ class EmergencyModels(unittest.TestCase):
                                  e['from'][0] < 7 < e['to'][0] and e['from'][1] < 7 < e['to'][1] and
                                  e['from'][2] < -4 < e['to'][2] for e in elements))
 
+    def test_patient_floor_and_equipment_support(self):
+        for name in ('ambulance', 'smurd'):
+            elements = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())['elements']
+            floors = [e for e in elements if e['faces']['up']['texture'] == '#medical_floor']
+            # Generator shifts x and z by eight. The entire centre aisle is
+            # solid and meets the forward floor and rear wheelhouse liners.
+            for x in (-6.39, -4.0, 0.0, 4.0, 6.39):
+                for z in (-21.20, -18.0, -13.8, -8.60, -8.50, -5.0):
+                    self.assertTrue(any(e['from'][0] <= x + 8 <= e['to'][0] and
+                                        e['from'][2] <= z + 8 <= e['to'][2] and
+                                        abs(e['to'][1] - 4.36) < 0.001 for e in floors),
+                                    (name, x, z))
+            # The bag and oxygen cylinder rest completely on the raised shelf,
+            # not floating over its outside edge.
+            shelf = next(e for e in floors if e['from'][0] == 14.96 and e['to'][0] == 16.19)
+            bag = next(e for e in elements if e['faces']['up']['texture'] == '#medical_red' and
+                       e['from'][1] == 8.57)
+            cylinder = next(e for e in elements if e['faces']['up']['texture'] == '#medical_white' and
+                            e['from'][1] == 8.57)
+            for item in (bag, cylinder):
+                for axis in (0, 2):
+                    self.assertLessEqual(shelf['from'][axis], item['from'][axis])
+                    self.assertGreaterEqual(shelf['to'][axis], item['to'][axis])
+                self.assertAlmostEqual(item['from'][1] - shelf['to'][1], 0.02)
+
     def test_raked_pillars_reach_roof_and_vans_have_distinct_fronts(self):
         grilles = []
         for name in ('ambulance', 'smurd'):
