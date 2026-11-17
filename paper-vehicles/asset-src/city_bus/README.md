@@ -12,3 +12,8 @@ wheels at the upstream frame positions, mapping materials for Horizon; it does
 not modify the shapes or UVs. The baked wheels are static placeholders; the WIP
 prototype is not registered or playable because this mod currently animates only
 four wheels and has no passenger-seat integration. No claim of in-game compatibility.
+
+`yellow_bus_frame.json` is the unchanged MIT-licensed upstream frame definition
+from the same revision. Its coordinates are Automobility model-space values,
+not verified Paper mount locations. It is retained for conversion and is not
+currently used by the plugin.

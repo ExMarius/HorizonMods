@@ -51,3 +51,11 @@ Modelul și texturile sursă MIT sunt copiate în `asset-src/city_bus/`. Nu sunt
 încă convertite în resource pack și nu sunt incluse în JAR. Formatul OBJ nu este
 acceptat direct de un client vanilla Paper 1.21.4; portul necesită o conversie
 reală și testare vizuală, nu redenumirea fișierului.
+
+Analiza offline `python3 paper-vehicles/tools/audit_bus_mesh.py` inventariază
+geometria originală: corpul conține 379 fețe, iar roata conține 64; acestea nu
+pot fi importate ca OBJ în pack-ul vanilla 1.21.4. Cifrele nu dovedesc că toate
+fețele se pot converti fără pierderi. Fișierul original de proprietăți pentru
+bus (`yellow_bus_frame.json`) descrie șase roți și 13 poziții de pasager, plus
+șofer, în coordonatele Automobility. Ele nu sunt încă adaptate la Paper, montate
+sau testate și nu garantează că jucătorii încap în aceste locuri.

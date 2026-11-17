@@ -36,6 +36,23 @@ class PaperScaffold(unittest.TestCase):
         self.assertNotIn('  vehicle:', plugin)
 
 class ModelAudit(unittest.TestCase):
+    def test_source_mesh_inventory_and_original_bus_layout(self):
+        import importlib.util
+        import json
+        spec = importlib.util.spec_from_file_location('audit_bus_mesh', PAPER / 'tools/audit_bus_mesh.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        source = PAPER / 'asset-src/city_bus'
+        report = module.analyze(source / 'bus.obj')
+        self.assertEqual(report['faces'], 379)
+        self.assertEqual(report['rectangular_quads'], 337)
+        self.assertEqual(report['other_quads'], 10)
+        self.assertEqual(report['degenerate_quads'], 32)
+        frame = json.loads((source / 'yellow_bus_frame.json').read_text())['display']
+        self.assertEqual(len(frame['wheels']), 6)
+        self.assertEqual(len(frame['passenger_seats']), 13)
+        self.assertEqual(frame['driver_seat'], [12, 12, 58])
+
     def test_catalog_audit_reports_real_conversion_blockers(self):
         import importlib.util
         spec = importlib.util.spec_from_file_location('audit_models', PAPER / 'tools/audit_models.py')
