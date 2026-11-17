@@ -46,6 +46,7 @@ class GoKartConversion(unittest.TestCase):
             second = Path(temp) / 'second.zip'
             converter.build_zip(second)
             self.assertEqual(path.read_bytes(), second.read_bytes())
+            self.assertEqual(path.read_bytes(), (PAPER / 'public/go-kart.zip').read_bytes())
 
 if __name__ == '__main__':
     unittest.main()

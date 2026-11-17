@@ -1,10 +1,14 @@
-# Horizon Vehicles pentru Paper — început, nu este gata de joc
+# Horizon Vehicles pentru Paper — Go-Kart experimental
 
-Plugin separat pentru **Paper 1.21.4 / Java 21**. Acest director nu înlocuiește
-modul Horizon. `/hvehicle list` enumeră vehiculele planificate, nu vehicule
-jucabile. Nu există spawn, condus, scaune funcționale, resource pack activ sau rețete în acest
-checkpoint. Nu instala pluginul vechi alături cu intenția că acest proiect i-a
-înlocuit resursele sau funcțiile.
+Plugin separat pentru Paper 1.21.4 / Java 21. Comenzile OP sunt
+`/hvehicle spawn go_kart`, `/hvehicle remove`, `/hvehicle fuel`, `/hvehicle pack`
+și `/hvehicle list`. Click dreapta pentru urcare, WASD pentru condus, spațiu
+pentru frână, Shift pentru coborâre. Resource pack-ul Go-Kart este inclus în JAR
+și este oferit clienților prin URL-ul public al acestui branch; acceptarea este
+necesară pentru a vedea modelul. Vehiculele sunt temporare și sunt eliminate la
+oprirea pluginului. Acesta este un prototip, **netestat încă în joc**: scaunul,
+modelul, mișcarea, coliziunile și livrarea pack-ului necesită validare. Nu sunt
+implementate rețeta, obiectul, salvarea, localizarea sau restul vehiculelor.
 
 Codul pluginului Paper existent a fost copiat separat în
 `../third_party/paper_vehicle_reference/` pentru a fi studiat și portat
@@ -32,8 +36,7 @@ vor fi portate pe rând, cu teste pentru model, mișcare și scaune multiplayer.
 
 Workflow-ul `.github/workflows/paper-vehicles.yml` instalează Java 21, verifică
 catalogul și încearcă să construiască JAR-ul pe GitHub Actions. Dacă reușește,
-JAR-ul de dezvoltare este disponibil 14 zile ca artifact al rulării. Este doar
-scheletul descris mai sus, **nu un plugin cu vehicule funcționale**. Dacă
+JAR-ul de dezvoltare este disponibil 14 zile ca artifact al rulării. Este un prototip netestat în joc. Dacă
 workflow-ul sau permisiunile repository-ului nu permit rularea, nu există un
 build verificat până când eroarea nu este rezolvată.
 
@@ -85,15 +88,11 @@ secretelor și a amprentei confirmate de HidenCloud. Nu repornește serverul.
 `tools/compile_go_kart.py` construiește un pack experimental din modelele și
 texturile proprii Horizon: caroserie, roți, volan și motor. Cuburile cu unghiuri
 neacceptate de Minecraft 1.21.4 sunt separate pe pivoti; datele lor precise
-sunt păstrate în `go_kart_parts.json`, fără rotunjirea unghiurilor. Pack-ul e
-în JAR, dar rendererul Paper încă nu desenează acele părți și nu sunt integrate
-condusul, scaunul, combustibilul sau coliziunile. Nu este încă un vehicul
-jucabil. Emisia luminii nu este implementată de formatul vanilla folosit.
+sunt păstrate în `go_kart_parts.json`, fără rotunjirea unghiurilor. Pack-ul e în JAR. Rendererul, scaunul și fizica de bază sunt conectate experimental, dar încă nu au fost validate în joc. Emisia luminii nu este implementată de formatul vanilla folosit.
 
 ### Integrare în curs
 
 `GoKartRig` este un renderer experimental pentru grupurile din pack, cu rotații
 în jurul pivotului sursă. `GoKartMotion` modelează separat accelerația, frâna,
-virarea și consumul. Aceste componente **nu sunt încă legate de comenzi, scaun,
-coliziunile lumii sau livrarea pack-ului** și nu au fost verificate în joc. Nu
-activa spawn-ul până nu sunt integrate și testate împreună.
+virarea și consumul. Aceste componente sunt legate experimental de comenzi, scaun,
+coliziuni aproximative și livrarea pack-ului, dar nu au fost verificate în joc.
