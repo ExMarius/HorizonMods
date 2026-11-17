@@ -1,1 +1,1 @@
-Cerere utilizator: livrare Go-Kart cu watcher și restart automat după actualizări.
+Cerere utilizator: livrare Go-Kart verificat cu aliasuri și restart automat.
