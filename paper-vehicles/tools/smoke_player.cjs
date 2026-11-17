@@ -1,8 +1,9 @@
-// Offline protocol client: checks spawn, display entities and mounting, not visuals or driving.
+// Offline protocol client: checks spawn, mounting and forward movement, not visual fidelity.
 const mineflayer = require('mineflayer')
 const bot = mineflayer.createBot({ host: '127.0.0.1', port: 25565, username: 'SmokeBot', version: '1.21.4', auth: 'offline' })
 let done = false
 let spawned = false
+let driving = false
 const timeout = setTimeout(() => fail('timed out'), 45000)
 function fail(message) {
   if (done) return
@@ -13,7 +14,7 @@ function fail(message) {
 function success() {
   if (done) return
   done = true; clearTimeout(timeout)
-  console.log('Offline player created Go-Kart, saw display entities and mounted the seat.')
+  console.log('Offline player created Go-Kart, saw display entities, mounted and drove forward.')
   bot.quit()
 }
 bot.on('error', e => fail(e.message))
@@ -31,7 +32,22 @@ const interval = setInterval(() => {
   const entities = Object.values(bot.entities)
   const displays = entities.filter(e => e.name === 'item_display')
   const target = entities.find(e => e.name === 'interaction')
-  if (bot.vehicle && displays.length >= 20) return success()
+  if (bot.vehicle && displays.length >= 20) {
+    if (!driving) {
+      driving = true
+      const start = bot.vehicle.position.clone()
+      const input = setInterval(() => bot._client.write('player_input', { inputs: { forward: true } }), 50)
+      setTimeout(() => {
+        clearInterval(input)
+        bot._client.write('player_input', { inputs: {} })
+        if (!bot.vehicle) return fail('player dismounted during movement')
+        const distance = start.distanceTo(bot.vehicle.position)
+        if (distance < .3) return fail('vehicle did not move: ' + distance)
+        success()
+      }, 4000)
+    }
+    return
+  }
   if (target && displays.length >= 20) {
     try { bot.activateEntity(target) } catch (e) { fail(e.message) }
   }
