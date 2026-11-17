@@ -37,6 +37,8 @@ def main(jar):
         root = Path(tmp)
         (root / 'paper.jar').write_bytes(content)
         (root / 'eula.txt').write_text('eula=true\n')
+        (root / 'start.sh').write_text('#!/bin/sh\necho restarted > restart.success\n')
+        (root / 'start.sh').chmod(0o755)
         (root / 'server.properties').write_text('online-mode=false\nserver-port=0\nspawn-protection=0\nview-distance=3\nsimulation-distance=3\n')
         plugins = root / 'plugins'
         plugins.mkdir()
@@ -70,7 +72,18 @@ def main(jar):
                     raise RuntimeError('Restart watcher did not consume matching digest')
                 if '[HorizonVehiclesPaper] Disabling' in text:
                     raise RuntimeError('Plugin disabled during startup')
-                print(f'Paper 1.21.4 build {build["id"]}: plugin loaded, command responded, stale marker consumed.')
+                # A different digest must issue the same restart command as the
+                # upstream plugin. Our dummy start.sh records the invocation.
+                marker.write_text('f' * 64 + '\n')
+                deadline = time.monotonic() + 90
+                while time.monotonic() < deadline and not (root / 'restart.success').exists():
+                    time.sleep(1)
+                if not (root / 'restart.success').exists():
+                    raise RuntimeError('Restart command did not invoke the configured start script')
+                text = logpath.read_text(errors='replace')
+                if 'Update detected; requesting server restart' not in text:
+                    raise RuntimeError('Restart watcher did not announce the update')
+                print(f'Paper 1.21.4 build {build["id"]}: plugin loaded, command responded, stale marker consumed and update triggered restart script.')
             except Exception:
                 print(logpath.read_text(errors='replace')[-30000:], file=sys.stderr)
                 raise
