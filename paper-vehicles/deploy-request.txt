@@ -1,1 +1,1 @@
-Cerere utilizator: reluare livrare SFTP, fără restart.
+Cerere utilizator: livrare prototip Go-Kart Paper, fără restart automat.
