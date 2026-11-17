@@ -7,6 +7,7 @@ author: ExMarius
 commands:
   hvehicle:
     description: Experimental Go-Kart commands.
+    aliases: [vehicle, vehicel]
     usage: /hvehicle <list|spawn [go_kart]|remove|fuel|pack>
     permission: horizonvehicles.admin
 permissions:

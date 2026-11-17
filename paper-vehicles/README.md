@@ -2,7 +2,7 @@
 
 Plugin separat pentru Paper 1.21.4 / Java 21. Comenzile OP sunt
 `/hvehicle spawn go_kart`, `/hvehicle remove`, `/hvehicle fuel`, `/hvehicle pack`
-și `/hvehicle list`. Click dreapta pentru urcare, WASD pentru condus, spațiu
+și `/hvehicle list` (aliasuri `/vehicle` și `/vehicel` dacă nu sunt ocupate de alt plugin). Click dreapta pentru urcare, WASD pentru condus, spațiu
 pentru frână, Shift pentru coborâre. Resource pack-ul Go-Kart este inclus în JAR
 și este oferit clienților prin URL-ul public al acestui branch; acceptarea este
 necesară pentru a vedea modelul. Vehiculele sunt temporare și sunt eliminate la
@@ -16,7 +16,7 @@ selectiv. Copia din `src/main/java` este inclusă în build, dar pluginul vechi
 nu este activat și nu sunt incluse modelele, sunetele sau resource pack-ul lui. Vezi și `../docs/paper-transfer-plan-ro.md`
 pentru licențe și starea fiecărui vehicul. Păstrează GPL și notificările
 necesare când se adaptează cod. Modelele generate în `../content/` sunt surse
-pentru port, nu sunt încă un resource pack valid pentru Paper.
+pentru port; pack-ul experimental Go-Kart este generat în timpul build-ului.
 
 ## Build (într-un mediu cu acces la repository-urile Gradle și Paper)
 
@@ -43,7 +43,7 @@ build verificat până când eroarea nu este rezolvată.
 ## Importul codului
 
 Codul Java al pluginului Paper și testul indicatorului de combustibil provin din pluginul Paper al lui ExMarius/MrCrayfish și sunt
-incluse în build, dar nu sunt încă legate de un vehicul. Entrypoint-ul pluginului vechi nu este activat; nu se încarcă resource pack-ul lui. `LICENSE` conține
+incluse în build; componentele de coliziune și specificația Go-Kart sunt folosite de prototip. Entrypoint-ul pluginului vechi nu este activat; nu se încarcă resource pack-ul lui. `LICENSE` conține
 textul complet GPLv3; `THIRD-PARTY.md` documentează sursa și excepțiile. Testele rămase și generatorul de pack sunt păstrate ca referință, fără a le
 activa și fără resursele originale. Nu rulăm generatorul original nefiltrat:
 el include și vehicule/componente cu mențiune ARR și trimite la resurse externe.
@@ -112,3 +112,8 @@ nu au fost încă verificate în joc.
 Livrarea scrie un marker SHA-256 după upload, iar watcherul pluginului anunță și
 execută `restart` după 5 secunde. Vezi `deploy/README.md` pentru condiția de
 primă activare și limitările serverului.
+
+Testul automat pornește un server Paper 1.21.4 separat și un client offline:
+verifică spawnul, urcarea, deplasarea orizontală și declanșarea scriptului de
+restart. Nu verifică fidelitatea vizuală, multiplayer, terenuri complexe sau
+comportamentul serverului real.

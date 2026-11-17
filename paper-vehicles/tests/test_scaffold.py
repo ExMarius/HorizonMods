@@ -34,6 +34,7 @@ class PaperScaffold(unittest.TestCase):
         plugin = (PAPER / 'src/main/resources/plugin.yml').read_text()
         self.assertIn('hvehicle:', plugin)
         self.assertNotIn('  vehicle:', plugin)
+        self.assertIn('aliases: [vehicle, vehicel]', plugin)
 
 class ModelAudit(unittest.TestCase):
     def test_source_mesh_inventory_and_original_bus_layout(self):
