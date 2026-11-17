@@ -146,6 +146,27 @@ def generate_vehicle_textures() -> None:
         write_png(bdir / (service + "_sign_reverse.png"), w, h,
                   [pixels[y*w + w - 1 - x] for y in range(h) for x in range(w)])
 
+    # Brushed aluminium roller shutters and dedicated fire brigade lettering.
+    pixels = []
+    for y in range(32):
+        for x in range(32):
+            v = 105 if y % 4 == 0 else (222 if y % 4 == 1 else 179)
+            pixels.append((v, v + 3, min(255, v + 6), 255))
+    write_png(bdir / "fire_shutter.png", 32, 32, pixels)
+    for reverse in (False, True):
+        w, h = 128, 16
+        pix = [(185, 26, 32, 255)] * (w*h)
+        label = "POMPIERII 112"
+        x0 = (w - len(label) * 8 + 2) // 2
+        for i, ch in enumerate(label):
+            for y, row in enumerate(font.get(ch, ("000",)*5)):
+                for x, bit in enumerate(row):
+                    if bit == "1":
+                        for dy in range(2):
+                            for dx in range(2): pix[(3+y*2+dy)*w+x0+i*8+x*2+dx] = (246, 248, 247, 255)
+        if reverse: pix = [pix[y*w+w-1-x] for y in range(h) for x in range(w)]
+        write_png(bdir / ("fire_sign_reverse.png" if reverse else "fire_sign.png"), w, h, pix)
+
     # Large service markings on each bonnet, distinct from the red/yellow rear chevrons.
     for name, base, ink, label in (
         ("medical_saj_hood", (239, 243, 245, 255), (24, 78, 166, 255), "AMBULANTA"),
@@ -734,6 +755,13 @@ def generate_item_textures() -> None:
         pal = {".": T, "S": (30, 98, 221, 255), "K": (30, 33, 39, 255),
                "W": body, "O": stripe, "G": (95, 99, 104, 255)}
         grid_to_png(idir / (n + ".png"), emergency_art, pal)
+
+    fire_art = ["................", "..SSSSSSSSSS....", "..KKKKKKKKKKK...", "..KGGGGGRRRRKK..",
+                "..KGGGGGRRRRRRK.", "..KGGGGGRRRRRRK.", ".KGGGGGGRRRRRRK.", ".KOOOOOOOOOOOOK.",
+                ".KRRRRRRRRRRRRK.", ".KRRRRRRRRRRRRK.", ".KKKKKKKKKKKKKK.", "..KKK......KKK..",
+                ".KGGGK....KGGGK.", ".KGGGK....KGGGK.", "..KKK......KKK..", "................"]
+    grid_to_png(idir / "fire_truck.png", fire_art, {".": T, "S": (38, 104, 216, 255),
+        "K": (30, 33, 39, 255), "R": (185, 26, 32, 255), "O": (231, 241, 39, 255), "G": (173, 184, 193, 255)})
 
     # 1d. Romanian Police Car (`Poliția Română`) item icon (`police_car.png`)
     pol_pal = {
@@ -2237,6 +2265,95 @@ def generate_models() -> None:
             "elements": van_elements,
         }, indent=2) + "\n")
 
+    # Independent cab-over fire engine, inspired by Romanian ISU pumpers.
+    # Equipment shutters, pump gauges and roof ladder are static visual details.
+    fire = [
+        obox([-8.7, 2.8, -8.5], [8.7, 3.9, 5.7], "#frame"),
+        obox([-6.1, 2.8, -21.5], [6.1, 3.9, -8.53], "#frame"),
+        obox([-6.1, 2.8, 5.73], [6.1, 3.9, 18.7], "#frame"),
+        obox([-8.1, 4.0, 16.13], [8.1, 10.9, 18.7], "#red"),
+        *sculpted_wheel_arch(cz=11.0, vx_in=8.22, vx_body=12.25, vx_flare=12.40,
+            vy_crown=7.85, vy_top=10.9, half_crown=1.15, slope_len=3.1, slope_deg=38,
+            vz_outer_min=5.75, vz_outer_max=18.75, vy_jamb_bot=3.1,
+            liner_x0=5.85, liner_x1=6.35, liner_y0=3.15,
+            body_tex="#red", body_tint=None, flare_tex="#frame", flare_tint=None),
+        *sculpted_wheel_arch(cz=-13.8, vx_in=8.22, vx_body=12.25, vx_flare=12.40,
+            vy_crown=7.85, vy_top=10.9, half_crown=1.15, slope_len=3.1, slope_deg=38,
+            vz_outer_min=-21.55, vz_outer_max=-8.55, vy_jamb_bot=3.1,
+            liner_x0=6.4, liner_x1=6.9, liner_y0=3.15,
+            body_tex="#red", body_tint=None, flare_tex="#frame", flare_tint=None),
+        obox([-12.25, 3.95, -8.50], [-10.0, 10.90, 5.70], "#red"),
+        obox([10.0, 3.95, -8.50], [12.25, 10.90, 5.70], "#red"),
+        # Equipment compartment: separate closed shutters on the side surfaces.
+        obox([-12.25, 10.92, -21.5], [12.25, 22.0, -3.8], "#red"),
+        obox([-12.25, 22.02, -21.5], [12.25, 23.0, -3.8], "#red"),
+        *[obox([x0, 11.55, z0], [x1, 19.95, z1], "#shutter", full_uv_faces=("east", "west"))
+          for x0,x1 in ((-12.36,-12.27),(12.27,12.36))
+          for z0,z1 in ((-20.8,-14.1),(-13.4,-5.0))],
+        *[obox([x0, 12.15, z0], [x1, 12.45, z1], "#frame")
+          for x0,x1 in ((-12.40,-12.37),(12.37,12.40))
+          for z0,z1 in ((-18.6,-16.4),(-10.7,-8.5))],
+        *[obox([x0, 9.45, -21.45], [x1, 10.12, 18.65], "#yellow")
+          for x0,x1 in ((-12.34,-12.27),(12.27,12.34))],
+        # Crew cab: broad vertical windscreen and two side glazing openings.
+        obox([-12.2, 10.92, -3.75], [12.2, 13.35, 18.75], "#red"),
+        obox([-12.2, 21.50, -3.75], [12.2, 22.50, 18.75], "#red"),
+        obox([-12.0, 13.37, 18.5], [-10.6, 21.48, 18.75], "#red"),
+        obox([10.6, 13.37, 18.5], [12.0, 21.48, 18.75], "#red"),
+        obox([-10.58, 13.40, 18.51], [10.58, 21.45, 18.69], "#glass", full_uv_faces=("north", "south")),
+        *[obox([x0, 13.40, -3.7], [x1, 21.45, -3.1], "#red")
+          for x0,x1 in ((-12.2,-12.0),(12.0,12.2))],
+        *[obox([x0, 13.40, 5.0], [x1, 21.45, 5.55], "#red")
+          for x0,x1 in ((-12.2,-12.0),(12.0,12.2))],
+        *[obox([x0, 13.42, z0], [x1, 21.40, z1], "#glass", full_uv_faces=("east", "west"))
+          for x0,x1 in ((-12.15,-12.05),(12.05,12.15))
+          for z0,z1 in ((-3.05,4.95),(5.60,18.45))],
+        # Cab seats and dark dashboard, behind the windshield.
+        obox([-9.5, 11.0, 15.3], [9.5, 12.45, 18.45], "#frame"),
+        *[obox([x0, 6.0, z0], [x1, 7.4, z1], "#seat") for x0,x1 in ((-8,-2),(2,8)) for z0,z1 in ((-1,3.5),(6.0,10.5))],
+        *[obox([x0, 7.42, z0], [x1, 17.0, z1], "#seat") for x0,x1 in ((-8,-2),(2,8)) for z0,z1 in ((-1.8,-1.05),(5.2,5.95))],
+        # Flat truck nose with grille, rectangular lamps, bumper and plate.
+        obox([-12.15, 3.0, 18.8], [12.15, 5.8, 20.0], "#frame"),
+        obox([-12.15, 10.92, 18.77], [12.15, 13.33, 19.0], "#red"),
+        obox([-7.8, 6.10, 18.78], [7.8, 10.72, 19.30], "#grille", full_uv_faces=("south",)),
+        obox([-11.55, 6.15, 18.8], [-8.0, 10.7, 19.25], "#lamp", full_uv_faces=("south",)),
+        obox([8.0, 6.15, 18.8], [11.55, 10.7, 19.25], "#lamp", full_uv_faces=("south",)),
+        obox([-3.3, 3.6, 20.02], [3.3, 5.15, 20.18], "#plate"),
+        *[obox([x0, 11.1, -3.5], [x1, 13.0, 4.8], tex, full_uv_faces=(face,))
+          for x0,x1,tex,face in ((12.37,12.43,"#sign","east"),(-12.43,-12.37,"#sign_reverse","west"))],
+        *[obox([x0, 11.2, 10.0], [x1, 14.0, 12.0], "#frame") for x0,x1 in ((-13.5,-12.3),(12.3,13.5))],
+        # Rear warning chevrons and pump-control impression on the tail.
+        obox([-8.2, 4.0, -21.50], [8.2, 10.90, -21.32], "#red"),
+        obox([-9.0, 6.0, -21.58], [9.0, 10.60, -21.52], "#rear_mark", full_uv_faces=("north",)),
+        obox([-12.0, 4.0, -22.12], [-10.6, 10.6, -21.90], "#taillight"),
+        obox([10.6, 4.0, -22.12], [12.0, 10.6, -21.90], "#taillight"),
+        obox([-8.5, 11.2, -21.58], [8.5, 18.0, -21.52], "#shutter", full_uv_faces=("north",)),
+        obox([-3.0, 12.0, -21.70], [3.0, 16.5, -21.60], "#dash", full_uv_faces=("north",)),
+        obox([-11.9, 2.75, -22.4], [11.9, 3.90, -21.6], "#frame"),
+        # Ladder rails and rungs securely placed above the equipment roof.
+        obox([-8.8, 23.12, -20.8], [-8.2, 24.0, -4.7], "#chrome"),
+        obox([-3.8, 23.12, -20.8], [-3.2, 24.0, -4.7], "#chrome"),
+        *[obox([-8.18, 23.30, z], [-3.82, 23.70, z+0.35], "#chrome")
+          for z in (-19.5,-17.0,-14.5,-12.0,-9.5,-7.0,-5.1)],
+        # Hose bundle and monitor on roof, plus front/rear blue beacon lenses.
+        obox([3.0, 23.12, -18.5], [8.8, 24.45, -8.5], "#frame"),
+        obox([4.0, 24.47, -16.8], [7.8, 25.05, -10.2], "#yellow"),
+        obox([-7.0, 22.52, 8.0], [7.0, 23.05, 10.0], "#frame"),
+        obox([-6.8, 23.07, 8.05], [-1.0, 24.0, 9.95], "#blue"),
+        obox([1.0, 23.07, 8.05], [6.8, 24.0, 9.95], "#blue"),
+    ]
+    (mdir / "fire_truck_body.json").write_text(json.dumps({"textures": {
+        "red": "gokart:block/medical_red", "yellow": "gokart:block/medical_yellow",
+        "frame": "gokart:block/kart_frame", "carbon": "gokart:block/kart_carbon",
+        "chrome": "gokart:block/kart_chrome", "shutter": "gokart:block/fire_shutter",
+        "glass": "gokart:block/medical_glass", "seat": "gokart:block/kart_seat",
+        "grille": "gokart:block/medical_smurd_grille", "lamp": "gokart:block/medical_headlamp",
+        "taillight": "gokart:block/kart_taillight", "plate": "gokart:block/plate_ro",
+        "sign": "gokart:block/fire_sign", "sign_reverse": "gokart:block/fire_sign_reverse",
+        "blue": "gokart:block/siren_blue", "dash": "gokart:block/kart_dash",
+        "rear_mark": "gokart:block/smurd_side_rear"},
+        "elements": fire}, indent=2) + "\n")
+
     # =========================================================================
     # 7b. Dynamic FiveM Girofar Strobe Pods (`siren_red.json`, `siren_blue.json`)
     # =========================================================================
@@ -2274,6 +2391,7 @@ ITEMS = [
     "atv",
     "ambulance",
     "smurd",
+    "fire_truck",
     "police_car",
     "small_engine_iron",
     "small_engine_gold",
@@ -2541,6 +2659,14 @@ def generate_recipes() -> None:
                     "W": "gokart:standard_wheel"},
             "result": {"id": "gokart:smurd", "count": 1},
         },
+        "fire_truck": {
+            "type": "minecraft:crafting_shaped", "category": "transportation",
+            "pattern": ["DRB", "ICI", "WEW"],
+            "key": {"D": "minecraft:red_dye", "R": "minecraft:redstone", "B": "minecraft:lapis_lazuli",
+                    "I": "minecraft:iron_block", "C": "minecraft:water_bucket", "E": "gokart:small_engine_diamond",
+                    "W": "gokart:standard_wheel"},
+            "result": {"id": "gokart:fire_truck", "count": 1},
+        },
         # 13. Romanian Police Car (`Poliția Română` — Redstone + Lapis Girofar, Iron Sedan, Diamond/Gold Engine, Racing/Sports Wheels)
         "police_car": {
             "type": "minecraft:crafting_shaped",
@@ -2727,6 +2853,10 @@ def generate_lang() -> None:
         "gokart.vehicle.ambulance": "Romanian Ambulance",
         "gokart.tooltip.place_ambulance": "Right-click to deploy Romanian Ambulance ([H]: sirenă / girofar)",
         "gokart.msg.placed_ambulance": "Romanian Ambulance: Deployed!",
+        "item.gokart.fire_truck": "Fire Engine",
+        "gokart.vehicle.fire_truck": "Fire Engine",
+        "gokart.tooltip.place_fire_truck": "Right-click to deploy fire engine ([H]: siren)",
+        "gokart.msg.placed_fire_truck": "Fire engine deployed!",
         "item.gokart.smurd": "SMURD Rescue Ambulance",
         "gokart.vehicle.smurd": "SMURD Rescue Ambulance",
         "gokart.tooltip.place_smurd": "Right-click to deploy SMURD Rescue Ambulance ([H]: sirenă / girofar)",
@@ -2848,6 +2978,10 @@ def generate_lang() -> None:
         "gokart.vehicle.ambulance": "Ambulanță Română",
         "gokart.tooltip.place_ambulance": "Click-dreapta pentru a plasa Ambulanță Română ([H]: sirenă / girofar)",
         "gokart.msg.placed_ambulance": "Ambulanță Română: Plasată!",
+        "item.gokart.fire_truck": "Autospecială de Pompieri",
+        "gokart.vehicle.fire_truck": "Autospecială de Pompieri",
+        "gokart.tooltip.place_fire_truck": "Click-dreapta pentru autospeciala de pompieri ([H]: sirenă)",
+        "gokart.msg.placed_fire_truck": "Autospecială de pompieri plasată!",
         "item.gokart.smurd": "Ambulanță SMURD",
         "gokart.vehicle.smurd": "Ambulanță SMURD",
         "gokart.tooltip.place_smurd": "Click-dreapta pentru a plasa Ambulanță SMURD ([H]: sirenă / girofar)",
@@ -3031,6 +3165,7 @@ def generate_creative_tab() -> None:
             "gokart:atv",
             "gokart:ambulance",
             "gokart:smurd",
+            "gokart:fire_truck",
             "gokart:off_roader",
             "gokart:police_car",
             "gokart:small_engine_iron",
@@ -3102,7 +3237,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.12.8 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.13.0 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

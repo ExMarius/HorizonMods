@@ -280,6 +280,7 @@ pub(in crate::game) fn items(items: &mut Vec<Item>) {
     push_item(items, rules::ITEM_ATV, 1, Rarity::Uncommon);
     push_item(items, rules::ITEM_AMBULANCE, 1, Rarity::Rare);
     push_item(items, rules::ITEM_SMURD, 1, Rarity::Rare);
+    push_item(items, rules::ITEM_FIRE_TRUCK, 1, Rarity::Rare);
     push_item(items, rules::ITEM_POLICE_CAR, 1, Rarity::Epic);
     push_item(items, rules::ITEM_ENGINE_IRON, 1, Rarity::Common);
     push_item(items, rules::ITEM_ENGINE_GOLD, 1, Rarity::Uncommon);
@@ -367,6 +368,7 @@ fn kart_summon_nbt(kind: rules::VehicleKind) -> Compound {
         }
         rules::VehicleKind::Ambulance => { tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_AMBULANCE))); }
         rules::VehicleKind::Smurd => { tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_SMURD))); }
+        rules::VehicleKind::FireTruck => { tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_FIRE_TRUCK))); }
         rules::VehicleKind::PoliceCar => {
             tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_POLICE_CAR)));
         }
@@ -432,6 +434,7 @@ fn prepare_kart_mob(game: &mut Game<'_>, entity_id: u32, yaw: f32, kind: rules::
             }
             rules::VehicleKind::Ambulance => { game.native_entity_add_tag(eref, rules::ENTITY_TAG_AMBULANCE); }
             rules::VehicleKind::Smurd => { game.native_entity_add_tag(eref, rules::ENTITY_TAG_SMURD); }
+            rules::VehicleKind::FireTruck => { game.native_entity_add_tag(eref, rules::ENTITY_TAG_FIRE_TRUCK); }
             rules::VehicleKind::PoliceCar => {
                 game.native_entity_add_tag(eref, rules::ENTITY_TAG_POLICE_CAR);
             }
@@ -506,6 +509,8 @@ fn lookup_kart_uuid(
             rules::KartSpec::default_ambulance()
         } else if tags.as_ref().is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_SMURD)) {
             rules::KartSpec::default_smurd()
+        } else if tags.as_ref().is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_FIRE_TRUCK)) {
+            rules::KartSpec::default_fire_truck()
         } else if tags
             .as_ref()
             .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_ATV))
@@ -649,6 +654,7 @@ pub(in crate::game) fn use_item_on(
                 rules::VehicleKind::Atv => tr("gokart.msg.placed_atv", "Utility ATV deployed!"),
                 rules::VehicleKind::Ambulance => tr("gokart.msg.placed_ambulance", "Ambulance deployed!"),
                 rules::VehicleKind::Smurd => tr("gokart.msg.placed_smurd", "SMURD deployed!"),
+                rules::VehicleKind::FireTruck => tr("gokart.msg.placed_fire_truck", "Fire truck deployed!"),
                 rules::VehicleKind::PoliceCar => tr(
                     "gokart.msg.placed_police_car",
                     "Poliția Română Patrol Car deployed! Press [H] while driving for Siren & Girofar.",
@@ -973,6 +979,7 @@ fn vehicle_kind_from_tags(tags: &[String]) -> Option<rules::VehicleKind> {
                 | rules::ENTITY_TAG_ATV
                 | rules::ENTITY_TAG_AMBULANCE
                 | rules::ENTITY_TAG_SMURD
+                | rules::ENTITY_TAG_FIRE_TRUCK
                 | rules::ENTITY_TAG_POLICE_CAR
                 | rules::ENTITY_TAG_DACIA_LOGAN
         )
@@ -986,6 +993,8 @@ fn vehicle_kind_from_tags(tags: &[String]) -> Option<rules::VehicleKind> {
         Some(rules::VehicleKind::Ambulance)
     } else if tags.iter().any(|t| t == rules::ENTITY_TAG_SMURD) {
         Some(rules::VehicleKind::Smurd)
+    } else if tags.iter().any(|t| t == rules::ENTITY_TAG_FIRE_TRUCK) {
+        Some(rules::VehicleKind::FireTruck)
     } else if tags.iter().any(|t| t == rules::ENTITY_TAG_ATV) {
         Some(rules::VehicleKind::Atv)
     } else if tags.iter().any(|t| t == rules::ENTITY_TAG_QUAD_BIKE) {
@@ -1234,6 +1243,7 @@ pub(in crate::game) fn perform_command(
             make_kart_item(game, rules::KartSpec::default_atv()),
             make_kart_item(game, rules::KartSpec::default_ambulance()),
             make_kart_item(game, rules::KartSpec::default_smurd()),
+            make_kart_item(game, rules::KartSpec::default_fire_truck()),
             make_kart_item(game, rules::KartSpec::default_off_roader()),
             make_kart_item(game, rules::KartSpec::default_police_car()),
             stack_of(rules::ITEM_ENGINE_GOLD, 1),
@@ -1265,6 +1275,8 @@ pub(in crate::game) fn perform_command(
             rules::KartSpec::default_ambulance()
         } else if arg == "smurd" {
             rules::KartSpec::default_smurd()
+        } else if matches!(arg, "fire_truck" | "firetruck" | "pompieri") {
+            rules::KartSpec::default_fire_truck()
         } else if matches!(arg, "atv" | "utility_atv") {
             rules::KartSpec::default_atv()
         } else if matches!(arg, "quad_bike" | "quadbike" | "quad") {
@@ -1280,6 +1292,7 @@ pub(in crate::game) fn perform_command(
             | rules::VehicleKind::PoliceCar
             | rules::VehicleKind::Ambulance
             | rules::VehicleKind::Smurd
+            | rules::VehicleKind::FireTruck
             | rules::VehicleKind::DaciaLoganPolice => 3.2,
             rules::VehicleKind::QuadBike | rules::VehicleKind::Atv => 2.5,
             rules::VehicleKind::GoKart => 2.4,
@@ -1301,6 +1314,7 @@ pub(in crate::game) fn perform_command(
                 rules::VehicleKind::Atv => tr("gokart.msg.placed_atv", "Utility ATV deployed!"),
                 rules::VehicleKind::Ambulance => tr("gokart.msg.placed_ambulance", "Ambulance deployed!"),
                 rules::VehicleKind::Smurd => tr("gokart.msg.placed_smurd", "SMURD deployed!"),
+                rules::VehicleKind::FireTruck => tr("gokart.msg.placed_fire_truck", "Fire truck deployed!"),
                 rules::VehicleKind::PoliceCar => {
                     tr("gokart.msg.placed_police_car", "Poliția Română Patrol Car deployed!")
                 }
@@ -1346,7 +1360,7 @@ pub(in crate::game) fn perform_command(
     game.native_tell(
         player.uuid,
         Text::literal(
-            "/vehicle [remove | remove all | clear | spawn [go_kart|quad_bike|atv|off_roader|police|ambulance|smurd] | pack | kit | fuel | paint <color>]",
+            "/vehicle [remove | remove all | clear | spawn [go_kart|quad_bike|atv|off_roader|police|ambulance|smurd|fire_truck] | pack | kit | fuel | paint <color>]",
         )
         .with_color(text::YELLOW),
     );
@@ -2462,7 +2476,7 @@ pub(in crate::game) fn mob_submit(
         rules::VehicleKind::OffRoader => 1.75,
         rules::VehicleKind::QuadBike | rules::VehicleKind::Atv => 1.45,
         rules::VehicleKind::DaciaLoganPolice => 1.42,
-        rules::VehicleKind::PoliceCar | rules::VehicleKind::Ambulance | rules::VehicleKind::Smurd => 1.30,
+        rules::VehicleKind::PoliceCar | rules::VehicleKind::Ambulance | rules::VehicleKind::Smurd | rules::VehicleKind::FireTruck => 1.30,
         rules::VehicleKind::GoKart => 1.0,
     };
     let roll_deg = if kart.drifting {
@@ -2479,7 +2493,7 @@ pub(in crate::game) fn mob_submit(
         rules::VehicleKind::OffRoader => 0.36,
         rules::VehicleKind::QuadBike | rules::VehicleKind::Atv => 0.30,
         rules::VehicleKind::DaciaLoganPolice => 0.30,
-        rules::VehicleKind::PoliceCar | rules::VehicleKind::Ambulance | rules::VehicleKind::Smurd => 0.28,
+        rules::VehicleKind::PoliceCar | rules::VehicleKind::Ambulance | rules::VehicleKind::Smurd | rules::VehicleKind::FireTruck => 0.28,
         rules::VehicleKind::GoKart => 0.18,
     };
     if roll_deg.abs() > 0.04 {
@@ -2553,10 +2567,15 @@ pub(in crate::game) fn mob_submit(
         );
     }
 
-    if matches!(kart.spec.kind, rules::VehicleKind::Ambulance | rules::VehicleKind::Smurd) && kart.siren_on {
+    if matches!(kart.spec.kind, rules::VehicleKind::Ambulance | rules::VehicleKind::Smurd | rules::VehicleKind::FireTruck) && kart.siren_on {
         let side = if ((mob.age * 0.65) as i32).rem_euclid(2) == 0 { 1.0 } else { -1.0 };
+        let (roof_y, roof_z) = if kart.spec.kind == rules::VehicleKind::FireTruck {
+            (34.2 / 16.0, 14.85 / 16.0)
+        } else {
+            (35.3 / 16.0, -2.97 / 16.0)
+        };
         draw_part_at_pivot(draw, rules::MODEL_SIREN_BLUE,
-            [side * 5.1 / 16.0, 35.3 / 16.0, -2.97 / 16.0], &[], [1.15, 0.75, 1.15], 0xFFFFFF);
+            [side * 5.1 / 16.0, roof_y, roof_z], &[], [1.15, 0.75, 1.15], 0xFFFFFF);
     }
 
     // 2e. FiveM Alternating Red & Blue Girofar + Grille Strobe Flashers on Romanian Police Cars!
@@ -3257,6 +3276,7 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
         | rules::ITEM_ATV
         | rules::ITEM_AMBULANCE
         | rules::ITEM_SMURD
+        | rules::ITEM_FIRE_TRUCK
         | rules::ITEM_POLICE_CAR
         | rules::ITEM_DACIA_LOGAN_POLICE => {
             let spec = read_kart_spec(game, stack);
@@ -3297,6 +3317,7 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
                 rules::VehicleKind::Atv => tr("gokart.tooltip.place_atv", "Right-click ground to deploy Utility ATV"),
                 rules::VehicleKind::Ambulance => tr("gokart.tooltip.place_ambulance", "Right-click to deploy ambulance"),
                 rules::VehicleKind::Smurd => tr("gokart.tooltip.place_smurd", "Right-click to deploy SMURD"),
+                rules::VehicleKind::FireTruck => tr("gokart.tooltip.place_fire_truck", "Right-click to deploy fire truck"),
                 rules::VehicleKind::PoliceCar => tr(
                     "gokart.tooltip.place_police_car",
                     "Right-click ground to deploy Poliția Română Patrol Car ([H] toggles Siren & Girofar!)",

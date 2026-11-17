@@ -67,7 +67,7 @@ dist_hmod.write_bytes(embedded_hmod.read_bytes())
 
 # 2. Build native `.hnmod` (exact `horizon-mods/native/tools/native.py` schema 1 format)
 mod_id = "gokart_native"
-version = "0.12.5"
+version = "0.13.0"
 native_manifest = {
     "schema": 1,
     "id": mod_id,

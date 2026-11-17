@@ -137,6 +137,24 @@ class EmergencyModels(unittest.TestCase):
                     arch_half_width = 1.15 + 3.1 * math.cos(math.radians(38))
                     self.assertLess(arch_half_width - radius * 16 / 1.65, 0.4)
 
+    def test_fire_engine_content_and_windows(self):
+        model = json.loads((ROOT / 'content/assets/gokart/models/block/fire_truck_body.json').read_text())
+        elements = model['elements']
+        self.assertGreaterEqual(sum(e['faces']['east']['texture'] == '#shutter' for e in elements), 4)
+        self.assertGreaterEqual(sum(e['faces']['up']['texture'] == '#chrome' and
+                                    e['from'][1] > 23 for e in elements), 9)
+        self.assertTrue((ROOT / 'content/assets/gokart/textures/item/fire_truck.png').is_file())
+        self.assertTrue((ROOT / 'content/data/gokart/recipe/fire_truck.json').is_file())
+        for texture in model['textures'].values():
+            namespace, path = texture.split(':', 1)
+            self.assertTrue((ROOT / 'content/assets' / namespace / 'textures' / (path + '.png')).is_file(), texture)
+        # Cab has no solid shell occupying the window/windscreen centres.
+        for e in elements:
+            if e.get('rotation') or e['faces']['up']['texture'] != '#red':
+                continue
+            for point in ((20.1, 17, 14.0), (-4.1, 17, 14.0), (8.0, 17, 26.6)):
+                self.assertFalse(all(e['from'][i] < point[i] < e['to'][i] for i in range(3)))
+
     def test_attendant_seat_faces_stretcher_without_overlap(self):
         for name in ('ambulance', 'smurd'):
             elements = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())['elements']

@@ -1,4 +1,4 @@
-# Horizon Vehicles: Go-Kart, ATV Quad Bike, ATV utilitar, 4x4 Off-Roader, Poliția Română (`gokart_native` v0.12.5)
+# Horizon Vehicles: Go-Kart, ATV Quad Bike, ATV utilitar, 4x4 Off-Roader, Poliția Română (`gokart_native` v0.13.0)
 
 Mod nativ **FiveM-style de Vehicule 3D** pentru **Horizon 26.3 (Launcher `0.2.69+` / Nightly)**: **Go-Kart**, **ATV Quad Bike**, **ATV utilitar**, **Off-Roader 4x4**, **Autospecială Poliția Română (Pursuit Sedan)** — cu aripi 3D poligonale curbate în 5 segmente pe conturul roții + contra-aripi interioare și praguri continue de la roți la roți, girofar Red/Blue dinamic + sirenă pe tasta `[H]`, faruri emisive (`light_emission: 15`) + blocuri reale `minecraft:light` noaptea, categorie dedicată **Horizon Vehicles** în Creative Inventory și modele 3D verificate fără z-fighting.
 
@@ -14,6 +14,7 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
 - **ATV utilitar (`gokart:atv`)** — model separat inspirat de ATV-ul din modul original, cu apărătoare frontală, aripi late și portbagaj spate.
 - **4x4 Off-Roader (`gokart:off_roader`)** — SUV off-road 4x4 (`~2.14` blocuri lățime × `~3.05` blocuri lungime, `step_height = 1.05`), aripi trapezoidale 3D evazate cu contra-aripi + praguri rock-slider continue de la roată la roată, bullbar îngust central cu troliu, roll-cage cu 4 proiectoare pe plafon, roată de rezervă pe hayon și rezervor `4.000 mB`.
 - **Ambulanță Română (`gokart:ambulance`)** — autospecială albă inspirată de Renault Master, cu bandă portocalie, geamuri ample, grilă distinctă și girofar albastru.
+- **Autospecială de pompieri (`gokart:fire_truck`)** — cabină de echipaj, compartimente cu rulouri, scară și echipament de pompă modelate vizual; `[H]` activează sirena. Scara, furtunurile și pompa sunt statice și nu sting incendii.
 - **Ambulanță SMURD (`gokart:smurd`)** — autospecială roșie inspirată de Sprinter SMURD, cu marcaje POMPIERII, bandă galbenă, grilă distinctă și girofar albastru. Ambele folosesc `[H]` pentru sirenă.
   - Compartimentul medical include targă, dulapuri, monitor, oxigen, scaun și geamuri decupate. Aceste detalii sunt statice: ușile nu se deschid, iar targa nu poate fi folosită pentru transportul unui jucător.
 - **Autospecială Poliția Română — Pursuit Sedan (`gokart:police_car`)** — Sedan sportiv de intervenție cu grilă dublă și stroboscoape integrate, aripi curbate în 5 segmente cu contra-aripi + praguri aero și linie mediană continuă de la roți la roți, plafon conectat cu antenă shark-fin, colantare Battenberg albastru/galben-neon `POLIȚIA`, plăcuțe `RO`, laptop MDT în bord și **girofar aerodinamic Red/Blue + sirenă pe `[H]`** (`4.500 mB`).
@@ -71,8 +72,8 @@ Pachetul `dist/gokart_native.hnmod` este **100% autonom (un singur fișier)**: c
 
 ## Comenzi Rapide (`/vehicle`, `/vehicel` sau `/gokart`)
 
-- `/vehicle kit` *(OP / Singleplayer Cheats)* — Oferă pachetul complet (**Go-Kart**, **ATV Quad Bike**, **ATV utilitar**, **4x4 Off-Roader**, **Autospecială Poliția Română**, **Ambulanță**, **SMURD**, motoare Aur/Diamant, roți Sport/Racing, Cheie Mecanică, Canistră plină și vopsele).
-- `/vehicle spawn [go_kart | quad_bike | atv | off_roader | police | ambulance | smurd]` *(OP)* — Spawnează instant vehiculul dorit în fața jucătorului.
+- `/vehicle kit` *(OP / Singleplayer Cheats)* — Oferă pachetul complet (**Go-Kart**, **ATV Quad Bike**, **ATV utilitar**, **4x4 Off-Roader**, **Autospecială Poliția Română**, **Ambulanță**, **SMURD**, **Pompieri**, motoare Aur/Diamant, roți Sport/Racing, Cheie Mecanică, Canistră plină și vopsele).
+- `/vehicle spawn [go_kart | quad_bike | atv | off_roader | police | ambulance | smurd | fire_truck]` *(OP)* — Spawnează instant vehiculul dorit în fața jucătorului.
 - `/vehicle remove`, `/vehicle remove <rază>` sau `/vehicle remove all` *(aliasuri: `/vehicel remove [all]`, `/vehicle clear`, `/vehicle delete`, plus butonul **Șterge Definitiv** în Garajul `[K]`)* — Șterge garantat din lume (`native_remove_mob`) atât vehiculele active, cât și vehiculele vechi rămase din sesiuni anterioare, curățând instant și blocurile de lumină.
 - `/vehicle fuel` *(OP)* — Comută între consum normal de combustibil și **Combustibil Infinit**.
 - `/vehicle paint <culoare>` — Vopsește vehiculul curent/apropiat (`red`, `green`, `blue`, `yellow`, `orange`, `lime`, `cyan`, `black`, `white` etc.).
