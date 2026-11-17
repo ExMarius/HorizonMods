@@ -1,2 +1,4 @@
 newmtl bus
 map_Kd #bus
+newmtl wheel
+map_Kd #wheel

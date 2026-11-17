@@ -4,6 +4,7 @@
   "flip_v": true,
   "shade_quads": true,
   "textures": {
-    "bus": "gokart:block/prototype_city_bus"
+    "bus": "gokart:block/prototype_city_bus",
+    "wheel": "gokart:block/prototype_city_bus_wheel"
   }
 }

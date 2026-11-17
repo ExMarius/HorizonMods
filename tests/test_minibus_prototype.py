@@ -14,7 +14,17 @@ class MinibusPrototype(unittest.TestCase):
         obj = (ASSETS / 'models/block/prototype_city_bus.obj').read_text()
         self.assertIn('mtllib prototype_city_bus.mtl', obj)
         self.assertIn('usemtl bus', obj)
+        self.assertEqual(obj.count('usemtl wheel'), 6)
+        totals = [sum(row.startswith(prefix) for row in obj.splitlines()) for prefix in ('v ', 'vt ', 'vn ')]
+        for line in obj.splitlines():
+            if line.startswith('f '):
+                for part in line.split()[1:]:
+                    for index, value in enumerate(part.split('/')):
+                        if value:
+                            self.assertLessEqual(int(value), totals[index])
         self.assertGreater(sum(line.startswith('f ') for line in obj.splitlines()), 100)
+        self.assertEqual((ASSETS / 'textures/block/prototype_city_bus_wheel.png').read_bytes(),
+                         (ROOT / 'third_party/city_vehicles/bus_wheel.png').read_bytes())
         self.assertEqual((ASSETS / 'textures/block/prototype_city_bus.png').read_bytes(),
                          (ROOT / 'third_party/city_vehicles/yellow_bus.png').read_bytes())
 

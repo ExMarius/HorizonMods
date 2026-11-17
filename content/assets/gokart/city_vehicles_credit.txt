@@ -7,11 +7,11 @@ wheel, and textures from `assets/cityvehicles/models/entity/bus*`. They are
 provided under the upstream MIT license in `LICENSE`. The car frame properties
 are upstream `data/cityvehicles/automobility/automobile_frame/yellow_bus.json`.
 
-`tools/import_city_bus.py` rescales the original bus body and changes its material
-references for the Horizon OBJ loader; it does not modify the shapes or UVs.
-The upstream six-wheel model is retained for reference; the WIP prototype is
-not registered or playable because this mod currently animates only four wheels
-and has no passenger-seat integration. No claim of in-game compatibility.
+`tools/import_city_bus.py` uniformly rescales and rotates the original bus and assembles its six
+wheels at the upstream frame positions, mapping materials for Horizon; it does
+not modify the shapes or UVs. The baked wheels are static placeholders; the WIP
+prototype is not registered or playable because this mod currently animates only
+four wheels and has no passenger-seat integration. No claim of in-game compatibility.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

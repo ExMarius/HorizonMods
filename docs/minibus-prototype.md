@@ -4,10 +4,9 @@ The first vehicle is being developed using the Minecraft Blockbench bus from
 FoundationGames' [City Vehicles Example Addon](https://github.com/FoundationGames/City-Vehicles-Example-Addon),
 licensed MIT (see `third_party/city_vehicles/`). It is a large three-axle bus,
 not an exact replica of the MrCrayfish minibus. The source OBJ geometry and
-texture are retained; `tools/import_city_bus.py` resizes the body and maps the
-texture into a Horizon OBJ model. This replaces the previous procedurally
-created prototype. The original six wheels are provided as reference, not yet
-wired into the vehicle renderer.
+texture are retained; `tools/import_city_bus.py` uniformly resizes and rotates the body and places the original six wheels
+at upstream axle positions in a single static Horizon OBJ model. This replaces
+the previous procedurally created prototype. The wheels do not animate yet.
 
 This model remains unregistered: it cannot be crafted or spawned yet. It has
 not been checked in game. Further work is needed to match all six animated
