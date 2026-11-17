@@ -1996,21 +1996,21 @@ def generate_models() -> None:
         ("smurd", "medical_red", "smurd_side", "medical_yellow", "medical_white"),
     ):
         van_elements = [
-            obox([-8.7, 2.8, -8.5], [8.7, 3.9, 8.5], "#carbon"),
+            obox([-8.7, 2.8, -8.5], [8.7, 3.9, 5.7], "#carbon"),
             obox([-6.1, 2.8, -21.5], [6.1, 3.9, -8.53], "#frame"),
-            obox([-6.1, 2.8, 8.53], [6.1, 3.9, 21.5], "#frame"),
-            obox([-5.8, 4.0, 8.55], [5.8, 8.72, 18.9], "#carbon"),
-            obox([-8.2, 8.75, 8.55], [8.2, 10.9, 21.5], "#shell"),
+            obox([-6.1, 2.8, 5.73], [6.1, 3.9, 18.7], "#frame"),
+            obox([-5.8, 4.0, 5.75], [5.8, 8.72, 16.1], "#carbon"),
+            obox([-8.2, 8.75, 5.75], [8.2, 10.9, 18.7], "#shell"),
             # Cover the rotated arch backing at hood height; no angular peaks
             # should protrude above the bonnet when viewed from the side.
-            obox([-12.25, 10.92, 8.56], [12.25, 11.80, 21.55], "#shell"),
-            obox([-11.9, 11.82, 15.55], [11.9, 12.05, 21.45], "#shell"),
-            obox([-5.0, 12.07, 19.5], [5.0, 12.20, 21.40], "#stripe"),
-            obox([-5.3, 12.07, 16.0], [5.3, 12.20, 19.45], "#hood_mark", full_uv_faces=("up",)),
-            obox([-8.2, 4.0, 18.93], [8.2, 8.72, 21.5], "#shell"),
-            *sculpted_wheel_arch(cz=13.8, vx_in=8.22, vx_body=12.25, vx_flare=12.40,
+            obox([-12.25, 10.92, 5.76], [12.25, 11.80, 18.75], "#shell"),
+            obox([-11.9, 11.82, 15.55], [11.9, 12.05, 18.65], "#shell"),
+            obox([-5.0, 12.07, 18.05], [5.0, 12.20, 18.60], "#stripe"),
+            obox([-5.3, 12.07, 15.7], [5.3, 12.20, 18.0], "#hood_mark", full_uv_faces=("up",)),
+            obox([-8.2, 4.0, 16.13], [8.2, 8.72, 18.7], "#shell"),
+            *sculpted_wheel_arch(cz=11.0, vx_in=8.22, vx_body=12.25, vx_flare=12.40,
                 vy_crown=7.85, vy_top=10.9, half_crown=1.15, slope_len=3.1, slope_deg=38,
-                vz_outer_min=8.55, vz_outer_max=21.55, vy_jamb_bot=3.1,
+                vz_outer_min=5.75, vz_outer_max=18.75, vy_jamb_bot=3.1,
                 liner_x0=5.85, liner_x1=6.35, liner_y0=3.15,
                 body_tex="#shell", body_tint=None, flare_tex="#shell", flare_tint=None),
             *sculpted_wheel_arch(cz=-13.8, vx_in=8.22, vx_body=12.25, vx_flare=12.40,
@@ -2023,27 +2023,27 @@ def generate_models() -> None:
             obox([-6.35, 3.92, -21.30], [6.35, 4.36, -8.55], "#medical_floor"),
             obox([-8.2, 4.0, -21.50], [8.2, 10.90, -21.32], "#shell"),
             # Painted side panel and continuous rocker trim between the arches.
-            obox([10.0, 3.95, -8.50], [12.25, 10.90, 8.50], "#shell"),
-            obox([-12.25, 3.95, -8.50], [-10.0, 10.90, 8.50], "#shell"),
+            obox([10.0, 3.95, -8.50], [12.25, 10.90, 5.70], "#shell"),
+            obox([-12.25, 3.95, -8.50], [-10.0, 10.90, 5.70], "#shell"),
             # Continuous reflective bands, following both door panels and fenders.
-            obox([12.27, 9.45, -21.45], [12.34, 10.12, 21.45], "#stripe"),
-            obox([-12.34, 9.45, -21.45], [-12.27, 10.12, 21.45], "#stripe"),
-            obox([12.27, 7.10, -8.48], [12.34, 7.55, 8.48], "#accent"),
-            obox([-12.34, 7.10, -8.48], [-12.27, 7.55, 8.48], "#accent"),
+            obox([12.27, 9.45, -21.45], [12.34, 10.12, 18.65], "#stripe"),
+            obox([-12.34, 9.45, -21.45], [-12.27, 10.12, 18.65], "#stripe"),
+            obox([12.27, 7.10, -8.48], [12.34, 7.55, 5.68], "#accent"),
+            obox([-12.34, 7.10, -8.48], [-12.27, 7.55, 5.68], "#accent"),
             # Door graphics are face-specific so the number reads normally from
             # either side; the short vertical seam describes the front door edge.
             *[obox([x0, 7.70, 0.0], [x1, 9.25, 6.4], tex, full_uv_faces=(face,))
               for x0, x1, tex, face in ((12.36, 12.42, "#door_mark", "east"),
                                          (-12.42, -12.36, "#door_mark_reverse", "west"))],
-            obox([12.35, 4.10, 8.05], [12.41, 10.85, 8.20], "#frame"),
-            obox([-12.41, 4.10, 8.05], [-12.35, 10.85, 8.20], "#frame"),
+            obox([12.35, 4.10, 5.48], [12.41, 10.85, 5.63], "#frame"),
+            obox([-12.41, 4.10, 5.48], [-12.35, 10.85, 5.63], "#frame"),
             # Sliding rear door & driver-door shut lines, and flush handles.
             obox([12.35, 4.10, -3.63], [12.41, 10.85, -3.48], "#frame"),
             obox([-12.41, 4.10, -3.63], [-12.35, 10.85, -3.48], "#frame"),
             obox([12.35, 8.10, -2.7], [12.51, 8.55, -1.1], "#frame"),
             obox([-12.51, 8.10, -2.7], [-12.35, 8.55, -1.1], "#frame"),
-            obox([12.27, 3.15, -8.48], [12.50, 3.92, 8.48], "#frame"),
-            obox([-12.50, 3.15, -8.48], [-12.27, 3.92, 8.48], "#frame"),
+            obox([12.27, 3.15, -8.48], [12.50, 3.92, 5.68], "#frame"),
+            obox([-12.50, 3.15, -8.48], [-12.27, 3.92, 5.68], "#frame"),
             # Tall rear medical compartment, high roof, contrasting service doors and handles.
             # The patient windows are real openings in the wall, not dark boxes
             # on top of a solid slab. Each cropped panel keeps the livery UV aligned.
@@ -2119,8 +2119,12 @@ def generate_models() -> None:
             obox([-6.9, 13.15, -18.8], [-6.7, 14.0, -18.0], "#medical_blue"),
             obox([3.0, 9.1, -4.05], [9.8, 9.60, -3.68], "#chrome"),
             # Attendant seat, monitor/defibrillator, oxygen cylinder and medical bag.
-            obox([7.10, 9.10, -17.1], [9.65, 10.70, -12.3], "#medical_blue"),
-            obox([8.90, 10.72, -17.1], [9.65, 15.30, -12.3], "#medical_blue"),
+            obox([4.30, 9.10, -16.9], [9.65, 10.35, -12.5], "#attendant"),
+            obox([8.75, 10.37, -16.9], [9.65, 15.40, -12.5], "#attendant"),
+            obox([8.85, 15.42, -15.8], [9.60, 17.00, -13.6], "#attendant"),
+            obox([6.90, 8.42, -15.9], [8.50, 9.08, -13.4], "#frame"),
+            obox([4.32, 10.37, -16.88], [4.62, 11.10, -12.52], "#frame"),
+            obox([4.65, 10.37, -14.90], [8.65, 10.51, -14.50], "#medical_yellow"),
             obox([7.0, 13.20, -7.10], [9.80, 16.10, -5.90], "#frame"),
             obox([7.25, 13.48, -7.14], [9.55, 15.80, -7.12], "#dash", full_uv_faces=("north", "south")),
             obox([7.40, 9.0, -20.40], [9.0, 14.0, -19.15], "#medical_white"),
@@ -2131,7 +2135,6 @@ def generate_models() -> None:
             # ceiling handrail: arranged clear of the stretcher's patient area.
             obox([-7.19, 9.1, -15.1], [-7.10, 12.3, -14.95], "#frame"),
             obox([-7.19, 9.1, -10.0], [-7.10, 12.3, -9.85], "#frame"),
-            obox([8.30, 5.1, -15.0], [9.15, 9.08, -14.2], "#frame"),
             obox([7.15, 10.72, -12.25], [7.40, 13.20, -12.0], "#chrome"),
             obox([7.15, 13.22, -18.0], [7.40, 13.50, -12.0], "#chrome"),
             obox([3.50, 21.25, -20.3], [3.80, 21.55, -5.1], "#chrome"),
@@ -2156,7 +2159,7 @@ def generate_models() -> None:
             # Dashboard shelf, instrument binnacle, centre console and two headrests.
             obox([-9.70, 9.35, 4.0], [9.70, 10.85, 8.4], "#frame"),
             obox([2.35, 10.87, 4.2], [7.65, 11.55, 5.6], "#dash", full_uv_faces=("up",)),
-            obox([-1.4, 7.0, 2.6], [1.4, 10.90, 6.7], "#frame"),
+            obox([-1.4, 7.0, 2.6], [1.4, 10.88, 6.7], "#frame"),
             obox([3.0, 14.42, -3.35], [7.0, 16.10, -2.35], "#seat"),
             obox([-7.0, 14.42, -3.35], [-3.0, 16.10, -2.35], "#seat"),
             obox([2.0, 4.0, -2.5], [8.0, 6.0, 2.8], "#seat"),
@@ -2173,26 +2176,26 @@ def generate_models() -> None:
             obox([12.1, 12.2, 3.9], [13.6, 14.3, 5.5], "#frame"),
             # Contoured painted bumper around the black lower intake; lamps are
             # separate recessed lenses rather than bright square kart headlights.
-            obox([-12.2, 3.0, 21.6], [12.2, 6.2, 22.8], "#shell"),
-            obox([-7.4, 3.45, 22.82], [7.4, 5.75, 22.94], "#grille", full_uv_faces=("south",)),
-            obox([-6.6, 6.25, 21.6], [6.6, 10.65, 22.4], "#van_grille", full_uv_faces=("north", "south")),
-            obox([-11.25, 7.1, 21.6], [-6.65, 10.55, 22.35], "#van_lamp", full_uv_faces=("north", "south")),
-            obox([6.65, 7.1, 21.6], [11.25, 10.55, 22.35], "#van_lamp", full_uv_faces=("north", "south")),
-            obox([-3.5, 3.3, 22.96], [3.5, 5.0, 23.12], "#plate_ro"),
+            obox([-12.2, 3.0, 18.80], [12.2, 6.2, 20.00], "#shell"),
+            obox([-7.4, 3.45, 20.02], [7.4, 5.75, 20.14], "#grille", full_uv_faces=("south",)),
+            obox([-6.6, 6.25, 18.80], [6.6, 10.65, 19.60], "#van_grille", full_uv_faces=("north", "south")),
+            obox([-11.25, 7.1, 18.80], [-6.65, 10.55, 19.55], "#van_lamp", full_uv_faces=("north", "south")),
+            obox([6.65, 7.1, 18.80], [11.25, 10.55, 19.55], "#van_lamp", full_uv_faces=("north", "south")),
+            obox([-3.5, 3.3, 20.16], [3.5, 5.0, 20.32], "#plate_ro"),
             # Swept corner lamps wrap onto the front fender instead of ending at the grille.
-            obox([12.35, 7.60, 20.20], [12.43, 10.15, 21.48], "#van_lamp", full_uv_faces=("east", "west")),
-            obox([-12.43, 7.60, 20.20], [-12.35, 10.15, 21.48], "#van_lamp", full_uv_faces=("east", "west")),
-            obox([12.45, 7.22, 20.80], [12.52, 8.00, 21.45], "#amber"),
-            obox([-12.52, 7.22, 20.80], [-12.45, 8.00, 21.45], "#amber"),
-            obox([12.36, 4.15, -8.35], [12.44, 4.85, 8.35], "#frame"),
-            obox([-12.44, 4.15, -8.35], [-12.36, 4.85, 8.35], "#frame"),
+            obox([12.35, 7.60, 17.40], [12.43, 10.15, 18.68], "#van_lamp", full_uv_faces=("east", "west")),
+            obox([-12.43, 7.60, 17.40], [-12.35, 10.15, 18.68], "#van_lamp", full_uv_faces=("east", "west")),
+            obox([12.45, 7.22, 18.00], [12.52, 8.00, 18.65], "#amber"),
+            obox([-12.52, 7.22, 18.00], [-12.45, 8.00, 18.65], "#amber"),
+            obox([12.36, 4.15, -8.35], [12.44, 4.85, 5.65], "#frame"),
+            obox([-12.44, 4.15, -8.35], [-12.36, 4.85, 5.65], "#frame"),
             obox([12.36, 8.15, -10.9], [12.50, 8.62, -9.20], "#frame"),
             obox([-12.50, 8.15, -10.9], [-12.36, 8.62, -9.20], "#frame"),
             # Wipers at the foot of the windshield and recessed bumper fog lights.
             obox([-9.2, 11.15, 15.51], [-0.35, 11.48, 15.67], "#frame"),
             obox([0.35, 11.15, 15.51], [9.2, 11.48, 15.67], "#frame"),
-            obox([-10.5, 3.75, 22.82], [-8.25, 4.80, 22.92], "#headlight"),
-            obox([8.25, 3.75, 22.82], [10.5, 4.80, 22.92], "#headlight"),
+            obox([-10.5, 3.75, 20.02], [-8.25, 4.80, 20.12], "#headlight"),
+            obox([8.25, 3.75, 20.02], [10.5, 4.80, 20.12], "#headlight"),
             # Exterior sliding-door track, high rear hinges and non-slip rear step.
             obox([12.40, 12.52, -20.8], [12.50, 12.82, -5.0], "#frame"),
             obox([-12.50, 12.52, -20.8], [-12.40, 12.82, -5.0], "#frame"),
@@ -2228,7 +2231,7 @@ def generate_models() -> None:
                          "corner_glass": "gokart:block/medical_corner_glass",
                          "amber": "gokart:block/kart_amber",
                          "medical_white": "gokart:block/medical_white", "medical_red": "gokart:block/medical_red",
-                         "medical_blue": "gokart:block/medical_blue", "medical_yellow": "gokart:block/medical_yellow",
+                         "attendant": "gokart:block/medical_blue", "medical_blue": "gokart:block/medical_blue", "medical_yellow": "gokart:block/medical_yellow",
                          "medical_mattress": "gokart:block/medical_mattress", "medical_floor": "gokart:block/medical_floor"},
             "elements": van_elements,
         }, indent=2) + "\n")
@@ -3098,7 +3101,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.12.6 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.12.7 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

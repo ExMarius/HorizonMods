@@ -15,7 +15,7 @@ class EmergencyModels(unittest.TestCase):
             model = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())
             elements = model['elements']
             # In the front wheel zone, the hood edge must be continuous and flat.
-            for zstep in range(95, 215):
+            for zstep in range(65, 187):
                 z = zstep / 10
                 for side in (-1, 1):
                     self.assertTrue(any(covers_side(e, side * 12.20, 11.70, z) for e in elements), (name, z))
@@ -57,7 +57,7 @@ class EmergencyModels(unittest.TestCase):
             # Forward-set windshield gives a van-like short nose, rather than
             # the long pickup hood seen in the previous model.
             self.assertTrue(all(abs(e['rotation']['origin'][2] - 23.25) < 0.01 for e in pillars))
-            self.assertLess(22.8 - 15.25, 8.0)
+            self.assertLess(20.0 - 15.25, 5.0)
             for e in pillars:
                 r = e['rotation']
                 angle = math.radians(r['angle'])
@@ -95,7 +95,7 @@ class EmergencyModels(unittest.TestCase):
             for x in (-12, -10.25, 0, 10.25, 12):
                 for z in (-20, -8, 0, 5):
                     self.assertTrue(any(covers_side(e, x, 22.3, z) for e in elements), (name, x, z))
-            self.assertEqual(sum(e['faces']['south']['texture'] == '#van_lamp' and e['from'][2] > 29 for e in elements), 2)
+            self.assertEqual(sum(e['faces']['south']['texture'] == '#van_lamp' and e['from'][2] > 26 for e in elements), 2)
             for tex, side in (('#door_mark', 'east'), ('#door_mark_reverse', 'west')):
                 self.assertEqual(sum(e['faces'][side]['texture'] == tex for e in elements), 1)
             self.assertEqual(model['textures']['glass'], 'gokart:block/medical_glass')
@@ -106,7 +106,7 @@ class EmergencyModels(unittest.TestCase):
         radius = 4 * 1.36 / 16
         for name in ('ambulance', 'smurd'):
             elements = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())['elements']
-            for axle in (-13.8, 13.8):
+            for axle in (-13.8, 11.0):
                 for side in (-1, 1):
                     for angle in range(0, 181, 5):
                         a = math.radians(angle)
@@ -122,6 +122,19 @@ class EmergencyModels(unittest.TestCase):
                     # The arch ends are near the tyre, not the previous huge opening.
                     arch_half_width = 1.15 + 3.1 * math.cos(math.radians(38))
                     self.assertLess(arch_half_width - radius * 16 / 1.65, 0.4)
+
+    def test_attendant_seat_faces_stretcher_without_overlap(self):
+        for name in ('ambulance', 'smurd'):
+            elements = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())['elements']
+            mattress = next(e for e in elements if e['faces']['up']['texture'] == '#medical_mattress')
+            seat = [e for e in elements if e['faces']['up']['texture'] == '#attendant']
+            self.assertEqual(len(seat), 3)  # seat cushion, back and headrest
+            cushion = min(seat, key=lambda e: e['from'][1])
+            back = max(seat, key=lambda e: e['to'][1])
+            self.assertGreater(cushion['from'][0], mattress['to'][0])
+            self.assertLess(cushion['from'][2], mattress['to'][2])
+            self.assertGreater(cushion['to'][2], mattress['from'][2])
+            self.assertGreater(back['to'][1], cushion['to'][1] + 5)
 
     def test_emergency_markings_and_opposite_side_uvs_are_present(self):
         for name in ('ambulance', 'smurd'):
