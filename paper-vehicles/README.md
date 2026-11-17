@@ -60,3 +60,7 @@ fețele se pot converti fără pierderi. Fișierul original de proprietăți pen
 bus (`yellow_bus_frame.json`) descrie șase roți și 13 poziții de pasager, plus
 șofer, în coordonatele Automobility. Ele nu sunt încă adaptate la Paper, montate
 sau testate și nu garantează că jucătorii încap în aceste locuri.
+
+`CityBusLayout` citește acum automat datele originale din JAR și le validează;
+rezultatul este exclusiv în coordonate sursă, încă necalibrat și neconectat
+la sistemul de montare. Faptul că datele se citesc nu face scaunele funcționale.
