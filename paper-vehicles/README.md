@@ -75,3 +75,7 @@ pentru fiecare roată: folosirea lor brută poate fi costisitoare pentru server.
 Texturile sunt resample la 48×48 per față, nu o conversie pixel-perfect.
 Geometria, UV-urile, transparența, animația și performanța trebuie verificate
 în Paper înainte de activare; nu este un produs final sau vehicul condus.
+
+Livrarea opțională prin GitHub Actions este documentată în
+`deploy/README.md`: este dezactivată până la o cerere explicită și configurarea
+secretelor și a amprentei confirmate de HidenCloud. Nu repornește serverul.
