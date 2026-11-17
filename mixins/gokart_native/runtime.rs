@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.13.8";
+pub const VERSION: &str = "0.13.9";
 pub const DESCRIPTION: &str = "FiveM-inspired 3D Vehicles for Horizon: Go-Kart, Quad Bike ATV, 4x4 Off-Roader, Poliția Română Pursuit Sedan with sculpted wheel arches, emissive lights, dynamic night headlights, siren & girofar, and /vehicle remove.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";

@@ -1856,6 +1856,47 @@ def generate_models() -> None:
             obox([-8, 5.5, -3.8], [-2, 13.5, -2.5], "#seat"),
             obox([2, 5.5, -3.8], [8, 13.5, -2.5], "#seat"),
         ]
+        # Front and rear fascias close the gaps between the centre hood and
+        # fender ends; lamps and grille sit slightly ahead of the fascia.
+        e.extend([
+            obox([-12.24, 6.0, 21.901], [12.24, 10.19, 21.915], "#body", tint=True),
+            obox([-12.24, 6.0, -21.915], [12.24, 10.19, -21.901], "#body", tint=True),
+            obox([-10.9, 2.46, 22.5], [10.9, 2.98, 23.5], "#carbon"),
+            obox([-10.9, 2.46, -23.5], [10.9, 2.98, -22.5], "#carbon"),
+            obox([-2.2, 3.5, 23.21], [2.2, 4.8, 23.30], "#chrome"),
+            obox([-2.2, 3.5, -23.30], [2.2, 4.8, -23.21], "#chrome"),
+            # Window planes live between the posts, not inside the doors.
+            obox([-9.98, 10.3, front_roof-0.4], [9.98, roof_y-0.08, front_roof-0.25], "#glass", full_uv_faces=("north", "south")),
+            obox([-9.98, 10.3, rear_roof+0.25], [9.98, roof_y-0.08, rear_roof+0.4], "#glass", full_uv_faces=("north", "south")),
+            obox([-10.99, 10.3, rear_roof+0.95], [-10.88, roof_y-0.08, front_roof-0.95], "#glass", full_uv_faces=("east", "west")),
+            obox([10.88, 10.3, rear_roof+0.95], [10.99, roof_y-0.08, front_roof-0.95], "#glass", full_uv_faces=("east", "west")),
+            # Sill trims, handles, and mirrors sit outside the skin.
+            obox([-12.48, 3.2, -8.45], [-12.26, 3.85, 8.45], "#carbon"),
+            obox([12.26, 3.2, -8.45], [12.48, 3.85, 8.45], "#carbon"),
+            obox([-12.39, 8.9, 1.0], [-12.26, 9.35, 3.0], "#chrome"),
+            obox([12.26, 8.9, 1.0], [12.39, 9.35, 3.0], "#chrome"),
+            obox([-13.45, 10.45, 4.5], [-11.01, 11.25, 5.4], "#frame"),
+            obox([11.01, 10.45, 4.5], [13.45, 11.25, 5.4], "#frame"),
+            obox([-14.05, 10.45, 4.2], [-13.45, 11.7, 5.7], "#body", tint=True),
+            obox([13.45, 10.45, 4.2], [14.05, 11.7, 5.7], "#body", tint=True),
+            # Short headrests finish the seats without hitting the roof.
+            obox([-6.8, 13.51, -3.75], [-3.2, min(14.9, roof_y-0.3), -2.55], "#seat"),
+            obox([3.2, 13.51, -3.75], [6.8, min(14.9, roof_y-0.3), -2.55], "#seat"),
+        ])
+        # Four-door silhouettes get a central pillar, rear handles and a rear bench.
+        # Side glass above is split instead of passing through the pillar.
+        if name in ("taxi", "city_suv"):
+            # Replace uninterrupted side glass with front/rear panes.
+            e = [part for part in e if not (part["faces"]["up"]["texture"] == "#glass" and
+                 abs(part["to"][0] - part["from"][0] - 0.11) < 0.001)]
+            for x0, x1 in ((-10.99, -10.88), (10.88, 10.99)):
+                e += [obox([x0, 10.2, -0.7], [x1, roof_y, 0.3], "#frame"),
+                      obox([x0, 10.3, rear_roof+0.95], [x1, roof_y-0.08, -0.72], "#glass", full_uv_faces=("east", "west")),
+                      obox([x0, 10.3, 0.32], [x1, roof_y-0.08, front_roof-0.95], "#glass", full_uv_faces=("east", "west"))]
+            e += [obox([-12.39, 8.9, -6.1], [-12.26, 9.35, -4.1], "#chrome"),
+                  obox([12.26, 8.9, -6.1], [12.39, 9.35, -4.1], "#chrome"),
+                  obox([-6.7, 4.0, -9], [6.7, 5.5, -5], "#seat"),
+                  obox([-6.7, 5.5, -9.8], [6.7, 12.5, -9], "#seat")]
         for axle in (-13.8, 13.8):
             e.extend(sculpted_wheel_arch(cz=axle, vx_in=8.22, vx_body=12.25, vx_flare=12.55,
                 vy_crown=8.75, vy_top=10.2, half_crown=2.15, slope_len=3.2, slope_deg=38.0,
@@ -1863,9 +1904,12 @@ def generate_models() -> None:
                 liner_x0=6.9, liner_x1=7.6, liner_y0=3.15, body_tex="#body", body_tint=True,
                 flare_tex="#body", flare_tint=True))
         if name == "muscle_car":
-            e += [obox([-2.6,10.21,12], [2.6,11.1,19], "#carbon"), obox([-8,10.3,-22], [8,11.2,-20.7], "#carbon")]
+            e += [obox([-2.6,10.21,12], [2.6,11.1,19], "#carbon"), obox([-8,10.3,-22], [8,11.2,-20.7], "#carbon"),
+                  obox([-7.3,6.35,22.16], [7.3,7.05,22.32], "#chrome")]
         elif name == "supercar":
-            e += [obox([-10,10.3,-22], [10,10.8,-20.5], "#carbon"), obox([-11,2.4,22], [11,2.95,23.6], "#carbon")]
+            e += [obox([-10,10.3,-22], [10,10.8,-20.5], "#carbon"), obox([-11,2.4,22], [11,2.95,23.6], "#carbon"),
+                  obox([-12.43, 5.2, -7.8], [-12.26, 7.4, -4.8], "#grille"),
+                  obox([12.26, 5.2, -7.8], [12.43, 7.4, -4.8], "#grille")]
         elif name == "city_suv":
             e += [obox([-9,roof_y+0.81,rear_roof+1], [-8.4,roof_y+1.25,front_roof-1], "#chrome"), obox([8.4,roof_y+0.81,rear_roof+1], [9,roof_y+1.25,front_roof-1], "#chrome")]
         elif name == "taxi":
@@ -1875,7 +1919,7 @@ def generate_models() -> None:
         (mdir / (name + "_body.json")).write_text(json.dumps({"textures": {
             "body": "gokart:block/kart_body", "frame": "gokart:block/kart_frame", "carbon": "gokart:block/kart_carbon",
             "seat": "gokart:block/kart_seat", "chrome": "gokart:block/kart_chrome", "grille": "gokart:block/kart_grille",
-            "headlight": "gokart:block/kart_headlight", "taillight": "gokart:block/kart_taillight"}, "elements": e}, indent=2) + "\n")
+            "glass": "gokart:block/medical_glass", "headlight": "gokart:block/kart_headlight", "taillight": "gokart:block/kart_taillight"}, "elements": e}, indent=2) + "\n")
 
     # =========================================================================
     # 7. Romanian Police Pursuit Sedan (`police_car_body.json`) — Poliția Română!
@@ -3369,7 +3413,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.13.8 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.13.9 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":
