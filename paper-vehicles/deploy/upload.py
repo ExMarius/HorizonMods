@@ -2,8 +2,8 @@
 """Upload the development JAR only after authenticating a pinned SSH host key.
 
 Requires environment variables: SFTP_USERNAME, SFTP_PASSWORD and
-either SFTP_PRIVATE_KEY or SFTP_PASSWORD. Never prints credentials. Does not run remote commands,
-send remote commands or modify worlds. After verification it requests a restart
+either SFTP_PRIVATE_KEY or SFTP_PASSWORD. Never prints credentials, runs remote
+commands, or modifies worlds. After verification it requests a restart
 through the plugin watcher, matching the original Paper plugin.
 """
 import base64
