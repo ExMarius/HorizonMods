@@ -89,3 +89,11 @@ sunt păstrate în `go_kart_parts.json`, fără rotunjirea unghiurilor. Pack-ul 
 în JAR, dar rendererul Paper încă nu desenează acele părți și nu sunt integrate
 condusul, scaunul, combustibilul sau coliziunile. Nu este încă un vehicul
 jucabil. Emisia luminii nu este implementată de formatul vanilla folosit.
+
+### Integrare în curs
+
+`GoKartRig` este un renderer experimental pentru grupurile din pack, cu rotații
+în jurul pivotului sursă. `GoKartMotion` modelează separat accelerația, frâna,
+virarea și consumul. Aceste componente **nu sunt încă legate de comenzi, scaun,
+coliziunile lumii sau livrarea pack-ului** și nu au fost verificate în joc. Nu
+activa spawn-ul până nu sunt integrate și testate împreună.
