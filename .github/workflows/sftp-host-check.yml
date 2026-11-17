@@ -29,3 +29,5 @@ jobs:
           fi
           echo 'Amprenta observată (trebuie verificată independent la HidenCloud):'
           ssh-keygen -lf "$keys" -E sha256
+          observed="$(ssh-keygen -lf "$keys" -E sha256 | awk 'NR==1 {print $2}')"
+          printf '::notice title=Amprentă ED25519 observată, neverificată::%s\n' "$observed"
