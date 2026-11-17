@@ -32,6 +32,16 @@ def main():
                     print('::notice title=Restart marker::Marker absent; this alone does not prove that the server restarted.')
                 else:
                     print('::notice title=Restart marker::Marker pending; the new watcher may not be active yet.')
+                try:
+                    with sftp.open('logs/latest.log', 'rb') as log:
+                        log.seek(0, 2)
+                        log.seek(max(0, log.tell() - 1024 * 1024))
+                        recent = log.read().decode('utf-8', errors='replace')
+                    enabled = recent.rfind('Enabling MrCrayfishVehiclePlugin')
+                    disabled = recent.rfind('Disabling MrCrayfishVehiclePlugin')
+                    print('::notice title=Legacy plugin::' + ('Enabled in current log.' if enabled >= 0 and enabled > disabled else 'No active legacy-plugin enable found in current log.'))
+                except OSError:
+                    print('::notice title=Legacy plugin::Current log could not be inspected.')
         finally:
             transport.close()
 
