@@ -1,1 +1,1 @@
-Cerere utilizator: livrare prototip Go-Kart Paper, fără restart automat.
+Cerere utilizator: reluare livrare prototip Go-Kart fără restart, cu backup la upgrade.

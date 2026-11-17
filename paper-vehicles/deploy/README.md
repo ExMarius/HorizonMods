@@ -3,8 +3,9 @@
 Workflow-ul `paper-deploy.yml` construiește și testează proiectul de pe branch,
 compară amprenta SSH observată anterior **înainte** de autentificare, apoi încarcă exclusiv
 `plugins/HorizonVehiclesPaper-dev.jar`. Verifică SHA-256 la upload, folosește
-fișier temporar și nu șterge vechiul JAR dacă înlocuirea atomică nu este
-suportată. Nu execută comenzi pe server, nu schimbă alte pluginuri, lumea sau
+fișier temporar. Dacă înlocuirea atomică nu este suportată, păstrează vechiul
+JAR ca backup `.bak` și încearcă revenirea în caz de eșec; există un scurt interval
+între redenumiri, deci serverul nu trebuie repornit în timpul livrării. Nu execută comenzi pe server, nu schimbă alte pluginuri, lumea sau
 configurația și nu repornește serverul. JAR-ul este doar un schelet: nu există
 încă vehicule jucabile.
 

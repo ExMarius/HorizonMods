@@ -50,10 +50,26 @@ class UploadTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / 'plugin.jar'
             path.write_bytes(b'new jar')
-            for sftp in (FakeSftp(existing=True, corrupt=True), FakeSftp(existing=True, atomic=False)):
-                with self.assertRaises((ValueError, OSError)):
-                    upload.transfer(sftp, path)
-                self.assertEqual(sftp.files, {upload.TARGET: b'old jar'})
+            sftp = FakeSftp(existing=True, corrupt=True)
+            with self.assertRaises(ValueError):
+                upload.transfer(sftp, path)
+            self.assertEqual(sftp.files, {upload.TARGET: b'old jar'})
+
+            sftp = FakeSftp(existing=True, atomic=False)
+            upload.transfer(sftp, path)
+            self.assertEqual(sftp.files[upload.TARGET], b'new jar')
+            backups = [data for name, data in sftp.files.items() if name.endswith('.bak')]
+            self.assertEqual(backups, [b'old jar'])
+
+            class FailInstall(FakeSftp):
+                def rename(self, old, new):
+                    if old.endswith('.tmp'):
+                        raise OSError('install failed')
+                    super().rename(old, new)
+            sftp = FailInstall(existing=True, atomic=False)
+            with self.assertRaises(OSError):
+                upload.transfer(sftp, path)
+            self.assertEqual(sftp.files, {upload.TARGET: b'old jar'})
 
     def test_fingerprint_uses_sha256_wire_encoding(self):
         class Key:

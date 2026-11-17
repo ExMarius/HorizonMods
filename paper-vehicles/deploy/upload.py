@@ -30,25 +30,47 @@ def fingerprint(key):
 
 def transfer(sftp, local_path):
     """Upload and verify a temporary file, then replace only our own JAR safely."""
+    global STAGE
     local_path = Path(local_path)
     sha = hashlib.sha256(local_path.read_bytes()).digest()
     temporary = f'plugins/.horizonvehicles-upload-{uuid.uuid4().hex}.tmp'
     try:
+        STAGE = 'upload_put'
         sftp.put(str(local_path), temporary, confirm=True)
+        STAGE = 'upload_verify'
         remote_sha = hashlib.sha256()
         with sftp.open(temporary, 'rb') as remote:
             for chunk in iter(lambda: remote.read(1024 * 1024), b''):
                 remote_sha.update(chunk)
         if not hmac.compare_digest(sha, remote_sha.digest()):
             raise ValueError('Uploaded file failed SHA-256 verification')
+        STAGE = 'upload_target_stat'
         try:
             sftp.stat(TARGET)
         except FileNotFoundError:
+            STAGE = 'upload_install'
             sftp.rename(temporary, TARGET)
         else:
-            # Never delete the old JAR first: if atomic overwrite is unsupported,
-            # fail safely and leave the previous file untouched.
-            sftp.posix_rename(temporary, TARGET)
+            try:
+                STAGE = 'upload_atomic_replace'
+                sftp.posix_rename(temporary, TARGET)
+            except OSError:
+                # Some SFTP hosts do not implement OpenSSH's posix-rename extension.
+                # Keep the old plugin as a non-JAR backup and restore it on failure.
+                # There is a brief gap between renames; no restart is performed here.
+                backup = f'plugins/.horizonvehicles-backup-{uuid.uuid4().hex}.bak'
+                STAGE = 'upload_backup'
+                sftp.rename(TARGET, backup)
+                try:
+                    STAGE = 'upload_install'
+                    sftp.rename(temporary, TARGET)
+                except Exception:
+                    try:
+                        STAGE = 'upload_rollback'
+                        sftp.rename(backup, TARGET)
+                    except Exception as rollback_error:
+                        raise RuntimeError('Upload failed and rollback failed; backup is retained') from rollback_error
+                    raise
     finally:
         try:
             sftp.remove(temporary)
