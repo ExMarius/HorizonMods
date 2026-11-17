@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.13.0";
+pub const VERSION: &str = "0.13.1";
 pub const DESCRIPTION: &str = "FiveM-inspired 3D Vehicles for Horizon: Go-Kart, Quad Bike ATV, 4x4 Off-Roader, Poliția Română Pursuit Sedan with sculpted wheel arches, emissive lights, dynamic night headlights, siren & girofar, and /vehicle remove.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
@@ -226,6 +226,24 @@ impl VehicleKind {
         self.is_police() || matches!(self, Self::Ambulance | Self::Smurd | Self::FireTruck)
     }
 
+    /// Pose of the animated overlay around one fixed roof lens. Both use the
+    /// same authored bounds and body scale, so changing a layout cannot leave
+    /// the flashing light floating above or behind the lightbar.
+    pub fn emergency_beacon_pose(self, side: f32) -> Option<([f32; 3], [f32; 3])> {
+        let (y0, y1, z) = match self {
+            Self::Ambulance | Self::Smurd => (23.67, 24.60, -1.8),
+            Self::FireTruck => (23.07, 24.00, 9.0),
+            _ => return None,
+        };
+        let b = self.layout().body_scale;
+        let center = [side * 3.9 * b[0] / 16.0, (y0 + y1) * 0.5 * b[1] / 16.0, z * b[2] / 16.0];
+        // Flash model measures 5 x 2.4 x 2.4 texels. Enclose the lens by
+        // 0.01 texel per face to avoid coplanar flicker while switched on.
+        let scale = [(5.8 * b[0] + 0.02) / 5.0, ((y1 - y0) * b[1] + 0.02) / 2.4,
+                     (1.9 * b[2] + 0.02) / 2.4];
+        Some((center, scale))
+    }
+
     pub fn slug(self) -> &'static str {
         match self {
             Self::GoKart => "go_kart",
@@ -424,8 +442,8 @@ impl VehicleKind {
             },
             Self::FireTruck => VehicleLayout {
                 body_model: MODEL_FIRE_TRUCK_BODY,
-                seat_attach: [6.5 / 16.0, 10.7 / 16.0, 12.0 / 16.0],
-                steer_pivot: [6.5 / 16.0, 18.5 / 16.0, 19.5 / 16.0],
+                seat_attach: [6.5 / 16.0, 8.7 / 16.0, -1.0 / 16.0],
+                steer_pivot: [6.5 / 16.0, 15.4 / 16.0, 9.5 / 16.0],
                 default_cam_dist: 8.0,
                 ..Self::Ambulance.layout()
             },
@@ -2089,6 +2107,23 @@ mod tests {
             assert!(decoded[0].siren_on);
         }
         assert_ne!(VehicleKind::Ambulance.layout().body_model, VehicleKind::Smurd.layout().body_model);
+    }
+
+    #[test]
+    fn emergency_beacons_fit_fixed_roof_lenses() {
+        for kind in [VehicleKind::Ambulance, VehicleKind::Smurd, VehicleKind::FireTruck] {
+            let scale = kind.layout().body_scale;
+            let (y0, y1, z) = if kind == VehicleKind::FireTruck { (23.07, 24.0, 9.0) } else { (23.67, 24.6, -1.8) };
+            for side in [-1.0, 1.0] {
+                let (center, overlay) = kind.emergency_beacon_pose(side).unwrap();
+                let expected = [side * 3.9 * scale[0] / 16.0, (y0+y1) * 0.5 * scale[1] / 16.0, z * scale[2] / 16.0];
+                for i in 0..3 { assert!((center[i] - expected[i]).abs() < 1e-6); }
+                let lens = [5.8 * scale[0], (y1-y0)*scale[1], 1.9*scale[2]];
+                let overlay_dims = [overlay[0] * 5.0, overlay[1] * 2.4, overlay[2] * 2.4];
+                for i in 0..3 { assert!((overlay_dims[i] - lens[i] - 0.02).abs() < 1e-5); }
+            }
+        }
+        assert!(VehicleKind::GoKart.emergency_beacon_pose(1.0).is_none());
     }
 
     #[test]

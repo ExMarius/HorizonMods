@@ -241,6 +241,18 @@ def generate_vehicle_textures() -> None:
             pixels.append(c)
     write_png(bdir / "medical_glass.png", 32, 32, pixels)
 
+    # Unlit blue beacon lens, distinct from the white-centred flashing texture.
+    # Full UV mapping keeps even small lenses visibly blue rather than sampling
+    # only the nearly-white middle pixel of the flashing texture.
+    pixels = []
+    for y in range(16):
+        for x in range(16):
+            edge = x in (0, 15) or y in (0, 15)
+            highlight = y in (3, 4) and 2 <= x <= 13
+            pixels.append((11, 42, 111, 255) if edge else
+                          ((57, 154, 235, 255) if highlight else (18, 88, 192, 255)))
+    write_png(bdir / "emergency_blue_lens.png", 16, 16, pixels)
+
     # Different front fascia motifs; pixel textures avoid external artwork/assets.
     for name in ("medical_saj_grille", "medical_smurd_grille"):
         pixels = []
@@ -2108,7 +2120,8 @@ def generate_models() -> None:
             obox([-12.2, 2.75, -22.55], [12.2, 3.90, -21.60], "#frame"),
             obox([-3.5, 4.0, -22.16], [3.5, 5.55, -21.92], "#plate_ro"),
             # Patient compartment: wipe-clean floor, front bulkhead and ceiling lights.
-            obox([-6.30, 4.38, -8.52], [6.30, 4.65, -3.65], "#medical_floor"),
+            # Full-width forward floor joins the narrow aisle between rear wheelhouses.
+            obox([-9.90, 3.92, -8.55], [9.90, 4.36, -3.65], "#medical_floor"),
             obox([-9.90, 4.38, -3.62], [9.90, 21.90, -3.48], "#medical_white"),
             obox([-8.9, 21.70, -19.5], [-6.6, 21.90, -7.0], "#headlight"),
             obox([6.6, 21.70, -19.5], [8.9, 21.90, -7.0], "#headlight"),
@@ -2233,8 +2246,8 @@ def generate_models() -> None:
             obox([-7.0, 2.50, -23.2], [7.0, 2.73, -22.20], "#frame"),
             # Static blue lenses and roof rails; animated blue beacons overlay when the siren is active.
             obox([-7.0, 23.12, -2.8], [7.0, 23.65, -0.8], "#frame"),
-            obox([-6.8, 23.67, -2.75], [-1.0, 24.6, -0.85], "#siren_blue"),
-            obox([1.0, 23.67, -2.75], [6.8, 24.6, -0.85], "#siren_blue"),
+            obox([-6.8, 23.67, -2.75], [-1.0, 24.6, -0.85], "#siren_blue", full_uv_faces=("north", "south", "east", "west", "up")),
+            obox([1.0, 23.67, -2.75], [6.8, 24.6, -0.85], "#siren_blue", full_uv_faces=("north", "south", "east", "west", "up")),
             obox([-10.0, 23.12, -20.9], [-8.0, 23.95, -19.5], "#siren_blue"),
             obox([8.0, 23.12, -20.9], [10.0, 23.95, -19.5], "#siren_blue"),
         ]
@@ -2252,7 +2265,7 @@ def generate_models() -> None:
                          "hood_mark": "gokart:block/" + ("medical_saj_hood" if van_name == "ambulance" else "medical_smurd_hood"),
                          "headlight": "gokart:block/kart_headlight",
                          "taillight": "gokart:block/kart_taillight", "plate_ro": "gokart:block/plate_ro",
-                         "siren_blue": "gokart:block/siren_blue", "glass": "gokart:block/medical_glass",
+                         "siren_blue": "gokart:block/emergency_blue_lens", "glass": "gokart:block/medical_glass",
                          "van_lamp": "gokart:block/medical_headlamp",
                          "door_mark": "gokart:block/medical_" + ("saj" if van_name == "ambulance" else "smurd") + "_door",
                          "door_mark_reverse": "gokart:block/medical_" + ("saj" if van_name == "ambulance" else "smurd") + "_door_reverse",
@@ -2296,7 +2309,11 @@ def generate_models() -> None:
         *[obox([x0, 9.45, -21.45], [x1, 10.12, 18.65], "#yellow")
           for x0,x1 in ((-12.34,-12.27),(12.27,12.34))],
         # Crew cab: broad vertical windscreen and two side glazing openings.
-        obox([-12.2, 10.92, -3.75], [12.2, 13.35, 18.75], "#red"),
+        obox([-12.2, 10.92, -3.75], [-10.0, 13.35, 18.75], "#red"),
+        obox([10.0, 10.92, -3.75], [12.2, 13.35, 18.75], "#red"),
+        obox([-10.0, 10.92, 15.4], [10.0, 13.35, 18.75], "#red"),
+        # Cab floor ends before the front wheelhouses. It supports both seats.
+        obox([-9.90, 3.92, -3.70], [9.90, 4.40, 5.65], "#floor"),
         obox([-12.2, 21.50, -3.75], [12.2, 22.50, 18.75], "#red"),
         obox([-12.0, 13.37, 18.5], [-10.6, 21.48, 18.75], "#red"),
         obox([10.6, 13.37, 18.5], [12.0, 21.48, 18.75], "#red"),
@@ -2309,9 +2326,12 @@ def generate_models() -> None:
           for x0,x1 in ((-12.15,-12.05),(12.05,12.15))
           for z0,z1 in ((-3.05,4.95),(5.60,18.45))],
         # Cab seats and dark dashboard, behind the windshield.
-        obox([-9.5, 11.0, 15.3], [9.5, 12.45, 18.45], "#frame"),
-        *[obox([x0, 6.0, z0], [x1, 7.4, z1], "#seat") for x0,x1 in ((-8,-2),(2,8)) for z0,z1 in ((-1,3.5),(6.0,10.5))],
-        *[obox([x0, 7.42, z0], [x1, 17.0, z1], "#seat") for x0,x1 in ((-8,-2),(2,8)) for z0,z1 in ((-1.8,-1.05),(5.2,5.95))],
+        obox([-9.5, 11.0, 12.0], [9.5, 12.45, 15.35], "#frame"),
+        # Two distinct front seats with supports on the cab floor; the former
+        # second row was embedded in the engine/wheelhouse and has been removed.
+        *[obox([x0, 4.42, -2.5], [x1, 6.0, 2.8], "#seat") for x0,x1 in ((-8,-2),(2,8))],
+        *[obox([x0, 6.02, -3.35], [x1, 14.40, -2.55], "#seat") for x0,x1 in ((-8,-2),(2,8))],
+        *[obox([x0, 14.42, -3.30], [x1, 16.10, -2.35], "#seat") for x0,x1 in ((-7,-3),(3,7))],
         # Flat truck nose with grille, rectangular lamps, bumper and plate.
         obox([-12.15, 3.0, 18.8], [12.15, 5.8, 20.0], "#frame"),
         obox([-12.15, 10.92, 18.77], [12.15, 13.33, 19.0], "#red"),
@@ -2339,18 +2359,19 @@ def generate_models() -> None:
         obox([3.0, 23.12, -18.5], [8.8, 24.45, -8.5], "#frame"),
         obox([4.0, 24.47, -16.8], [7.8, 25.05, -10.2], "#yellow"),
         obox([-7.0, 22.52, 8.0], [7.0, 23.05, 10.0], "#frame"),
-        obox([-6.8, 23.07, 8.05], [-1.0, 24.0, 9.95], "#blue"),
-        obox([1.0, 23.07, 8.05], [6.8, 24.0, 9.95], "#blue"),
+        obox([-6.8, 23.07, 8.05], [-1.0, 24.0, 9.95], "#blue", full_uv_faces=("north", "south", "east", "west", "up")),
+        obox([1.0, 23.07, 8.05], [6.8, 24.0, 9.95], "#blue", full_uv_faces=("north", "south", "east", "west", "up")),
     ]
     (mdir / "fire_truck_body.json").write_text(json.dumps({"textures": {
         "red": "gokart:block/medical_red", "yellow": "gokart:block/medical_yellow",
         "frame": "gokart:block/kart_frame", "carbon": "gokart:block/kart_carbon",
         "chrome": "gokart:block/kart_chrome", "shutter": "gokart:block/fire_shutter",
         "glass": "gokart:block/medical_glass", "seat": "gokart:block/kart_seat",
+        "floor": "gokart:block/medical_floor",
         "grille": "gokart:block/medical_smurd_grille", "lamp": "gokart:block/medical_headlamp",
         "taillight": "gokart:block/kart_taillight", "plate": "gokart:block/plate_ro",
         "sign": "gokart:block/fire_sign", "sign_reverse": "gokart:block/fire_sign_reverse",
-        "blue": "gokart:block/siren_blue", "dash": "gokart:block/kart_dash",
+        "blue": "gokart:block/emergency_blue_lens", "dash": "gokart:block/kart_dash",
         "rear_mark": "gokart:block/smurd_side_rear"},
         "elements": fire}, indent=2) + "\n")
 
@@ -3237,7 +3258,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.13.0 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.13.1 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@
     "headlight": "gokart:block/kart_headlight",
     "taillight": "gokart:block/kart_taillight",
     "plate_ro": "gokart:block/plate_ro",
-    "siren_blue": "gokart:block/siren_blue",
+    "siren_blue": "gokart:block/emergency_blue_lens",
     "glass": "gokart:block/medical_glass",
     "van_lamp": "gokart:block/medical_headlamp",
     "door_mark": "gokart:block/medical_saj_door",
@@ -9918,67 +9918,67 @@
     },
     {
       "from": [
-        1.7,
-        4.38,
-        -0.52
+        -1.9,
+        3.92,
+        -0.55
       ],
       "to": [
-        14.3,
-        4.65,
+        17.9,
+        4.36,
         4.35
       ],
       "faces": {
         "down": {
           "texture": "#medical_floor",
           "uv": [
-            1.7,
-            5.57,
-            14.3,
-            10.44
+            0.0,
+            5.55,
+            16.0,
+            10.45
           ]
         },
         "up": {
           "texture": "#medical_floor",
           "uv": [
-            1.7,
-            5.57,
-            14.3,
-            10.44
+            0.0,
+            5.55,
+            16.0,
+            10.45
           ]
         },
         "north": {
           "texture": "#medical_floor",
           "uv": [
-            1.7,
+            0.0,
             7.75,
-            14.3,
+            16.0,
             8.25
           ]
         },
         "south": {
           "texture": "#medical_floor",
           "uv": [
-            1.7,
+            0.0,
             7.75,
-            14.3,
+            16.0,
             8.25
           ]
         },
         "west": {
           "texture": "#medical_floor",
           "uv": [
-            5.57,
+            5.55,
             7.75,
-            10.44,
+            10.45,
             8.25
           ]
         },
         "east": {
           "texture": "#medical_floor",
           "uv": [
-            5.57,
+            5.55,
             7.75,
-            10.44,
+            10.45,
             8.25
           ]
         }
@@ -17713,46 +17713,46 @@
         "up": {
           "texture": "#siren_blue",
           "uv": [
-            5.1,
-            7.05,
-            10.9,
-            8.95
+            0.0,
+            0.0,
+            16.0,
+            16.0
           ]
         },
         "north": {
           "texture": "#siren_blue",
           "uv": [
-            5.1,
-            7.54,
-            10.9,
-            8.47
+            0.0,
+            0.0,
+            16.0,
+            16.0
           ]
         },
         "south": {
           "texture": "#siren_blue",
           "uv": [
-            5.1,
-            7.54,
-            10.9,
-            8.47
+            0.0,
+            0.0,
+            16.0,
+            16.0
           ]
         },
         "west": {
           "texture": "#siren_blue",
           "uv": [
-            7.05,
-            7.54,
-            8.95,
-            8.47
+            0.0,
+            0.0,
+            16.0,
+            16.0
           ]
         },
         "east": {
           "texture": "#siren_blue",
           "uv": [
-            7.05,
-            7.54,
-            8.95,
-            8.47
+            0.0,
+            0.0,
+            16.0,
+            16.0
           ]
         }
       },
@@ -17782,46 +17782,46 @@
         "up": {
           "texture": "#siren_blue",
           "uv": [
-            5.1,
-            7.05,
-            10.9,
-            8.95
+            0.0,
+            0.0,
+            16.0,
+            16.0
           ]
         },
         "north": {
           "texture": "#siren_blue",
           "uv": [
-            5.1,
-            7.54,
-            10.9,
-            8.47
+            0.0,
+            0.0,
+            16.0,
+            16.0
           ]
         },
         "south": {
           "texture": "#siren_blue",
           "uv": [
-            5.1,
-            7.54,
-            10.9,
-            8.47
+            0.0,
+            0.0,
+            16.0,
+            16.0
           ]
         },
         "west": {
           "texture": "#siren_blue",
           "uv": [
-            7.05,
-            7.54,
-            8.95,
-            8.47
+            0.0,
+            0.0,
+            16.0,
+            16.0
           ]
         },
         "east": {
           "texture": "#siren_blue",
           "uv": [
-            7.05,
-            7.54,
-            8.95,
-            8.47
+            0.0,
+            0.0,
+            16.0,
+            16.0
           ]
         }
       },

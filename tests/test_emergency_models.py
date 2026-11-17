@@ -155,6 +155,37 @@ class EmergencyModels(unittest.TestCase):
             for point in ((20.1, 17, 14.0), (-4.1, 17, 14.0), (8.0, 17, 26.6)):
                 self.assertFalse(all(e['from'][i] < point[i] < e['to'][i] for i in range(3)))
 
+    def test_fire_cab_is_hollow_and_seats_rest_on_floor(self):
+        elements = json.loads((ROOT / 'content/assets/gokart/models/block/fire_truck_body.json').read_text())['elements']
+        floors = [e for e in elements if e['faces']['up']['texture'] == '#floor']
+        self.assertEqual(len(floors), 1)
+        floor = floors[0]
+        seats = [e for e in elements if e['faces']['up']['texture'] == '#seat' and abs(e['from'][1] - 4.42) < 0.001]
+        self.assertEqual(len(seats), 2)
+        for seat in seats:
+            self.assertLess(abs(seat['from'][1] - floor['to'][1]), 0.03)
+            for axis in (0, 2):
+                self.assertGreater(seat['from'][axis], floor['from'][axis])
+                self.assertLess(seat['to'][axis], floor['to'][axis])
+            point = [(seat['from'][0]+seat['to'][0])/2, 7.0, (seat['from'][2]+seat['to'][2])/2]
+            self.assertFalse(any(e['faces']['up']['texture'] == '#red' and not e.get('rotation') and
+                                 all(e['from'][i] < point[i] < e['to'][i] for i in range(3)) for e in elements))
+
+    def test_static_blue_beacons_have_expected_bounds_and_uv(self):
+        for name, key, y0, y1, z0, z1 in (('ambulance', '#siren_blue', 23.67, 24.6, -2.75, -0.85),
+                                           ('smurd', '#siren_blue', 23.67, 24.6, -2.75, -0.85),
+                                           ('fire_truck', '#blue', 23.07, 24.0, 8.05, 9.95)):
+            model = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())
+            self.assertEqual(model['textures'][key[1:]], 'gokart:block/emergency_blue_lens')
+            lenses = [e for e in model['elements'] if e['faces']['up']['texture'] == key and
+                      abs(e['from'][1]-y0) < 0.001 and abs(e['to'][1]-y1) < 0.001]
+            self.assertEqual(len(lenses), 2)
+            for lens in lenses:
+                self.assertAlmostEqual(lens['to'][0]-lens['from'][0], 5.8)
+                self.assertAlmostEqual(lens['from'][2]-8, z0)
+                self.assertAlmostEqual(lens['to'][2]-8, z1)
+                self.assertEqual(lens['faces']['up']['uv'], [0.0, 0.0, 16.0, 16.0])
+
     def test_attendant_seat_faces_stretcher_without_overlap(self):
         for name in ('ambulance', 'smurd'):
             elements = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())['elements']
