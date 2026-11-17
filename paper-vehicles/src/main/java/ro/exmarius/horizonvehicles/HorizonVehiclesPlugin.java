@@ -12,6 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import ro.exmarius.horizonvehicles.kart.GoKartManager;
 import ro.exmarius.horizonvehicles.restart.DeployRestartWatcher;
 import java.nio.file.Files;
+import java.io.File;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.util.HexFormat;
@@ -31,7 +32,11 @@ public final class HorizonVehiclesPlugin extends JavaPlugin implements CommandEx
             packHash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(stream.readAllBytes()));
         } catch (Exception error) { throw new IllegalStateException("Cannot load Go-Kart pack", error); }
         try {
-            String loadedHash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(getFile().toPath())));
+            // Paper remaps plugin JARs on startup, so getFile() may name a
+            // remapped copy whose hash differs from the artifact uploaded by CI.
+            File deployedJar = new File(getDataFolder().getParentFile(), "HorizonVehiclesPaper-dev.jar");
+            File sourceJar = deployedJar.isFile() ? deployedJar : getFile();
+            String loadedHash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(sourceJar.toPath())));
             restartWatcher = new DeployRestartWatcher(this, loadedHash);
             restartWatcher.start();
         } catch (Exception error) {
