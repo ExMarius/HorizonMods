@@ -1,0 +1,31 @@
+name: Check HidenCloud SFTP host
+
+# Connectivity check only: no credentials, uploads, server commands or restarts.
+# The displayed fingerprint is an observation, NOT verified host identity.
+on:
+  push:
+    paths:
+      - '.github/workflows/sftp-host-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check SFTP reachability and display observed host key fingerprint
+        shell: bash
+        run: |
+          set -euo pipefail
+          keys="$(mktemp)"
+          trap 'rm -f "$keys"' EXIT
+          ssh-keyscan -T 15 -p 2022 -t ed25519 zara.hidencloud.com > "$keys"
+          if [ ! -s "$keys" ]; then
+            echo 'Nu am primit o cheie ED25519 de la serverul SFTP.' >&2
+            exit 1
+          fi
+          echo 'Amprenta observată (trebuie verificată independent la HidenCloud):'
+          ssh-keygen -lf "$keys" -E sha256
