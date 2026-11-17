@@ -1,6 +1,6 @@
 [mod]
 id = "gokart_native"
-version = "0.12.1"
+version = "0.12.2"
 priority = 100
 
 # Planned and verified against Horizon Nightly 2026-11-16 (`9f42064c11efe7ef3e5ed2baad7ddc2a3b36eea0`, NATIVE_HOOKS_API = 415).

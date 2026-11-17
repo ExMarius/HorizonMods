@@ -84,6 +84,19 @@ class EmergencyModels(unittest.TestCase):
             self.assertEqual(sum(e['faces']['up']['texture'] == '#medical_mattress' for e in elements), 1)
             self.assertTrue(any(e['faces']['up']['texture'] == '#medical_red' for e in elements))
 
+    def test_roof_crown_front_lights_and_door_markings(self):
+        for name in ('ambulance', 'smurd'):
+            model = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())
+            elements = model['elements']
+            for x in (-12, -10.25, 0, 10.25, 12):
+                for z in (-20, -8, 0, 5):
+                    self.assertTrue(any(covers_side(e, x, 22.3, z) for e in elements), (name, x, z))
+            self.assertEqual(sum(e['faces']['south']['texture'] == '#van_lamp' for e in elements), 2)
+            for tex, side in (('#door_mark', 'east'), ('#door_mark_reverse', 'west')):
+                self.assertEqual(sum(e['faces'][side]['texture'] == tex for e in elements), 1)
+            self.assertEqual(model['textures']['glass'], 'gokart:block/medical_glass')
+            self.assertEqual(model['textures']['van_lamp'], 'gokart:block/medical_headlamp')
+
     def test_emergency_markings_and_opposite_side_uvs_are_present(self):
         for name in ('ambulance', 'smurd'):
             model = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())
