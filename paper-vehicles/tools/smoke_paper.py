@@ -14,7 +14,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-API = 'https://api.papermc.io/v2/projects/paper/versions/1.21.4'
+API = 'https://fill.papermc.io/v3/projects/paper/versions/1.21.4'
 HEADERS = {'User-Agent': 'HorizonVehiclesPaper-smoke/1.0 (https://github.com/ExMarius/HorizonMods)'}
 
 
@@ -25,13 +25,12 @@ def get(url):
 
 def main(jar):
     jar = Path(jar).resolve()
-    builds = json.loads(get(API + '/builds'))['builds']
-    stable = [build for build in builds if build.get('channel') == 'default']
-    build = max(stable or builds, key=lambda item: item['build'])
-    name = build['downloads']['application']['name']
-    url = API + f"/builds/{build['build']}/downloads/{name}"
-    content = get(url)
-    expected = build['downloads']['application']['sha256']
+    builds = json.loads(get(API + '/builds'))
+    stable = [build for build in builds if build.get('channel') == 'STABLE']
+    build = max(stable or builds, key=lambda item: item['id'])
+    download = build['downloads']['server:default']
+    content = get(download['url'])
+    expected = download['checksums']['sha256']
     if hashlib.sha256(content).hexdigest() != expected:
         raise RuntimeError('Paper server download checksum mismatch')
     with tempfile.TemporaryDirectory(prefix='horizon-paper-smoke-') as tmp:
@@ -71,7 +70,7 @@ def main(jar):
                     raise RuntimeError('Restart watcher did not consume matching digest')
                 if '[HorizonVehiclesPaper] Disabling' in text:
                     raise RuntimeError('Plugin disabled during startup')
-                print(f'Paper 1.21.4 build {build["build"]}: plugin loaded, command responded, stale marker consumed.')
+                print(f'Paper 1.21.4 build {build["id"]}: plugin loaded, command responded, stale marker consumed.')
             except Exception:
                 print(logpath.read_text(errors='replace')[-30000:], file=sys.stderr)
                 raise
