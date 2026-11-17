@@ -8,8 +8,8 @@ checkpoint. Nu instala pluginul vechi alături cu intenția că acest proiect i-
 
 Codul pluginului Paper existent a fost copiat separat în
 `../third_party/paper_vehicle_reference/` pentru a fi studiat și portat
-selectiv. Nu este compilat în pluginul nou și nici nu sunt incluse modelele,
-sunetele sau resource pack-ul lui. Vezi și `../docs/paper-transfer-plan-ro.md`
+selectiv. Copia din `src/main/java` este inclusă în build, dar pluginul vechi
+nu este activat și nu sunt incluse modelele, sunetele sau resource pack-ul lui. Vezi și `../docs/paper-transfer-plan-ro.md`
 pentru licențe și starea fiecărui vehicul. Păstrează GPL și notificările
 necesare când se adaptează cod. Modelele generate în `../content/` sunt surse
 pentru port, nu sunt încă un resource pack valid pentru Paper.
@@ -37,12 +37,10 @@ scheletul descris mai sus, **nu un plugin cu vehicule funcționale**. Dacă
 workflow-ul sau permisiunile repository-ului nu permit rularea, nu există un
 build verificat până când eroarea nu este rezolvată.
 
-## Import selectiv al codului
+## Importul codului
 
-Primele clase independente de input/tuning/indicator de combustibil și testul
-indicatorului provin din pluginul Paper al lui ExMarius/MrCrayfish și sunt
-incluse în build, dar nu sunt încă legate de un vehicul. `LICENSE` conține
-textul complet GPLv3; `THIRD-PARTY.md` documentează sursa și excepțiile. Codul
-și testele rămase și generatorul de pack sunt păstrate ca referință, fără a le
+Codul Java al pluginului Paper și testul indicatorului de combustibil provin din pluginul Paper al lui ExMarius/MrCrayfish și sunt
+incluse în build, dar nu sunt încă legate de un vehicul. Entrypoint-ul pluginului vechi nu este activat; nu se încarcă resource pack-ul lui. `LICENSE` conține
+textul complet GPLv3; `THIRD-PARTY.md` documentează sursa și excepțiile. Testele rămase și generatorul de pack sunt păstrate ca referință, fără a le
 activa și fără resursele originale. Nu rulăm generatorul original nefiltrat:
 el include și vehicule/componente cu mențiune ARR și trimite la resurse externe.

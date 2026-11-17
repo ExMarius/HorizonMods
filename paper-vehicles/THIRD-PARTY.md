@@ -2,11 +2,11 @@
 
 ## Paper plugin reference code
 
-`DriveTuning`, `FuelGauge`, `VehicleInput`, and `FuelGaugeTest` were copied from
+The Paper Java sources and `FuelGaugeTest` were copied from
 [ExMarius/MrCrayfishVehicleMod](https://github.com/ExMarius/MrCrayfishVehicleMod),
-revision `f52426454e69407e7f16c7e8eb20ff5a511c318d`, under the source project's
+revision `6ff2f1da494e7861d14c6772b2bdbcbc2a70ade0` (the test was copied at `f52426454e69407e7f16c7e8eb20ff5a511c318d`), under the source project's
 GPLv3 license in `LICENSE`. The copied source code retains its existing package
-and comments. They are not yet wired into this scaffold's command or vehicles.
+and comments. The original plugin entrypoint is present for future adaptation but is not enabled; the active entrypoint remains the new scaffold. It is not wired into vehicle commands.
 A wider reference snapshot is retained in `../third_party/paper_vehicle_reference`.
 
 ## Models, textures and sounds
