@@ -1,1 +1,1 @@
-Cerere utilizator: diagnostic precis pentru configurare, fără restart.
+Cerere utilizator: reluare după configurarea amprentei, fără restart.
