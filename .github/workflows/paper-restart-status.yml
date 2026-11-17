@@ -1,0 +1,23 @@
+name: Check Paper restart marker
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'paper-vehicles/deploy/check_restart.py'
+      - '.github/workflows/paper-restart-status.yml'
+permissions:
+  contents: read
+jobs:
+  status:
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install paramiko==3.5.1
+      - name: Check pending restart request
+        env:
+          SFTP_USERNAME: ${{ secrets.HIDENCLOUD_SFTP_USERNAME }}
+          SFTP_PASSWORD: ${{ secrets.HIDENCLOUD_SFTP_PASSWORD }}
+          SFTP_PRIVATE_KEY: ${{ secrets.HIDENCLOUD_SFTP_PRIVATE_KEY }}
+        run: python3 paper-vehicles/deploy/check_restart.py
