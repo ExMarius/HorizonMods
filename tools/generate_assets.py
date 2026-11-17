@@ -2125,6 +2125,12 @@ def generate_models() -> None:
             obox([-9.90, 4.38, -3.62], [9.90, 21.90, -3.48], "#medical_white"),
             obox([-8.9, 21.70, -19.5], [-6.6, 21.90, -7.0], "#headlight"),
             obox([6.6, 21.70, -19.5], [8.9, 21.90, -7.0], "#headlight"),
+            # Raised wheelhouse covers join the central floor aisle. Their inner
+            # edges stay outside the stretcher rails and they support equipment.
+            obox([-8.19, 8.39, -20.75], [-6.96, 8.55, -8.58], "#medical_floor"),
+            obox([6.96, 8.39, -20.75], [8.19, 8.55, -8.58], "#medical_floor"),
+            # Cabinet pedestal in front of the rear wheelhouse, down to the floor.
+            obox([-9.90, 4.38, -8.52], [-7.20, 8.87, -4.05], "#medical_white"),
             # Low storage cabinetry, upper cupboards and metallic handles.
             obox([-9.90, 8.9, -20.75], [-7.20, 12.5, -4.05], "#medical_white"),
             obox([-9.90, 17.4, -20.75], [-7.85, 20.35, -4.05], "#medical_white"),
@@ -2163,15 +2169,15 @@ def generate_models() -> None:
             obox([4.30, 9.10, -16.9], [9.65, 10.35, -12.5], "#attendant"),
             obox([8.75, 10.37, -16.9], [9.65, 15.40, -12.5], "#attendant"),
             obox([8.85, 15.42, -15.8], [9.60, 17.00, -13.6], "#attendant"),
-            obox([6.90, 8.42, -15.9], [8.50, 9.08, -13.4], "#frame"),
+            obox([6.96, 8.57, -15.9], [8.50, 9.08, -13.4], "#frame"),
             obox([4.32, 10.37, -16.88], [4.62, 11.10, -12.52], "#frame"),
             obox([4.65, 10.37, -14.90], [8.65, 10.51, -14.50], "#medical_yellow"),
             obox([7.0, 13.20, -7.10], [9.80, 16.10, -5.90], "#frame"),
-            obox([7.25, 13.48, -7.14], [9.55, 15.80, -7.12], "#dash", full_uv_faces=("north", "south")),
-            obox([7.40, 9.0, -20.40], [9.0, 14.0, -19.15], "#medical_white"),
-            obox([7.70, 14.02, -20.1], [8.70, 14.60, -19.45], "#chrome"),
-            obox([7.20, 10.85, -11.55], [9.40, 12.80, -9.25], "#medical_red"),
-            obox([7.70, 12.82, -11.10], [8.90, 13.20, -9.70], "#frame"),
+            obox([6.97, 13.48, -6.95], [6.99, 15.80, -6.05], "#dash", full_uv_faces=("east", "west")),
+            obox([7.40, 8.57, -20.40], [9.0, 13.57, -19.15], "#medical_white"),
+            obox([7.70, 13.59, -20.1], [8.70, 14.17, -19.45], "#chrome"),
+            obox([7.20, 8.57, -11.55], [9.40, 10.52, -9.25], "#medical_red"),
+            obox([7.70, 10.54, -11.10], [8.90, 10.92, -9.70], "#frame"),
             # Cabinet door joints, disinfectant storage, seat pedestal and a
             # ceiling handrail: arranged clear of the stretcher's patient area.
             obox([-7.19, 9.1, -15.1], [-7.10, 12.3, -14.95], "#frame"),
@@ -3258,7 +3264,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.13.1 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.13.2 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":
