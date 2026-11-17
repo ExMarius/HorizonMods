@@ -1,0 +1,30 @@
+name: Paper server startup smoke test
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'paper-vehicles/**'
+      - '.github/workflows/paper-server-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  smoke:
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: python3 -m pip install Pillow==11.3.0
+      - run: ./paper-vehicles/gradlew -p paper-vehicles build
+      - name: Start disposable Paper server and exercise plugin
+        run: |
+          set -o pipefail
+          python3 paper-vehicles/tools/smoke_paper.py paper-vehicles/build/libs/HorizonVehiclesPaper-0.1.0-dev.jar 2>&1 | tee /tmp/paper-smoke.log || {
+            python3 -c "from pathlib import Path; lines=Path('/tmp/paper-smoke.log').read_text().splitlines(); print('::error::' + ' | '.join(line.replace('%','%25') for line in lines[-15:])[:10000])"
+            exit 1
+          }
