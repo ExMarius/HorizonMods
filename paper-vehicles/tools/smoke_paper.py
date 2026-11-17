@@ -76,7 +76,10 @@ def main(jar):
                 # entity creation, mounting and movement, not texture fidelity.
                 proc.stdin.write('op SmokeBot\n'); proc.stdin.flush()
                 bot = Path(__file__).with_name('smoke_player.cjs').resolve()
-                subprocess.run(['node', str(bot)], check=True, timeout=60)
+                player_test = subprocess.run(['node', str(bot)], capture_output=True, text=True, timeout=60)
+                if player_test.returncode:
+                    raise RuntimeError('Offline player failed: ' + (player_test.stdout + player_test.stderr)[-2000:])
+                print(player_test.stdout)
                 # A different digest must issue the same restart command as the
                 # upstream plugin. Our dummy start.sh records the invocation.
                 marker.write_text('f' * 64 + '\n')

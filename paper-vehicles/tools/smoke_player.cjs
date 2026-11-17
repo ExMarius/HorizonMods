@@ -21,7 +21,9 @@ bot.on('error', e => fail(e.message))
 bot.on('kicked', reason => fail('kicked: ' + String(reason).slice(0, 300)))
 bot.on('end', () => { if (!done) fail('connection ended') })
 bot.once('spawn', () => {
-  setTimeout(() => { bot.chat('/hvehicle spawn go_kart'); spawned = true }, 2500)
+  setTimeout(() => bot.chat('/fill ~-8 ~-1 ~-8 ~8 ~-1 ~8 stone'), 1500)
+  setTimeout(() => bot.chat('/fill ~-8 ~ ~-8 ~8 ~4 ~8 air'), 2500)
+  setTimeout(() => { bot.chat('/hvehicle spawn go_kart'); spawned = true }, 4500)
 })
 bot.on('messagestr', text => {
   if (text.includes('Nu am putut crea Go-Kart') || text.includes('Nu este loc liber')) fail(text)
