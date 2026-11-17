@@ -1,1 +1,1 @@
-Cerere utilizator: reluare cu diagnostic sigur, fără restart.
+Cerere utilizator: diagnostic precis pentru configurare, fără restart.

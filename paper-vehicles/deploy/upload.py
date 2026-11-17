@@ -56,6 +56,7 @@ def transfer(sftp, local_path):
 def main():
     import paramiko
     global STAGE
+    STAGE = 'jar'
     if len(sys.argv) != 2:
         raise ValueError('Expected one JAR path')
     path = Path(sys.argv[1])
@@ -64,8 +65,15 @@ def main():
     username = os.environ.get('SFTP_USERNAME', '')
     password = os.environ.get('SFTP_PASSWORD', '')
     expected = os.environ.get('SFTP_HOST_KEY_SHA256', '').strip()
-    if not username or not password or not expected.startswith('SHA256:'):
-        raise ValueError('SFTP settings are incomplete')
+    STAGE = 'username_missing'
+    if not username:
+        raise ValueError('SFTP username is missing')
+    STAGE = 'password_missing'
+    if not password:
+        raise ValueError('SFTP password is missing')
+    STAGE = 'fingerprint_missing_or_invalid'
+    if not expected.startswith('SHA256:'):
+        raise ValueError('SFTP host fingerprint is missing or invalid')
     STAGE = 'network'
     with socket.create_connection((HOST, PORT), timeout=20) as sock:
         transport = paramiko.Transport(sock)
