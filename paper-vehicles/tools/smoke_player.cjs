@@ -43,7 +43,7 @@ const interval = setInterval(() => {
         clearInterval(input)
         bot._client.write('player_input', { inputs: {} })
         if (!bot.vehicle) return fail('player dismounted during movement')
-        const distance = start.distanceTo(bot.vehicle.position)
+        const distance = Math.hypot(start.x - bot.vehicle.position.x, start.z - bot.vehicle.position.z)
         if (distance < .3) return fail('vehicle did not move: ' + distance)
         success()
       }, 4000)
