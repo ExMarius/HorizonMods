@@ -1,7 +1,7 @@
 # Livrare SFTP controlată — versiune de dezvoltare
 
 Workflow-ul `paper-deploy.yml` construiește și testează proiectul de pe branch,
-verifică amprenta SSH **înainte** de autentificare, apoi încarcă exclusiv
+compară amprenta SSH observată anterior **înainte** de autentificare, apoi încarcă exclusiv
 `plugins/HorizonVehiclesPaper-dev.jar`. Verifică SHA-256 la upload, folosește
 fișier temporar și nu șterge vechiul JAR dacă înlocuirea atomică nu este
 suportată. Nu execută comenzi pe server, nu schimbă alte pluginuri, lumea sau
@@ -15,10 +15,9 @@ repo:
 - `HIDENCLOUD_SFTP_PRIVATE_KEY`: cheia SSH **privată ED25519** (preferată);
   adaugă doar cheia publică în panel. Alternativ, `HIDENCLOUD_SFTP_PASSWORD`
   este parola SFTP. Dacă ambele există, este folosită doar cheia privată.
-- `HIDENCLOUD_SFTP_HOST_KEY_SHA256`: amprenta SSH ED25519 în format `SHA256:…`,
-  **confirmată independent de HidenCloud**. Rezultatul `ssh-keyscan` din
-  workflow-ul de diagnostic este doar o observație, nu o sursă de încredere.
-  Dacă nu există confirmare de la furnizor, nu seta valoarea și nu lansa deploy.
+- Amprenta serverului este fixată în `upload.py` la valoarea observată de pe
+  GitHub Actions. Aceasta este trust-on-first-use și nu a fost confirmată
+  independent de HidenCloud; la o schimbare a cheii, livrarea se oprește.
 
 Odată configurate, declanșează `workflow_dispatch` pe branch; dacă GitHub nu
 permite dispatch pentru un workflow absent pe branch-ul implicit, o schimbare

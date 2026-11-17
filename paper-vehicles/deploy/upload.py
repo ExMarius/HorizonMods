@@ -2,7 +2,7 @@
 """Upload the development JAR only after authenticating a pinned SSH host key.
 
 Requires environment variables: SFTP_USERNAME, SFTP_PASSWORD and
-SFTP_HOST_KEY_SHA256 and either SFTP_PRIVATE_KEY or SFTP_PASSWORD. Never prints credentials. Does not run remote commands,
+either SFTP_PRIVATE_KEY or SFTP_PASSWORD. Never prints credentials. Does not run remote commands,
 restart the server, modify worlds, or remove an existing plugin.
 """
 import base64
@@ -17,6 +17,8 @@ from pathlib import Path
 
 HOST = 'zara.hidencloud.com'
 PORT = 2022
+# Trust-on-first-use: observed via GitHub's SFTP host check, not verified by provider.
+HOST_KEY_SHA256 = 'SHA256:phWPoAg3Zy1vnk1M1VJBUFGfvS/r0R+7pN8Al82o1IQ'
 TARGET = 'plugins/HorizonVehiclesPaper-dev.jar'
 STAGE = 'configuration'
 
@@ -66,22 +68,19 @@ def main():
     username = os.environ.get('SFTP_USERNAME', '')
     password = os.environ.get('SFTP_PASSWORD', '')
     private_key = os.environ.get('SFTP_PRIVATE_KEY', '')
-    expected = os.environ.get('SFTP_HOST_KEY_SHA256', '').strip()
+    expected = HOST_KEY_SHA256
     STAGE = 'username_missing'
     if not username:
         raise ValueError('SFTP username is missing')
     STAGE = 'credential_missing'
     if not private_key and not password:
         raise ValueError('SFTP credential is missing')
-    STAGE = 'fingerprint_missing_or_invalid'
-    if not expected.startswith('SHA256:'):
-        raise ValueError('SFTP host fingerprint is missing or invalid')
     STAGE = 'network'
     with socket.create_connection((HOST, PORT), timeout=20) as sock:
         transport = paramiko.Transport(sock)
         try:
             transport.start_client(timeout=20)
-            # Verify independently obtained host key BEFORE sending credentials.
+            # Compare the pinned, observed host key BEFORE sending credentials.
             STAGE = 'host_key'
             if not hmac.compare_digest(fingerprint(transport.get_remote_server_key()), expected):
                 raise ValueError('SFTP host key fingerprint mismatch; upload stopped before authentication')

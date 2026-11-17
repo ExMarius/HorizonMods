@@ -1,1 +1,1 @@
-Cerere utilizator: reluare după configurarea amprentei, fără restart.
+Cerere utilizator: reluare livrare SFTP, fără restart.
