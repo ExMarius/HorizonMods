@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.13.6";
+pub const VERSION: &str = "0.13.7";
 pub const DESCRIPTION: &str = "FiveM-inspired 3D Vehicles for Horizon: Go-Kart, Quad Bike ATV, 4x4 Off-Roader, Poliția Română Pursuit Sedan with sculpted wheel arches, emissive lights, dynamic night headlights, siren & girofar, and /vehicle remove.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
@@ -130,9 +130,9 @@ pub const EXHAUST_HEIGHT_Y: f32 = 0.48;
 pub const SEAT_ATTACH_Y: f32 = (3.30 * 1.14) / 16.0;   // 0.235125 b (3.76 tx cushion top)
 pub const SEAT_OFFSET_Z: f32 = (-3.80 * 1.18) / 16.0;  // -0.28025 b (-4.484 tx, 18.9 tx legroom!)
 pub const MAX_STEER_DEG: f32 = 25.0;
-pub const STEP_HEIGHT: f64 = 0.625;
-pub const DACIA_LOGAN_STEP_HEIGHT: f64 = 0.80;
-pub const POLICE_CAR_STEP_HEIGHT: f64 = 0.75;
+pub const STEP_HEIGHT: f64 = 1.06;
+pub const DACIA_LOGAN_STEP_HEIGHT: f64 = 1.06;
+pub const POLICE_CAR_STEP_HEIGHT: f64 = 1.06;
 pub const QUAD_BIKE_STEP_HEIGHT: f64 = 1.02;
 pub const OFF_ROADER_STEP_HEIGHT: f64 = 1.06;
 pub const DEFAULT_CAMERA_DISTANCE: f32 = 4.5;
@@ -1959,6 +1959,18 @@ mod tests {
     }
 
     use super::*;
+
+    #[test]
+    fn each_vehicle_has_at_least_one_block_step_height() {
+        for kind in [VehicleKind::GoKart, VehicleKind::OffRoader, VehicleKind::QuadBike,
+                     VehicleKind::Atv, VehicleKind::Ambulance, VehicleKind::Smurd,
+                     VehicleKind::FireTruck, VehicleKind::PoliceCar, VehicleKind::DaciaLoganPolice] {
+            let step = kind.layout().step_height;
+            assert!((1.0..=1.1).contains(&step), "{kind:?}: {step}");
+            // horizon_world::nbt::Tag::Double stores IEEE-754 bits, not f64.
+            assert_eq!(f64::from_bits(step.to_bits()), step);
+        }
+    }
 
     #[test]
     fn engine_tiers_increase_top_speed_and_acceleration() {
