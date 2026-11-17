@@ -29,4 +29,18 @@ class BundledBusAssetsTest {
         }
         assertNotNull(getClass().getResource("/source-assets/city_bus/yellow_bus_frame.json"));
     }
+    @Test
+    void experimentalPackIsIncludedButNotActivated() throws Exception {
+        try (var stream = getClass().getResourceAsStream("/resource-packs/city-bus-experimental.zip")) {
+            assertNotNull(stream, "Experimental resource pack must be included in the JAR");
+            var seen = new java.util.HashSet<String>();
+            try (var zip = new java.util.zip.ZipInputStream(stream)) {
+                java.util.zip.ZipEntry entry;
+                while ((entry = zip.getNextEntry()) != null) seen.add(entry.getName());
+            }
+            assertTrue(seen.contains("pack.mcmeta"));
+            assertTrue(seen.contains("city_bus_parts.json"));
+            assertTrue(seen.contains("LICENSE-city-bus.txt"));
+        }
+    }
 }

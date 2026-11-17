@@ -11,12 +11,12 @@ A wider reference snapshot is retained in `../third_party/paper_vehicle_referenc
 
 ## Models, textures and sounds
 
-This development plugin does not yet include or distribute a resource pack or
-any models, textures or sounds from MrCrayfish's Vehicle Mod or Furniture Mod.
+This development plugin does not include models, textures or sounds from
+MrCrayfish's Vehicle Mod or Furniture Mod.
 Future asset ports must identify their exact sources, version, license, credits
 and dependency chain. Some source models say "All Rights Reserved" in their
 credit field despite the repository's GPLv3 license: those assets remain out
 until their reuse terms are clarified. Do not erase or replace the original
 credit to work around this. Absence of that note is not, by itself, proof of
 permission for each dependency. FoundationGames City Vehicles has a separate
-MIT license. The bus source files and MIT license are staged in `asset-src/city_bus/`; they are bundled unchanged in the development JAR under `source-assets/city_bus/`, but are not yet converted into a resource pack or usable in game.
+MIT license. The bus source files and MIT license are staged in `asset-src/city_bus/`; they are bundled unchanged in the development JAR under `source-assets/city_bus/`, A generated experimental resource pack using these MIT assets is bundled in the JAR; it is not yet enabled or validated in game.

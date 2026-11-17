@@ -2,7 +2,7 @@
 
 Plugin separat pentru **Paper 1.21.4 / Java 21**. Acest director nu înlocuiește
 modul Horizon. `/hvehicle list` enumeră vehiculele planificate, nu vehicule
-jucabile. Nu există spawn, condus, scaune, resource pack sau rețete în acest
+jucabile. Nu există spawn, condus, scaune funcționale, resource pack activ sau rețete în acest
 checkpoint. Nu instala pluginul vechi alături cu intenția că acest proiect i-a
 înlocuit resursele sau funcțiile.
 
@@ -20,7 +20,7 @@ pentru port, nu sunt încă un resource pack valid pentru Paper.
 ./gradlew -p paper-vehicles build
 ```
 
-Necesită Java 21, descărcarea Gradle și a Paper API. Acest mediu nu are Java și
+Necesită Java 21, Python 3 cu Pillow 11.3.0, descărcarea Gradle și a Paper API. Acest mediu nu are Java și
 nu poate accesa gazdele Gradle/Paper, deci build-ul și rularea Paper nu au fost
 validate aici. Urmează conversia geometriei și a texturilor la un resource pack
 vanilla 1.21.4 și integrarea în rig-ul de afișare; JSON-urile Horizon folosesc
@@ -64,3 +64,14 @@ sau testate și nu garantează că jucătorii încap în aceste locuri.
 `CityBusLayout` citește acum automat datele originale din JAR și le validează;
 rezultatul este exclusiv în coordonate sursă, încă necalibrat și neconectat
 la sistemul de montare. Faptul că datele se citesc nu face scaunele funcționale.
+
+### Conversie experimentală
+
+`tools/compile_city_bus.py` convertește suprafețele OBJ în modele vanilla
+plane cu texturi coapte din UV-urile originale, grupate după orientare. Build-ul
+include zip-ul experimental și licența MIT în JAR, dar **nu îl trimite
+clienților și nu instanțiază modelele**. Sunt 31 grupuri pentru corp și 21
+pentru fiecare roată: folosirea lor brută poate fi costisitoare pentru server.
+Texturile sunt resample la 48×48 per față, nu o conversie pixel-perfect.
+Geometria, UV-urile, transparența, animația și performanța trebuie verificate
+în Paper înainte de activare; nu este un produs final sau vehicul condus.

@@ -24,7 +24,17 @@ tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
     options.release.set(21)
 }
+val buildCityBusPack by tasks.registering(Exec::class) {
+    inputs.dir("asset-src/city_bus")
+    inputs.file("tools/compile_city_bus.py")
+    val pack = layout.buildDirectory.file("generated/city-bus-experimental.zip")
+    outputs.file(pack)
+    commandLine("python3", "tools/compile_city_bus.py", pack.get().asFile.absolutePath)
+}
+
 tasks.processResources {
+    dependsOn(buildCityBusPack)
+    from(buildCityBusPack) { into("resource-packs") }
     inputs.property("version", project.version)
     filesMatching("plugin.yml") { expand("version" to project.version) }
     from("LICENSE") { rename { "LICENSE.txt" } }
