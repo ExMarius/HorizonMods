@@ -281,6 +281,11 @@ pub(in crate::game) fn items(items: &mut Vec<Item>) {
     push_item(items, rules::ITEM_AMBULANCE, 1, Rarity::Rare);
     push_item(items, rules::ITEM_SMURD, 1, Rarity::Rare);
     push_item(items, rules::ITEM_FIRE_TRUCK, 1, Rarity::Rare);
+    push_item(items, "gokart:street_coupe", 1, Rarity::Rare);
+    push_item(items, "gokart:muscle_car", 1, Rarity::Rare);
+    push_item(items, "gokart:supercar", 1, Rarity::Rare);
+    push_item(items, "gokart:city_suv", 1, Rarity::Rare);
+    push_item(items, "gokart:taxi", 1, Rarity::Rare);
     push_item(items, rules::ITEM_POLICE_CAR, 1, Rarity::Epic);
     push_item(items, rules::ITEM_ENGINE_IRON, 1, Rarity::Common);
     push_item(items, rules::ITEM_ENGINE_GOLD, 1, Rarity::Uncommon);
@@ -375,6 +380,9 @@ fn kart_summon_nbt(kind: rules::VehicleKind) -> Compound {
         rules::VehicleKind::DaciaLoganPolice => {
             tags.push(Tag::String(JavaString::from(rules::ENTITY_TAG_DACIA_LOGAN)));
         }
+        rules::VehicleKind::StreetCoupe | rules::VehicleKind::MuscleCar | rules::VehicleKind::Supercar | rules::VehicleKind::CitySuv | rules::VehicleKind::Taxi => {
+            tags.push(Tag::String(JavaString::from(format!("gokart_{}", kind.slug()).as_str())));
+        }
         rules::VehicleKind::GoKart => {}
     }
     nbt.insert(JavaString::from("Tags"), Tag::List(tags));
@@ -446,6 +454,9 @@ fn prepare_kart_mob(game: &mut Game<'_>, entity_id: u32, yaw: f32, kind: rules::
             rules::VehicleKind::DaciaLoganPolice => {
                 game.native_entity_add_tag(eref, rules::ENTITY_TAG_DACIA_LOGAN);
             }
+            rules::VehicleKind::StreetCoupe | rules::VehicleKind::MuscleCar | rules::VehicleKind::Supercar | rules::VehicleKind::CitySuv | rules::VehicleKind::Taxi => {
+                game.native_entity_add_tag(eref, &format!("gokart_{}", kind.slug()));
+            }
             rules::VehicleKind::GoKart => {}
         }
         game.native_entity_set_rotation(eref, yaw, 0.0);
@@ -505,7 +516,9 @@ fn lookup_kart_uuid(
         .as_ref()
         .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG))
     {
-        let default_spec = if tags
+        let default_spec = if let Some(street_kind) = tags.as_ref().and_then(|t| street_kind_from_tags(t)) {
+            rules::KartSpec::default_for_kind(street_kind)
+        } else if tags
             .as_ref()
             .is_some_and(|t| t.iter().any(|s| s == rules::ENTITY_TAG_OFF_ROADER))
         {
@@ -660,6 +673,7 @@ pub(in crate::game) fn use_item_on(
                 rules::VehicleKind::Ambulance => tr("gokart.msg.placed_ambulance", "Ambulance deployed!"),
                 rules::VehicleKind::Smurd => tr("gokart.msg.placed_smurd", "SMURD deployed!"),
                 rules::VehicleKind::FireTruck => tr("gokart.msg.placed_fire_truck", "Fire truck deployed!"),
+                rules::VehicleKind::StreetCoupe | rules::VehicleKind::MuscleCar | rules::VehicleKind::Supercar | rules::VehicleKind::CitySuv | rules::VehicleKind::Taxi => tr("gokart.msg.placed_street_car", "Street car deployed!"),
                 rules::VehicleKind::PoliceCar => tr(
                     "gokart.msg.placed_police_car",
                     "Poliția Română Patrol Car deployed! Press [H] while driving for Siren & Girofar.",
@@ -974,7 +988,15 @@ pub(in crate::game) fn attack_entity(
     }
 }
 
+fn street_kind_from_tags(tags: &[String]) -> Option<rules::VehicleKind> {
+    for kind in [rules::VehicleKind::StreetCoupe, rules::VehicleKind::MuscleCar, rules::VehicleKind::Supercar, rules::VehicleKind::CitySuv, rules::VehicleKind::Taxi] {
+        if tags.iter().any(|tag| tag == &format!("gokart_{}", kind.slug())) { return Some(kind); }
+    }
+    None
+}
+
 fn vehicle_kind_from_tags(tags: &[String]) -> Option<rules::VehicleKind> {
+    if let Some(kind) = street_kind_from_tags(tags) { return Some(kind); }
     let has_any = tags.iter().any(|t| {
         matches!(
             t.as_str(),
@@ -1249,6 +1271,11 @@ pub(in crate::game) fn perform_command(
             make_kart_item(game, rules::KartSpec::default_ambulance()),
             make_kart_item(game, rules::KartSpec::default_smurd()),
             make_kart_item(game, rules::KartSpec::default_fire_truck()),
+            make_kart_item(game, rules::KartSpec::default_for_kind(rules::VehicleKind::StreetCoupe)),
+            make_kart_item(game, rules::KartSpec::default_for_kind(rules::VehicleKind::MuscleCar)),
+            make_kart_item(game, rules::KartSpec::default_for_kind(rules::VehicleKind::Supercar)),
+            make_kart_item(game, rules::KartSpec::default_for_kind(rules::VehicleKind::CitySuv)),
+            make_kart_item(game, rules::KartSpec::default_for_kind(rules::VehicleKind::Taxi)),
             make_kart_item(game, rules::KartSpec::default_off_roader()),
             make_kart_item(game, rules::KartSpec::default_police_car()),
             stack_of(rules::ITEM_ENGINE_GOLD, 1),
@@ -1274,7 +1301,9 @@ pub(in crate::game) fn perform_command(
 
     if rest == "spawn" || rest.starts_with("spawn ") {
         let arg = rest.strip_prefix("spawn").unwrap_or("").trim();
-        let spec = if matches!(arg, "off_roader" | "offroader" | "4x4" | "jeep") {
+        let spec = if let Some(kind) = rules::VehicleKind::from_item(&format!("gokart:{}", arg)) {
+            rules::KartSpec::default_for_kind(kind)
+        } else if matches!(arg, "off_roader" | "offroader" | "4x4" | "jeep") {
             rules::KartSpec::default_off_roader()
         } else if matches!(arg, "ambulance" | "ambulanta" | "salvare") {
             rules::KartSpec::default_ambulance()
@@ -1298,6 +1327,11 @@ pub(in crate::game) fn perform_command(
             | rules::VehicleKind::Ambulance
             | rules::VehicleKind::Smurd
             | rules::VehicleKind::FireTruck
+            | rules::VehicleKind::StreetCoupe
+            | rules::VehicleKind::MuscleCar
+            | rules::VehicleKind::Supercar
+            | rules::VehicleKind::CitySuv
+            | rules::VehicleKind::Taxi
             | rules::VehicleKind::DaciaLoganPolice => 3.2,
             rules::VehicleKind::QuadBike | rules::VehicleKind::Atv => 2.5,
             rules::VehicleKind::GoKart => 2.4,
@@ -1320,6 +1354,7 @@ pub(in crate::game) fn perform_command(
                 rules::VehicleKind::Ambulance => tr("gokart.msg.placed_ambulance", "Ambulance deployed!"),
                 rules::VehicleKind::Smurd => tr("gokart.msg.placed_smurd", "SMURD deployed!"),
                 rules::VehicleKind::FireTruck => tr("gokart.msg.placed_fire_truck", "Fire truck deployed!"),
+                rules::VehicleKind::StreetCoupe | rules::VehicleKind::MuscleCar | rules::VehicleKind::Supercar | rules::VehicleKind::CitySuv | rules::VehicleKind::Taxi => tr("gokart.msg.placed_street_car", "Street car deployed!"),
                 rules::VehicleKind::PoliceCar => {
                     tr("gokart.msg.placed_police_car", "Poliția Română Patrol Car deployed!")
                 }
@@ -2487,7 +2522,7 @@ pub(in crate::game) fn mob_submit(
         rules::VehicleKind::OffRoader => 1.75,
         rules::VehicleKind::QuadBike | rules::VehicleKind::Atv => 1.45,
         rules::VehicleKind::DaciaLoganPolice => 1.42,
-        rules::VehicleKind::PoliceCar | rules::VehicleKind::Ambulance | rules::VehicleKind::Smurd | rules::VehicleKind::FireTruck => 1.30,
+        rules::VehicleKind::PoliceCar | rules::VehicleKind::Ambulance | rules::VehicleKind::Smurd | rules::VehicleKind::FireTruck | rules::VehicleKind::StreetCoupe | rules::VehicleKind::MuscleCar | rules::VehicleKind::Supercar | rules::VehicleKind::CitySuv | rules::VehicleKind::Taxi => 1.30,
         rules::VehicleKind::GoKart => 1.0,
     };
     let roll_deg = if kart.drifting {
@@ -2504,7 +2539,7 @@ pub(in crate::game) fn mob_submit(
         rules::VehicleKind::OffRoader => 0.36,
         rules::VehicleKind::QuadBike | rules::VehicleKind::Atv => 0.30,
         rules::VehicleKind::DaciaLoganPolice => 0.30,
-        rules::VehicleKind::PoliceCar | rules::VehicleKind::Ambulance | rules::VehicleKind::Smurd | rules::VehicleKind::FireTruck => 0.28,
+        rules::VehicleKind::PoliceCar | rules::VehicleKind::Ambulance | rules::VehicleKind::Smurd | rules::VehicleKind::FireTruck | rules::VehicleKind::StreetCoupe | rules::VehicleKind::MuscleCar | rules::VehicleKind::Supercar | rules::VehicleKind::CitySuv | rules::VehicleKind::Taxi => 0.28,
         rules::VehicleKind::GoKart => 0.18,
     };
     if roll_deg.abs() > 0.04 {
@@ -3284,6 +3319,11 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
         | rules::ITEM_AMBULANCE
         | rules::ITEM_SMURD
         | rules::ITEM_FIRE_TRUCK
+        | "gokart:street_coupe"
+        | "gokart:muscle_car"
+        | "gokart:supercar"
+        | "gokart:city_suv"
+        | "gokart:taxi"
         | rules::ITEM_POLICE_CAR
         | rules::ITEM_DACIA_LOGAN_POLICE => {
             let spec = read_kart_spec(game, stack);
@@ -3325,6 +3365,7 @@ pub(in crate::game) fn tooltip(game: &Game<'_>, stack: &ItemStack, lines: &mut V
                 rules::VehicleKind::Ambulance => tr("gokart.tooltip.place_ambulance", "Right-click to deploy ambulance"),
                 rules::VehicleKind::Smurd => tr("gokart.tooltip.place_smurd", "Right-click to deploy SMURD"),
                 rules::VehicleKind::FireTruck => tr("gokart.tooltip.place_fire_truck", "Right-click to deploy fire truck"),
+                rules::VehicleKind::StreetCoupe | rules::VehicleKind::MuscleCar | rules::VehicleKind::Supercar | rules::VehicleKind::CitySuv | rules::VehicleKind::Taxi => tr("gokart.tooltip.place_street_car", "Right-click to deploy street car"),
                 rules::VehicleKind::PoliceCar => tr(
                     "gokart.tooltip.place_police_car",
                     "Right-click ground to deploy Poliția Română Patrol Car ([H] toggles Siren & Girofar!)",

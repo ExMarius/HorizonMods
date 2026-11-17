@@ -1,6 +1,6 @@
 [package]
 name = "gokart_native"
-version = "0.13.7"
+version = "0.13.8"
 edition = "2024"
 license = "GPL-3.0-or-later"
 description = "Go-Kart native mod for Horizon 26.3 inspired by MrCrayfish's Vehicle Mod"

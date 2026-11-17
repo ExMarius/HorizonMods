@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 pub const ID: &str = "gokart";
 pub const MIXIN_ID: &str = "gokart_native";
-pub const VERSION: &str = "0.13.7";
+pub const VERSION: &str = "0.13.8";
 pub const DESCRIPTION: &str = "FiveM-inspired 3D Vehicles for Horizon: Go-Kart, Quad Bike ATV, 4x4 Off-Roader, Poliția Română Pursuit Sedan with sculpted wheel arches, emissive lights, dynamic night headlights, siren & girofar, and /vehicle remove.";
 pub const SAVE_DIR: &str = "gokart";
 pub const SAVE_FILE: &str = "karts.txt";
@@ -71,8 +71,13 @@ pub const MODEL_ENGINE_IRON: &str = "gokart:block/engine_iron";
 pub const MODEL_ENGINE_GOLD: &str = "gokart:block/engine_gold";
 pub const MODEL_ENGINE_DIAMOND: &str = "gokart:block/engine_diamond";
 
-pub const STANDALONE_MODELS: [&str; 18] = [
+pub const STANDALONE_MODELS: [&str; 23] = [
     MODEL_BODY,
+    "gokart:block/street_coupe_body",
+    "gokart:block/muscle_car_body",
+    "gokart:block/supercar_body",
+    "gokart:block/city_suv_body",
+    "gokart:block/taxi_body",
     MODEL_OFF_ROADER_BODY,
     MODEL_QUAD_BIKE_BODY,
     MODEL_ATV_BODY,
@@ -151,6 +156,11 @@ pub enum VehicleKind {
     Ambulance,
     Smurd,
     FireTruck,
+    StreetCoupe,
+    MuscleCar,
+    Supercar,
+    CitySuv,
+    Taxi,
     PoliceCar,
     DaciaLoganPolice,
 }
@@ -287,6 +297,11 @@ impl VehicleKind {
             Self::Ambulance => 6,
             Self::Smurd => 7,
             Self::FireTruck => 8,
+            Self::StreetCoupe => 9,
+            Self::MuscleCar => 10,
+            Self::Supercar => 11,
+            Self::CitySuv => 12,
+            Self::Taxi => 13,
             Self::PoliceCar => 3,
             Self::DaciaLoganPolice => 4,
         }
@@ -300,6 +315,11 @@ impl VehicleKind {
             6 => Self::Ambulance,
             7 => Self::Smurd,
             8 => Self::FireTruck,
+            9 => Self::StreetCoupe,
+            10 => Self::MuscleCar,
+            11 => Self::Supercar,
+            12 => Self::CitySuv,
+            13 => Self::Taxi,
             3 => Self::PoliceCar,
             4 => Self::PoliceCar,
             _ => Self::GoKart,
@@ -341,6 +361,11 @@ impl VehicleKind {
             Self::Ambulance => "ambulance",
             Self::Smurd => "smurd",
             Self::FireTruck => "fire_truck",
+            Self::StreetCoupe => "street_coupe",
+            Self::MuscleCar => "muscle_car",
+            Self::Supercar => "supercar",
+            Self::CitySuv => "city_suv",
+            Self::Taxi => "taxi",
             Self::PoliceCar => "police_car",
             Self::DaciaLoganPolice => "dacia_logan_police",
         }
@@ -353,6 +378,11 @@ impl VehicleKind {
             "atv" | "utility_atv" => Self::Atv,
             "ambulance" | "ambulanta" | "salvare" => Self::Ambulance,
             "smurd" => Self::Smurd,
+            "street_coupe" => Self::StreetCoupe,
+            "muscle_car" => Self::MuscleCar,
+            "supercar" => Self::Supercar,
+            "city_suv" => Self::CitySuv,
+            "taxi" => Self::Taxi,
             "fire_truck" | "firetruck" | "pompieri" => Self::FireTruck,
             "police_car" | "policecar" | "police" | "politia" | "politie" | "bmw" => Self::PoliceCar,
             "dacia_logan_police" | "dacia_logan" | "dacia" | "logan" | "logan_politie" | "logan_police" => {
@@ -371,6 +401,11 @@ impl VehicleKind {
             ITEM_AMBULANCE => Some(Self::Ambulance),
             ITEM_SMURD => Some(Self::Smurd),
             ITEM_FIRE_TRUCK => Some(Self::FireTruck),
+            "gokart:street_coupe" => Some(Self::StreetCoupe),
+            "gokart:muscle_car" => Some(Self::MuscleCar),
+            "gokart:supercar" => Some(Self::Supercar),
+            "gokart:city_suv" => Some(Self::CitySuv),
+            "gokart:taxi" => Some(Self::Taxi),
             ITEM_POLICE_CAR => Some(Self::PoliceCar),
             _ => None,
         }
@@ -385,6 +420,11 @@ impl VehicleKind {
             Self::Ambulance => ITEM_AMBULANCE,
             Self::Smurd => ITEM_SMURD,
             Self::FireTruck => ITEM_FIRE_TRUCK,
+            Self::StreetCoupe => "gokart:street_coupe",
+            Self::MuscleCar => "gokart:muscle_car",
+            Self::Supercar => "gokart:supercar",
+            Self::CitySuv => "gokart:city_suv",
+            Self::Taxi => "gokart:taxi",
             Self::PoliceCar => ITEM_POLICE_CAR,
             Self::DaciaLoganPolice => ITEM_DACIA_LOGAN_POLICE,
         }
@@ -399,6 +439,11 @@ impl VehicleKind {
             Self::Ambulance => "gokart.vehicle.ambulance",
             Self::Smurd => "gokart.vehicle.smurd",
             Self::FireTruck => "gokart.vehicle.fire_truck",
+            Self::StreetCoupe => "gokart.vehicle.street_coupe",
+            Self::MuscleCar => "gokart.vehicle.muscle_car",
+            Self::Supercar => "gokart.vehicle.supercar",
+            Self::CitySuv => "gokart.vehicle.city_suv",
+            Self::Taxi => "gokart.vehicle.taxi",
             Self::PoliceCar => "gokart.vehicle.police_car",
             Self::DaciaLoganPolice => "gokart.vehicle.dacia_logan_police",
         }
@@ -410,7 +455,7 @@ impl VehicleKind {
             Self::QuadBike | Self::Atv => QUAD_BIKE_MAX_FUEL_MB,
             Self::OffRoader => OFF_ROADER_MAX_FUEL_MB,
             Self::DaciaLoganPolice => DACIA_LOGAN_MAX_FUEL_MB,
-            Self::PoliceCar | Self::Ambulance | Self::Smurd | Self::FireTruck => POLICE_CAR_MAX_FUEL_MB,
+            Self::PoliceCar | Self::Ambulance | Self::Smurd | Self::FireTruck | Self::StreetCoupe | Self::MuscleCar | Self::Supercar | Self::CitySuv | Self::Taxi => POLICE_CAR_MAX_FUEL_MB,
         }
     }
 
@@ -534,6 +579,17 @@ impl VehicleKind {
                 steer_pivot: [6.5 / 16.0, 15.4 / 16.0, 9.5 / 16.0],
                 default_cam_dist: 8.0,
                 ..Self::Ambulance.layout()
+            },
+            Self::StreetCoupe | Self::MuscleCar | Self::Supercar | Self::CitySuv | Self::Taxi => VehicleLayout {
+                body_model: match self {
+                    Self::StreetCoupe => "gokart:block/street_coupe_body",
+                    Self::MuscleCar => "gokart:block/muscle_car_body",
+                    Self::Supercar => "gokart:block/supercar_body",
+                    Self::CitySuv => "gokart:block/city_suv_body",
+                    Self::Taxi => "gokart:block/taxi_body",
+                    _ => unreachable!(),
+                },
+                ..Self::PoliceCar.layout()
             },
             Self::PoliceCar => VehicleLayout {
                 body_model: MODEL_POLICE_CAR_BODY,
@@ -1233,6 +1289,11 @@ impl KartSpec {
             VehicleKind::Ambulance => Self::default_ambulance(),
             VehicleKind::Smurd => Self::default_smurd(),
             VehicleKind::FireTruck => Self::default_fire_truck(),
+            VehicleKind::StreetCoupe => Self { kind, paint: PaintColor::Red, ..Self::default_police_car() },
+            VehicleKind::MuscleCar => Self { kind, paint: PaintColor::Orange, ..Self::default_police_car() },
+            VehicleKind::Supercar => Self { kind, paint: PaintColor::Blue, ..Self::default_police_car() },
+            VehicleKind::CitySuv => Self { kind, paint: PaintColor::Gray, ..Self::default_police_car() },
+            VehicleKind::Taxi => Self { kind, paint: PaintColor::Yellow, ..Self::default_police_car() },
             VehicleKind::PoliceCar => Self::default_police_car(),
             VehicleKind::DaciaLoganPolice => Self::default_dacia_logan(),
         }
@@ -1959,6 +2020,26 @@ mod tests {
     }
 
     use super::*;
+
+    #[test]
+    fn street_cars_round_trip_and_have_separate_models() {
+        let kinds = [VehicleKind::StreetCoupe, VehicleKind::MuscleCar, VehicleKind::Supercar, VehicleKind::CitySuv, VehicleKind::Taxi];
+        let mut models = std::collections::BTreeSet::new();
+        for (i, kind) in kinds.into_iter().enumerate() {
+            assert_eq!(VehicleKind::from_code(kind.code()), kind);
+            assert_eq!(VehicleKind::from_slug(kind.slug()), kind);
+            assert_eq!(VehicleKind::from_item(kind.item_id()), Some(kind));
+            assert!(models.insert(kind.layout().body_model));
+            let spec = KartSpec::default_for_kind(kind);
+            assert_eq!(KartSpec::decode_component(&spec.encode_component()).kind, kind);
+            let view = ClientKartView { entity_id: i as u32 + 1, spec, steer_deg: 0.0,
+                wheel_rot_deg: 0.0, speed_kmh: 0.0, boost_charge: 0.0,
+                drifting: false, burnout: false, boosting: false, siren_on: false };
+            let (_, decoded) = decode_sync_packet(&encode_sync_packet(false, &[view])).unwrap();
+            assert_eq!(decoded[0].spec.kind, kind);
+            assert!(!kind.is_emergency());
+        }
+    }
 
     #[test]
     fn each_vehicle_has_at_least_one_block_step_height() {

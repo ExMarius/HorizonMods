@@ -776,6 +776,11 @@ def generate_item_textures() -> None:
     grid_to_png(idir / "fire_truck.png", fire_art, {".": T, "S": (38, 104, 216, 255),
         "K": (30, 33, 39, 255), "R": (185, 26, 32, 255), "O": (231, 241, 39, 255), "G": (173, 184, 193, 255)})
 
+    # Original street-car icons: each palette matches its default paint.
+    street_icon = ["................", "......KKKK......", "....KKGGGGKK....", "...KGGGGGGGGK...", "..KCCCCCCCCCCK..", ".KCCCCCCCCCCCCK.", ".KCCCCCCCCCCCCK.", ".KCCCCCCCCCCCCK.", ".KCCCCCCCCCCCCK.", ".KKKKKKKKKKKKKK.", "..KKK......KKK..", ".KGGGK....KGGGK.", ".KGGGK....KGGGK.", "..KKK......KKK..", "................", "................"]
+    for name, color in (("street_coupe", (185,36,45,255)), ("muscle_car", (226,104,27,255)), ("supercar", (36,92,192,255)), ("city_suv", (98,105,114,255)), ("taxi", (237,194,31,255))):
+        grid_to_png(idir / (name + ".png"), street_icon, {".": T, "K": (25,29,35,255), "G": (126,153,164,255), "C": color})
+
     # 1d. Romanian Police Car (`Poliția Română`) item icon (`police_car.png`)
     pol_pal = {
         ".": T,
@@ -1820,6 +1825,58 @@ def generate_models() -> None:
         "elements": atv_elements,
     }, indent=2) + "\n")
 
+    # Five original, block-built street cars.  No game assets or trademarks are reused.
+    # All share the sedan axle centres so the animated wheels fit the arches.
+    for name, roof_y, rear_roof, front_roof in (
+        ("street_coupe", 17.8, -9.5, 4.4), ("muscle_car", 18.6, -10.3, 4.0),
+        ("supercar", 15.5, -8.6, 3.0), ("city_suv", 21.7, -13.0, 5.0),
+        ("taxi", 19.4, -11.5, 4.7)):
+        e = [
+            obox([-10, 2.8, -9], [10, 3.9, 9], "#carbon"),
+            obox([-8.2, 3.9, 8.6], [8.2, 10.2, 21.9], "#body", tint=True),
+            obox([-8.2, 3.9, -21.9], [8.2, 10.2, -8.6], "#body", tint=True),
+            obox([-12.25, 3.9, -8.5], [-10, 10.2, 8.5], "#body", tint=True),
+            obox([10, 3.9, -8.5], [12.25, 10.2, 8.5], "#body", tint=True),
+            obox([-12.25, 3.0, 21.9], [12.25, 6.0, 23.2], "#body", tint=True),
+            obox([-12.25, 3.0, -23.2], [12.25, 6.0, -21.9], "#body", tint=True),
+            obox([-7.5, 6.2, 21.92], [7.5, 8.5, 22.15], "#grille"),
+            obox([-11.6, 8.55, 21.92], [-7.8, 9.9, 22.15], "#headlight"),
+            obox([7.8, 8.55, 21.92], [11.6, 9.9, 22.15], "#headlight"),
+            obox([-11.6, 8.4, -22.15], [-5.5, 9.8, -21.92], "#taillight"),
+            obox([5.5, 8.4, -22.15], [11.6, 9.8, -21.92], "#taillight"),
+            obox([-10.5, roof_y, rear_roof], [10.5, roof_y+0.8, front_roof], "#body", tint=True),
+            # Pillars and open windows keep seats visible rather than embedding opaque panes.
+            obox([-11, 10.2, front_roof-0.9], [-10, roof_y, front_roof], "#frame"),
+            obox([10, 10.2, front_roof-0.9], [11, roof_y, front_roof], "#frame"),
+            obox([-11, 10.2, rear_roof], [-10, roof_y, rear_roof+0.9], "#frame"),
+            obox([10, 10.2, rear_roof], [11, roof_y, rear_roof+0.9], "#frame"),
+            obox([-9.9, 8.0, 5.1], [9.9, 10.2, 7.4], "#seat"),
+            obox([-8, 4, -2.5], [-2, 5.5, 2.5], "#seat"),
+            obox([2, 4, -2.5], [8, 5.5, 2.5], "#seat"),
+            obox([-8, 5.5, -3.8], [-2, 13.5, -2.5], "#seat"),
+            obox([2, 5.5, -3.8], [8, 13.5, -2.5], "#seat"),
+        ]
+        for axle in (-13.8, 13.8):
+            e.extend(sculpted_wheel_arch(cz=axle, vx_in=8.22, vx_body=12.25, vx_flare=12.55,
+                vy_crown=8.75, vy_top=10.2, half_crown=2.15, slope_len=3.2, slope_deg=38.0,
+                vz_outer_min=(-21.9 if axle < 0 else 8.55), vz_outer_max=(-8.55 if axle < 0 else 21.9), vy_jamb_bot=3.0,
+                liner_x0=6.9, liner_x1=7.6, liner_y0=3.15, body_tex="#body", body_tint=True,
+                flare_tex="#body", flare_tint=True))
+        if name == "muscle_car":
+            e += [obox([-2.6,10.21,12], [2.6,11.1,19], "#carbon"), obox([-8,10.3,-22], [8,11.2,-20.7], "#carbon")]
+        elif name == "supercar":
+            e += [obox([-10,10.3,-22], [10,10.8,-20.5], "#carbon"), obox([-11,2.4,22], [11,2.95,23.6], "#carbon")]
+        elif name == "city_suv":
+            e += [obox([-9,roof_y+0.81,rear_roof+1], [-8.4,roof_y+1.25,front_roof-1], "#chrome"), obox([8.4,roof_y+0.81,rear_roof+1], [9,roof_y+1.25,front_roof-1], "#chrome")]
+        elif name == "taxi":
+            e += [obox([-2.5,roof_y+0.81,-3], [2.5,roof_y+2.0,-1], "#headlight")]
+        else:
+            e += [obox([-8,10.3,-22], [8,10.8,-21], "#carbon")]
+        (mdir / (name + "_body.json")).write_text(json.dumps({"textures": {
+            "body": "gokart:block/kart_body", "frame": "gokart:block/kart_frame", "carbon": "gokart:block/kart_carbon",
+            "seat": "gokart:block/kart_seat", "chrome": "gokart:block/kart_chrome", "grille": "gokart:block/kart_grille",
+            "headlight": "gokart:block/kart_headlight", "taillight": "gokart:block/kart_taillight"}, "elements": e}, indent=2) + "\n")
+
     # =========================================================================
     # 7. Romanian Police Pursuit Sedan (`police_car_body.json`) — Poliția Română!
     # =========================================================================
@@ -2422,6 +2479,11 @@ ITEMS = [
     "ambulance",
     "smurd",
     "fire_truck",
+    "street_coupe",
+    "muscle_car",
+    "supercar",
+    "city_suv",
+    "taxi",
     "police_car",
     "small_engine_iron",
     "small_engine_gold",
@@ -2697,6 +2759,21 @@ def generate_recipes() -> None:
                     "W": "gokart:standard_wheel"},
             "result": {"id": "gokart:fire_truck", "count": 1},
         },
+        "street_coupe": {"type": "minecraft:crafting_shaped", "category": "transportation",
+            "pattern": ["DGI", "III", "WEW"], "key": {"D": "minecraft:red_dye", "G": "minecraft:glass", "I": "minecraft:iron_ingot", "W": "gokart:sports_wheel", "E": "gokart:small_engine_gold"},
+            "result": {"id": "gokart:street_coupe", "count": 1}},
+        "muscle_car": {"type": "minecraft:crafting_shaped", "category": "transportation",
+            "pattern": ["DGI", "III", "WEW"], "key": {"D": "minecraft:orange_dye", "G": "minecraft:glass", "I": "minecraft:iron_ingot", "W": "gokart:sports_wheel", "E": "gokart:small_engine_gold"},
+            "result": {"id": "gokart:muscle_car", "count": 1}},
+        "supercar": {"type": "minecraft:crafting_shaped", "category": "transportation",
+            "pattern": ["DGI", "III", "WEW"], "key": {"D": "minecraft:blue_dye", "G": "minecraft:glass", "I": "minecraft:iron_ingot", "W": "gokart:sports_wheel", "E": "gokart:small_engine_gold"},
+            "result": {"id": "gokart:supercar", "count": 1}},
+        "city_suv": {"type": "minecraft:crafting_shaped", "category": "transportation",
+            "pattern": ["DGI", "III", "WEW"], "key": {"D": "minecraft:gray_dye", "G": "minecraft:glass", "I": "minecraft:iron_ingot", "W": "gokart:sports_wheel", "E": "gokart:small_engine_gold"},
+            "result": {"id": "gokart:city_suv", "count": 1}},
+        "taxi": {"type": "minecraft:crafting_shaped", "category": "transportation",
+            "pattern": ["DGI", "III", "WEW"], "key": {"D": "minecraft:yellow_dye", "G": "minecraft:glass", "I": "minecraft:iron_ingot", "W": "gokart:sports_wheel", "E": "gokart:small_engine_gold"},
+            "result": {"id": "gokart:taxi", "count": 1}},
         # 13. Romanian Police Car (`Poliția Română` — Redstone + Lapis Girofar, Iron Sedan, Diamond/Gold Engine, Racing/Sports Wheels)
         "police_car": {
             "type": "minecraft:crafting_shaped",
@@ -2883,6 +2960,16 @@ def generate_lang() -> None:
         "gokart.vehicle.ambulance": "Romanian Ambulance",
         "gokart.tooltip.place_ambulance": "Right-click to deploy Romanian Ambulance ([H]: sirenă / girofar)",
         "gokart.msg.placed_ambulance": "Romanian Ambulance: Deployed!",
+        "item.gokart.street_coupe": "Street Coupe",
+        "gokart.vehicle.street_coupe": "Street Coupe",
+        "item.gokart.muscle_car": "Muscle Car",
+        "gokart.vehicle.muscle_car": "Muscle Car",
+        "item.gokart.supercar": "Supercar",
+        "gokart.vehicle.supercar": "Supercar",
+        "item.gokart.city_suv": "City SUV",
+        "gokart.vehicle.city_suv": "City SUV",
+        "item.gokart.taxi": "Taxi",
+        "gokart.vehicle.taxi": "Taxi",
         "item.gokart.fire_truck": "Fire Engine",
         "gokart.vehicle.fire_truck": "Fire Engine",
         "gokart.tooltip.place_fire_truck": "Right-click to deploy fire engine ([H]: siren)",
@@ -3008,6 +3095,16 @@ def generate_lang() -> None:
         "gokart.vehicle.ambulance": "Ambulanță Română",
         "gokart.tooltip.place_ambulance": "Click-dreapta pentru a plasa Ambulanță Română ([H]: sirenă / girofar)",
         "gokart.msg.placed_ambulance": "Ambulanță Română: Plasată!",
+        "item.gokart.street_coupe": "Coupé Urban",
+        "gokart.vehicle.street_coupe": "Coupé Urban",
+        "item.gokart.muscle_car": "Muscle Car",
+        "gokart.vehicle.muscle_car": "Muscle Car",
+        "item.gokart.supercar": "Supermașină",
+        "gokart.vehicle.supercar": "Supermașină",
+        "item.gokart.city_suv": "SUV Urban",
+        "gokart.vehicle.city_suv": "SUV Urban",
+        "item.gokart.taxi": "Taxi",
+        "gokart.vehicle.taxi": "Taxi",
         "item.gokart.fire_truck": "Autospecială de Pompieri",
         "gokart.vehicle.fire_truck": "Autospecială de Pompieri",
         "gokart.tooltip.place_fire_truck": "Click-dreapta pentru autospeciala de pompieri ([H]: sirenă)",
@@ -3196,6 +3293,11 @@ def generate_creative_tab() -> None:
             "gokart:ambulance",
             "gokart:smurd",
             "gokart:fire_truck",
+            "gokart:street_coupe",
+            "gokart:muscle_car",
+            "gokart:supercar",
+            "gokart:city_suv",
+            "gokart:taxi",
             "gokart:off_roader",
             "gokart:police_car",
             "gokart:small_engine_iron",
@@ -3267,7 +3369,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.13.7 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.13.8 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":

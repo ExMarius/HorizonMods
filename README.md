@@ -129,3 +129,7 @@ Alternativ, pentru 0.2.69 CLI: `horizon-launcher native-build dist/gokart_native
 ## Licență
 
 Distribuit sub **GNU General Public License v3.0 (`GPL-3.0-or-later`)**. Inspirat de [MrCrayfish's Vehicle Mod](https://github.com/MrCrayfish/MrCrayfishVehicleMod) (GPL-3.0).
+
+### Original street cars (0.13.8)
+
+Five original block-built cars inspired by urban driving games are available in the creative tab, `/vehicle kit` and as craftable items: `street_coupe`, `muscle_car`, `supercar`, `city_suv`, and `taxi`. Spawn with `/vehicle spawn <name>` (operator permission required). These are original models, not imported GTA assets. Their visuals and driving still require in-game validation. The current native implementation supports only the driver; decorative seats are not multiplayer passenger seats.
