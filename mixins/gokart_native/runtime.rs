@@ -189,6 +189,43 @@ impl SeatReservations {
         true
     }
 
+    /// Choose the closest unoccupied seat from server-supplied world positions.
+    /// This only chooses; it never mounts or reserves a player. A stable index
+    /// breaks ties. Positions must be finite and the list must fit in a u8.
+    pub fn closest_free(&self, vehicle: u128, seats: &[[f64; 3]], player_pos: [f64; 3]) -> Option<u8> {
+        if vehicle == 0 || seats.len() > usize::from(u8::MAX) ||
+            !player_pos.iter().all(|v| v.is_finite()) {
+            return None;
+        }
+        seats.iter().enumerate().filter_map(|(i, pos)| {
+            let seat = u8::try_from(i).ok()?;
+            if self.occupant(vehicle, seat).is_some() || !pos.iter().all(|v| v.is_finite()) {
+                return None;
+            }
+            let distance = pos.iter().zip(player_pos).map(|(a, b)| (a-b).powi(2)).sum::<f64>();
+            distance.is_finite().then_some((seat, distance))
+        }).min_by(|a, b| a.1.total_cmp(&b.1).then(a.0.cmp(&b.0))).map(|x| x.0)
+    }
+
+    /// Find another free seat in order, wrapping once; no state is changed.
+    pub fn next_free(&self, vehicle: u128, current: u8, count: u8) -> Option<u8> {
+        if vehicle == 0 || count == 0 || current >= count { return None; }
+        (1..count).map(|step| ((u16::from(current) + u16::from(step)) % u16::from(count)) as u8)
+            .find(|&seat| self.occupant(vehicle, seat).is_none())
+    }
+
+    /// Commit a seat change only after the integration has moved the rider.
+    /// Failed validation leaves the original reservation untouched.
+    pub fn change_seat(&mut self, vehicle: u128, player: u128, destination: u8, count: u8) -> bool {
+        let Some((v, old)) = self.seat_of(player) else { return false; };
+        if v != vehicle || destination >= count { return false; }
+        if old == destination { return true; }
+        if self.occupant(vehicle, destination).is_some() { return false; }
+        self.occupied.remove(&(vehicle, old));
+        self.occupied.insert((vehicle, destination), player);
+        true
+    }
+
     /// Release on dismount, disconnect or death. Returns the old assignment.
     pub fn release_player(&mut self, player: u128) -> Option<(u128, u8)> {
         let seat = self.seat_of(player)?;
@@ -1902,6 +1939,25 @@ mod tests {
         assert_eq!(seats.occupant(2, 0), Some(10));
         assert_eq!(seats.occupant(2, 1), Some(12));
     }
+    #[test]
+    fn future_seat_choice_is_nearest_and_switch_is_exclusive() {
+        let mut seats = super::SeatReservations::default();
+        let poses = [[0.0, 0.0, 0.0], [3.0, 0.0, 0.0], [-1.0, 0.0, 0.0]];
+        assert_eq!(seats.closest_free(4, &poses, [2.8, 0.0, 0.0]), Some(1));
+        assert!(seats.reserve(4, 1, 3, 50));
+        assert_eq!(seats.closest_free(4, &poses, [2.8, 0.0, 0.0]), Some(0));
+        assert_eq!(seats.closest_free(4, &poses, [f64::NAN, 0.0, 0.0]), None);
+        assert!(seats.reserve(4, 2, 3, 51));
+        assert_eq!(seats.next_free(4, 1, 3), Some(0));
+        assert!(!seats.change_seat(4, 50, 2, 3));
+        assert_eq!(seats.seat_of(50), Some((4, 1)));
+        assert!(seats.change_seat(4, 50, 0, 3));
+        assert_eq!(seats.seat_of(50), Some((4, 0)));
+        assert_eq!(seats.occupant(4, 1), None);
+        assert!(!seats.change_seat(5, 50, 1, 3));
+        assert_eq!(seats.next_free(4, 0, 0), None);
+    }
+
     use super::*;
 
     #[test]

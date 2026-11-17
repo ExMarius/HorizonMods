@@ -4,6 +4,19 @@ Status: **not integrated**. The current release still mounts only the driver.
 `SeatReservations` in `runtime.rs` is standalone bookkeeping, not a mount system.
 It must not be used as evidence that passengers or the stretcher work.
 
+## Reference behavior
+
+The Forge Vehicle Mod (`EntityVehicle`, `SeatTracker`, `MessageCycleSeats`)
+chooses the nearest free seat, mounts the player on a custom vehicle entity,
+tracks each player-to-seat assignment, synchronizes it to tracking clients,
+positions each rider relative to the rotating vehicle and permits cycling seats.
+It is not the same entity implementation as Horizon's pig-backed vehicle.
+The reference tree inspected does not include an ambulance stretcher; lying down
+and restraints are a separate feature to design and validate here.
+
+The experimental reservation code includes closest-seat and cycle selection, but
+neither is wired into interaction, mounting, network synchronization, or poses.
+
 ## Constraints verified in Horizon revision `9f42064`
 
 - The current vehicle is a saddled pig; the existing client positioning and driver
