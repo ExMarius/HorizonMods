@@ -1,4 +1,4 @@
-# Horizon Vehicles: Go-Kart, ATV Quad Bike, ATV utilitar, 4x4 Off-Roader, Poliția Română (`gokart_native` v0.13.5)
+# Horizon Vehicles: Go-Kart, ATV Quad Bike, ATV utilitar, 4x4 Off-Roader, Poliția Română (`gokart_native` v0.13.6)
 
 Mod nativ **FiveM-style de Vehicule 3D** pentru **Horizon 26.3 (Launcher `0.2.69+` / Nightly)**: **Go-Kart**, **ATV Quad Bike**, **ATV utilitar**, **Off-Roader 4x4**, **Autospecială Poliția Română (Pursuit Sedan)** — cu aripi 3D poligonale curbate în 5 segmente pe conturul roții + contra-aripi interioare și praguri continue de la roți la roți, girofar Red/Blue dinamic + sirenă pe tasta `[H]`, faruri emisive (`light_emission: 15`) + blocuri reale `minecraft:light` noaptea, categorie dedicată **Horizon Vehicles** în Creative Inventory și modele 3D verificate fără z-fighting.
 

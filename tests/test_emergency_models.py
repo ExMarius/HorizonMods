@@ -71,6 +71,28 @@ class EmergencyModels(unittest.TestCase):
                     self.assertGreaterEqual(shelf['to'][axis], item['to'][axis])
                 self.assertAlmostEqual(item['from'][1], shelf['to'][1])
 
+    def test_stretcher_is_light_and_supported_without_dark_platforms(self):
+        for name in ('ambulance', 'smurd'):
+            elements = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())['elements']
+            mattress = next(e for e in elements if e['faces']['up']['texture'] == '#medical_mattress')
+            platform = next(e for e in elements if e['faces']['up']['texture'] == '#chrome' and
+                            e['from'] == [3.65, 8.30, -12.70])
+            self.assertEqual(platform['to'][1], mattress['from'][1])
+            supports = [e for e in elements if e['faces']['up']['texture'] == '#medical_white' and
+                        e['from'][1] == 4.36 and e['to'][1] == 8.30]
+            self.assertEqual(len(supports), 4)
+            for support in supports:
+                for i in (0, 2):
+                    self.assertGreaterEqual(support['from'][i], platform['from'][i])
+                    self.assertLessEqual(support['to'][i], platform['to'][i])
+            # No long, opaque, dark tray occupies the patient aisle.
+            for e in elements:
+                if e.get('rotation') or e['faces']['up']['texture'] != '#frame':
+                    continue
+                self.assertFalse(e['from'][0] >= 3 and e['to'][0] <= 10 and
+                                 4.3 <= e['from'][1] < 9 and
+                                 e['to'][2] - e['from'][2] > 10, (name, e))
+
     def test_raked_pillars_reach_roof_and_vans_have_distinct_fronts(self):
         grilles = []
         for name in ('ambulance', 'smurd'):
@@ -274,7 +296,7 @@ class EmergencyModels(unittest.TestCase):
                     if rot.get('axis') == 'x' and other['from'][2] < 0 and other['to'][1] < 12:
                         self.assertTrue(part['to'][0] <= other['from'][0] or
                                         part['from'][0] >= other['to'][0], (name, other))
-            pedestal = next(e for e in elements if e['faces']['up']['texture'] == '#frame' and
+            pedestal = next(e for e in elements if e['faces']['up']['texture'] == '#chrome' and
                             e['from'] == [12.7, 4.36, -7.9] and e['to'] == [13.9, 9.1, -5.4])
             self.assertEqual(pedestal['to'][1], cushion['from'][1])
             self.assertEqual(pedestal['from'][1], 4.36)

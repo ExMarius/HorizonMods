@@ -70,7 +70,8 @@ def generate_vehicle_textures() -> None:
     # Reference-inspired Romanian SAJ white/orange/blue and SMURD red/yellow liveries.
     for name, color in (("medical_white", (239, 243, 245, 255)), ("medical_red", (185, 26, 32, 255)),
                         ("medical_orange", (241, 92, 25, 255)), ("medical_blue", (25, 75, 172, 255)),
-                        ("medical_yellow", (230, 242, 35, 255)), ("medical_mattress", (101, 172, 179, 255)),
+                        ("medical_yellow", (230, 242, 35, 255)), ("medical_mattress", (125, 189, 195, 255)),
+                        ("medical_seat", (49, 100, 127, 255)), ("medical_cabinet", (152, 201, 213, 255)),
                         ("medical_floor", (100, 122, 146, 255))):
         write_png(bdir / (name + ".png"), 16, 16, [color] * 256)
     font = {
@@ -1386,6 +1387,7 @@ def generate_models() -> None:
         body_tint=0,
         flare_tex: str = "#body",
         flare_tint=0,
+        liner_tex: str = "#carbon",
     ) -> list:
         """Builds a 100% WATERTIGHT, ZERO-GAP symmetric 5-segment wheel arch around axle `cz`:
           - Closed 4-wall `#carbon` inner wheelhouse tub (inner wall + ceiling + front/rear splash bulkheads)
@@ -1423,12 +1425,12 @@ def generate_models() -> None:
             # 1. Enclosed 4-Wall Dark `#carbon` Wheelhouse Tub (`oală completă contra-aripă` — zero daylight!)
             z_tub_r = max(vz_outer_min + 0.06, z_r_open - 0.48)
             z_tub_f = min(vz_outer_max - 0.06, z_f_open + 0.48)
-            elems.append(obox([l0, liner_y0, z_tub_r], [l1, vy_top - 0.10, z_tub_f], "#carbon"))
-            elems.append(obox([tub0, vy_crown + 0.04, z_tub_r + 0.04], [tub1, vy_crown + 0.52, z_tub_f - 0.04], "#carbon"))
+            elems.append(obox([l0, liner_y0, z_tub_r], [l1, vy_top - 0.10, z_tub_f], liner_tex))
+            elems.append(obox([tub0, vy_crown + 0.04, z_tub_r + 0.04], [tub1, vy_crown + 0.52, z_tub_f - 0.04], liner_tex))
             if z_tub_f > z_f_open + 0.08:
-                elems.append(obox([tub0, vy_jamb_bot + 0.06, z_f_open + 0.03], [tub1, vy_crown + 0.02, z_tub_f], "#carbon"))
+                elems.append(obox([tub0, vy_jamb_bot + 0.06, z_f_open + 0.03], [tub1, vy_crown + 0.02, z_tub_f], liner_tex))
             if z_r_open - 0.08 > z_tub_r:
-                elems.append(obox([tub0, vy_jamb_bot + 0.06, z_tub_r], [tub1, vy_crown + 0.02, z_r_open - 0.03], "#carbon"))
+                elems.append(obox([tub0, vy_jamb_bot + 0.06, z_tub_r], [tub1, vy_crown + 0.02, z_r_open - 0.03], liner_tex))
 
             # 2. Top horizontal arch crown + proud 3D outward fender flare lip
             elems.append(obox([b0, vy_crown, z_r_crown], [b1, vy_top, z_f_crown], body_tex, tint=body_tint))
@@ -2052,12 +2054,12 @@ def generate_models() -> None:
                 vy_crown=7.85, vy_top=10.9, half_crown=1.15, slope_len=3.1, slope_deg=38,
                 vz_outer_min=5.75, vz_outer_max=18.75, vy_jamb_bot=3.1,
                 liner_x0=5.85, liner_x1=6.35, liner_y0=3.15,
-                body_tex="#shell", body_tint=None, flare_tex="#shell", flare_tint=None),
+                body_tex="#shell", body_tint=None, flare_tex="#shell", flare_tint=None, liner_tex="#medical_floor"),
             *sculpted_wheel_arch(cz=-13.8, vx_in=8.22, vx_body=12.25, vx_flare=12.40,
                 vy_crown=7.85, vy_top=10.9, half_crown=1.15, slope_len=3.1, slope_deg=38,
                 vz_outer_min=-21.55, vz_outer_max=-8.55, vy_jamb_bot=3.1,
                 liner_x0=6.4, liner_x1=6.9, liner_y0=3.15,
-                body_tex="#shell", body_tint=None, flare_tex="#shell", flare_tint=None),
+                body_tex="#shell", body_tint=None, flare_tex="#shell", flare_tint=None, liner_tex="#medical_floor"),
             # Flat patient-compartment floor: the old full-height solid block here
             # filled the entire cabin and made a stretcher impossible to see.
             obox([-6.40, 3.92, -21.30], [6.40, 4.36, -8.55], "#medical_floor"),
@@ -2134,36 +2136,27 @@ def generate_models() -> None:
             # Low storage cabinetry, upper cupboards and metallic handles.
             obox([-8.19, 8.55, -20.75], [-6.96, 12.5, -4.05], "#medical_white"),
             obox([-10.0, 17.4, -20.75], [-7.85, 20.35, -4.05], "#medical_white"),
-            obox([-7.83, 18.1, -19.4], [-7.72, 19.75, -15.5], "#medical_blue"),
-            obox([-7.83, 18.1, -14.9], [-7.72, 19.75, -11.0], "#medical_blue"),
-            obox([-7.83, 18.1, -10.4], [-7.72, 19.75, -6.5], "#medical_blue"),
+            obox([-7.83, 18.1, -19.4], [-7.72, 19.75, -15.5], "#cabinet_glass"),
+            obox([-7.83, 18.1, -14.9], [-7.72, 19.75, -11.0], "#cabinet_glass"),
+            obox([-7.83, 18.1, -10.4], [-7.72, 19.75, -6.5], "#cabinet_glass"),
             obox([-6.96, 11.4, -18.5], [-6.84, 11.7, -16.2], "#chrome"),
             obox([-6.96, 11.4, -13.4], [-6.84, 11.7, -11.1], "#chrome"),
-            # Retractable wheeled stretcher: base, crossed legs, mattress, raised
-            # headrest, side safety rails and two yellow patient restraints.
-            obox([-4.40, 4.68, -20.85], [1.40, 5.05, -3.90], "#frame"),
-            obox([-4.05, 5.08, -18.5], [-3.40, 8.25, -17.9], "#chrome", rot=("x", 20.0, [0, 5.08, -18.2])),
-            obox([0.40, 5.08, -18.5], [1.05, 8.25, -17.9], "#chrome", rot=("x", 20.0, [0, 5.08, -18.2])),
-            obox([-4.05, 5.08, -7.20], [-3.40, 8.25, -6.60], "#chrome", rot=("x", -20.0, [0, 5.08, -6.9])),
-            obox([0.40, 5.08, -7.20], [1.05, 8.25, -6.60], "#chrome", rot=("x", -20.0, [0, 5.08, -6.9])),
-            obox([-4.45, 8.30, -20.80], [1.45, 8.88, -3.90], "#frame"),
-            obox([-4.15, 8.90, -20.55], [1.15, 9.75, -4.15], "#medical_mattress"),
-            obox([-4.15, 9.77, -6.40], [1.15, 10.20, -4.25], "#medical_white"),
-            obox([-4.50, 9.78, -16.30], [1.50, 9.98, -15.70], "#medical_yellow"),
-            obox([-4.50, 9.78, -10.90], [1.50, 9.98, -10.30], "#medical_yellow"),
-            obox([-4.75, 8.90, -20.30], [-4.50, 10.55, -4.40], "#chrome"),
-            obox([1.50, 8.90, -20.30], [1.75, 10.55, -4.40], "#chrome"),
-            obox([-4.35, 4.36, -19.5], [-3.55, 4.68, -18.55], "#frame"),
-            obox([0.55, 4.36, -19.5], [1.35, 4.68, -18.55], "#frame"),
-            # Loading guide rails on the floor and additional stretcher casters.
-            obox([-5.25, 4.36, -21.1], [-4.93, 4.53, -8.65], "#chrome"),
-            obox([1.93, 4.36, -21.1], [2.25, 4.53, -8.65], "#chrome"),
-            obox([-4.35, 4.36, -7.9], [-3.55, 4.68, -6.95], "#frame"),
-            obox([0.55, 4.36, -7.9], [1.35, 4.68, -6.95], "#frame"),
-            # Two low loading stops sit outside the stretcher frame, on the rails.
-            obox([-5.25, 4.53, -20.8], [-4.93, 4.93, -20.2], "#frame"),
-            obox([1.93, 4.53, -20.8], [2.25, 4.93, -20.2], "#frame"),
-            # Small anti-slip threshold between the rear doors and the aisle.
+            # Patient stretcher: a light, slim platform and four small supports.
+            # The old pair of dark full-length trays and decorative floor rails
+            # obscured the floor; remove them rather than implying functionality.
+            obox([-4.35, 8.30, -20.70], [1.35, 8.55, -4.00], "#chrome"),
+            *[obox([x0, 4.36, z0], [x1, 8.30, z1], "#medical_white")
+              for x0, x1 in ((-4.05, -3.50), (0.50, 1.05))
+              for z0, z1 in ((-19.50, -18.90), (-6.20, -5.60))],
+            obox([-4.15, 8.55, -20.55], [1.15, 9.40, -4.15], "#medical_mattress"),
+            obox([-4.00, 9.40, -6.35], [1.00, 9.78, -4.35], "#medical_white"),
+            # Short safety handles and restraint bands instead of heavy black bars.
+            *[obox([x0, 8.55, z0], [x1, 10.10, z1], "#chrome")
+              for x0, x1 in ((-4.55, -4.35), (1.35, 1.55))
+              for z0, z1 in ((-17.00, -16.70), (-9.90, -9.60))],
+            obox([-4.15, 9.40, -16.0], [1.15, 9.52, -15.50], "#medical_blue"),
+            obox([-4.15, 9.40, -10.50], [1.15, 9.52, -10.00], "#medical_blue"),
+            # Flush threshold across the rear loading door.
             obox([-6.35, 4.36, -21.28], [6.35, 4.52, -21.13], "#chrome"),
             # Wall-mounted medical outlets and a small worktop at the bulkhead.
             obox([-8.15, 12.50, -19.8], [-6.96, 12.70, -5.0], "#chrome"),
@@ -2176,10 +2169,9 @@ def generate_models() -> None:
             obox([2.05, 9.10, -16.9], [6.28, 10.35, -12.5], "#attendant"),
             obox([5.40, 10.35, -16.9], [6.28, 15.40, -12.5], "#attendant"),
             obox([5.50, 15.40, -15.8], [6.18, 17.00, -13.6], "#attendant"),
-            obox([4.70, 4.36, -15.9], [5.90, 9.10, -13.4], "#frame"),
-            obox([2.05, 10.35, -16.88], [2.30, 11.10, -12.52], "#frame"),
+            obox([4.70, 4.36, -15.9], [5.90, 9.10, -13.4], "#chrome"),
             obox([2.32, 10.35, -14.90], [5.35, 10.49, -14.50], "#medical_yellow"),
-            obox([7.0, 13.20, -7.10], [9.80, 16.10, -5.90], "#frame"),
+            obox([7.0, 13.20, -7.10], [9.80, 16.10, -5.90], "#medical_white"),
             obox([6.98, 13.48, -6.95], [7.00, 15.80, -6.05], "#dash", full_uv_faces=("east", "west")),
             obox([7.00, 8.55, -20.40], [8.10, 13.57, -19.15], "#medical_white"),
             obox([7.15, 13.57, -20.1], [7.95, 14.17, -19.45], "#chrome"),
@@ -2286,7 +2278,7 @@ def generate_models() -> None:
                          "corner_glass": "gokart:block/medical_corner_glass",
                          "amber": "gokart:block/kart_amber",
                          "medical_white": "gokart:block/medical_white", "medical_red": "gokart:block/medical_red",
-                         "attendant": "gokart:block/medical_blue", "medical_blue": "gokart:block/medical_blue", "medical_yellow": "gokart:block/medical_yellow",
+                         "attendant": "gokart:block/medical_seat", "cabinet_glass": "gokart:block/medical_cabinet", "medical_blue": "gokart:block/medical_blue", "medical_yellow": "gokart:block/medical_yellow",
                          "medical_mattress": "gokart:block/medical_mattress", "medical_floor": "gokart:block/medical_floor"},
             "elements": van_elements,
         }, indent=2) + "\n")
@@ -3275,7 +3267,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.13.5 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.13.6 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":
