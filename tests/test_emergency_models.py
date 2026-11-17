@@ -77,14 +77,28 @@ class EmergencyModels(unittest.TestCase):
             model = json.loads((ROOT / f'content/assets/gokart/models/block/{name}_body.json').read_text())
             elements = model['elements']
             corners = [e for e in elements if e['faces']['east']['texture'] == '#corner_glass']
-            self.assertEqual(len(corners), 10)
+            self.assertEqual(len(corners), 16)
             for side in (-1, 1):
                 strips = sorted((e for e in corners if (e['from'][0] > 8) == (side > 0)),
                                 key=lambda e: e['from'][2])
-                self.assertEqual(len(strips), 5)
+                self.assertEqual(len(strips), 8)
                 for a, b in zip(strips, strips[1:]):
                     self.assertLessEqual(b['from'][2] - a['to'][2], 0.011)
                     self.assertGreater(a['to'][1], b['to'][1])
+                for e in strips:
+                    self.assertLessEqual(e['to'][0] - e['from'][0], 0.081)
+                    # Rear surface of the -30 degree A-pillar: verify the
+                    # front upper corner of each window stays behind it.
+                    y = e['to'][1]
+                    pillar_rear_z = 15.25 - 0.25 / math.cos(math.radians(30)) - (y - 11.05) * math.tan(math.radians(30))
+                    self.assertLessEqual(e['to'][2] - 8, pillar_rear_z - 0.09)
+            main = [e for e in elements if e['faces']['east']['texture'] == '#glass' and
+                    e['from'][1] == 11.86 and e['to'][1] == 21.70]
+            self.assertEqual(len(main), 2)
+            for e in main:
+                pillar_rear_z = 15.25 - 0.25 / math.cos(math.radians(30)) - (e['to'][1] - 11.05) * math.tan(math.radians(30))
+                self.assertLess(e['to'][2] - 8, pillar_rear_z)
+                self.assertLessEqual(e['to'][0] - e['from'][0], 0.081)
             self.assertEqual(sum(e['faces']['up']['texture'] == '#medical_mattress' for e in elements), 1)
             self.assertTrue(any(e['faces']['up']['texture'] == '#medical_red' for e in elements))
 

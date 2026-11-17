@@ -2140,22 +2140,23 @@ def generate_models() -> None:
             obox([3.50, 21.25, -20.3], [3.80, 21.55, -5.1], "#chrome"),
             obox([3.50, 20.8, -19.9], [3.8, 21.23, -19.6], "#chrome"),
             obox([3.50, 20.8, -5.8], [3.8, 21.23, -5.5], "#chrome"),
-            # Front cabin: clear safety glazing, dashboard, seats, windshield pillars and wing mirrors.
-            obox([-10.0, 11.84, 9.55], [10.0, 13.0, 15.55], "#shell"),
-            # Raked windscreen and matching A-pillars, all attached to the roof.
+            # Front cabin. The windscreen and A-pillars use one rotation;
+            # glazing is thin and its stepped edge remains behind that plane.
             obox([-10.0, 11.05, 15.00], [10.0, 23.6, 15.50], "#glass", rot=("x", -30.0, [0, 11.05, 15.25]), full_uv_faces=("north", "south")),
             obox([-12.0, 11.05, 15.00], [-10.02, 23.6, 15.50], "#shell", rot=("x", -30.0, [0, 11.05, 15.25])),
             obox([10.02, 11.05, 15.00], [12.0, 23.6, 15.50], "#shell", rot=("x", -30.0, [0, 11.05, 15.25])),
-            # A single side window per cab door, framed by the raked A-pillar.
-            obox([-11.7, 11.1, -3.45], [-10.15, 21.7, 10.9], "#glass", full_uv_faces=("east", "west")),
-            obox([10.15, 11.1, -3.45], [11.7, 21.7, 10.9], "#glass", full_uv_faces=("east", "west")),
-            # Fill the wedge between the rectangular side glass and sloping
-            # windshield with progressively shorter transparent glazing strips.
-            *[obox([x0, 11.82, z0], [x1, y1, z1], "#corner_glass", full_uv_faces=("east", "west"))
-              for x0, x1 in ((-11.7, -10.15), (10.15, 11.7))
-              for z0, z1, y1 in ((10.91, 11.70, 18.0), (11.71, 12.50, 16.6),
-                                 (12.51, 13.30, 15.2), (13.31, 14.10, 13.8),
-                                 (14.11, 14.85, 12.4))],
+            # Main panes stop short of the swept A-pillar. The small front
+            # corner is sliced against its inner plane; unlike the old single
+            # rectangle, its top edge cannot cut through the pillar.
+            *[obox([x0, 11.86, -3.45], [x1, 21.70, 8.60], "#glass", full_uv_faces=("east", "west"))
+              for x0, x1 in ((-12.13, -12.05), (12.05, 12.13))],
+            *[obox([x0, 11.86, round(8.60 + i * 0.70, 3)],
+                    [x1, round(min(21.65, 11.05 + (14.96 - (8.60 + (i + 1) * 0.70) - 0.10) / math.tan(math.radians(30))), 3),
+                     round(8.60 + (i + 1) * 0.70, 3)], "#corner_glass", full_uv_faces=("east", "west"))
+              for x0, x1 in ((-12.13, -12.05), (12.05, 12.13)) for i in range(8)],
+            # Dark dashboard top ends behind the windscreen instead of a white
+            # solid slab cutting through the glass and hiding the cab.
+            obox([-9.70, 11.82, 9.0], [9.70, 12.10, 14.25], "#frame"),
             # Dashboard shelf, instrument binnacle, centre console and two headrests.
             obox([-9.70, 9.35, 4.0], [9.70, 10.85, 8.4], "#frame"),
             obox([2.35, 10.87, 4.2], [7.65, 11.55, 5.6], "#dash", full_uv_faces=("up",)),
@@ -2166,14 +2167,14 @@ def generate_models() -> None:
             obox([-8.0, 4.0, -2.5], [-2.0, 6.0, 2.8], "#seat"),
             obox([2.0, 6.02, -3.45], [8.0, 14.4, -2.55], "#seat"),
             obox([-8.0, 6.02, -3.45], [-2.0, 14.4, -2.55], "#seat"),
-            # Mirror support arms extend from the actual door skin; the outer
-            # housing has an inset reflective face facing toward the driver.
-            obox([-13.20, 11.85, 4.0], [-11.74, 12.10, 4.4], "#frame"),
-            obox([11.74, 11.85, 4.0], [13.20, 12.10, 4.4], "#frame"),
-            obox([-13.5, 12.4, 3.87], [-12.2, 14.1, 3.89], "#chrome"),
-            obox([12.2, 12.4, 3.87], [13.5, 14.1, 3.89], "#chrome"),
-            obox([-13.6, 12.2, 3.9], [-12.1, 14.3, 5.5], "#frame"),
-            obox([12.1, 12.2, 3.9], [13.6, 14.3, 5.5], "#frame"),
+            # Mirror arms attach below the side windows; housings sit entirely
+            # outboard of the glazing instead of penetrating through it.
+            obox([-13.20, 10.95, 4.0], [-12.25, 11.20, 4.4], "#frame"),
+            obox([12.25, 10.95, 4.0], [13.20, 11.20, 4.4], "#frame"),
+            obox([-13.50, 11.55, 3.87], [-12.45, 13.25, 3.89], "#chrome"),
+            obox([12.45, 11.55, 3.87], [13.50, 13.25, 3.89], "#chrome"),
+            obox([-13.60, 11.35, 3.90], [-12.35, 13.45, 5.50], "#frame"),
+            obox([12.35, 11.35, 3.90], [13.60, 13.45, 5.50], "#frame"),
             # Contoured painted bumper around the black lower intake; lamps are
             # separate recessed lenses rather than bright square kart headlights.
             obox([-12.2, 3.0, 18.80], [12.2, 6.2, 20.00], "#shell"),
@@ -2192,8 +2193,8 @@ def generate_models() -> None:
             obox([12.36, 8.15, -10.9], [12.50, 8.62, -9.20], "#frame"),
             obox([-12.50, 8.15, -10.9], [-12.36, 8.62, -9.20], "#frame"),
             # Wipers at the foot of the windshield and recessed bumper fog lights.
-            obox([-9.2, 11.15, 15.51], [-0.35, 11.48, 15.67], "#frame"),
-            obox([0.35, 11.15, 15.51], [9.2, 11.48, 15.67], "#frame"),
+            obox([-9.2, 11.65, 15.52], [-0.35, 11.92, 15.62], "#frame", rot=("x", -30.0, [0, 11.05, 15.25])),
+            obox([0.35, 11.65, 15.52], [9.2, 11.92, 15.62], "#frame", rot=("x", -30.0, [0, 11.05, 15.25])),
             obox([-10.5, 3.75, 20.02], [-8.25, 4.80, 20.12], "#headlight"),
             obox([8.25, 3.75, 20.02], [10.5, 4.80, 20.12], "#headlight"),
             # Exterior sliding-door track, high rear hinges and non-slip rear step.
@@ -3101,7 +3102,7 @@ def main() -> None:
     generate_sounds()
     generate_lang()
     generate_mod_icon()
-    print("Generated & verified all Horizon Vehicles content v0.12.7 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
+    print("Generated & verified all Horizon Vehicles content v0.12.8 assets, sculpted 5-segment wheel arches, Poliția Română, sounds & EN/RO locales.")
 
 
 if __name__ == "__main__":
