@@ -14,6 +14,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.ItemDisplay;
+import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -39,7 +40,7 @@ public final class GoKartRig {
             }
             rig.add(descriptor, "engine_iron", location, new Vector3f(0, 6.5f * 1.14f / 16, -11.6f * 1.18f / 16), new Vector3f(1.18f));
             rig.add(descriptor, "go_kart_steering_wheel", location, new Vector3f(0, 10.5f * 1.14f / 16, 2.95f * 1.18f / 16), new Vector3f(1.14f));
-            rig.move(location);
+            rig.moveUnattached(location);
             return rig;
         } catch (Exception error) {
             rig.remove();
@@ -89,8 +90,8 @@ public final class GoKartRig {
                 entity.setItemStack(stack);
                 entity.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.NONE);
                 entity.setInterpolationDelay(0);
-                entity.setInterpolationDuration(1);
-                entity.setTeleportDuration(1);
+                entity.setInterpolationDuration(0);
+                entity.setTeleportDuration(0);
                 entity.setPersistent(false);
                 entity.setInvulnerable(true);
                 entity.setShadowRadius(0);
@@ -99,12 +100,42 @@ public final class GoKartRig {
         }
     }
 
-    /** Root location is the ground-level center; yaw follows Bukkit conventions. */
-    public void move(Location root) {
+    /** Mount every model group onto a common carrier riding inside the boat.
+     * Their client positions are then inherited from the actual boat, not sent
+     * as independent moving entities. Failure is fatal to the spawn attempt. */
+    public void attach(Entity carrier, Location root) {
+        for (Piece piece : pieces) {
+            if (!carrier.addPassenger(piece.display())) {
+                throw new IllegalStateException("Could not attach every Go-Kart model group to its carrier");
+            }
+        }
+        updateAttached(root, carrier);
+    }
+
+    public boolean isAttached(Entity carrier) {
+        return carrier.isValid() && pieces.stream().allMatch(piece ->
+                piece.display().isValid() && carrier.equals(piece.display().getVehicle()));
+    }
+
+    /** Compute the model offset relative to the boat-mounted carrier. */
+    public void updateAttached(Location root, Entity carrier) {
+        Location anchor = carrier.getLocation();
+        double angle = Math.toRadians(root.getYaw());
+        double dx = root.getX() - anchor.getX(), dz = root.getZ() - anchor.getZ();
+        Vector3f relative = new Vector3f((float) (dx * Math.cos(angle) + dz * Math.sin(angle)),
+                (float) (root.getY() - anchor.getY()),
+                (float) (-dx * Math.sin(angle) + dz * Math.cos(angle)));
+        for (Piece piece : pieces) {
+            piece.display().setRotation(root.getYaw(), 0);
+            piece.display().setTransformation(new Transformation(new Vector3f(piece.offset()).add(relative),
+                    new Quaternionf(), piece.scale(), new Quaternionf(piece.rotation()).rotateY((float) Math.PI)));
+        }
+    }
+
+    private void moveUnattached(Location root) {
         for (Piece piece : pieces) {
             piece.display().teleport(root);
             piece.display().setRotation(root.getYaw(), 0);
-            // Vanilla item displays face opposite to the entity; compensate by 180 degrees.
             piece.display().setTransformation(new Transformation(piece.offset(), new Quaternionf(), piece.scale(),
                     new Quaternionf(piece.rotation()).rotateY((float) Math.PI)));
         }

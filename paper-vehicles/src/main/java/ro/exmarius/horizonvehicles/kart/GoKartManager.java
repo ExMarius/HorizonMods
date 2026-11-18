@@ -48,6 +48,7 @@ public final class GoKartManager implements Listener {
                 entity.setPersistent(false); entity.setRemoveWhenFarAway(false);
             });
             if (!seat.addPassenger(blocker)) throw new IllegalStateException("Unable to reserve boat control seat");
+            rig.attach(blocker, root);
             hitbox = root.getWorld().spawn(root, Interaction.class, entity -> {
                 entity.setInteractionWidth(1.8f); entity.setInteractionHeight(1.3f);
                 entity.setResponsive(true); entity.setPersistent(false);
@@ -102,7 +103,10 @@ public final class GoKartManager implements Listener {
 
     public void tick() {
         for (Kart kart : new ArrayList<>(karts)) {
-            if (!kart.seat.isValid() || !kart.hitbox.isValid()) { kart.remove(); karts.remove(kart); continue; }
+            if (!kart.seat.isValid() || !kart.hitbox.isValid()
+                    || !kart.seat.equals(kart.blocker.getVehicle()) || !kart.rig.isAttached(kart.blocker)) {
+                kart.remove(); karts.remove(kart); continue;
+            }
             kart.tick();
         }
     }
@@ -136,10 +140,8 @@ public final class GoKartManager implements Listener {
     private static final class Kart {
         Location root; final GoKartRig rig; final Boat seat; final ArmorStand blocker; final Interaction hitbox;
         final GoKartMotion motion; double fallVelocity; boolean onGround = true;
-        private Location previousSeatTarget;
         Kart(Location root, GoKartRig rig, Boat seat, ArmorStand blocker, Interaction hitbox) {
             this.root = root.clone(); this.rig = rig; this.seat = seat; this.blocker = blocker; this.hitbox = hitbox;
-            this.previousSeatTarget = seatLocation(root);
             this.motion = new GoKartMotion(root.getYaw());
         }
         void tick() {
@@ -184,17 +186,14 @@ public final class GoKartManager implements Listener {
             if (Math.abs(actual.getX() - requested.getX()) > 0.001
                     || Math.abs(actual.getZ() - requested.getZ()) > 0.001) motion.stop();
             Location seatTarget = seatLocation(next);
-            // Match the existing Paper rig's boat synchronization: the item
-            // displays interpolate their teleports for one tick, so position the
-            // boat at the previous tick's target rather than ahead of the body.
-            // Apply the position and yaw together; never move the model when
-            // the boat/passenger teleport fails.
-            Location delayed = previousSeatTarget.clone();
+            // The boat is the moving parent: the player rides it directly and
+            // every model display rides its invisible first-seat carrier.
             seat.setVelocity(new Vector(0, 0, 0));
-            if (!seat.teleport(delayed, TeleportFlag.EntityState.RETAIN_PASSENGERS)) { motion.stop(); return; }
-            seat.setRotation(delayed.getYaw(), 0);
-            previousSeatTarget = seatTarget;
-            root = next; hitbox.teleport(root); rig.move(root);
+            if (!seat.teleport(seatTarget, TeleportFlag.EntityState.RETAIN_PASSENGERS)) { motion.stop(); return; }
+            seat.setRotation(seatTarget.getYaw(), 0);
+            root = next;
+            hitbox.teleport(root);
+            rig.updateAttached(root, blocker);
             if (driver != null && driver.getTicksLived() % 20 == 0)
                 driver.sendActionBar(Component.text(String.format("Go-Kart | Combustibil: %.0f%%", step.fuel())));
         }

@@ -2,8 +2,12 @@
 const mineflayer = require('mineflayer')
 const bot = mineflayer.createBot({ host: '127.0.0.1', port: 25565, username: 'SmokeBot', version: '1.21.4', auth: 'offline' })
 let done = false, spawned = false, driving = false, dismounted = false, packs = 0, packsAtSpawn = 0
+const passengers = new Map()
 const timeout = setTimeout(() => fail('timed out'), 50000)
-bot._client.on('packet', (_, meta) => { if (meta.name === 'add_resource_pack') packs++ })
+bot._client.on('packet', (data, meta) => {
+  if (meta.name === 'add_resource_pack') packs++
+  if (meta.name === 'set_passengers') passengers.set(data.entityId, data.passengers)
+})
 function fail(message) {
   if (done) return
   done = true; clearTimeout(timeout); console.error('Offline player smoke failed: ' + message)
@@ -12,7 +16,7 @@ function fail(message) {
 function success() {
   if (done) return
   done = true; clearTimeout(timeout)
-  console.log('Boat mounted; server entity separation bounded in motion; pack not resent on spawn.')
+  console.log('Boat mounted; model displays are attached to its carrier; movement tested; pack not resent on spawn.')
   bot.quit()
 }
 bot.on('error', e => fail(e.message))
@@ -41,6 +45,12 @@ const interval = setInterval(() => {
     if (!driving) {
       driving = true
       if (bot.vehicle.name !== 'oak_boat') return fail('seat is not an oak boat: ' + bot.vehicle.name)
+      const riders = passengers.get(bot.vehicle.id) || []
+      const carrierId = riders.find(id => id !== bot.entity.id)
+      const attached = passengers.get(carrierId) || []
+      const displayIds = new Set(displays.map(e => e.id))
+      const attachedDisplays = attached.filter(id => displayIds.has(id)).length
+      if (attachedDisplays < 30) return fail('model is not attached to boat carrier; attached displays: ' + attachedDisplays)
       if (packs !== packsAtSpawn) return fail('resource pack sent again on spawn')
       if (entities.some(e => e.name === 'block_display')) return fail('unwanted cosmetic hands exist')
       const startYaw = bot.vehicle.yaw
