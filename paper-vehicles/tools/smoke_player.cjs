@@ -86,7 +86,7 @@ const interval = setInterval(() => {
           if (packs !== packsAtSpawn) return fail('resource pack sent after spawn')
           // Command dismount, since Mineflayer does not reproduce all vanilla sneak input.
           bot.chat('/ride SmokeBot dismount')
-          setTimeout(() => { if (!dismounted) return fail('server did not confirm dismount'); bot.chat('/hvehicle remove'); setTimeout(() => { if (fake && bot.entities[fakeId]) return fail('fake pilot remained after kart removal'); success() }, 2500) }, 2500)
+          setTimeout(() => { if (!dismounted) return fail('server did not confirm dismount'); bot.chat('/execute at @e[type=minecraft:interaction,limit=1,sort=nearest] run tp SmokeBot ~ ~ ~'); setTimeout(() => { bot.chat('/hvehicle remove'); setTimeout(() => { if (fake && bot.entities[fakeId]) return fail('fake pilot remained after kart removal'); success() }, 2500) }, 1000) }, 2500)
         }, 4000)
       }, 2000)
     }
