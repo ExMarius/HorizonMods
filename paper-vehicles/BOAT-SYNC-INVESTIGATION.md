@@ -64,3 +64,28 @@ https://maven.fabricmc.net/docs/yarn-1.21.4+build.1/net/minecraft/entity/vehicle
 A community example of a boat mounted on a marker stand:
 https://www.reddit.com/r/MinecraftCommands/comments/zpd8y7/fix_boats_position_so_it_cannot_be_pushed_by_a/
 Neither reference proves the proposed rig works for a moving local rider.
+
+## Real-player feedback: A/D rotation remains (2026-11-16)
+
+The user tested both shared-carrier variants on the deployed server: they
+remain fixed to the vehicle in position, but the boat/raft itself rotates
+independently around its attachment when A or D is pressed. This is a failing
+visual acceptance criterion, not a fix. The Mineflayer smoke did not simulate
+vanilla boat control and therefore could not detect it.
+
+Likely explanation to test, not yet established as the sole cause: the real
+player is the first passenger of the boat and its vanilla client runs steering.
+Inserting an armor stand first does not work on the current implementation:
+Paper promotes the player ahead of a non-player passenger. A possible next
+experiment is a real or packet-only fake *player* in seat one, and the driver
+in seat two, leaving both client and server passenger lists consistent. Check
+input delivery, boat yaw, seat offset, the player's head/body pose and camera,
+observers, reconnect, dismount, cleanup, and packet ordering. The second seat
+may move the rider and alter camera behavior; fake player lifecycle and network
+synchronization need careful handling. Do not assume it works or deploy it as a
+fix without these checks. A client modification to suppress boat steering is an
+alternative only with the user's agreement.
+
+Independent note: 1.21.4 passenger packet observations in Grim's test matrix:
+https://github.com/GrimAnticheat/Grim/pull/2921
+This concerns packet counts, not a visual test of the proposed prototype.
