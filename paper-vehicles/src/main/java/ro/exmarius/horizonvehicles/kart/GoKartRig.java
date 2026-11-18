@@ -21,7 +21,7 @@ import org.bukkit.util.Transformation;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-/** Experimental split-model renderer; not yet wired to spawning or movement. */
+/** Experimental split-model renderer using the earlier Horizon kart layout. */
 public final class GoKartRig {
     private record Piece(ItemDisplay display, Vector3f offset, Quaternionf rotation, Vector3f scale) { }
     private final List<Piece> pieces = new ArrayList<>();

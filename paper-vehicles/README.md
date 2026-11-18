@@ -99,10 +99,10 @@ coliziuni aproximative și livrarea pack-ului, dar nu au fost verificate în joc
 
 ### Preluare din proiectul Paper existent
 
-Prototipul folosește acum direct `LandVehicleSpec.GO_KART` din proiectul Paper
-preluat pentru pozițiile caroseriei, roților, volanului, motorului și șoferului,
-precum și `VehicleCollisionMover` pentru coliziuni și urcarea treptelor. Modelul
-este cel Horizon propriu, deci pozițiile preluate necesită calibrare vizuală;
+Prototipul folosește `LandVehicleSpec.GO_KART` din proiectul Paper pentru
+poziția scaunului și parametrii fizici, precum și `VehicleCollisionMover` pentru
+coliziuni și urcarea treptelor. Pentru modelul Horizon am restaurat aranjarea
+anterioară a caroseriei, roților, volanului și motorului, care necesită verificare vizuală;
 nu este încă rig-ul sau motorul complet `LandVehicle` al proiectului sursă.
 Condusul folosește o adaptare selectivă a formulelor din `LandVehicle`, inclusiv frecare, tracțiune și virare pe osii; boost-ul și unele detalii ale rezervorului rămân neportate. Aceste modificări
 nu au fost încă verificate în joc.
