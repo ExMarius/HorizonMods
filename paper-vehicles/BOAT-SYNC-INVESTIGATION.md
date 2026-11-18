@@ -40,3 +40,28 @@ actually loaded server JAR also need checking in a real vanilla client.
   change is presently supported by evidence as a fix.
 
 No proposed alternative has yet passed a real vanilla-client visual test.
+
+## Shared-carrier prototype (opt-in, not visually verified)
+
+The plugin now has an isolated alternative hierarchy: marker armor stand ->
+boat -> player, and the same stand -> kart ItemDisplays. Enable it in the
+plugin data directory's `config.yml` with `experiments.nested-boat-seat: true`
+(nested YAML syntax), before starting/restarting the plugin. It is disabled by
+default and is not deployed automatically. The original rig remains the default.
+The existing model and resource pack are unchanged. This option is experimental;
+seat/model offsets, rotation, camera and prediction may still be wrong.
+
+The disposable Paper 1.21.4 smoke enables the option, mounts a Mineflayer bot,
+checks the passenger tree, moves and steers the server-side rig and dismounts.
+A separate command-only experiment tests both oak boat and bamboo raft mounted
+on a marker stand next to an item display. Both chains survive mounting and a
+root movement according to the captured passenger packets. These checks do not
+simulate client movement or render anything; they do not establish whether the
+raft or boat stays visually aligned or which has the desired camera.
+
+Relevant reference: Yarn 1.21.4 documents AbstractBoatEntity and its passenger
+position and controller methods:
+https://maven.fabricmc.net/docs/yarn-1.21.4+build.1/net/minecraft/entity/vehicle/AbstractBoatEntity.html
+A community example of a boat mounted on a marker stand:
+https://www.reddit.com/r/MinecraftCommands/comments/zpd8y7/fix_boats_position_so_it_cannot_be_pushed_by_a/
+Neither reference proves the proposed rig works for a moving local rider.
