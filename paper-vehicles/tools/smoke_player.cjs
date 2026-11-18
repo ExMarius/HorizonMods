@@ -46,6 +46,7 @@ const interval = setInterval(() => {
       driving = true
       if (bot.vehicle.name !== 'oak_boat') return fail('seat is not an oak boat: ' + bot.vehicle.name)
       const riders = passengers.get(bot.vehicle.id) || []
+      if (riders[0] === bot.entity.id) return fail('CLIENT CONTROLS BOAT: player placed ahead of non-player carrier')
       const carrierId = riders.find(id => id !== bot.entity.id)
       const attached = passengers.get(carrierId) || []
       const displayIds = new Set(displays.map(e => e.id))
