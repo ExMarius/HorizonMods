@@ -21,9 +21,9 @@ bot.once('spawn', () => {
   setTimeout(() => bot.chat('/ride SmokeBot mount @e[type=minecraft:oak_boat,tag=hv_nested_boat,limit=1]'), 3500)
   setTimeout(() => {
     const entities = Object.values(bot.entities)
-    const root = entities.find(e => e.name === 'armor_stand')
-    const boat = entities.find(e => e.name === 'oak_boat')
-    const display = entities.find(e => e.name === 'item_display')
+    const boat = entities.find(e => e.name === 'oak_boat' && (passengers.get(e.id) || []).includes(bot.entity.id))
+    const root = boat && entities.find(e => e.name === 'armor_stand' && (passengers.get(e.id) || []).includes(boat.id))
+    const display = root && entities.find(e => e.name === 'item_display' && (passengers.get(root.id) || []).includes(e.id))
     if (!root || !boat || !display) return finish('missing experiment entities')
     const riders = passengers.get(root.id) || []
     if (!riders.includes(boat.id) || !riders.includes(display.id)) return finish('root passenger list incomplete: ' + riders)
