@@ -1,1 +1,1 @@
-Cerere utilizator: restaurare model Go-Kart, scaun barcă și pack doar la intrare.
+Cerere utilizator: sincronizare barcă și caroserie în mers.
