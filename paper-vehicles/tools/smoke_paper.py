@@ -82,6 +82,9 @@ def main(jar):
                     if player_test.returncode:
                         raise RuntimeError('Offline ' + variant + ' player failed: ' + (player_test.stdout + player_test.stderr)[-2000:])
                     print(player_test.stdout)
+                    # Clean up the prior variant before reconnecting the same bot.
+                    proc.stdin.write('kill @e[type=minecraft:interaction]\n'); proc.stdin.flush()
+                    time.sleep(2)
                 nested = Path(__file__).with_name('smoke_nested_boat.cjs').resolve()
                 for vehicle in ('oak_boat', 'bamboo_raft'):
                     nested_test = subprocess.run(['node', str(nested), vehicle], capture_output=True, text=True, timeout=40)
