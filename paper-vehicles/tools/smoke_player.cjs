@@ -1,21 +1,18 @@
-// Offline protocol client: checks spawn, mounting, movement and cosmetic hand lifecycle, not visual fidelity.
+// Offline protocol test: boat seat, steering and pack delivery. Not a visual test.
 const mineflayer = require('mineflayer')
 const bot = mineflayer.createBot({ host: '127.0.0.1', port: 25565, username: 'SmokeBot', version: '1.21.4', auth: 'offline' })
-let done = false
-let spawned = false
-let driving = false
-let dismounted = false
-const timeout = setTimeout(() => fail('timed out'), 45000)
+let done = false, spawned = false, driving = false, dismounted = false, packs = 0, packsAtSpawn = 0
+const timeout = setTimeout(() => fail('timed out'), 50000)
+bot._client.on('packet', (_, meta) => { if (meta.name === 'add_resource_pack') packs++ })
 function fail(message) {
   if (done) return
-  done = true; clearTimeout(timeout)
-  console.error('Offline player smoke failed: ' + message)
+  done = true; clearTimeout(timeout); console.error('Offline player smoke failed: ' + message)
   bot.quit(); process.exitCode = 1
 }
 function success() {
   if (done) return
   done = true; clearTimeout(timeout)
-  console.log('Offline player created Go-Kart, mounted, drove, and observed hands appear and disappear.')
+  console.log('Boat seat mounted; steering at rest and moving tested; pack not resent on spawn.')
   bot.quit()
 }
 bot.on('error', e => fail(e.message))
@@ -24,7 +21,11 @@ bot.on('end', () => { if (!done) fail('connection ended') })
 bot.once('spawn', () => {
   setTimeout(() => bot.chat('/fill ~-8 ~-1 ~-8 ~8 ~-1 ~8 stone'), 1500)
   setTimeout(() => bot.chat('/fill ~-8 ~ ~-8 ~8 ~4 ~8 air'), 2500)
-  setTimeout(() => { bot.chat('/hvehicle spawn go_kart'); spawned = true }, 4500)
+  setTimeout(() => {
+    packsAtSpawn = packs
+    if (packsAtSpawn !== 1) return fail('expected one join pack, got ' + packsAtSpawn)
+    bot.chat('/hvehicle spawn go_kart'); spawned = true
+  }, 4500)
 })
 bot.on('messagestr', text => {
   if (text.includes('stopped riding')) dismounted = true
@@ -39,28 +40,30 @@ const interval = setInterval(() => {
   if (bot.vehicle && displays.length >= 20) {
     if (!driving) {
       driving = true
-      const start = bot.vehicle.position.clone()
+      if (bot.vehicle.name !== 'oak_boat') return fail('seat is not an oak boat: ' + bot.vehicle.name)
+      if (packs !== packsAtSpawn) return fail('resource pack sent again on spawn')
+      if (entities.some(e => e.name === 'block_display')) return fail('unwanted cosmetic hands exist')
       const startYaw = bot.vehicle.yaw
-      const hands = entities.filter(e => e.name === 'block_display')
-      if (hands.length !== 4) return fail('expected four cosmetic hand segments, got ' + hands.length)
-      const input = setInterval(() => bot._client.write('player_input', { inputs: { forward: true, left: true } }), 50)
+      const steerOnly = setInterval(() => bot._client.write('player_input', { inputs: { left: true } }), 50)
       setTimeout(() => {
-        clearInterval(input)
-        bot._client.write('player_input', { inputs: {} })
-        if (!bot.vehicle) return fail('player dismounted during movement')
-        const distance = Math.hypot(start.x - bot.vehicle.position.x, start.z - bot.vehicle.position.z)
-        if (distance < .3) return fail('vehicle did not move: ' + distance)
-        if (Math.abs(bot.vehicle.yaw - startYaw) < .02) return fail('seat did not follow the kart turn')
-        // Force dismount using vanilla command: Mineflayer does not emulate the
-        // vanilla client's complete sneak/dismount input sequence.
-        bot.chat('/ride SmokeBot dismount')
+        clearInterval(steerOnly)
+        if (!bot.vehicle) return fail('dismounted while steering')
+        if (Math.abs(bot.vehicle.yaw - startYaw) > .08) return fail('boat rotates on A without driving')
+        const start = bot.vehicle.position.clone(), yaw = bot.vehicle.yaw
+        const input = setInterval(() => bot._client.write('player_input', { inputs: { forward: true, left: true } }), 50)
         setTimeout(() => {
-          const remaining = Object.values(bot.entities).filter(e => e.name === 'block_display').length
-          if (!dismounted) return fail('server did not confirm dismount')
-          if (remaining !== 0) return fail('cosmetic hands remained after dismount: ' + remaining)
-          success()
-        }, 2500)
-      }, 4000)
+          clearInterval(input)
+          bot._client.write('player_input', { inputs: {} })
+          if (!bot.vehicle) return fail('player dismounted during movement')
+          const distance = Math.hypot(start.x - bot.vehicle.position.x, start.z - bot.vehicle.position.z)
+          if (distance < .3) return fail('vehicle did not move: ' + distance)
+          if (Math.abs(bot.vehicle.yaw - yaw) < .02) return fail('boat did not follow kart turn')
+          if (packs !== packsAtSpawn) return fail('resource pack sent after spawn')
+          // Command dismount, since Mineflayer does not reproduce all vanilla sneak input.
+          bot.chat('/ride SmokeBot dismount')
+          setTimeout(() => { if (!dismounted) return fail('server did not confirm dismount'); success() }, 2500)
+        }, 4000)
+      }, 2000)
     }
     return
   }

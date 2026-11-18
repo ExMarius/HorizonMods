@@ -118,12 +118,12 @@ verifică spawnul, urcarea, deplasarea orizontală și declanșarea scriptului d
 restart. Nu verifică fidelitatea vizuală, multiplayer, terenuri complexe sau
 comportamentul serverului real.
 
-### Mâini și urmărirea scaunului (experiment vanilla)
+### Scaun barcă și pachetul de resurse
 
-Scaunul este mutat și rotit odată cu kartul, fără pachete care să forțeze
-camera jucătorului. Clientul vanilla controlează în continuare privirea liberă;
-nu garantăm aceeași cameră ca în Horizon. Când scaunul este ocupat, patru
-BlockDisplay-uri adaugă mâneci albastre și mănuși portocalii statice lângă volan;
-nu sunt brațele sau skin-ul jucătorului și pot să se suprapună peste el. Ele
-se ascund când coboară și nu necesită un resource pack suplimentar. Poziția și
-aspectul trebuie calibrate vizual în joc, în ambele perspective.
+Kartul folosește experimental o barcă vanilla pentru poziția de șezut. Un suport
+invizibil ocupă primul loc al bărcii, pentru ca A/D să controleze kartul și nu
+barca independent; jucătorul stă direct pe celălalt loc. Poziția, aspectul și
+camera trebuie verificate cu un client Minecraft: testul automat nu dovedește
+cum se vede sau simte camera. Barca poate fi vizibilă în model. Mâinile
+cosmetice au fost eliminate. Pachetul este trimis automat doar la intrare, nu
+la spawn; `/hvehicle pack` rămâne disponibil la cerere.

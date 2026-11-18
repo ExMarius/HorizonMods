@@ -81,7 +81,7 @@ public final class HorizonVehiclesPlugin extends JavaPlugin implements CommandEx
         }
         if ((args.length == 1 && args[0].equalsIgnoreCase("spawn")) ||
                 (args.length == 2 && args[0].equalsIgnoreCase("spawn") && args[1].equalsIgnoreCase("go_kart"))) {
-            sendPack(player); karts.spawn(player); return true;
+            karts.spawn(player); return true;
         }
         return false;
     }

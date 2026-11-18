@@ -2,7 +2,6 @@ package ro.exmarius.horizonvehicles.kart;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.mrcrayfish.vehicle.paper.vehicle.LandVehicleSpec;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -22,9 +21,9 @@ import org.bukkit.util.Transformation;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-/** Split-model renderer using the Paper source Go-Kart layout. */
+/** Experimental split-model renderer; not yet wired to spawning or movement. */
 public final class GoKartRig {
-    private record Piece(ItemDisplay display, Vector3f offset, Quaternionf outerRotation, Quaternionf rotation, Vector3f scale) { }
+    private record Piece(ItemDisplay display, Vector3f offset, Quaternionf rotation, Vector3f scale) { }
     private final List<Piece> pieces = new ArrayList<>();
 
     private GoKartRig() { }
@@ -33,23 +32,13 @@ public final class GoKartRig {
         JsonObject descriptor = readDescriptor(plugin).getAsJsonObject("parts");
         GoKartRig rig = new GoKartRig();
         try {
-            LandVehicleSpec spec = LandVehicleSpec.GO_KART;
-            rig.add(descriptor, "go_kart_body", location, point(spec.bodyOrigin()),
-                    new Vector3f(spec.bodyScale()), new Quaternionf());
-            for (LandVehicleSpec.Wheel wheel : spec.wheels()) {
-                Vector3f center = new Vector3f(wheel.axleX() + wheel.halfWidthOffset(),
-                        wheel.centerY(), wheel.axleZ());
-                Quaternionf orientation = new Quaternionf();
-                if (wheel.side() > 0) orientation.rotateY((float) Math.PI);
-                rig.add(descriptor, "wheel_standard", location, center,
-                        new Vector3f(wheel.scaleX(), wheel.scaleY(), wheel.scaleZ()), orientation);
+            rig.add(descriptor, "go_kart_body", location, new Vector3f(0, 1.14f * .5f, 0), new Vector3f(1.18f, 1.14f, 1.18f));
+            for (int side : new int[]{-1, 1}) {
+                rig.add(descriptor, "wheel_standard", location, new Vector3f(side * 11.64f / 16, 1.18f / 4, 11.2f * 1.18f / 16), new Vector3f(1.15f, 1.18f, 1.18f));
+                rig.add(descriptor, "wheel_standard", location, new Vector3f(side * 12.16f / 16, 1.28f / 4, -11.4f * 1.18f / 16), new Vector3f(1.34f, 1.28f, 1.28f));
             }
-            LandVehicleSpec.Part engine = spec.engine();
-            rig.add(descriptor, "engine_iron", location, point(engine.center()),
-                    new Vector3f(engine.scale()), rotation(engine));
-            LandVehicleSpec.Part steering = spec.steering();
-            rig.add(descriptor, "go_kart_steering_wheel", location, point(steering.center()),
-                    new Vector3f(steering.scale()), rotation(steering));
+            rig.add(descriptor, "engine_iron", location, new Vector3f(0, 6.5f * 1.14f / 16, -11.6f * 1.18f / 16), new Vector3f(1.18f));
+            rig.add(descriptor, "go_kart_steering_wheel", location, new Vector3f(0, 10.5f * 1.14f / 16, 2.95f * 1.18f / 16), new Vector3f(1.14f));
             rig.move(location);
             return rig;
         } catch (Exception error) {
@@ -72,18 +61,7 @@ public final class GoKartRig {
         throw new IllegalStateException("Go-Kart pack descriptor missing");
     }
 
-    private static Vector3f point(LandVehicleSpec.Point point) {
-        return new Vector3f(point.x(), point.y(), point.z());
-    }
-
-    private static Quaternionf rotation(LandVehicleSpec.Part part) {
-        return new Quaternionf().rotateX((float) Math.toRadians(part.rotationX()))
-                .rotateY((float) Math.toRadians(part.rotationY()))
-                .rotateZ((float) Math.toRadians(part.rotationZ()));
-    }
-
-    private void add(JsonObject descriptor, String name, Location location, Vector3f offset,
-                     Vector3f scale, Quaternionf outerRotation) {
+    private void add(JsonObject descriptor, String name, Location location, Vector3f offset, Vector3f scale) {
         for (var element : descriptor.getAsJsonArray(name)) {
             JsonObject part = element.getAsJsonObject();
             String model = part.get("item_model").getAsString();
@@ -102,7 +80,6 @@ public final class GoKartRig {
                 }
                 shift.set(pivot).sub(rotation.transform(new Vector3f(pivot))).mul(scale);
             }
-            outerRotation.transform(shift);
             ItemStack stack = new ItemStack(Material.LEATHER_HORSE_ARMOR);
             LeatherArmorMeta meta = (LeatherArmorMeta) stack.getItemMeta();
             meta.setItemModel(NamespacedKey.fromString(model));
@@ -118,7 +95,7 @@ public final class GoKartRig {
                 entity.setInvulnerable(true);
                 entity.setShadowRadius(0);
             });
-            pieces.add(new Piece(display, new Vector3f(offset).add(shift), new Quaternionf(outerRotation), rotation, new Vector3f(scale)));
+            pieces.add(new Piece(display, new Vector3f(offset).add(shift), rotation, new Vector3f(scale)));
         }
     }
 
@@ -128,7 +105,7 @@ public final class GoKartRig {
             piece.display().teleport(root);
             piece.display().setRotation(root.getYaw(), 0);
             // Vanilla item displays face opposite to the entity; compensate by 180 degrees.
-            piece.display().setTransformation(new Transformation(piece.offset(), piece.outerRotation(), piece.scale(),
+            piece.display().setTransformation(new Transformation(piece.offset(), new Quaternionf(), piece.scale(),
                     new Quaternionf(piece.rotation()).rotateY((float) Math.PI)));
         }
     }
