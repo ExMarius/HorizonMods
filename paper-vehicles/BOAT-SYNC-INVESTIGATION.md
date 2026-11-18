@@ -89,3 +89,28 @@ alternative only with the user's agreement.
 Independent note: 1.21.4 passenger packet observations in Grim's test matrix:
 https://github.com/GrimAnticheat/Grim/pull/2921
 This concerns packet counts, not a visual test of the proposed prototype.
+
+## Official 1.21.4 client bytecode audit
+
+`tools/audit_vanilla_boat.py` fetches Mojang's 1.21.4 client JAR and client
+mappings, verifies both manifest SHA-1 values, and uses `javap` in a temporary
+directory. It does not copy Mojang source into the project. GitHub Actions run
+44289955661 produced the bytecode and mapping annotations.
+
+In the actual 1.21.4 client, the boat's `clampRotation` calls the passenger's
+`setYBodyRot` with the boat yaw, clamps the yaw difference between -105 and
++105 degrees, then updates the passenger yaw and head yaw. The boat's
+`onPassengerTurned` calls that same method. `LocalPlayer.rideTick` forwards
+four input booleans to the boat; `controlBoat` uses the left and right booleans
+to change the boat's own `deltaRotation`. This explains why a passive-looking
+server-side boat is not sufficient to suppress local steering. It does not
+prove the camera-follow prototype is visually correct.
+
+BlockShips source inspected at `def9a2a4/BlockShips` uses shulkers as seats,
+not vanilla boats; it therefore does not establish the desired boat-specific
+body/head behavior. Its license is a non-commercial custom license, so no
+code or assets were copied. Paper's `CraftPlayer.setRotation` forwards an
+absolute rotation to the client: the `go_kart_follow` experiment applies only
+the kart's yaw delta, but client mouse updates can race those corrections and
+cause jitter. Its protocol smoke observes correction packets, not actual camera
+behavior. The user must verify it in a real client; do not present it as solved.
