@@ -35,6 +35,7 @@ public final class GoKartManager implements Listener {
         Boat seat = null;
         ArmorStand blocker = null;
         Interaction hitbox = null;
+        boolean nested = plugin.getConfig().getBoolean("experiments.nested-boat-seat", false);
         try {
             rig = GoKartRig.spawn(plugin, root);
             seat = (Boat) root.getWorld().spawnEntity(seatLocation(root), EntityType.OAK_BOAT);
@@ -47,13 +48,19 @@ public final class GoKartManager implements Listener {
                 entity.setGravity(false); entity.setInvulnerable(true); entity.setSilent(true);
                 entity.setPersistent(false); entity.setRemoveWhenFarAway(false);
             });
-            if (!seat.addPassenger(blocker)) throw new IllegalStateException("Unable to reserve boat control seat");
+            if (nested) {
+                // Experimental inverted hierarchy: carrier -> boat -> player,
+                // and carrier -> model displays. Not yet visually validated.
+                if (!blocker.addPassenger(seat)) throw new IllegalStateException("Unable to attach boat to carrier");
+            } else if (!seat.addPassenger(blocker)) {
+                throw new IllegalStateException("Unable to attach model carrier to boat");
+            }
             rig.attach(blocker, root);
             hitbox = root.getWorld().spawn(root, Interaction.class, entity -> {
                 entity.setInteractionWidth(1.8f); entity.setInteractionHeight(1.3f);
                 entity.setResponsive(true); entity.setPersistent(false);
             });
-            karts.add(new Kart(root, rig, seat, blocker, hitbox));
+            karts.add(new Kart(root, rig, seat, blocker, hitbox, nested));
             player.sendMessage("Go-Kart experimental creat. Click dreapta pentru a urca; Shift pentru a cobori.");
             return true;
         } catch (Exception error) {
@@ -104,7 +111,8 @@ public final class GoKartManager implements Listener {
     public void tick() {
         for (Kart kart : new ArrayList<>(karts)) {
             if (!kart.seat.isValid() || !kart.hitbox.isValid()
-                    || !kart.seat.equals(kart.blocker.getVehicle()) || !kart.rig.isAttached(kart.blocker)) {
+                    || !(kart.nested ? kart.blocker.equals(kart.seat.getVehicle()) : kart.seat.equals(kart.blocker.getVehicle()))
+                    || !kart.rig.isAttached(kart.blocker)) {
                 kart.remove(); karts.remove(kart); continue;
             }
             kart.tick();
@@ -139,10 +147,10 @@ public final class GoKartManager implements Listener {
 
     private static final class Kart {
         Location root; final GoKartRig rig; final Boat seat; final ArmorStand blocker; final Interaction hitbox;
-        final GoKartMotion motion; double fallVelocity; boolean onGround = true;
-        Kart(Location root, GoKartRig rig, Boat seat, ArmorStand blocker, Interaction hitbox) {
+        final GoKartMotion motion; final boolean nested; double fallVelocity; boolean onGround = true;
+        Kart(Location root, GoKartRig rig, Boat seat, ArmorStand blocker, Interaction hitbox, boolean nested) {
             this.root = root.clone(); this.rig = rig; this.seat = seat; this.blocker = blocker; this.hitbox = hitbox;
-            this.motion = new GoKartMotion(root.getYaw());
+            this.motion = new GoKartMotion(root.getYaw()); this.nested = nested;
         }
         void tick() {
             Player driver = seat.getPassengers().stream().filter(Player.class::isInstance).map(Player.class::cast).findFirst().orElse(null);
@@ -189,7 +197,12 @@ public final class GoKartManager implements Listener {
             // The boat is the moving parent: the player rides it directly and
             // every model display rides its invisible first-seat carrier.
             seat.setVelocity(new Vector(0, 0, 0));
-            if (!seat.teleport(seatTarget, TeleportFlag.EntityState.RETAIN_PASSENGERS)) { motion.stop(); return; }
+            if (nested) {
+                blocker.setVelocity(new Vector(0, 0, 0));
+                if (!blocker.teleport(seatTarget, TeleportFlag.EntityState.RETAIN_PASSENGERS)) { motion.stop(); return; }
+            } else if (!seat.teleport(seatTarget, TeleportFlag.EntityState.RETAIN_PASSENGERS)) {
+                motion.stop(); return;
+            }
             seat.setRotation(seatTarget.getYaw(), 0);
             root = next;
             hitbox.teleport(root);

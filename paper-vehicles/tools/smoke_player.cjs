@@ -46,10 +46,10 @@ const interval = setInterval(() => {
       driving = true
       if (bot.vehicle.name !== 'oak_boat') return fail('seat is not an oak boat: ' + bot.vehicle.name)
       const riders = passengers.get(bot.vehicle.id) || []
-      // Paper 1.21.4 promotes the player ahead of the non-player carrier.
-      // This documents the observed protocol order, not a vanilla-client physics test.
-      if (riders[0] !== bot.entity.id) return fail('unexpected boat passenger order: ' + riders.join(','))
-      const carrierId = riders.find(id => id !== bot.entity.id)
+      if (!riders.includes(bot.entity.id)) return fail('player missing from boat')
+      const carrier = entities.find(e => e.name === 'armor_stand' && (passengers.get(e.id) || []).includes(bot.vehicle.id))
+      if (!carrier) return fail('boat is not riding the shared carrier')
+      const carrierId = carrier.id
       const attached = passengers.get(carrierId) || []
       const displayIds = new Set(displays.map(e => e.id))
       const attachedDisplays = attached.filter(id => displayIds.has(id)).length
@@ -62,12 +62,12 @@ const interval = setInterval(() => {
         clearInterval(steerOnly)
         if (!bot.vehicle) return fail('dismounted while steering')
         if (Math.abs(bot.vehicle.yaw - startYaw) > .08) return fail('boat rotates on A without driving')
-        const start = bot.vehicle.position.clone(), yaw = bot.vehicle.yaw
+        const start = carrier.position.clone(), yaw = bot.vehicle.yaw
         let maxSeparation = 0
         const input = setInterval(() => {
           bot._client.write('player_input', { inputs: { forward: true, left: true } })
           if (bot.vehicle && target) {
-            const distance = Math.hypot(target.position.x - bot.vehicle.position.x, target.position.z - bot.vehicle.position.z)
+            const distance = Math.hypot(target.position.x - carrier.position.x, target.position.z - carrier.position.z)
             maxSeparation = Math.max(maxSeparation, distance)
           }
         }, 50)
@@ -75,7 +75,7 @@ const interval = setInterval(() => {
           clearInterval(input)
           bot._client.write('player_input', { inputs: {} })
           if (!bot.vehicle) return fail('player dismounted during movement')
-          const distance = Math.hypot(start.x - bot.vehicle.position.x, start.z - bot.vehicle.position.z)
+          const distance = Math.hypot(start.x - carrier.position.x, start.z - carrier.position.z)
           if (distance < .3) return fail('vehicle did not move: ' + distance)
           if (maxSeparation > 1.2) return fail('boat separated from kart during driving: ' + maxSeparation)
           if (Math.abs(bot.vehicle.yaw - yaw) < .02) return fail('boat did not follow kart turn')

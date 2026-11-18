@@ -100,7 +100,7 @@ public final class GoKartRig {
         }
     }
 
-    /** Mount every model group onto a common carrier riding inside the boat.
+    /** Mount every model group onto a common carrier.
      * Their client positions are then inherited from the actual boat, not sent
      * as independent moving entities. Failure is fatal to the spawn attempt. */
     public void attach(Entity carrier, Location root) {
@@ -117,7 +117,7 @@ public final class GoKartRig {
                 piece.display().isValid() && carrier.equals(piece.display().getVehicle()));
     }
 
-    /** Compute the model offset relative to the boat-mounted carrier. */
+    /** Compute the model offset relative to the carrier. */
     public void updateAttached(Location root, Entity carrier) {
         Location anchor = carrier.getLocation();
         double angle = Math.toRadians(root.getYaw());

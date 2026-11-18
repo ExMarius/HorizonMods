@@ -45,6 +45,7 @@ def main(jar):
         shutil.copyfile(jar, plugins / 'HorizonVehiclesPaper-dev.jar')
         data = plugins / 'HorizonVehiclesPaper'
         data.mkdir()
+        (data / 'config.yml').write_text('experiments:\n  nested-boat-seat: true\n')
         marker = data / '.restart-request'
         marker.write_text(hashlib.sha256(jar.read_bytes()).hexdigest() + '\n')
         logpath = root / 'smoke.log'
