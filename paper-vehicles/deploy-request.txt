@@ -1,1 +1,1 @@
-Cerere utilizator: variantă experimentală cu pilot fictiv în prima poziție și jucătorul pe al doilea loc.
+Cerere utilizator: probă separată de urmărire a camerei la viraj pentru pilotul de pe al doilea loc.
