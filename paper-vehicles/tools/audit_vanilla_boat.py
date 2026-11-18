@@ -15,7 +15,7 @@ from pathlib import Path
 
 MANIFEST = 'https://piston-meta.mojang.com/mc/game/version_manifest_v2.json'
 WANTED = {
-    'net.minecraft.world.entity.vehicle.AbstractBoat': {'tick', 'controlBoat', 'clampRotation', 'getControllingPassenger', 'positionRider'},
+    'net.minecraft.world.entity.vehicle.AbstractBoat': {'tick', 'controlBoat', 'clampRotation', 'getControllingPassenger', 'positionRider', 'onPassengerTurned'},
     'net.minecraft.client.player.LocalPlayer': {'rideTick', 'sendPosition', 'sendChanges'},
     'net.minecraft.world.entity.Entity': {'addPassenger', 'isControlledByLocalInstance', 'getRootVehicle', 'getControlledVehicle'},
 }
@@ -59,6 +59,19 @@ def main():
     version = json.loads(download(version_url))
     mapping = checked(version['downloads']['client_mappings']).decode('utf-8')
     classes, methods = parse_mappings(mapping)
+    # Expose official mappings for obfuscated symbols used in the key methods.
+    # These are names only, not Mojang implementation source.
+    print('## Referenced symbol mappings')
+    current = None
+    for line in mapping.splitlines():
+        match = re.match(r'^([^ ]+) -> ([^:]+):$', line)
+        if match:
+            current = match.group(1)
+            continue
+        if current == 'net.minecraft.world.entity.Entity' and re.search(r' -> (r|q|v|dL|cZ)$', line):
+            print('Entity ' + line.strip())
+        if current == 'net.minecraft.world.entity.vehicle.AbstractBoat' and re.search(r' -> (az|aA|p|Q)$', line):
+            print('AbstractBoat ' + line.strip())
     if set(classes) != set(WANTED):
         raise RuntimeError('Expected mapped classes missing: ' + str(set(WANTED) - set(classes)))
     with tempfile.TemporaryDirectory(prefix='hv-vanilla-audit-') as tmp:
