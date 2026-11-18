@@ -1,1 +1,1 @@
-Cerere utilizator: sincronizare barcă și caroserie în mers.
+Cerere utilizator: caroseria ancorată pe barcă prin ierarhia de pasageri.
