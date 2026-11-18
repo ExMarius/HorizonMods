@@ -20,6 +20,9 @@ import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 /** Temporary single-seat prototype. Vehicles are removed on plugin shutdown. */
 public final class GoKartManager implements Listener {
@@ -27,7 +30,18 @@ public final class GoKartManager implements Listener {
     private final List<Kart> karts = new ArrayList<>();
     public GoKartManager(JavaPlugin plugin) { this.plugin = plugin; }
 
-    public boolean spawn(Player player, boolean raft) {
+    public boolean spawn(Player player, boolean raft) { return spawn(player, raft, false); }
+
+    public boolean spawn(Player player, boolean raft, boolean fakePilot) {
+        FakeSeatPilot bridge = null;
+        if (fakePilot) {
+            try { bridge = new FakeSeatPilot(); }
+            catch (ReflectiveOperationException | IllegalStateException e) {
+                player.sendMessage("Testul cu pilot fictiv necesită pluginul fakeplayer compatibil.");
+                plugin.getLogger().warning("Fake seat pilot unavailable: " + e);
+                return false;
+            }
+        }
         Location root = player.getLocation().clone();
         root.add(root.getDirection().setY(0).normalize().multiply(2.5));
         if (!clear(root)) { player.sendMessage("Nu este loc liber pentru Go-Kart."); return false; }
@@ -60,7 +74,37 @@ public final class GoKartManager implements Listener {
                 entity.setInteractionWidth(1.8f); entity.setInteractionHeight(1.3f);
                 entity.setResponsive(true); entity.setPersistent(false);
             });
-            karts.add(new Kart(root, rig, seat, blocker, hitbox, nested));
+            Kart kart = new Kart(root, rig, seat, blocker, hitbox, nested);
+            karts.add(kart);
+            if (fakePilot) {
+                final FakeSeatPilot pilotBridge = bridge;
+                final String name = "hv" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+                kart.pilotBridge = pilotBridge; kart.pilotName = name; kart.pilotPending = true;
+                try {
+                    pilotBridge.spawn(name, seat.getLocation()).whenComplete((pilot, error) -> {
+                        if (!plugin.isEnabled()) return;
+                        plugin.getServer().getScheduler().runTask(plugin, () -> {
+                            if (error != null || pilot == null || !karts.contains(kart) || !kart.seat.isValid()) {
+                                pilotBridge.remove(name);
+                                kart.remove(); karts.remove(kart);
+                                if (player.isOnline()) player.sendMessage("Pilotul fictiv nu a putut fi creat.");
+                                return;
+                            }
+                            pilot.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false));
+                            pilot.setSilent(true); pilot.setCollidable(false); pilot.setInvulnerable(true);
+                            if (!kart.seat.addPassenger(pilot)) {
+                                pilotBridge.remove(name); kart.remove(); karts.remove(kart);
+                                if (player.isOnline()) player.sendMessage("Pilotul fictiv nu a putut fi montat.");
+                                return;
+                            }
+                            kart.pilot = pilot; kart.pilotPending = false;
+                            if (player.isOnline()) player.sendMessage("Pilotul fictiv este pregătit. Urcă în vehicul.");
+                        });
+                    });
+                } catch (ReflectiveOperationException e) {
+                    kart.remove(); karts.remove(kart); throw e;
+                }
+            }
             player.sendMessage("Go-Kart experimental " + (raft ? "cu plută" : "cu barcă") + " creat. Click dreapta pentru a urca; Shift pentru a cobori.");
             return true;
         } catch (Exception error) {
@@ -79,7 +123,8 @@ public final class GoKartManager implements Listener {
         for (Kart kart : karts) {
             if (event.getRightClicked().equals(kart.hitbox) || event.getRightClicked().equals(kart.seat)) {
                 event.setCancelled(true);
-                if (kart.seat.getPassengers().stream().anyMatch(Player.class::isInstance)) {
+                if (kart.pilotPending) { event.getPlayer().sendMessage("Pilotul fictiv se pregătește."); return; }
+                if (kart.seat.getPassengers().stream().anyMatch(p -> p instanceof Player && !p.equals(kart.pilot))) {
                     event.getPlayer().sendMessage("Scaunul este ocupat."); return;
                 }
                 if (!kart.seat.addPassenger(event.getPlayer())) event.getPlayer().sendMessage("Nu te-ai putut urca.");
@@ -112,7 +157,8 @@ public final class GoKartManager implements Listener {
         for (Kart kart : new ArrayList<>(karts)) {
             if (!kart.seat.isValid() || !kart.hitbox.isValid()
                     || !(kart.nested ? kart.blocker.equals(kart.seat.getVehicle()) : kart.seat.equals(kart.blocker.getVehicle()))
-                    || !kart.rig.isAttached(kart.blocker)) {
+                    || !kart.rig.isAttached(kart.blocker)
+                    || (kart.pilot != null && (!kart.pilot.isOnline() || !kart.seat.equals(kart.pilot.getVehicle())))) {
                 kart.remove(); karts.remove(kart); continue;
             }
             kart.tick();
@@ -147,13 +193,13 @@ public final class GoKartManager implements Listener {
 
     private static final class Kart {
         Location root; final GoKartRig rig; final Boat seat; final ArmorStand blocker; final Interaction hitbox;
-        final GoKartMotion motion; final boolean nested; double fallVelocity; boolean onGround = true;
+        final GoKartMotion motion; final boolean nested; FakeSeatPilot pilotBridge; Player pilot; String pilotName; boolean pilotPending; double fallVelocity; boolean onGround = true;
         Kart(Location root, GoKartRig rig, Boat seat, ArmorStand blocker, Interaction hitbox, boolean nested) {
             this.root = root.clone(); this.rig = rig; this.seat = seat; this.blocker = blocker; this.hitbox = hitbox;
             this.motion = new GoKartMotion(root.getYaw()); this.nested = nested;
         }
         void tick() {
-            Player driver = seat.getPassengers().stream().filter(Player.class::isInstance).map(Player.class::cast).findFirst().orElse(null);
+            Player driver = seat.getPassengers().stream().filter(Player.class::isInstance).map(Player.class::cast).filter(p -> !p.equals(pilot)).findFirst().orElse(null);
             var input = driver == null ? null : driver.getCurrentInput();
             int throttle = input == null ? 0 : (input.isForward() ? 1 : 0) - (input.isBackward() ? 1 : 0);
             int steering = input == null ? 0 : (input.isLeft() ? 1 : 0) - (input.isRight() ? 1 : 0);
@@ -210,6 +256,6 @@ public final class GoKartManager implements Listener {
             if (driver != null && driver.getTicksLived() % 20 == 0)
                 driver.sendActionBar(Component.text(String.format("Go-Kart | Combustibil: %.0f%%", step.fuel())));
         }
-        void remove() { seat.eject(); blocker.remove(); seat.remove(); hitbox.remove(); rig.remove(); }
+        void remove() { seat.eject(); if (pilotBridge != null && pilotName != null) pilotBridge.remove(pilotName); blocker.remove(); seat.remove(); hitbox.remove(); rig.remove(); }
     }
 }
