@@ -114,3 +114,23 @@ absolute rotation to the client: the `go_kart_follow` experiment applies only
 the kart's yaw delta, but client mouse updates can race those corrections and
 cause jitter. Its protocol smoke observes correction packets, not actual camera
 behavior. The user must verify it in a real client; do not present it as solved.
+
+## Candidate plugin source review
+
+* BlockShips commit `e05116c302db08e544a5940a8bc9b52e6e65de4e`: driver
+  seats are shulkers, and WASD input is handled separately. It does not use a
+  boat seat, so it is not evidence of the requested exact boat pose/camera.
+  Its custom non-commercial license is not assumed compatible with this plugin.
+* MTVehicles commit `9b4f9f49b4631db36e97b40ea59f388d3b23a8d0` (MIT):
+  `VehicleUtils` creates the main seat as an armor stand and `VehicleMovement`
+  rotates the stand, seat and skin. This is a valuable vehicle-system reference,
+  but is not evidence that the vanilla boat head/camera behavior is preserved.
+  No third-party implementation has been copied into this repository.
+
+The official 1.21.4 client bytecode additionally shows that local-authority
+checks the controlling passenger, and the boat selects its first living
+passenger as controller. That supports the fake-first-player experiment. The
+server smoke verifies fake-first ordering and cleanup, but a real client must
+still determine whether `go_kart_follow` preserves free mouse look, body pose,
+smoothness, and alignment while turning. Its correction is not equivalent to a
+verified vanilla boat driver camera.
