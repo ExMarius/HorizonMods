@@ -72,6 +72,12 @@ public final class HorizonVehiclesPlugin extends JavaPlugin implements CommandEx
             return true;
         }
         if (!(sender instanceof Player player)) { sender.sendMessage("Comanda se folosește în joc."); return true; }
+        if (args.length == 1 && args[0].equalsIgnoreCase("input")) {
+            var input = player.getCurrentInput();
+            player.sendMessage("Input test: forward=" + input.isForward() + " backward=" + input.isBackward()
+                    + " left=" + input.isLeft() + " right=" + input.isRight());
+            return true;
+        }
         if (args.length == 1 && args[0].equalsIgnoreCase("pack")) { sendPack(player); return true; }
         if (args.length == 1 && args[0].equalsIgnoreCase("remove")) {
             player.sendMessage(karts.removeNearest(player) ? "Go-Kart eliminat." : "Nu există un Go-Kart în apropiere."); return true;

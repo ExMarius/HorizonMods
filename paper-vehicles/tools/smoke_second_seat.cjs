@@ -5,13 +5,13 @@ const options = username => ({ host:'127.0.0.1', port:25565, username, version:'
 const pilot = mineflayer.createBot(options('SeatPilot'))
 const driver = mineflayer.createBot(options('SmokeBot'))
 const passengers = new Map()
-let pilotReady = false, driverReady = false, started = false, done = false
+let pilotReady = false, driverReady = false, started = false, done = false, leftSeen = false
 const timer = setTimeout(() => finish('timeout'), 35000)
 function finish(error) {
   if (done) return
   done = true; clearTimeout(timer)
   if (error) { console.error('Second-seat protocol test failed: ' + error); process.exitCode = 1 }
-  else console.log('Two player passengers ordered; second player remains mounted while root moves; input packet sent. Not a vanilla client or visual test.')
+  else console.log('Two player passengers ordered; second player remains mounted while root moves; Paper reports left input. Not a vanilla client or visual test.')
   pilot.quit(); driver.quit()
 }
 for (const bot of [pilot, driver]) {
@@ -19,6 +19,7 @@ for (const bot of [pilot, driver]) {
   bot.on('kicked', reason => finish('kicked: ' + String(reason)))
   bot.on('end', () => { if (!done) finish('unexpected disconnect') })
 }
+driver.on('messagestr', text => { if (text.includes('Input test:') && text.includes('left=true')) leftSeen = true })
 driver._client.on('packet', (data, meta) => { if (meta.name === 'set_passengers') passengers.set(data.entityId, data.passengers) })
 pilot.once('spawn', () => { pilotReady = true; begin() })
 driver.once('spawn', () => { driverReady = true; begin() })
@@ -39,11 +40,14 @@ function begin() {
     const root = entities.find(e => e.name === 'armor_stand' && (passengers.get(e.id) || []).includes(boat.id))
     if (!root) return finish('boat not mounted on root')
     const before = root.position.clone()
-    // Send input while mounted. This does not verify server receipt or vanilla
-    // prediction/rotation; those need separate assertions and a real client.
-    driver._client.write('player_input', { inputs: { left: true } })
+    // Verify Paper exposes the second passenger's input to the plugin. This
+    // does not simulate a vanilla client's boat prediction or rendering.
+    const inputTimer = setInterval(() => driver._client.write('player_input', { inputs: { left: true } }), 50)
+    setTimeout(() => driver.chat('/hvehicle input'), 700)
     driver.chat('/execute as @e[type=minecraft:armor_stand,tag=hv_second_root,limit=1] at @s run tp @s ~3 ~ ~')
     setTimeout(() => {
+      clearInterval(inputTimer)
+      if (!leftSeen) return finish('Paper did not report second passenger left input')
       const now = driver.entities[root.id]
       if (!now || now.position.distanceTo(before) < 2) return finish('root movement not observed')
       const after = passengers.get(boat.id) || []
