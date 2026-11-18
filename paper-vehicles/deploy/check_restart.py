@@ -40,6 +40,11 @@ def main():
                     enabled = recent.rfind('Enabling MrCrayfishVehiclePlugin')
                     disabled = recent.rfind('Disabling MrCrayfishVehiclePlugin')
                     print('::notice title=Legacy plugin::' + ('Enabled in current log.' if enabled >= 0 and enabled > disabled else 'No active legacy-plugin enable found in current log.'))
+                    enabled = recent.rfind('Enabling HorizonVehiclesPaper')
+                    disabled = recent.rfind('Disabling HorizonVehiclesPaper')
+                    print('::notice title=Horizon plugin::' + ('Enabled in current log.' if enabled >= 0 and enabled > disabled else 'No active Horizon plugin enable found in current log.'))
+                    if 'Update detected; requesting server restart' in recent:
+                        print('::notice title=Restart watcher::A restart request was observed in the current log.')
                 except OSError:
                     print('::notice title=Legacy plugin::Current log could not be inspected.')
         finally:
