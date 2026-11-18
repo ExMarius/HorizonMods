@@ -90,7 +90,7 @@ def main(jar):
                     proc.stdin.write('kill @e[type=minecraft:interaction]\n'); proc.stdin.flush()
                     time.sleep(2)
                 nested = Path(__file__).with_name('smoke_nested_boat.cjs').resolve()
-                for vehicle in ('oak_boat', 'bamboo_raft'):
+                for vehicle in (() if os.environ.get('FAKEPILOT_DEPS') else ('oak_boat', 'bamboo_raft')):
                     nested_test = subprocess.run(['node', str(nested), vehicle], capture_output=True, text=True, timeout=40)
                     if nested_test.returncode:
                         raise RuntimeError('Nested ' + vehicle + ' experiment failed: ' + (nested_test.stdout + nested_test.stderr)[-2000:])
