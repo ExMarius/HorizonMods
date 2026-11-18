@@ -4,6 +4,7 @@ const bot = mineflayer.createBot({ host: '127.0.0.1', port: 25565, username: 'Sm
 let done = false
 let spawned = false
 let driving = false
+let dismounted = false
 const timeout = setTimeout(() => fail('timed out'), 45000)
 function fail(message) {
   if (done) return
@@ -26,6 +27,7 @@ bot.once('spawn', () => {
   setTimeout(() => { bot.chat('/hvehicle spawn go_kart'); spawned = true }, 4500)
 })
 bot.on('messagestr', text => {
+  if (text.includes('stopped riding')) dismounted = true
   if (text.includes('Nu am putut crea Go-Kart') || text.includes('Nu este loc liber')) fail(text)
 })
 const interval = setInterval(() => {
@@ -52,7 +54,7 @@ const interval = setInterval(() => {
         bot.chat('/ride SmokeBot dismount')
         setTimeout(() => {
           const remaining = Object.values(bot.entities).filter(e => e.name === 'block_display').length
-          if (bot.vehicle) return fail('player did not dismount')
+          if (!dismounted) return fail('server did not confirm dismount')
           if (remaining !== 0) return fail('cosmetic hands remained after dismount: ' + remaining)
           success()
         }, 2500)
