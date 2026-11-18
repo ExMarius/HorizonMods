@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "DDD",
+    "DED",
+    "BDR"
+  ],
+  "key": {
+    "D": "minecraft:diamond",
+    "E": "gokart:small_engine_gold",
+    "B": "minecraft:blaze_rod",
+    "R": "minecraft:redstone_block"
+  },
+  "result": {
+    "id": "gokart:small_engine_diamond",
+    "count": 1
+  }
+}

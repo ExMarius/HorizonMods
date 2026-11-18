@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "III",
+    "PFP",
+    "IRI"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "P": "minecraft:piston",
+    "F": "minecraft:furnace",
+    "R": "minecraft:redstone"
+  },
+  "result": {
+    "id": "gokart:small_engine_iron",
+    "count": 1
+  }
+}

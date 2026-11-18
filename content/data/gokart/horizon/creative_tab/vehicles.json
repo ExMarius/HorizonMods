@@ -1,0 +1,27 @@
+{
+  "title": "Horizon Vehicles",
+  "icon": "gokart:police_car",
+  "items": [
+    "gokart:go_kart",
+    "gokart:quad_bike",
+    "gokart:atv",
+    "gokart:ambulance",
+    "gokart:smurd",
+    "gokart:fire_truck",
+    "gokart:street_coupe",
+    "gokart:muscle_car",
+    "gokart:supercar",
+    "gokart:city_suv",
+    "gokart:taxi",
+    "gokart:off_roader",
+    "gokart:police_car",
+    "gokart:small_engine_iron",
+    "gokart:small_engine_gold",
+    "gokart:small_engine_diamond",
+    "gokart:standard_wheel",
+    "gokart:sports_wheel",
+    "gokart:racing_wheel",
+    "gokart:wrench",
+    "gokart:jerry_can"
+  ]
+}

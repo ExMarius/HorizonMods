@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "transportation",
+  "pattern": [
+    "DGI",
+    "III",
+    "WEW"
+  ],
+  "key": {
+    "D": "minecraft:yellow_dye",
+    "G": "minecraft:glass",
+    "I": "minecraft:iron_ingot",
+    "W": "gokart:sports_wheel",
+    "E": "gokart:small_engine_gold"
+  },
+  "result": {
+    "id": "gokart:taxi",
+    "count": 1
+  }
+}

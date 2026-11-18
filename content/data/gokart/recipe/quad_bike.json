@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "transportation",
+  "pattern": [
+    "BLB",
+    "IEI",
+    "W W"
+  ],
+  "key": {
+    "B": "minecraft:iron_bars",
+    "L": "minecraft:leather",
+    "I": "minecraft:iron_ingot",
+    "E": "gokart:small_engine_iron",
+    "W": "gokart:sports_wheel"
+  },
+  "result": {
+    "id": "gokart:quad_bike",
+    "count": 1
+  }
+}

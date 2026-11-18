@@ -1,0 +1,10 @@
+newmtl white
+map_Kd #white
+newmtl windows
+map_Kd #windows
+newmtl grey
+map_Kd #grey
+newmtl headlights
+map_Kd #headlights
+newmtl taillights
+map_Kd #taillights

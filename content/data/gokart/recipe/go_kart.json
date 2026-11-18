@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "transportation",
+  "pattern": [
+    "I L",
+    "III",
+    "WEW"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "L": "minecraft:leather",
+    "W": "gokart:standard_wheel",
+    "E": "gokart:small_engine_iron"
+  },
+  "result": {
+    "id": "gokart:go_kart",
+    "count": 1
+  }
+}

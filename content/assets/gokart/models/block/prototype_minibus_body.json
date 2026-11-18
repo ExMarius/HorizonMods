@@ -1,0 +1,10 @@
+{
+  "loader": "neoforge:obj",
+  "model": "gokart:models/block/prototype_city_bus.obj",
+  "flip_v": true,
+  "shade_quads": true,
+  "textures": {
+    "bus": "gokart:block/prototype_city_bus",
+    "wheel": "gokart:block/prototype_city_bus_wheel"
+  }
+}

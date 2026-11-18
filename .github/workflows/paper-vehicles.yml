@@ -1,0 +1,48 @@
+name: Paper vehicles build
+
+on:
+  push:
+    paths:
+      - 'paper-vehicles/**'
+      - 'content/assets/gokart/**'
+      - 'LICENSE'
+      - '.github/workflows/paper-vehicles.yml'
+  pull_request:
+    paths:
+      - 'paper-vehicles/**'
+      - 'content/assets/gokart/**'
+      - 'LICENSE'
+      - '.github/workflows/paper-vehicles.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install model converter dependency
+        run: python3 -m pip install Pillow==11.3.0
+      - name: Offline asset and catalog checks
+        run: python3 -m unittest discover -s paper-vehicles/tests -v
+      - name: Build Paper development plugin
+        run: |
+          set -o pipefail
+          ./paper-vehicles/gradlew -p paper-vehicles build 2>&1 | tee /tmp/paper-build.log || {
+            python3 -c "from pathlib import Path; lines=Path('/tmp/paper-build.log').read_text().splitlines(); print('::error::' + ' | '.join(line.replace('%','%25').replace('\r','%0D').replace('\n','%0A') for line in lines[-30:])[:10000])"
+            exit 1
+          }
+      - name: Upload development jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: HorizonVehiclesPaper-development
+          path: paper-vehicles/build/libs/HorizonVehiclesPaper-*.jar
+          if-no-files-found: error
+          retention-days: 14

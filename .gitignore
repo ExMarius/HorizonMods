@@ -1,0 +1,9 @@
+/target/
+/build/
+/.horizon-cache/
+*.pyc
+__pycache__/
+
+# Paper plugin local builds
+paper-vehicles/.gradle/
+paper-vehicles/build/
