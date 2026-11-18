@@ -82,10 +82,11 @@ def main(jar):
                     raise RuntimeError('Offline player failed: ' + (player_test.stdout + player_test.stderr)[-2000:])
                 print(player_test.stdout)
                 nested = Path(__file__).with_name('smoke_nested_boat.cjs').resolve()
-                nested_test = subprocess.run(['node', str(nested)], capture_output=True, text=True, timeout=40)
-                if nested_test.returncode:
-                    raise RuntimeError('Nested boat experiment failed: ' + (nested_test.stdout + nested_test.stderr)[-2000:])
-                print(nested_test.stdout)
+                for vehicle in ('oak_boat', 'bamboo_raft'):
+                    nested_test = subprocess.run(['node', str(nested), vehicle], capture_output=True, text=True, timeout=40)
+                    if nested_test.returncode:
+                        raise RuntimeError('Nested ' + vehicle + ' experiment failed: ' + (nested_test.stdout + nested_test.stderr)[-2000:])
+                    print(nested_test.stdout)
                 # A different digest must issue the same restart command as the
                 # upstream plugin. Our dummy start.sh records the invocation.
                 marker.write_text('f' * 64 + '\n')

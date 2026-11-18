@@ -194,8 +194,8 @@ public final class GoKartManager implements Listener {
             if (Math.abs(actual.getX() - requested.getX()) > 0.001
                     || Math.abs(actual.getZ() - requested.getZ()) > 0.001) motion.stop();
             Location seatTarget = seatLocation(next);
-            // The boat is the moving parent: the player rides it directly and
-            // every model display rides its invisible first-seat carrier.
+            // Move only the root of the chosen hierarchy, retaining passengers.
+            // Client rendering and local boat prediction still need visual tests.
             seat.setVelocity(new Vector(0, 0, 0));
             if (nested) {
                 blocker.setVelocity(new Vector(0, 0, 0));
