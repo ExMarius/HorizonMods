@@ -27,7 +27,7 @@ jobs:
           text = Path('/tmp/boat-audit.txt').read_text()
           mappings = text.split('## Referenced symbol mappings', 1)[1].split('## ', 1)[0]
           print('::notice title=Vanilla symbol mappings::' + mappings.replace('%', '%25').replace('\n', '%0A'))
-          for name in ('controlBoat', 'clampRotation', 'getControllingPassenger', 'rideTick', 'onPassengerTurned'):
+          for name in ('controlBoat', 'clampRotation', 'getControllingPassenger', 'rideTick', 'onPassengerTurned', 'tick', 'positionRider', 'isControlledByLocalInstance', 'addPassenger', 'getRootVehicle', 'getControlledVehicle'):
               match = re.search(r'^### ' + name + r'[^\n]*\n([\s\S]*?)(?=^### |^## |\Z)', text, re.M)
               if match:
                   value = match.group(0)[:10000].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
