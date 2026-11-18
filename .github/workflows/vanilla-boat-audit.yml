@@ -19,7 +19,18 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Verify Mojang downloads and inspect boat methods
-        run: python3 paper-vehicles/tools/audit_vanilla_boat.py | tee /tmp/boat-audit.txt
+        run: |
+          python3 paper-vehicles/tools/audit_vanilla_boat.py | tee /tmp/boat-audit.txt
+          python3 - <<'PYCODE'
+          from pathlib import Path
+          import re
+          text = Path('/tmp/boat-audit.txt').read_text()
+          for name in ('controlBoat', 'clampRotation', 'getControllingPassenger', 'rideTick'):
+              match = re.search(r'^### ' + name + r'[^\n]*\n([\s\S]*?)(?=^### |^## |\Z)', text, re.M)
+              if match:
+                  value = match.group(0)[:10000].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+                  print('::notice title=Vanilla ' + name + '::' + value)
+          PYCODE
       - uses: actions/upload-artifact@v4
         with:
           name: vanilla-boat-bytecode-audit
