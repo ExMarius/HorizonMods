@@ -1,1 +1,1 @@
-Cerere utilizator: caroseria ancorată pe barcă prin ierarhia de pasageri.
+Cerere utilizator: test pe server al variantelor Go-Kart cu barcă și plută pe suport comun.
