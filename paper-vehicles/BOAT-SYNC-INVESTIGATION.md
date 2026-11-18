@@ -44,10 +44,9 @@ No proposed alternative has yet passed a real vanilla-client visual test.
 ## Shared-carrier prototype (opt-in, not visually verified)
 
 The plugin now has an isolated alternative hierarchy: marker armor stand ->
-boat -> player, and the same stand -> kart ItemDisplays. Enable it in the
-plugin data directory's `config.yml` with `experiments.nested-boat-seat: true`
-(nested YAML syntax), before starting/restarting the plugin. It is disabled by
-default and is not deployed automatically. The original rig remains the default.
+boat -> player, and the same stand -> kart ItemDisplays. It is enabled by default for the requested server trial. To revert to the original
+rig, set `experiments.nested-boat-seat: false` in the plugin data directory's `config.yml` (nested YAML syntax) and restart. Use `/hvehicle spawn go_kart`
+for the boat or `/hvehicle spawn go_kart_raft` for the bamboo raft.
 The existing model and resource pack are unchanged. This option is experimental;
 seat/model offsets, rotation, camera and prediction may still be wrong.
 

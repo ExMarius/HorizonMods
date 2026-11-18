@@ -77,10 +77,11 @@ def main(jar):
                 # boat mounting, steering and pack delivery, not visual fidelity.
                 proc.stdin.write('op SmokeBot\n'); proc.stdin.flush()
                 bot = Path(__file__).with_name('smoke_player.cjs').resolve()
-                player_test = subprocess.run(['node', str(bot)], capture_output=True, text=True, timeout=60)
-                if player_test.returncode:
-                    raise RuntimeError('Offline player failed: ' + (player_test.stdout + player_test.stderr)[-2000:])
-                print(player_test.stdout)
+                for variant in ('boat', 'raft'):
+                    player_test = subprocess.run(['node', str(bot), variant], capture_output=True, text=True, timeout=60)
+                    if player_test.returncode:
+                        raise RuntimeError('Offline ' + variant + ' player failed: ' + (player_test.stdout + player_test.stderr)[-2000:])
+                    print(player_test.stdout)
                 nested = Path(__file__).with_name('smoke_nested_boat.cjs').resolve()
                 for vehicle in ('oak_boat', 'bamboo_raft'):
                     nested_test = subprocess.run(['node', str(nested), vehicle], capture_output=True, text=True, timeout=40)

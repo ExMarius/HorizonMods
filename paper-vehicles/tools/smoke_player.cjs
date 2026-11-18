@@ -1,5 +1,6 @@
 // Offline protocol test: boat seat, steering and pack delivery. Not a visual test.
 const mineflayer = require('mineflayer')
+const raft = process.argv[2] === 'raft'
 const bot = mineflayer.createBot({ host: '127.0.0.1', port: 25565, username: 'SmokeBot', version: '1.21.4', auth: 'offline' })
 let done = false, spawned = false, driving = false, dismounted = false, packs = 0, packsAtSpawn = 0
 const passengers = new Map()
@@ -28,7 +29,7 @@ bot.once('spawn', () => {
   setTimeout(() => {
     packsAtSpawn = packs
     if (packsAtSpawn !== 1) return fail('expected one join pack, got ' + packsAtSpawn)
-    bot.chat('/hvehicle spawn go_kart'); spawned = true
+    bot.chat('/hvehicle spawn ' + (raft ? 'go_kart_raft' : 'go_kart')); spawned = true
   }, 4500)
 })
 bot.on('messagestr', text => {
@@ -44,7 +45,7 @@ const interval = setInterval(() => {
   if (bot.vehicle && displays.length >= 20) {
     if (!driving) {
       driving = true
-      if (bot.vehicle.name !== 'oak_boat') return fail('seat is not an oak boat: ' + bot.vehicle.name)
+      if (bot.vehicle.name !== (raft ? 'bamboo_raft' : 'oak_boat')) return fail('seat is not an oak boat: ' + bot.vehicle.name)
       const riders = passengers.get(bot.vehicle.id) || []
       if (!riders.includes(bot.entity.id)) return fail('player missing from boat')
       const carrier = entities.find(e => e.name === 'armor_stand' && (passengers.get(e.id) || []).includes(bot.vehicle.id))
@@ -82,7 +83,7 @@ const interval = setInterval(() => {
           if (packs !== packsAtSpawn) return fail('resource pack sent after spawn')
           // Command dismount, since Mineflayer does not reproduce all vanilla sneak input.
           bot.chat('/ride SmokeBot dismount')
-          setTimeout(() => { if (!dismounted) return fail('server did not confirm dismount'); success() }, 2500)
+          setTimeout(() => { if (!dismounted) return fail('server did not confirm dismount'); bot.chat('/hvehicle remove'); setTimeout(success, 1000) }, 2500)
         }, 4000)
       }, 2000)
     }

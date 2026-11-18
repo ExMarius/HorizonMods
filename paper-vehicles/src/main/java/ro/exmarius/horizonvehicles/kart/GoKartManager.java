@@ -27,7 +27,7 @@ public final class GoKartManager implements Listener {
     private final List<Kart> karts = new ArrayList<>();
     public GoKartManager(JavaPlugin plugin) { this.plugin = plugin; }
 
-    public boolean spawn(Player player) {
+    public boolean spawn(Player player, boolean raft) {
         Location root = player.getLocation().clone();
         root.add(root.getDirection().setY(0).normalize().multiply(2.5));
         if (!clear(root)) { player.sendMessage("Nu este loc liber pentru Go-Kart."); return false; }
@@ -35,10 +35,10 @@ public final class GoKartManager implements Listener {
         Boat seat = null;
         ArmorStand blocker = null;
         Interaction hitbox = null;
-        boolean nested = plugin.getConfig().getBoolean("experiments.nested-boat-seat", false);
+        boolean nested = plugin.getConfig().getBoolean("experiments.nested-boat-seat", true);
         try {
             rig = GoKartRig.spawn(plugin, root);
-            seat = (Boat) root.getWorld().spawnEntity(seatLocation(root), EntityType.OAK_BOAT);
+            seat = (Boat) root.getWorld().spawnEntity(seatLocation(root), raft ? EntityType.BAMBOO_RAFT : EntityType.OAK_BOAT);
             seat.setGravity(false); seat.setInvulnerable(true); seat.setSilent(true); seat.setPersistent(false);
             // Carrier for the model. Paper 1.21.4 promotes a player ahead of
             // this non-player passenger, so it does NOT reserve boat control.
@@ -61,7 +61,7 @@ public final class GoKartManager implements Listener {
                 entity.setResponsive(true); entity.setPersistent(false);
             });
             karts.add(new Kart(root, rig, seat, blocker, hitbox, nested));
-            player.sendMessage("Go-Kart experimental creat. Click dreapta pentru a urca; Shift pentru a cobori.");
+            player.sendMessage("Go-Kart experimental " + (raft ? "cu plută" : "cu barcă") + " creat. Click dreapta pentru a urca; Shift pentru a cobori.");
             return true;
         } catch (Exception error) {
             if (rig != null) rig.remove();
