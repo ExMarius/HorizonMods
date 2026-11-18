@@ -1,1 +1,1 @@
-Cerere utilizator: test pe server al variantelor Go-Kart cu barcă și plută pe suport comun.
+Cerere utilizator: variantă experimentală cu pilot fictiv în prima poziție și jucătorul pe al doilea loc.
