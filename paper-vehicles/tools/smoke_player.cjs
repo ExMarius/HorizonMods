@@ -47,9 +47,10 @@ const interval = setInterval(() => {
         if (!bot.vehicle) return fail('player dismounted during movement')
         const distance = Math.hypot(start.x - bot.vehicle.position.x, start.z - bot.vehicle.position.z)
         if (distance < .3) return fail('vehicle did not move: ' + distance)
-        bot._client.write('player_input', { inputs: { shift: true } })
+        // Force dismount using vanilla command: Mineflayer does not emulate the
+        // vanilla client's complete sneak/dismount input sequence.
+        bot.chat('/ride SmokeBot dismount')
         setTimeout(() => {
-          bot._client.write('player_input', { inputs: {} })
           const remaining = Object.values(bot.entities).filter(e => e.name === 'block_display').length
           if (bot.vehicle) return fail('player did not dismount')
           if (remaining !== 0) return fail('cosmetic hands remained after dismount: ' + remaining)
