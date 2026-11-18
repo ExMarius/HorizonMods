@@ -33,9 +33,17 @@ jobs:
         run: |
           python3 -m unittest discover -s paper-vehicles/tests -v
           ./paper-vehicles/gradlew -p paper-vehicles build
+      - name: Download test-seat dependencies
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/fakepilot-deps
+          gh release download 0.3.13 --repo tanyaofei/minecraft-fakeplayer --pattern fakeplayer-0.3.13.jar --dir /tmp/fakepilot-deps
+          gh release download 9.7.0 --repo CommandAPI/CommandAPI --pattern CommandAPI-9.7.0.jar --dir /tmp/fakepilot-deps
+          sha256sum /tmp/fakepilot-deps/*.jar
       - name: Upload verified JAR and request restart
         env:
           SFTP_USERNAME: ${{ secrets.HIDENCLOUD_SFTP_USERNAME }}
           SFTP_PASSWORD: ${{ secrets.HIDENCLOUD_SFTP_PASSWORD }}
           SFTP_PRIVATE_KEY: ${{ secrets.HIDENCLOUD_SFTP_PRIVATE_KEY }}
-        run: python3 paper-vehicles/deploy/upload.py paper-vehicles/build/libs/HorizonVehiclesPaper-0.1.0-dev.jar
+        run: python3 paper-vehicles/deploy/upload.py paper-vehicles/build/libs/HorizonVehiclesPaper-0.1.0-dev.jar /tmp/fakepilot-deps/CommandAPI-9.7.0.jar /tmp/fakepilot-deps/fakeplayer-0.3.13.jar
