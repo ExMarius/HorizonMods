@@ -123,7 +123,9 @@ comportamentul serverului real.
 Kartul folosește experimental o barcă vanilla pentru poziția de șezut. Un suport
 invizibil ocupă primul loc al bărcii, pentru ca A/D să controleze kartul și nu
 barca independent; jucătorul stă direct pe celălalt loc. Poziția, aspectul și
-camera trebuie verificate cu un client Minecraft: testul automat nu dovedește
-cum se vede sau simte camera. Barca poate fi vizibilă în model. Mâinile
-cosmetice au fost eliminate. Pachetul este trimis automat doar la intrare, nu
+caroseria și restul grupurilor modelului sunt pasageri ai suportului invizibil,
+formând ierarhia barcă → suport → model; nu mai sunt teleportate ca entități
+independente. Jucătorul rămâne pasager direct al bărcii. Testul automat verifică
+ierarhia și deplasarea, dar nu dovedește cum se văd modelul și camera într-un
+client real. Barca poate fi vizibilă în model. Mâinile cosmetice au fost eliminate. Pachetul este trimis automat doar la intrare, nu
 la spawn; `/hvehicle pack` rămâne disponibil la cerere.
