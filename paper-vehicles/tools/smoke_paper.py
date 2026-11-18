@@ -91,6 +91,11 @@ def main(jar):
                     if nested_test.returncode:
                         raise RuntimeError('Nested ' + vehicle + ' experiment failed: ' + (nested_test.stdout + nested_test.stderr)[-2000:])
                     print(nested_test.stdout)
+                two = Path(__file__).with_name('smoke_second_seat.cjs').resolve()
+                two_test = subprocess.run(['node', str(two)], capture_output=True, text=True, timeout=45)
+                if two_test.returncode:
+                    raise RuntimeError('Second-seat experiment failed: ' + (two_test.stdout + two_test.stderr)[-2000:])
+                print(two_test.stdout)
                 # A different digest must issue the same restart command as the
                 # upstream plugin. Our dummy start.sh records the invocation.
                 marker.write_text('f' * 64 + '\n')
