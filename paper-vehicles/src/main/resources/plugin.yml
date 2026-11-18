@@ -9,7 +9,7 @@ commands:
   hvehicle:
     description: Experimental Go-Kart commands.
     aliases: [vehicle, vehicel]
-    usage: /hvehicle <list|spawn [go_kart|go_kart_raft|go_kart_fake]|remove|fuel|pack|input>
+    usage: /hvehicle <list|spawn [go_kart|go_kart_raft|go_kart_fake|go_kart_follow]|remove|fuel|pack|input>
     permission: horizonvehicles.admin
 permissions:
   horizonvehicles.admin:

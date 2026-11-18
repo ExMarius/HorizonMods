@@ -81,7 +81,7 @@ def main(jar):
                 # boat mounting, steering and pack delivery, not visual fidelity.
                 proc.stdin.write('op SmokeBot\n'); proc.stdin.flush()
                 bot = Path(__file__).with_name('smoke_player.cjs').resolve()
-                for variant in (('boat', 'raft', 'fake') if os.environ.get('FAKEPILOT_DEPS') else ('boat', 'raft')):
+                for variant in (('boat', 'raft', 'fake', 'follow') if os.environ.get('FAKEPILOT_DEPS') else ('boat', 'raft')):
                     player_test = subprocess.run(['node', str(bot), variant], capture_output=True, text=True, timeout=60)
                     if player_test.returncode:
                         raise RuntimeError('Offline ' + variant + ' player failed: ' + (player_test.stdout + player_test.stderr)[-2000:])

@@ -30,9 +30,10 @@ public final class GoKartManager implements Listener {
     private final List<Kart> karts = new ArrayList<>();
     public GoKartManager(JavaPlugin plugin) { this.plugin = plugin; }
 
-    public boolean spawn(Player player, boolean raft) { return spawn(player, raft, false); }
+    public boolean spawn(Player player, boolean raft) { return spawn(player, raft, false, false); }
+    public boolean spawn(Player player, boolean raft, boolean fakePilot) { return spawn(player, raft, fakePilot, false); }
 
-    public boolean spawn(Player player, boolean raft, boolean fakePilot) {
+    public boolean spawn(Player player, boolean raft, boolean fakePilot, boolean followLook) {
         FakeSeatPilot bridge = null;
         if (fakePilot) {
             try { bridge = new FakeSeatPilot(); }
@@ -74,7 +75,7 @@ public final class GoKartManager implements Listener {
                 entity.setInteractionWidth(1.8f); entity.setInteractionHeight(1.3f);
                 entity.setResponsive(true); entity.setPersistent(false);
             });
-            Kart kart = new Kart(root, rig, seat, blocker, hitbox, nested);
+            Kart kart = new Kart(root, rig, seat, blocker, hitbox, nested, followLook);
             karts.add(kart);
             if (fakePilot) {
                 final FakeSeatPilot pilotBridge = bridge;
@@ -196,10 +197,10 @@ public final class GoKartManager implements Listener {
 
     private static final class Kart {
         Location root; final GoKartRig rig; final Boat seat; final ArmorStand blocker; final Interaction hitbox;
-        final GoKartMotion motion; final boolean nested; FakeSeatPilot pilotBridge; Player pilot; String pilotName; boolean pilotPending; double fallVelocity; boolean onGround = true;
-        Kart(Location root, GoKartRig rig, Boat seat, ArmorStand blocker, Interaction hitbox, boolean nested) {
+        final GoKartMotion motion; final boolean nested; final boolean followLook; FakeSeatPilot pilotBridge; Player pilot; String pilotName; boolean pilotPending; double fallVelocity; boolean onGround = true;
+        Kart(Location root, GoKartRig rig, Boat seat, ArmorStand blocker, Interaction hitbox, boolean nested, boolean followLook) {
             this.root = root.clone(); this.rig = rig; this.seat = seat; this.blocker = blocker; this.hitbox = hitbox;
-            this.motion = new GoKartMotion(root.getYaw()); this.nested = nested;
+            this.motion = new GoKartMotion(root.getYaw()); this.nested = nested; this.followLook = followLook;
         }
         void tick() {
             Player driver = seat.getPassengers().stream().filter(Player.class::isInstance).map(Player.class::cast).filter(p -> !p.equals(pilot)).findFirst().orElse(null);
@@ -253,6 +254,16 @@ public final class GoKartManager implements Listener {
                 motion.stop(); return;
             }
             seat.setRotation(seatTarget.getYaw(), 0);
+            // Trial for a non-controlling second passenger: add only the
+            // vehicle's yaw change to the current look, never lock to the
+            // chassis heading. Absolute server corrections can still jitter
+            // or race mouse input; real-client validation is essential.
+            if (followLook && driver != null) {
+                float delta = (next.getYaw() - root.getYaw() + 540.0f) % 360.0f - 180.0f;
+                if (Math.abs(delta) > 0.01f) {
+                    driver.setRotation(driver.getLocation().getYaw() + delta, driver.getLocation().getPitch());
+                }
+            }
             root = next;
             hitbox.teleport(root);
             rig.updateAttached(root, blocker);

@@ -1,13 +1,16 @@
 // Offline protocol test: boat seat, steering and pack delivery. Not a visual test.
 const mineflayer = require('mineflayer')
 const raft = process.argv[2] === 'raft'
-const fake = process.argv[2] === 'fake'
+const follow = process.argv[2] === 'follow'
+const fake = process.argv[2] === 'fake' || follow
+let rotationPackets = 0
 const bot = mineflayer.createBot({ host: '127.0.0.1', port: 25565, username: 'SmokeBot', version: '1.21.4', auth: 'offline' })
 let done = false, spawned = false, driving = false, dismounted = false, packs = 0, packsAtSpawn = 0
 const passengers = new Map()
 const timeout = setTimeout(() => fail('timed out'), 50000)
 bot._client.on('packet', (data, meta) => {
   if (meta.name === 'add_resource_pack') packs++
+  if (meta.name === 'player_rotation') rotationPackets++
   if (meta.name === 'set_passengers') passengers.set(data.entityId, data.passengers)
 })
 function fail(message) {
@@ -30,7 +33,7 @@ bot.once('spawn', () => {
   setTimeout(() => {
     packsAtSpawn = packs
     if (packsAtSpawn !== 1) return fail('expected one join pack, got ' + packsAtSpawn)
-    bot.chat('/hvehicle spawn ' + (raft ? 'go_kart_raft' : fake ? 'go_kart_fake' : 'go_kart')); spawned = true
+    bot.chat('/hvehicle spawn ' + (raft ? 'go_kart_raft' : follow ? 'go_kart_follow' : fake ? 'go_kart_fake' : 'go_kart')); spawned = true
   }, 4500)
 })
 bot.on('messagestr', text => {
@@ -66,7 +69,7 @@ const interval = setInterval(() => {
         clearInterval(steerOnly)
         if (!bot.vehicle) return fail('dismounted while steering')
         if (Math.abs(bot.vehicle.yaw - startYaw) > .08) return fail('boat rotates on A without driving')
-        const start = carrier.position.clone(), yaw = bot.vehicle.yaw
+        const start = carrier.position.clone(), yaw = bot.vehicle.yaw, beforeRotations = rotationPackets
         let maxSeparation = 0
         const input = setInterval(() => {
           bot._client.write('player_input', { inputs: { forward: true, left: true } })
@@ -83,6 +86,7 @@ const interval = setInterval(() => {
           if (distance < .3) return fail('vehicle did not move: ' + distance)
           if (maxSeparation > 1.2) return fail('boat separated from kart during driving: ' + maxSeparation)
           if (Math.abs(bot.vehicle.yaw - yaw) < .02) return fail('boat did not follow kart turn')
+          if (follow && rotationPackets <= beforeRotations) return fail('no player rotation correction during turn')
           if (packs !== packsAtSpawn) return fail('resource pack sent after spawn')
           // Command dismount, since Mineflayer does not reproduce all vanilla sneak input.
           bot.chat('/ride SmokeBot dismount')
