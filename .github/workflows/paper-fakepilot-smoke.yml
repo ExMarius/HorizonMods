@@ -1,0 +1,45 @@
+name: Experimental fake seat pilot smoke
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'paper-vehicles/**'
+      - '.github/workflows/paper-fakepilot-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  smoke:
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: python3 -m pip install Pillow==11.3.0
+      - run: ./paper-vehicles/gradlew -p paper-vehicles build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix /tmp/horizon-bot mineflayer@4.39.0
+      - name: Download pinned experimental dependencies
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/fakepilot-deps
+          gh release download 0.3.13 --repo tanyaofei/minecraft-fakeplayer --pattern fakeplayer-0.3.13.jar --dir /tmp/fakepilot-deps
+          gh release download 9.7.0 --repo CommandAPI/CommandAPI --pattern CommandAPI-9.7.0.jar --dir /tmp/fakepilot-deps
+          sha256sum /tmp/fakepilot-deps/*.jar
+      - name: Exercise fake passenger on disposable Paper server
+        env:
+          NODE_PATH: /tmp/horizon-bot/node_modules
+          FAKEPILOT_DEPS: /tmp/fakepilot-deps
+        run: |
+          set -o pipefail
+          python3 paper-vehicles/tools/smoke_paper.py paper-vehicles/build/libs/HorizonVehiclesPaper-0.1.0-dev.jar 2>&1 | tee /tmp/fakepilot-smoke.log || {
+            python3 -c "from pathlib import Path; lines=Path('/tmp/fakepilot-smoke.log').read_text().splitlines(); print('::error::' + ' | '.join(line.replace('%','%25') for line in lines[-18:])[:10000])"
+            exit 1
+          }

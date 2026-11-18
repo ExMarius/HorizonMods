@@ -6,6 +6,7 @@ Requires Java 21, network access to Paper and Mojang, and a built plugin JAR.
 """
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -43,6 +44,9 @@ def main(jar):
         plugins = root / 'plugins'
         plugins.mkdir()
         shutil.copyfile(jar, plugins / 'HorizonVehiclesPaper-dev.jar')
+        if os.environ.get('FAKEPILOT_DEPS'):
+            for dep in Path(os.environ['FAKEPILOT_DEPS']).glob('*.jar'):
+                shutil.copyfile(dep, plugins / dep.name)
         data = plugins / 'HorizonVehiclesPaper'
         data.mkdir()
         (data / 'config.yml').write_text('experiments:\n  nested-boat-seat: true\n')
@@ -77,7 +81,7 @@ def main(jar):
                 # boat mounting, steering and pack delivery, not visual fidelity.
                 proc.stdin.write('op SmokeBot\n'); proc.stdin.flush()
                 bot = Path(__file__).with_name('smoke_player.cjs').resolve()
-                for variant in ('boat', 'raft'):
+                for variant in (('boat', 'raft', 'fake') if os.environ.get('FAKEPILOT_DEPS') else ('boat', 'raft')):
                     player_test = subprocess.run(['node', str(bot), variant], capture_output=True, text=True, timeout=60)
                     if player_test.returncode:
                         raise RuntimeError('Offline ' + variant + ' player failed: ' + (player_test.stdout + player_test.stderr)[-2000:])

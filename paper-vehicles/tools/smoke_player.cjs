@@ -1,6 +1,7 @@
 // Offline protocol test: boat seat, steering and pack delivery. Not a visual test.
 const mineflayer = require('mineflayer')
 const raft = process.argv[2] === 'raft'
+const fake = process.argv[2] === 'fake'
 const bot = mineflayer.createBot({ host: '127.0.0.1', port: 25565, username: 'SmokeBot', version: '1.21.4', auth: 'offline' })
 let done = false, spawned = false, driving = false, dismounted = false, packs = 0, packsAtSpawn = 0
 const passengers = new Map()
@@ -29,7 +30,7 @@ bot.once('spawn', () => {
   setTimeout(() => {
     packsAtSpawn = packs
     if (packsAtSpawn !== 1) return fail('expected one join pack, got ' + packsAtSpawn)
-    bot.chat('/hvehicle spawn ' + (raft ? 'go_kart_raft' : 'go_kart')); spawned = true
+    bot.chat('/hvehicle spawn ' + (raft ? 'go_kart_raft' : fake ? 'go_kart_fake' : 'go_kart')); spawned = true
   }, 4500)
 })
 bot.on('messagestr', text => {
@@ -48,6 +49,7 @@ const interval = setInterval(() => {
       if (bot.vehicle.name !== (raft ? 'bamboo_raft' : 'oak_boat')) return fail('seat is not an oak boat: ' + bot.vehicle.name)
       const riders = passengers.get(bot.vehicle.id) || []
       if (!riders.includes(bot.entity.id)) return fail('player missing from boat')
+      if (fake && (riders.length !== 2 || riders[1] !== bot.entity.id)) return fail('fake pilot is not first: ' + riders)
       const carrier = entities.find(e => e.name === 'armor_stand' && (passengers.get(e.id) || []).includes(bot.vehicle.id))
       if (!carrier) return fail('boat is not riding the shared carrier')
       const carrierId = carrier.id
