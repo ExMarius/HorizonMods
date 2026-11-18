@@ -40,15 +40,17 @@ const interval = setInterval(() => {
     if (!driving) {
       driving = true
       const start = bot.vehicle.position.clone()
+      const startYaw = bot.vehicle.yaw
       const hands = entities.filter(e => e.name === 'block_display')
       if (hands.length !== 4) return fail('expected four cosmetic hand segments, got ' + hands.length)
-      const input = setInterval(() => bot._client.write('player_input', { inputs: { forward: true } }), 50)
+      const input = setInterval(() => bot._client.write('player_input', { inputs: { forward: true, left: true } }), 50)
       setTimeout(() => {
         clearInterval(input)
         bot._client.write('player_input', { inputs: {} })
         if (!bot.vehicle) return fail('player dismounted during movement')
         const distance = Math.hypot(start.x - bot.vehicle.position.x, start.z - bot.vehicle.position.z)
         if (distance < .3) return fail('vehicle did not move: ' + distance)
+        if (Math.abs(bot.vehicle.yaw - startYaw) < .02) return fail('seat did not follow the kart turn')
         // Force dismount using vanilla command: Mineflayer does not emulate the
         // vanilla client's complete sneak/dismount input sequence.
         bot.chat('/ride SmokeBot dismount')
