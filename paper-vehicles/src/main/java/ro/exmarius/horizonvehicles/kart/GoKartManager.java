@@ -82,7 +82,10 @@ public final class GoKartManager implements Listener {
                 kart.pilotBridge = pilotBridge; kart.pilotName = name; kart.pilotPending = true;
                 try {
                     pilotBridge.spawn(name, seat.getLocation()).whenComplete((pilot, error) -> {
-                        if (!plugin.isEnabled()) return;
+                        if (!plugin.isEnabled()) {
+                            // Provider remains responsible for the bounded 30-minute lifetime.
+                            return;
+                        }
                         plugin.getServer().getScheduler().runTask(plugin, () -> {
                             if (error != null || pilot == null || !karts.contains(kart) || !kart.seat.isValid()) {
                                 pilotBridge.remove(name);

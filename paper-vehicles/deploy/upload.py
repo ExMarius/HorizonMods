@@ -31,7 +31,7 @@ def fingerprint(key):
     return 'SHA256:' + base64.b64encode(digest).decode('ascii').rstrip('=')
 
 
-def transfer(sftp, local_path):
+def transfer(sftp, local_path, target=TARGET):
     """Upload and verify a temporary file, then replace only our own JAR safely."""
     global STAGE
     local_path = Path(local_path)
@@ -49,28 +49,28 @@ def transfer(sftp, local_path):
             raise ValueError('Uploaded file failed SHA-256 verification')
         STAGE = 'upload_target_stat'
         try:
-            sftp.stat(TARGET)
+            sftp.stat(target)
         except FileNotFoundError:
             STAGE = 'upload_install'
-            sftp.rename(temporary, TARGET)
+            sftp.rename(temporary, target)
         else:
             try:
                 STAGE = 'upload_atomic_replace'
-                sftp.posix_rename(temporary, TARGET)
+                sftp.posix_rename(temporary, target)
             except OSError:
                 # Some SFTP hosts do not implement OpenSSH's posix-rename extension.
                 # Keep the old plugin as a non-JAR backup and restore it on failure.
                 # There is a brief gap between renames; no restart is performed here.
                 backup = f'plugins/.horizonvehicles-backup-{uuid.uuid4().hex}.bak'
                 STAGE = 'upload_backup'
-                sftp.rename(TARGET, backup)
+                sftp.rename(target, backup)
                 try:
                     STAGE = 'upload_install'
-                    sftp.rename(temporary, TARGET)
+                    sftp.rename(temporary, target)
                 except Exception:
                     try:
                         STAGE = 'upload_rollback'
-                        sftp.rename(backup, TARGET)
+                        sftp.rename(backup, target)
                     except Exception as rollback_error:
                         raise RuntimeError('Upload failed and rollback failed; backup is retained') from rollback_error
                     raise
@@ -118,11 +118,14 @@ def main():
     import paramiko
     global STAGE
     STAGE = 'jar'
-    if len(sys.argv) != 2:
-        raise ValueError('Expected one JAR path')
+    if len(sys.argv) not in (2, 4):
+        raise ValueError('Expected plugin JAR and optional two test dependency JARs')
     path = Path(sys.argv[1])
     if not path.is_file() or path.suffix != '.jar':
         raise ValueError('The plugin JAR was not found')
+    dependencies = [Path(p) for p in sys.argv[2:]]
+    if dependencies and ([p.name for p in dependencies] != ['CommandAPI-9.7.0.jar', 'fakeplayer-0.3.13.jar'] or any(not p.is_file() for p in dependencies)):
+        raise ValueError('Unexpected or missing experimental dependency')
     username = os.environ.get('SFTP_USERNAME', '')
     password = os.environ.get('SFTP_PASSWORD', '')
     private_key = os.environ.get('SFTP_PRIVATE_KEY', '')
@@ -152,6 +155,14 @@ def main():
                 raise ValueError('SFTP authentication failed')
             STAGE = 'upload'
             with paramiko.SFTPClient.from_transport(transport) as sftp:
+                if dependencies:
+                    STAGE = 'dependency_conflict_check'
+                    existing = [n.lower() for n in sftp.listdir('plugins') if n.lower().endswith('.jar')]
+                    for keyword, dep in zip(('commandapi', 'fakeplayer'), dependencies):
+                        if any(keyword in n and n != dep.name.lower() for n in existing):
+                            raise ValueError('A conflicting dependency already exists; refusing duplicate plugins')
+                    for dep in dependencies:
+                        transfer(sftp, dep, 'plugins/' + dep.name)
                 transfer(sftp, path)
                 request_restart(sftp, path)
         finally:

@@ -30,7 +30,7 @@ final class FakeSeatPilot {
 
     @SuppressWarnings("unchecked")
     CompletableFuture<Player> spawn(String name, Location where) throws ReflectiveOperationException {
-        return (CompletableFuture<Player>) spawn.invoke(manager, Bukkit.getConsoleSender(), name, where, -1L);
+        return (CompletableFuture<Player>) spawn.invoke(manager, Bukkit.getConsoleSender(), name, where, 1_800_000L);
     }
 
     void remove(String name) {

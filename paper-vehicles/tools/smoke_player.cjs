@@ -48,6 +48,7 @@ const interval = setInterval(() => {
       driving = true
       if (bot.vehicle.name !== (raft ? 'bamboo_raft' : 'oak_boat')) return fail('seat is not an oak boat: ' + bot.vehicle.name)
       const riders = passengers.get(bot.vehicle.id) || []
+      const fakeId = fake ? riders[0] : null
       if (!riders.includes(bot.entity.id)) return fail('player missing from boat')
       if (fake && (riders.length !== 2 || riders[1] !== bot.entity.id)) return fail('fake pilot is not first: ' + riders)
       const carrier = entities.find(e => e.name === 'armor_stand' && (passengers.get(e.id) || []).includes(bot.vehicle.id))
@@ -85,7 +86,7 @@ const interval = setInterval(() => {
           if (packs !== packsAtSpawn) return fail('resource pack sent after spawn')
           // Command dismount, since Mineflayer does not reproduce all vanilla sneak input.
           bot.chat('/ride SmokeBot dismount')
-          setTimeout(() => { if (!dismounted) return fail('server did not confirm dismount'); bot.chat('/hvehicle remove'); setTimeout(success, 1000) }, 2500)
+          setTimeout(() => { if (!dismounted) return fail('server did not confirm dismount'); bot.chat('/hvehicle remove'); setTimeout(() => { if (fake && bot.entities[fakeId]) return fail('fake pilot remained after kart removal'); success() }, 2500) }, 2500)
         }, 4000)
       }, 2000)
     }
