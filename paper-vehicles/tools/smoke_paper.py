@@ -73,7 +73,7 @@ def main(jar):
                 if '[HorizonVehiclesPaper] Disabling' in text:
                     raise RuntimeError('Plugin disabled during startup')
                 # Give the offline test player OP before login. The bot checks
-                # entity creation, mounting and movement, not texture fidelity.
+                # entity creation, mounting, movement and cosmetic hand lifecycle, not visual fidelity.
                 proc.stdin.write('op SmokeBot\n'); proc.stdin.flush()
                 bot = Path(__file__).with_name('smoke_player.cjs').resolve()
                 player_test = subprocess.run(['node', str(bot)], capture_output=True, text=True, timeout=60)
@@ -91,7 +91,7 @@ def main(jar):
                 text = logpath.read_text(errors='replace')
                 if 'Update detected; requesting server restart' not in text:
                     raise RuntimeError('Restart watcher did not announce the update')
-                print(f'Paper 1.21.4 build {build["id"]}: plugin loaded, offline client mounted and drove, stale marker consumed and update triggered restart script.')
+                print(f'Paper 1.21.4 build {build["id"]}: plugin loaded, offline client mounted, drove and checked cosmetic hand lifecycle, stale marker consumed and update triggered restart script.')
             except Exception:
                 print(logpath.read_text(errors='replace')[-30000:], file=sys.stderr)
                 raise

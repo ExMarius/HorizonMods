@@ -1,4 +1,4 @@
-// Offline protocol client: checks spawn, mounting and forward movement, not visual fidelity.
+// Offline protocol client: checks spawn, mounting, movement and cosmetic hand lifecycle, not visual fidelity.
 const mineflayer = require('mineflayer')
 const bot = mineflayer.createBot({ host: '127.0.0.1', port: 25565, username: 'SmokeBot', version: '1.21.4', auth: 'offline' })
 let done = false
@@ -14,7 +14,7 @@ function fail(message) {
 function success() {
   if (done) return
   done = true; clearTimeout(timeout)
-  console.log('Offline player created Go-Kart, saw display entities, mounted and drove forward.')
+  console.log('Offline player created Go-Kart, mounted, drove, and observed hands appear and disappear.')
   bot.quit()
 }
 bot.on('error', e => fail(e.message))
@@ -38,6 +38,8 @@ const interval = setInterval(() => {
     if (!driving) {
       driving = true
       const start = bot.vehicle.position.clone()
+      const hands = entities.filter(e => e.name === 'block_display')
+      if (hands.length !== 4) return fail('expected four cosmetic hand segments, got ' + hands.length)
       const input = setInterval(() => bot._client.write('player_input', { inputs: { forward: true } }), 50)
       setTimeout(() => {
         clearInterval(input)
@@ -45,7 +47,14 @@ const interval = setInterval(() => {
         if (!bot.vehicle) return fail('player dismounted during movement')
         const distance = Math.hypot(start.x - bot.vehicle.position.x, start.z - bot.vehicle.position.z)
         if (distance < .3) return fail('vehicle did not move: ' + distance)
-        success()
+        bot._client.write('player_input', { inputs: { shift: true } })
+        setTimeout(() => {
+          bot._client.write('player_input', { inputs: {} })
+          const remaining = Object.values(bot.entities).filter(e => e.name === 'block_display').length
+          if (bot.vehicle) return fail('player did not dismount')
+          if (remaining !== 0) return fail('cosmetic hands remained after dismount: ' + remaining)
+          success()
+        }, 2500)
       }, 4000)
     }
     return

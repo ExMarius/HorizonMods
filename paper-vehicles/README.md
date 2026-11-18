@@ -117,3 +117,13 @@ Testul automat pornește un server Paper 1.21.4 separat și un client offline:
 verifică spawnul, urcarea, deplasarea orizontală și declanșarea scriptului de
 restart. Nu verifică fidelitatea vizuală, multiplayer, terenuri complexe sau
 comportamentul serverului real.
+
+### Mâini și urmărirea scaunului (experiment vanilla)
+
+Scaunul este mutat și rotit odată cu kartul, fără pachete care să forțeze
+camera jucătorului. Clientul vanilla controlează în continuare privirea liberă;
+nu garantăm aceeași cameră ca în Horizon. Când scaunul este ocupat, patru
+BlockDisplay-uri adaugă mâneci albastre și mănuși portocalii statice lângă volan;
+nu sunt brațele sau skin-ul jucătorului și pot să se suprapună peste el. Ele
+se ascund când coboară și nu necesită un resource pack suplimentar. Poziția și
+aspectul trebuie calibrate vizual în joc, în ambele perspective.

@@ -33,6 +33,7 @@ public final class GoKartManager implements Listener {
         GoKartRig rig = null;
         ArmorStand seat = null;
         Interaction hitbox = null;
+        GoKartHands hands = null;
         try {
             rig = GoKartRig.spawn(plugin, root);
             seat = root.getWorld().spawn(seatLocation(root), ArmorStand.class, entity -> {
@@ -46,13 +47,15 @@ public final class GoKartManager implements Listener {
                 entity.setInteractionWidth(1.8f); entity.setInteractionHeight(1.3f);
                 entity.setResponsive(true); entity.setPersistent(false);
             });
-            karts.add(new Kart(root, rig, seat, hitbox));
+            hands = GoKartHands.spawn(root);
+            karts.add(new Kart(root, rig, seat, hitbox, hands));
             player.sendMessage("Go-Kart experimental creat. Click dreapta pentru a urca; Shift pentru a cobori.");
             return true;
         } catch (Exception error) {
             if (rig != null) rig.remove();
             if (seat != null) seat.remove();
             if (hitbox != null) hitbox.remove();
+            if (hands != null) hands.remove();
             plugin.getLogger().warning("Go-Kart spawn failed: " + error);
             player.sendMessage("Nu am putut crea Go-Kart-ul; verifică logul serverului.");
             return false;
@@ -66,6 +69,7 @@ public final class GoKartManager implements Listener {
                 event.setCancelled(true);
                 if (!kart.seat.getPassengers().isEmpty()) { event.getPlayer().sendMessage("Scaunul este ocupat."); return; }
                 if (!kart.seat.addPassenger(event.getPlayer())) event.getPlayer().sendMessage("Nu te-ai putut urca.");
+                else kart.hands.setOccupied(true);
                 return;
             }
         }
@@ -103,9 +107,11 @@ public final class GoKartManager implements Listener {
         LandVehicleSpec.Point p = LandVehicleSpec.GO_KART.seats().stream()
                 .filter(LandVehicleSpec.Seat::driver).findFirst().orElseThrow().sourceOffset();
         double angle = Math.toRadians(root.getYaw());
-        return root.clone().add(p.x() * Math.cos(angle) - p.z() * Math.sin(angle),
+        Location target = root.clone().add(p.x() * Math.cos(angle) - p.z() * Math.sin(angle),
                 p.y() + LandVehicleSpec.RIDER_HEIGHT_CORRECTION - 0.7 * 0.0625,
                 p.x() * Math.sin(angle) + p.z() * Math.cos(angle));
+        target.setPitch(0);
+        return target;
     }
 
     /** Coarse conservative occupancy check; refuses unloaded chunks and blocks other than passable ones. */
@@ -124,13 +130,14 @@ public final class GoKartManager implements Listener {
 
     private static final class Kart {
         Location root; final GoKartRig rig; final ArmorStand seat; final Interaction hitbox;
-        final GoKartMotion motion; double fallVelocity; boolean onGround = true;
-        Kart(Location root, GoKartRig rig, ArmorStand seat, Interaction hitbox) {
-            this.root = root.clone(); this.rig = rig; this.seat = seat; this.hitbox = hitbox;
+        final GoKartHands hands; final GoKartMotion motion; double fallVelocity; boolean onGround = true;
+        Kart(Location root, GoKartRig rig, ArmorStand seat, Interaction hitbox, GoKartHands hands) {
+            this.root = root.clone(); this.rig = rig; this.seat = seat; this.hitbox = hitbox; this.hands = hands;
             this.motion = new GoKartMotion(root.getYaw());
         }
         void tick() {
             Player driver = seat.getPassengers().stream().filter(Player.class::isInstance).map(Player.class::cast).findFirst().orElse(null);
+            hands.setOccupied(driver != null);
             var input = driver == null ? null : driver.getCurrentInput();
             int throttle = input == null ? 0 : (input.isForward() ? 1 : 0) - (input.isBackward() ? 1 : 0);
             int steering = input == null ? 0 : (input.isLeft() ? 1 : 0) - (input.isRight() ? 1 : 0);
@@ -172,10 +179,13 @@ public final class GoKartManager implements Listener {
                     || Math.abs(actual.getZ() - requested.getZ()) > 0.001) motion.stop();
             Location seatTarget = seatLocation(next);
             if (!seat.teleport(seatTarget, TeleportFlag.EntityState.RETAIN_PASSENGERS)) { motion.stop(); return; }
-            root = next; hitbox.teleport(root); rig.move(root);
+            // The carrier follows the kart's yaw as in the source rig. This does
+            // not force the vanilla player's free-look camera or animate their skin.
+            seat.setRotation(next.getYaw(), 0);
+            root = next; hitbox.teleport(root); rig.move(root); hands.move(root);
             if (driver != null && driver.getTicksLived() % 20 == 0)
                 driver.sendActionBar(Component.text(String.format("Go-Kart | Combustibil: %.0f%%", step.fuel())));
         }
-        void remove() { seat.eject(); seat.remove(); hitbox.remove(); rig.remove(); }
+        void remove() { seat.eject(); seat.remove(); hitbox.remove(); rig.remove(); hands.remove(); }
     }
 }
