@@ -39,9 +39,9 @@ public final class GoKartManager implements Listener {
             rig = GoKartRig.spawn(plugin, root);
             seat = (Boat) root.getWorld().spawnEntity(seatLocation(root), EntityType.OAK_BOAT);
             seat.setGravity(false); seat.setInvulnerable(true); seat.setSilent(true); seat.setPersistent(false);
-            // Occupy the first passenger position so the vanilla client cannot
-            // independently drive the boat with A/D. The player sits in the
-            // other boat seat and keeps the normal vanilla boat pose.
+            // Carrier for the model. Paper 1.21.4 promotes a player ahead of
+            // this non-player passenger, so it does NOT reserve boat control.
+            // A vanilla client can still predict boat movement independently.
             blocker = root.getWorld().spawn(seatLocation(root), ArmorStand.class, entity -> {
                 entity.setInvisible(true); entity.setMarker(true); entity.setSmall(true);
                 entity.setGravity(false); entity.setInvulnerable(true); entity.setSilent(true);
