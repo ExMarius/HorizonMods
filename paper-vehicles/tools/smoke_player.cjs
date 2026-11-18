@@ -12,7 +12,7 @@ function fail(message) {
 function success() {
   if (done) return
   done = true; clearTimeout(timeout)
-  console.log('Boat seat mounted; steering at rest and moving tested; pack not resent on spawn.')
+  console.log('Boat mounted; server entity separation bounded in motion; pack not resent on spawn.')
   bot.quit()
 }
 bot.on('error', e => fail(e.message))
@@ -50,13 +50,21 @@ const interval = setInterval(() => {
         if (!bot.vehicle) return fail('dismounted while steering')
         if (Math.abs(bot.vehicle.yaw - startYaw) > .08) return fail('boat rotates on A without driving')
         const start = bot.vehicle.position.clone(), yaw = bot.vehicle.yaw
-        const input = setInterval(() => bot._client.write('player_input', { inputs: { forward: true, left: true } }), 50)
+        let maxSeparation = 0
+        const input = setInterval(() => {
+          bot._client.write('player_input', { inputs: { forward: true, left: true } })
+          if (bot.vehicle && target) {
+            const distance = Math.hypot(target.position.x - bot.vehicle.position.x, target.position.z - bot.vehicle.position.z)
+            maxSeparation = Math.max(maxSeparation, distance)
+          }
+        }, 50)
         setTimeout(() => {
           clearInterval(input)
           bot._client.write('player_input', { inputs: {} })
           if (!bot.vehicle) return fail('player dismounted during movement')
           const distance = Math.hypot(start.x - bot.vehicle.position.x, start.z - bot.vehicle.position.z)
           if (distance < .3) return fail('vehicle did not move: ' + distance)
+          if (maxSeparation > 1.2) return fail('boat separated from kart during driving: ' + maxSeparation)
           if (Math.abs(bot.vehicle.yaw - yaw) < .02) return fail('boat did not follow kart turn')
           if (packs !== packsAtSpawn) return fail('resource pack sent after spawn')
           // Command dismount, since Mineflayer does not reproduce all vanilla sneak input.
