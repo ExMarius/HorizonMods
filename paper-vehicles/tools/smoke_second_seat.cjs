@@ -11,7 +11,7 @@ function finish(error) {
   if (done) return
   done = true; clearTimeout(timer)
   if (error) { console.error('Second-seat protocol test failed: ' + error); process.exitCode = 1 }
-  else console.log('Two player passengers ordered; second player remains mounted while root moves and receives input. Not a vanilla client or visual test.')
+  else console.log('Two player passengers ordered; second player remains mounted while root moves; input packet sent. Not a vanilla client or visual test.')
   pilot.quit(); driver.quit()
 }
 for (const bot of [pilot, driver]) {
@@ -39,8 +39,8 @@ function begin() {
     const root = entities.find(e => e.name === 'armor_stand' && (passengers.get(e.id) || []).includes(boat.id))
     if (!root) return finish('boat not mounted on root')
     const before = root.position.clone()
-    // Verify the server sees the second rider's input while mounted. This only
-    // tests packet delivery, not whether vanilla predicts/rotates the boat.
+    // Send input while mounted. This does not verify server receipt or vanilla
+    // prediction/rotation; those need separate assertions and a real client.
     driver._client.write('player_input', { inputs: { left: true } })
     driver.chat('/execute as @e[type=minecraft:armor_stand,tag=hv_second_root,limit=1] at @s run tp @s ~3 ~ ~')
     setTimeout(() => {
