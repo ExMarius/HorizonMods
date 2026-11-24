@@ -115,5 +115,12 @@ jobs:
                       print(f'::notice title={label}::{text.replace(chr(10), " ").replace(chr(13), " ")}')
                   except urllib.error.HTTPError as exc:
                       print(f'::warning title={label}::HTTP {exc.code}')
+          doc = request_json(urllib.request.Request(audience + '/openapi.json'), 'Falix OpenAPI')
+          for path, method in [('/servers/{server_id}/files/upload', 'post'), ('/servers/{server_id}/files/download', 'post')]:
+              op = doc.get('paths', {}).get(path, {}).get(method, {})
+              body_schema = op.get('requestBody', {}).get('content', {}).get('application/json', {}).get('schema', {})
+              responses = op.get('responses', {})
+              response_schema = responses.get('200', {}).get('content', {}).get('application/json', {}).get('schema', {})
+              print(f'::notice title=API {path}::request={json.dumps(body_schema)} response={json.dumps(response_schema)}')
           print('No server operation was performed.')
           PY
