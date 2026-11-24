@@ -10,3 +10,7 @@ este o instalare pe server și nu a fost compilat sau testat în acest mediu.
 Resursele, creditele și licențele provin din snapshotul original. Prezența lor
 nu constituie o verificare separată a permisiunilor pentru fiecare asset. Nu
 activa resurse suplimentare sau redistribui asseturi nefiltrate fără verificare.
+
+Pentru siguranță, copia de lucru exclude perechea de chei SSH din snapshotul
+original. Acea cheie a fost prezentă în istoricul sursei și în commitul inițial
+al copiei: trebuie considerată compromisă și revocată/înlocuită.
