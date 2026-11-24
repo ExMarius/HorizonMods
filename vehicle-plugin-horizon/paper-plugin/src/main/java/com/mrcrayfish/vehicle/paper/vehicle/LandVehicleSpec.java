@@ -336,7 +336,14 @@ public record LandVehicleSpec(
                     new Wheel(-1, true, -14.74F / 16F, .390F, 14.5F * 1.42F / 16F, 0, 0, 1.55F, 1.56F, 1.56F),
                     new Wheel(1, false, 14.74F / 16F, .390F, -14.5F * 1.42F / 16F, 0, 0, 1.55F, 1.56F, 1.56F),
                     new Wheel(-1, false, -14.74F / 16F, .390F, -14.5F * 1.42F / 16F, 0, 0, 1.55F, 1.56F, 1.56F)),
-            List.of(new Seat(true, new Point(6.816F / 16F, 9.108F / 16F - RIDER_HEIGHT_CORRECTION, -3.550F / 16F), 0)),
+            // The driver's source attachment is documented. The other three
+            // are derived from the front cushion and rear bench geometry; verify
+            // mounted player fit in a vanilla client, not just server positions.
+            List.of(
+                    new Seat(true, new Point(6.816F / 16F, 9.108F / 16F - RIDER_HEIGHT_CORRECTION, -3.550F / 16F), 0),
+                    new Seat(false, new Point(-6.816F / 16F, 9.108F / 16F - RIDER_HEIGHT_CORRECTION, -3.550F / 16F), 0),
+                    new Seat(false, new Point(6.816F / 16F, 8.8F * 1.38F / 16F - RIDER_HEIGHT_CORRECTION, -14.55F * 1.42F / 16F), 0),
+                    new Seat(false, new Point(-6.816F / 16F, 8.8F * 1.38F / 16F - RIDER_HEIGHT_CORRECTION, -14.55F * 1.42F / 16F), 0)),
             false, "tow_bar", new Point(0, 0, 0), new Point(0, 0, 0),
             null, null, List.of(), false
     );

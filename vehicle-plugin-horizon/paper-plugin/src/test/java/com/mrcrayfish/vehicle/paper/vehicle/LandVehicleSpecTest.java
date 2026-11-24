@@ -17,7 +17,11 @@ class LandVehicleSpecTest {
         assertEquals(LandVehicleSpec.HORIZON_OFF_ROADER, spec);
         assertEquals(LandVehicleSpec.OFF_ROADER, LandVehicleSpec.byId("off_roader"));
         assertEquals(4, spec.wheels().size());
-        assertEquals(1, spec.seats().size());
+        assertEquals(4, spec.seats().size());
+        assertEquals(1, spec.seats().stream().filter(LandVehicleSpec.Seat::driver).count());
+        assertEquals(-spec.seats().get(0).sourceOffset().x(), spec.seats().get(1).sourceOffset().x(), EPSILON);
+        assertTrue(spec.seats().get(2).sourceOffset().z() < spec.seats().get(0).sourceOffset().z());
+        assertEquals(-spec.seats().get(2).sourceOffset().x(), spec.seats().get(3).sourceOffset().x(), EPSILON);
         assertEquals(4000.0F, spec.energyCapacity(), EPSILON);
         assertEquals(1.06F, spec.stepHeight(), EPSILON);
         assertEquals(14.74F / 16F, spec.wheels().getFirst().axleX(), EPSILON);

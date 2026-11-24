@@ -26,7 +26,7 @@ def main(jar):
                     if 'Done (' in text and 'Vehicle plugin enabled.' in text: break
                 else: raise RuntimeError('startup timeout')
                 proc.stdin.write('op HorizonBot\n'); proc.stdin.flush(); time.sleep(2)
-                bot=subprocess.run(['node',str(Path(__file__).with_suffix('.cjs'))],capture_output=True,text=True,timeout=75)
+                bot=subprocess.run(['node',str(Path(__file__).with_suffix('.cjs'))],capture_output=True,text=True,timeout=110)
                 if bot.returncode: raise RuntimeError('bot failed: '+(bot.stdout+bot.stderr)[-2500:])
                 print(bot.stdout,flush=True)
                 proc.stdin.write('stop\n'); proc.stdin.flush(); proc.wait(timeout=90)
