@@ -176,3 +176,11 @@ poziția laterală urmează și unghiul de bracaj. Fața are grilă și detalii 
 iar pe capotă și aripi sunt accente albastre fără scris. Testele geometrice
 verifică spațiul în poziția statică; virajele și aspectul necesită verificare
 în client, nu sunt demonstrate de randările schematice sau testele de protocol.
+
+Livrare `45420871057`: build, teste geometrice, teste Paper pentru Dacia și
+Off-Roader și verificarea celorlalte resurse au trecut. Backupul verificat este
+`mcv-before-horizon-45420871057-`, inclusiv datele garajelor. JAR instalat
+SHA-256 `6ddf2f509eebfca58a0686f0378da74b324e78b3b79d8953e3e5978a06ae37a6`,
+pack SHA-1 `ba7b73145f5312aac04d4158d2340576da4afb9e`. Restartul automat a
+fost respins de Falix cu HTTP 403 `verification_required`: trebuie restartat
+manual și verificat efectul în client.
