@@ -37,7 +37,7 @@ def main():
     old=properties(api)
     if old.get('resource-pack','').strip() not in ('', URL): f.abort('Another pack is configured; refusing to overwrite it')
     values={'resource-pack':URL,'resource-pack-sha1':SHA1,'resource-pack-id':str(uuid.uuid5(uuid.NAMESPACE_URL, URL)), 'require-resource-pack':'true'}
-    api.api('/properties', {'properties':[{'key':k,'value':v} for k,v in values.items()]}, 'PUT')
+    api.api('/properties', {'properties':values}, 'PUT')
     current=properties(api)
     if any(current.get(k,'').lower() != v.lower() for k,v in values.items()): f.abort('Pack properties could not be verified after write; no restart requested')
     f.notice('Resource pack', 'Server properties updated and verified; pack is offered on login')
