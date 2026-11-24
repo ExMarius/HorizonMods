@@ -13,7 +13,7 @@ def main(jar):
     if hashlib.sha256(paper).hexdigest()!=download['checksums']['sha256']: raise RuntimeError('Paper hash mismatch')
     with tempfile.TemporaryDirectory(prefix='horizon-rig-smoke-') as tmp:
         root=Path(tmp); (root/'paper.jar').write_bytes(paper); (root/'eula.txt').write_text('eula=true\n')
-        (root/'server.properties').write_text('online-mode=false\nserver-port=25568\nspawn-protection=0\nview-distance=3\nsimulation-distance=3\nlevel-type=minecraft:flat\nresource-pack=https://github.com/ExMarius/MrCrayfishVehicleMod/releases/download/paper-plugin/MrCrayfishVehiclePlugin-resource-pack-1.21.4-r39.zip\nresource-pack-sha1=d1b55da29e79f91f2299c40c3f7413656f349ff4\nrequire-resource-pack=false\n')
+        (root/'server.properties').write_text('online-mode=false\ndifficulty=peaceful\nspawn-monsters=false\nserver-port=25568\nspawn-protection=0\nview-distance=3\nsimulation-distance=3\nlevel-type=minecraft:flat\nresource-pack=https://github.com/ExMarius/MrCrayfishVehicleMod/releases/download/paper-plugin/MrCrayfishVehiclePlugin-resource-pack-1.21.4-r39.zip\nresource-pack-sha1=d1b55da29e79f91f2299c40c3f7413656f349ff4\nrequire-resource-pack=false\n')
         (root/'plugins').mkdir(); shutil.copyfile(jar,root/'plugins/MrCrayfishVehiclePlugin.jar')
         log=root/'server.log'
         with log.open('w+') as out:
