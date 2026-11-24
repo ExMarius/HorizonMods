@@ -16,3 +16,12 @@ Mai trebuie: înregistrare ID separat și integrarea fizicii, a celor patru
 scaune, roților, volanului și culorilor pe baza codului original MrCrayfish;
 teste Paper, verificare în joc și abia apoi livrare. Geometria verificată
 structural nu dovedește redarea sau poziția jucătorilor în client.
+
+## Dacia Logan poliție — în lucru
+
+`prepare_police.py` folosește modelul și configurația distincte de poliție,
+cele 268 de elemente și textura/sunetul din arhiva aprobată. Combină resursele
+numai cu packul curent identificat prin SHA-1, refuză coliziunile și păstrează
+intrările existente; testele automate nu confirmă aspectul în Minecraft. Sunetul
+de sirenă este inclus ca resursă, dar comanda/comportamentul nu sunt implementate.
+Nu este încă înregistrată ca vehicul și nu este instalată pe server.
