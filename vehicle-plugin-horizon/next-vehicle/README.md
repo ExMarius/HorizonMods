@@ -272,3 +272,11 @@ colțurile tuturor pieselor cu geometria Horizon. Roțile nu sunt mutate în afa
 Au fost adăugate căptușeli de pasaj și un volan derivat din modelul Horizon,
 cu coloană. Scuturile sunt verificate geometric în repaus; testarea virajelor,
 aspectului și audio în client este în continuare necesară.
+
+Livrare `45436491163`: testele geometrice ale tuturor pieselor roții, build-ul,
+testele Paper pentru ambele vehicule și verificarea resurselor au trecut.
+Backup verificat `mcv-before-horizon-45436491163-`, inclusiv garaje. JAR
+instalat SHA-256 `01ea6f68ecea941d1b3af04b21a2e5134e6bb6c1fe5e16183b990778df6446f6`,
+pack SHA-1 `9159951f45d8449c9e70f4e9a925f1d537df207b`. Falix a respins
+restartul automat HTTP 403 `verification_required`; este necesar restart manual
+și verificare vizuală/audio în client.
