@@ -18,6 +18,8 @@ jobs:
       - name: Build and test candidate source
         working-directory: vehicle-plugin-1.21.4
         run: ./paper-plugin/gradlew -p paper-plugin clean build
+      - name: Smoke test on a disposable Paper 1.21.4 server
+        run: MC_VERSION=1.21.4 bash vehicle-plugin-1.21.4/tools/test_fresh_paper_server.sh vehicle-plugin-1.21.4/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
       - name: Compare class files with installed release
         env:
           GH_TOKEN: ${{ github.token }}
