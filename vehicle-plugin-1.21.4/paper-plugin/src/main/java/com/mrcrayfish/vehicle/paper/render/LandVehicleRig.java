@@ -35,7 +35,7 @@ import java.util.concurrent.ThreadLocalRandom;
 /** Multipart vanilla-display rig driven by a generated land-vehicle definition. */
 public final class LandVehicleRig {
     public static final String ENTITY_TAG = "mcv_plugin_vehicle";
-    private static final int VANILLA_ENTITY_LERP_TICKS = 3;
+    private static final int VANILLA_ENTITY_LERP_TICKS = 0;
     /* Ciclul BL: scaunul este un cal la scara minima, invizibil, fara saua:
      * acelasi rider pose + HUD de inimi, iar yaw-ul calareului este clamp-uit
      * vanilla la yaw-ul vehiculului (corp blocat, cap liber). Entitatile sunt
@@ -216,7 +216,7 @@ public final class LandVehicleRig {
             display.setItemStack(stack);
             display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.NONE);
             display.setInterpolationDelay(0);
-            display.setInterpolationDuration(1);
+            display.setInterpolationDuration(0);
             display.setTeleportDuration(VANILLA_ENTITY_LERP_TICKS);
             display.setInvulnerable(true);
             display.setPersistent(false);
@@ -228,30 +228,6 @@ public final class LandVehicleRig {
     /** BL16: scaunul poate fi si ARMOR STAND (entitate vie fara AI, deci nu se
      *  roteste dupa camera cum face calul). Implicit: calul = varianta C
      *  validata de user; comutabil live cu /vehicle seatkind. */
-    // Off by default: user can compare the stable display interpolation with
-    // same-tick updates. This does not claim vanilla client visual parity.
-    private static volatile VehicleSyncMode syncMode = VehicleSyncMode.NORMAL;
-
-    public static VehicleSyncMode syncMode() { return syncMode; }
-
-    public static void setSyncMode(VehicleSyncMode mode) {
-        syncMode = java.util.Objects.requireNonNull(mode);
-    }
-
-    private void updateSyncMode(VehicleSyncMode mode) {
-        for (Entity entity : entities) {
-            if (entity instanceof ItemDisplay display && display.isValid()) {
-                if (display.getTeleportDuration() != mode.teleportTicks()) {
-                    display.setTeleportDuration(mode.teleportTicks());
-                }
-                if (display.getInterpolationDuration() != mode.transformTicks()) {
-                    display.setInterpolationDelay(0);
-                    display.setInterpolationDuration(mode.transformTicks());
-                }
-            }
-        }
-    }
-
     private static volatile String seatKind = "cal";
 
     /* BL66 (confirmat de user: "/vehicle boatdemo face 1 la 1 vizualul din mod"):
@@ -331,10 +307,6 @@ public final class LandVehicleRig {
      *  devine PASAGER al corpului masinii, deci il urmeaza nativ (fara teleport
      *  in fiecare tick => fara tremurat si fara "moved too quickly"). */
     private boolean variantAttachToBody;
-    /** BL62 (clarificare user: "de lipit e lipit, dar trebuie lipit de tot, cu
-     *  tot cu pozitia masinii"): scaunul primeste pozitia + rotatia ancorei in
-     *  FIECARE tick, fara niciun prag - practic sudat pe masina. */
-    private boolean variantGlueEveryTick;
 
     public void applyVariant(String name, String kind, boolean ride, String yawMode, boolean lockLook) {
         this.applyVariant(name, kind, ride, yawMode, lockLook, false);
@@ -353,7 +325,6 @@ public final class LandVehicleRig {
     public void applyVariant(String name, String kind, boolean ride, String yawMode,
                              boolean lockLook, boolean keepPosition, boolean attachToBody,
                              boolean glueEveryTick) {
-        this.variantGlueEveryTick = glueEveryTick;
         this.variantName = name;
         this.variantKind = kind;
         this.variantRide = ride;
@@ -666,8 +637,6 @@ public final class LandVehicleRig {
             return;
         }
 
-        VehicleSyncMode mode = syncMode;
-        updateSyncMode(mode);
         float yaw = root.getYaw();
         Quaternionf chassisRotation = usesAircraftBodyRotation()
                 ? SourceTransforms.aircraftRotation(wheelieAngle, bodyRoll)
@@ -1022,32 +991,10 @@ public final class LandVehicleRig {
         Location seatTarget = carrier.anchor.getLocation().clone();
         seatTarget.setYaw(wrapDegrees(seatYaw));
         seatTarget.setPitch(0.0F);
-        boolean drift = !seat.getWorld().equals(seatTarget.getWorld())
-                || seat.getLocation().distanceSquared(seatTarget) > 1.0E-4D
-                || Math.abs(wrapDegrees(seat.getYaw() - seatYaw)) > 0.5F;
-        /* BL61: daca scaunul e pasager al corpului masinii, pozitia si rotatia
-         * ii sunt date de parinte - nu-l mai teleportam (asta tremura). */
-        /* BL63 (cauza dovedita de user: "barca pleaca pe alte locuri si masina pe
-         * altele"): corpul masinii este un ItemDisplay cu teleportDuration=1, deci
-         * clientul il deseneaza cu UN TICK MAI TARZIU. Daca scaunul il mutam pe
-         * pozitia de ACUM, apare cu un tick inaintea masinii => "pe alt loc".
-         * Solutie: scaunul primeste pozitia din tickul precedent (aceeasi
-         * intarziere ca desenul masinii). */
-        if (syncMode == VehicleSyncMode.DIRECT && !seat.isInsideVehicle()
-                && !(seat instanceof org.bukkit.entity.Boat)) {
-            // Keep the actual mount and passenger together at this tick's anchor.
-            // Boat physics is deliberately untouched by this experiment.
-            seat.teleport(seatTarget, TeleportFlag.EntityState.RETAIN_PASSENGERS);
-            carrier.boatDelayReady = false;
-        } else if (variantGlueEveryTick && !seat.isInsideVehicle() && !(seat instanceof org.bukkit.entity.Boat)) {
-            Location delayed = carrier.boatDelayReady
-                    ? carrier.boatDelayLocation.clone() : seatTarget.clone();
-            delayed.setYaw(carrier.boatDelayReady ? carrier.boatDelayYaw : seatTarget.getYaw());
-            seat.teleport(delayed, TeleportFlag.EntityState.RETAIN_PASSENGERS);
-            carrier.boatDelayLocation = seatTarget.clone();
-            carrier.boatDelayYaw = seatTarget.getYaw();
-            carrier.boatDelayReady = true;
-        } else if (drift && !seat.isInsideVehicle()) {
+        // Move the mount to the same current-tick seat anchor as the displays.
+        // Preserve passengers and do not overwrite the player's view rotation.
+        // Boats are handled once below because they also need velocity control.
+        if (!seat.isInsideVehicle() && !(seat instanceof org.bukkit.entity.Boat)) {
             seat.teleport(seatTarget, TeleportFlag.EntityState.RETAIN_PASSENGERS);
         }
         Player rider = riderHost(carrier, seat).getPassengers().stream()
@@ -1127,27 +1074,13 @@ public final class LandVehicleRig {
          * rotita pe yaw-ul masinii in fiecare update, deci calul o urmeaza
          * natural, fara corectii care sa se bata cu clientul. */
         if (seat instanceof org.bukkit.entity.Boat boat && !variantAttachToBody) {
-            Location seatLocation = carrier.anchor.getLocation();
-            if (!carrier.boatDelayReady) {
-                carrier.boatDelayLocation = seatLocation.clone();
-                carrier.boatDelayYaw = seatYaw;
-                carrier.boatDelayReady = true;
-            }
-            /* BL58 (cerinta user): "barca fixata de masina, sa nu se invarta nici
-             * cand dai A/D; doar masina sa se miste, eu sa stau in barca normal".
-             * Viteza e zero in fiecare tick, iar rotatia se impune mereu (nu doar
-             * la abateri mari), deci barca nu are cum sa se rasuceasca singura. */
+            // No artificial one-tick delay: the chassis and wheels also use
+            // zero display interpolation and are updated from this tick's root.
             boat.setVelocity(new org.bukkit.util.Vector(0, 0, 0));
-            Location target = carrier.boatDelayLocation.clone();
-            float targetYaw = carrier.boatDelayYaw;
-            /* BL66: teleport in fiecare tick (exact ca in demo, care merge) - nu
-             * mai asteptam driftul, altfel barca ramane in urma. */
-            boat.teleport(target, TeleportFlag.EntityState.RETAIN_PASSENGERS);
-            if (Math.abs(wrapDegrees(boat.getYaw() - targetYaw)) > 0.01F || boat.getPitch() != 0.0F) {
-                boat.setRotation(targetYaw, 0.0F);
+            boat.teleport(seatTarget, TeleportFlag.EntityState.RETAIN_PASSENGERS);
+            if (Math.abs(wrapDegrees(boat.getYaw() - seatYaw)) > 0.01F || boat.getPitch() != 0.0F) {
+                boat.setRotation(seatYaw, 0.0F);
             }
-            carrier.boatDelayLocation = seatLocation.clone();
-            carrier.boatDelayYaw = seatYaw;
         }
         /* BL21: camera ramane pe directia vehiculului (mouse-ul nu mai roteste
          * jucatorul). Pitch-ul rămâne liber. 999 = dezactivat. */
@@ -1780,12 +1713,6 @@ public final class LandVehicleRig {
          *  ca barca sa nu fie condusa de client; jucatorul urca pe al doilea
          *  loc, deci are vizualul si pose-ul normal de barca. */
         private Entity support;
-        /** BL37: intarziere de 1 tick pentru barca (display-urile vehiculului au
-         *  interpolationDuration=1, deci masina se deseneaza cu un tick mai
-         *  tarziu; barca teleportata instant pare sa "o ia inainte"). */
-        private Location boatDelayLocation;
-        private float boatDelayYaw;
-        private boolean boatDelayReady;
         /** BL57: ultimul yaw al scaunului, ca sa stim cu CAT a virat masina
          *  (rotatia se adauga la privire, nu o inlocuieste). */
         private float lastSeatYaw;

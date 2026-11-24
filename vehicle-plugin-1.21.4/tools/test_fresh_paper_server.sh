@@ -115,7 +115,7 @@ run_server_cycle() {
   done
   $ready || fail "cycle $cycle did not become ready within 240 seconds"
 
-  printf 'vehicle syncmode direct\nvehicle syncmode normal\nvehicle list\nvehicle save\nvehicle pack\nplugins\n' >&3
+  printf 'vehicle list\nvehicle save\nvehicle pack\nplugins\n' >&3
   sleep 3
   printf 'stop\n' >&3
 
@@ -153,8 +153,6 @@ grep -Fq 'd1b55da29e79f91f2299c40c3f7413656f349ff4' "$DATA_DIR/config.yml" \
 
 run_server_cycle 2
 
-grep -Fq 'Sincronizare experimentala: direct' "$SERVER_LOG" || fail "direct sync command did not execute"
-grep -Fq 'Sincronizare experimentala: normal' "$SERVER_LOG" || fail "normal sync command did not execute"
 
 [ "$(grep -Fc 'Vehicle plugin enabled. Seventeen land vehicles, three water vehicles, three aircraft, five trailers, and the gas pump are ready.' "$SERVER_LOG")" -eq 2 ] \
   || fail "plugin did not enable exactly once per startup"

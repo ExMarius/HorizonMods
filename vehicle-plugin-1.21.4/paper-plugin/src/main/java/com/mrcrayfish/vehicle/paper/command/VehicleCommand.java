@@ -84,7 +84,6 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
             case "give" -> give(sender, args);
             case "propsdebug" -> propsDebug(sender);
             case "seattest" -> seatTest(sender, args);
-            case "syncmode" -> syncModeCmd(sender, args);
             case "seatkind" -> seatKindCmd(sender, args);
             case "seatyaw" -> seatYawCmd(sender, args);
             case "seatlook" -> seatLookCmd(sender, args);
@@ -95,25 +94,6 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
             default -> help(sender, label);
         }
         return true;
-    }
-
-    /** Operator-only, non-persistent A/B test; normal restores the old timings. */
-    private void syncModeCmd(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("vehicle.admin")) {
-            sender.sendRichMessage("<red>Nu ai permisiunea vehicle.admin.</red>");
-            return;
-        }
-        if (args.length != 2 || (!args[1].equalsIgnoreCase("direct")
-                && !args[1].equalsIgnoreCase("normal"))) {
-            sender.sendRichMessage("<yellow>Folosire: /vehicle syncmode <normal|direct>; actual: "
-                    + com.mrcrayfish.vehicle.paper.render.LandVehicleRig.syncMode().name().toLowerCase(Locale.ROOT)
-                    + "</yellow>");
-            return;
-        }
-        var mode = com.mrcrayfish.vehicle.paper.render.VehicleSyncMode.valueOf(args[1].toUpperCase(Locale.ROOT));
-        com.mrcrayfish.vehicle.paper.render.LandVehicleRig.setSyncMode(mode);
-        sender.sendRichMessage("<green>Sincronizare experimentala: " + mode.name().toLowerCase(Locale.ROOT)
-                + ". Se reseteaza la restart; direct poate tremura.</green>");
     }
 
     /** /vehicle seatlock <on|off>: forteaza corpul/camera pe directia masinii
@@ -1188,7 +1168,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
                                                  @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return filter(List.of("spawn", "variants", "boatdemo", "boatshell", "remove", "refuel", "gaspump", "jerrycan", "trust", "untrust", "trusted", "magazin", "podium", "list", "save", "pack", "creative", "paint", "vopsea", "vopseste", "garaj", "perf", "consum", "stats", "give", "propsdebug", "seattest", "syncmode", "seatkind", "seatyaw", "seatlook", "inputtest", "seatride", "seatdebug", "seatlock"), args[0]);
+            return filter(List.of("spawn", "variants", "boatdemo", "boatshell", "remove", "refuel", "gaspump", "jerrycan", "trust", "untrust", "trusted", "magazin", "podium", "list", "save", "pack", "creative", "paint", "vopsea", "vopseste", "garaj", "perf", "consum", "stats", "give", "propsdebug", "seattest", "seatkind", "seatyaw", "seatlook", "inputtest", "seatride", "seatdebug", "seatlock"), args[0]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("trust") || args[0].equalsIgnoreCase("untrust"))) {
             return filter(onTabPlayers(), args[1]);
@@ -1201,9 +1181,6 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 4 && args[0].equalsIgnoreCase("podium") && "set".equalsIgnoreCase(args[1])) {
             return filter(java.util.List.of("10000", "25000", "60000", "100000"), args[3]);
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("syncmode")) {
-            return sender.hasPermission("vehicle.admin") ? filter(List.of("normal", "direct"), args[1]) : List.of();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("seatlook")) {
             return filter(List.of("0", "1", "5", "15", "45", "999"), args[1]);
