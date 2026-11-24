@@ -17,6 +17,9 @@ jobs:
         run: |
           python3 - <<'PY'
           import json, os, sys, time, urllib.error, urllib.parse, urllib.request
+          def fail(message):
+              print('::error title=Falix start::'+str(message), flush=True)
+              raise SystemExit(1)
           base='https://client.falixnodes.net/api/v2'
           def req(url, data=None, headers=None):
               try:
@@ -24,9 +27,9 @@ jobs:
               except urllib.error.HTTPError as e:
                   try: err=json.load(e).get('error',{}).get('code','unknown')
                   except Exception: err='unknown'
-                  sys.exit(f'Falix request failed: HTTP {e.code}, code={err}')
+                  fail(f'Falix request failed: HTTP {e.code}, code={err}')
               except (urllib.error.URLError, TimeoutError, ValueError) as e:
-                  sys.exit('Falix request failed: '+type(e).__name__)
+                  fail('Falix request failed: '+type(e).__name__)
           oidc=os.environ['ACTIONS_ID_TOKEN_REQUEST_URL']+'&'+urllib.parse.urlencode({'audience':base})
           jwt=req(oidc,headers={'Authorization':'bearer '+os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']})['value']
           print('::add-mask::'+jwt,flush=True)
@@ -36,7 +39,7 @@ jobs:
           headers={'Authorization':'Bearer '+token}
           prefix=base+'/servers/3500167'
           listing=req(prefix+'/files?directory=%2Fplugins&limit=100',headers=headers)['data']
-          if not any(x.get('name')=='MrCrayfishVehiclePlugin.jar' for x in listing): sys.exit('Plugin file missing; not starting server')
+          if not any(x.get('name')=='MrCrayfishVehiclePlugin.jar' for x in listing): fail('Plugin file missing; not starting server')
           state=req(prefix+'/console/status',headers=headers)['data'].get('status')
           if state=='offline':
               h={**headers,'Content-Type':'application/json'}
@@ -44,12 +47,12 @@ jobs:
               print('::notice title=Falix power::Start request accepted')
           elif state in ('starting','running'):
               print('::notice title=Falix power::Already starting or running')
-          else: sys.exit('Unexpected server state; not sending power command')
+          else: fail('Unexpected server state; not sending power command')
           for _ in range(30):
               time.sleep(5)
               state=req(prefix+'/console/status',headers=headers)['data'].get('status')
               if state=='running': break
-          else: sys.exit('Server did not reach running state within 150 seconds')
+          else: fail('Server did not reach running state within 150 seconds')
           print('::notice title=Falix status::Server is running')
           for _ in range(12):
               obj=req(prefix+'/console/log?lines=40',headers=headers).get('data',{})
@@ -59,5 +62,5 @@ jobs:
                   print('::notice title=Plugin verification::Console shows plugin enabling')
                   break
               time.sleep(5)
-          else: sys.exit('Server is running but plugin enabling could not be confirmed in recent console log')
+          else: fail('Server is running but plugin enabling could not be confirmed in recent console log')
           PY
