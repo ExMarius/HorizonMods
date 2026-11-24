@@ -121,6 +121,10 @@ jobs:
               body_schema = op.get('requestBody', {}).get('content', {}).get('application/json', {}).get('schema', {})
               responses = op.get('responses', {})
               response_schema = responses.get('200', {}).get('content', {}).get('application/json', {}).get('schema', {})
-              print(f'::notice title=API {path}::request={json.dumps(body_schema)} response={json.dumps(response_schema)}')
+              schemas=doc.get('components', {}).get('schemas', {})
+              def resolve(x):
+                  ref=x.get('$ref','') if isinstance(x,dict) else ''
+                  return schemas.get(ref.rsplit('/',1)[-1],x) if ref else x
+              print(f'::notice title=API {method} {path}::request={json.dumps(resolve(body_schema))} response={json.dumps(resolve(response_schema))}')
           print('No server operation was performed.')
           PY
