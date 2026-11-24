@@ -91,6 +91,8 @@ jobs:
                   ('Server status', '/servers/3500167/console/status'),
                   ('Root files', '/servers/3500167/files?directory=%2F&limit=100'),
                   ('Plugins directory', '/servers/3500167/files?directory=%2Fplugins&limit=100'),
+                  ('Versions directory', '/servers/3500167/files?directory=%2Fversions&limit=100'),
+                  ('Version history', '/servers/3500167/files/content?path=%2Fversion_history.json'),
               ]:
                   try:
                       req = urllib.request.Request(audience + endpoint, headers={'Authorization': 'Bearer ' + access_token})
@@ -102,6 +104,10 @@ jobs:
                           safe = [x for x in names if re.fullmatch(r'[A-Za-z0-9._-]{1,100}', x)]
                           text = ', '.join(safe[:100]) or '(none)'
                       elif isinstance(payload, dict):
+                          if label == 'Version history' and isinstance(payload.get('content'), str):
+                              import re
+                              matches = re.findall(r'(?<![0-9])1\.21\.[0-9]+(?![0-9])', payload['content'])
+                              print('::notice title=Version history matches::' + ', '.join(sorted(set(matches))))
                           allowed = ('status', 'state', 'node_ready', 'name', 'identifier', 'version', 'software', 'application', 'lifecycle_status')
                           text = ', '.join(f'{k}={payload[k]}' for k in allowed if isinstance(payload.get(k), (str, int, bool)))[:1000] or 'response OK'
                       else:
