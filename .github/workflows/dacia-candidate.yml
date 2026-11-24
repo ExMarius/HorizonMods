@@ -1,0 +1,29 @@
+name: Prepare Dacia Logan model candidate
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['vehicle-plugin-horizon/next-vehicle/**', '.github/workflows/dacia-candidate.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test conversion and source preservation
+        run: python3 -m unittest discover -s vehicle-plugin-horizon/next-vehicle -p 'test_*.py' -v
+      - name: Build separate pack candidate from selected pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download horizon-offroader-45392102009 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp
+          python3 vehicle-plugin-horizon/next-vehicle/prepare_dacia.py /tmp/HorizonOffRoader-1.21.4.zip paper-vehicles/transfer/vehicle-reference/vehicle-fara-mentiune.zip /tmp/dacia-candidate.zip
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('/tmp/HorizonOffRoader-1.21.4.zip') as old, zipfile.ZipFile('/tmp/dacia-candidate.zip') as new:
+              for name in old.namelist():
+                  if not name.endswith('/'): assert old.read(name)==new.read(name), name
+              assert new.testzip() is None
+              print(f'::notice::All {len(old.namelist())} existing files preserved; Dacia candidate not deployed')
+          PY
