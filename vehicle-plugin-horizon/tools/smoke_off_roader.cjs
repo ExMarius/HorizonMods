@@ -13,7 +13,7 @@ bot.on('messagestr', s=>{ if(s.includes('Horizon Off Roader creat')) started=tru
 bot.once('spawn', ()=>{
   setTimeout(()=>bot.chat('/fill ~-12 ~-1 ~-12 ~12 ~-1 ~12 stone'),1000)
   setTimeout(()=>bot.chat('/fill ~-12 ~ ~-12 ~12 ~5 ~12 air'),2200)
-  setTimeout(()=>{ packsAtSpawn=packs; bot.chat('/vehicle spawn horizon_off_roader') },4000)
+  setTimeout(()=>{ packsAtSpawn=packs; if(packsAtSpawn!==1)return fail('expected one login pack, got '+packsAtSpawn); bot.chat('/vehicle spawn horizon_off_roader') },4000)
 })
 const interval=setInterval(()=>{
   if(done) {clearInterval(interval); return}
@@ -31,6 +31,7 @@ const interval=setInterval(()=>{
     setTimeout(()=>{
       clearInterval(input); bot._client.write('player_input',{inputs:{}})
       if(!bot.vehicle)return fail('rider left seat while driving')
+      if(packs!==packsAtSpawn)return fail('resource pack resent during driving')
       if(target.position.distanceTo(start)<0.3)return fail('vehicle did not move: '+target.position.distanceTo(start))
       bot.chat('/vehicle save')
       setTimeout(success,1000)
