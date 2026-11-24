@@ -59,6 +59,7 @@ public final class LandVehicleRig {
     private final Interaction interaction;
     private final ItemDisplay body;
     private HorizonOffRoaderRig horizonRig;
+    private DaciaHorizonWheels daciaWheels;
     private final ItemDisplay engine;
     private final ItemDisplay steering;
     private final ItemDisplay towBar;
@@ -210,6 +211,10 @@ public final class LandVehicleRig {
                 Collections.unmodifiableList(forkParts), storageChest, storageInteraction,
                 Collections.unmodifiableList(wheels), Collections.unmodifiableList(seats), all);
         if (horizon) rig.horizonRig = new HorizonOffRoaderRig(location, vehicleId, all);
+        if ("dacia_logan_police".equals(spec.id())) {
+            rig.daciaWheels = new DaciaHorizonWheels(location, vehicleId, all, spec);
+            rig.setWheelModel("standard_wheel");
+        }
         rig.update(location, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, false, 0);
         return rig;
     }
@@ -377,6 +382,10 @@ public final class LandVehicleRig {
             place(engine, renderAnchor, relativeToSeat(center, driverSeat), yaw, rotation,
                     new Vector3f(part.scale()), sourceRotation);
         }
+
+        if (daciaWheels != null) daciaWheels.update(renderAnchor, driverSeat, chassisRotation,
+                point(spec.wheeliePivot()), renderSteeringAngle, frontWheelRotation, rearWheelRotation,
+                wheelieAngle, bodyRoll);
 
         float steeringRotation = renderSteeringAngle / spec.maxSteeringAngle()
                 * spec.steeringVisualAngle();
@@ -866,6 +875,7 @@ public final class LandVehicleRig {
                 && (storageChest == null || storageChest.isValid())
                 && (storageInteraction == null || storageInteraction.isValid())
                 && (horizonRig == null || horizonRig.valid())
+                && (daciaWheels == null || daciaWheels.valid())
                 && wheels.stream().allMatch(wheel -> wheel.entity.isValid())
                 && seats.stream().allMatch(seat -> seat.anchor.isValid());
     }
@@ -966,6 +976,7 @@ public final class LandVehicleRig {
             return;
         }
         if (horizonRig != null) horizonRig.hideWheels();
+        if (daciaWheels != null) daciaWheels.hide();
         org.bukkit.inventory.ItemStack empty =
                 new org.bukkit.inventory.ItemStack(org.bukkit.Material.AIR);
         for (WheelDisplay wheel : wheels) {
@@ -989,7 +1000,9 @@ public final class LandVehicleRig {
             return;
         }
         if (horizonRig != null) horizonRig.setWheels(modelName);
-        ItemStack stack = model(modelName);
+        if (daciaWheels != null) daciaWheels.setModel(modelName);
+        ItemStack stack = daciaWheels != null && daciaWheels.handles(modelName)
+                ? new ItemStack(Material.AIR) : model(modelName);
         for (WheelDisplay wheel : wheels) {
             if (wheel.entity != null && wheel.entity.isValid()) {
                 wheel.entity.setItemStack(stack);
