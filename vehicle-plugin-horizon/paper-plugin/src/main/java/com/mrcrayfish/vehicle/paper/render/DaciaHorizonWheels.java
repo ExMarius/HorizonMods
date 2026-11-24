@@ -21,10 +21,15 @@ import java.util.UUID;
 final class DaciaHorizonWheels {
     private record Piece(ItemDisplay display, HorizonGroups.Group group, LandVehicleSpec.Wheel wheel) {}
     private final List<Piece> pieces = new ArrayList<>();
+    // Move only the visual wheels outward from the Logan body. The source
+    // Horizon tire is wider than the old tire; its inner half was buried in
+    // the cabin floor/bench. Keep the actual physics axles and seats unchanged.
+    private final float clearanceOffset;
     private boolean visible = true;
     private String model = "wheel_sports";
 
     DaciaHorizonWheels(Location location, UUID id, List<Entity> all, LandVehicleSpec spec) {
+        clearanceOffset = 2.0F * spec.bodyScale() / 16.0F;
         for (LandVehicleSpec.Wheel wheel : spec.wheels()) for (HorizonGroups.Group group : HorizonGroups.WHEEL_STANDARD) {
             ItemDisplay display = location.getWorld().spawn(location, ItemDisplay.class, d -> {
                 d.setItemStack(stack(group.name().replace("wheel_standard", "wheel_sports")));
@@ -58,13 +63,17 @@ final class DaciaHorizonWheels {
     }
     boolean handles(String name) { return "standard_wheel".equals(name) || "sports_wheel".equals(name); }
     boolean valid() { return pieces.stream().allMatch(p -> p.display().isValid()); }
+    static Vector3f visualCenter(LandVehicleSpec.Wheel w, float angle, float clearanceOffset) {
+        float visualOffset = w.halfWidthOffset() + w.side() * clearanceOffset;
+        return new Vector3f(w.axleX() + visualOffset * (float)Math.cos(angle), w.centerY(),
+                w.axleZ() - visualOffset * (float)Math.sin(angle));
+    }
     void update(Location anchor, Vector3f driverSeat, Quaternionf chassis, Vector3f pivot,
                 float steer, float frontSpin, float rearSpin, float wheelie, float roll) {
         for (Piece p : pieces) {
             LandVehicleSpec.Wheel w=p.wheel();
             float angle=(float)Math.toRadians(w.front() ? steer : 0.0F);
-            Vector3f center=new Vector3f(w.axleX()+w.halfWidthOffset()*(float)Math.cos(angle), w.centerY(),
-                    w.axleZ()-w.halfWidthOffset()*(float)Math.sin(angle));
+            Vector3f center=visualCenter(w, angle, clearanceOffset);
             center=SourceTransforms.chassisPoint(center, pivot, wheelie, roll).sub(driverSeat);
             Quaternionf animation=new Quaternionf(chassis).rotateY(angle)
                     .rotateX((float)Math.toRadians(-(w.front() ? frontSpin : rearSpin)));

@@ -165,3 +165,14 @@ pluginului și `garages.yml`. Instalarea a fost verificată: JAR SHA-256
 pack SHA-1 `566045f084e745bf4b76706435c573763ec07e74`. Restartul automat a
 fost respins de Falix (HTTP 403 `verification_required`); este necesar restart
 manual și verificare vizuală/audio în client.
+
+### Reparații roți, aripi și față
+
+`polish_logan_body.py` adaugă un perete la capătul compartimentului pedalelor,
+leagă partea de sus a pasajelor de aripi și reduce lățimea traversei de sub
+caroserie care intra în roți. Roțile Horizon sunt deplasate vizual lateral în
+mod simetric (fără modificarea axelor fizice) pentru a lăsa spațiu banchetei;
+poziția laterală urmează și unghiul de bracaj. Fața are grilă și detalii noi,
+iar pe capotă și aripi sunt accente albastre fără scris. Testele geometrice
+verifică spațiul în poziția statică; virajele și aspectul necesită verificare
+în client, nu sunt demonstrate de randările schematice sau testele de protocol.
