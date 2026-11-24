@@ -1,0 +1,58 @@
+name: Verify Falix connection
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify OIDC token exchange (no server changes)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          def request_json(request, label):
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      return json.load(response)
+              except urllib.error.HTTPError as exc:
+                  # Never log response bodies: they may include credentials.
+                  sys.exit(f'{label}: HTTP {exc.code}')
+              except (urllib.error.URLError, ValueError, TimeoutError) as exc:
+                  sys.exit(f'{label}: request or response failed ({type(exc).__name__})')
+
+          audience = 'https://client.falixnodes.net/api/v2'
+          url = os.environ['ACTIONS_ID_TOKEN_REQUEST_URL'] + '&' + urllib.parse.urlencode({'audience': audience})
+          request = urllib.request.Request(url, headers={
+              'Authorization': 'bearer ' + os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN'],
+          })
+          id_token = request_json(request, 'GitHub OIDC').get('value')
+          if not isinstance(id_token, str) or not id_token:
+              sys.exit('GitHub OIDC: token missing')
+          print('::add-mask::' + id_token, flush=True)
+          body = urllib.parse.urlencode({
+              'grant_type': 'urn:ietf:params:oauth:grant-type:token-exchange',
+              'subject_token_type': 'urn:ietf:params:oauth:token-type:id_token',
+              'connection': 'reg_541k4oqt2cDg61pRuQcRzOQie7',
+              'subject_token': id_token,
+          }).encode()
+          request = urllib.request.Request(audience + '/oauth2/token', data=body, method='POST')
+          access_token = request_json(request, 'Falix token exchange').get('access_token')
+          if not isinstance(access_token, str) or not access_token:
+              sys.exit('Falix token exchange: access token missing')
+          print('::add-mask::' + access_token, flush=True)
+          print('Falix accepted the GitHub OIDC token. No server operation was performed.')
+          PY
