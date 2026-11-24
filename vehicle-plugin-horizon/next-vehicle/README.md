@@ -137,3 +137,12 @@ celor două modele. Pozițiile pasagerilor/condusul nu sunt modificate. Auditul
 numeric pentru cuburi fără rotație reduce perechile de fețe coplanare suprapuse
 de la 36 la 0; acesta nu dovedește că toate glitch-urile sau golurile au dispărut
 în client. Este necesară o nouă verificare în joc.
+
+Livrare reparație: workflow-ul `45415904672` a trecut build-ul și testele pe
+servere temporare pentru ambele vehicule. A identificat și inclus `garages.yml`
+în backupul verificat `mcv-before-horizon-45415904672-`, fără să îl modifice.
+Instalarea JAR și configurației packului a fost verificată (JAR SHA-256
+`2943944c0db6bbd6ccf0d38f097f6e0af8721818ec4be21ddbb60221a8b212ec`,
+pack SHA-1 `9d73687b1be4272c02c7acd91ed8408e9f3faf02`). Falix a respins
+restartul automat cu HTTP 403 `verification_required`; restartul din panoul
+Falix și validarea vizuală/audio în client sunt necesare.
