@@ -59,5 +59,31 @@ jobs:
           if not isinstance(access_token, str) or not access_token:
               sys.exit('Falix token exchange: access token missing')
           print('::add-mask::' + access_token, flush=True)
-          print('Falix accepted the GitHub OIDC token. No server operation was performed.')
+          print('Falix accepted the GitHub OIDC token.')
+          found = []
+          for offset in range(0, 2000, 100):
+              req = urllib.request.Request(
+                  audience + '/servers?' + urllib.parse.urlencode({'limit': 100, 'offset': offset}),
+                  headers={'Authorization': 'Bearer ' + access_token},
+              )
+              page = request_json(req, 'List servers')
+              servers = page.get('data')
+              if not isinstance(servers, list):
+                  sys.exit('List servers: unexpected response format')
+              for server in servers:
+                  identifier = server.get('id') if isinstance(server, dict) else None
+                  if isinstance(identifier, (str, int)):
+                      found.append(str(identifier))
+              if not page.get('pagination', {}).get('has_more', False):
+                  break
+          else:
+              sys.exit('List servers: pagination limit reached')
+          print('Accessible server count:', len(found))
+          # Only expose numeric IDs; avoid printing account details or server names.
+          for identifier in found:
+              if identifier.isdecimal():
+                  print('Server ID:', identifier)
+              else:
+                  print('A server has a non-numeric ID; manual inspection required.')
+          print('No server operation was performed.')
           PY
