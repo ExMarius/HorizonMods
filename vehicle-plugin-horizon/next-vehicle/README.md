@@ -309,3 +309,11 @@ Coordonata longitudinală vizuală a roților a fost corectată în raport cu
 rotația de 180° a caroseriei afișate: centrele corespund astfel pasajelor
 autorate față/spate, în timp ce axele fizice rămân nemodificate. Testele
 matematice și de protocol nu confirmă aspectul sau virarea în client.
+
+Livrare `45442315730`: testele de eșantionare a panourilor, transformări,
+build și smoke Paper pentru Dacia și Off-Roader au trecut. Backup verificat cu
+prefix `mcv-before-horizon-45442315730-`, inclusiv garajele. JAR instalat
+SHA-256 `a2c0d24b67862b72c871d980fb0e20337b4bf3ec23cd2c00dfae7f76020b4852`,
+pack SHA-1 `2069088cc44c8c55157ed6baceba8eda16bcd9a0`. Falix a refuzat
+restartul automat HTTP 403 `verification_required`; restart manual și verificare
+vizuală a roților, inclusiv în viraj, sunt necesare.
