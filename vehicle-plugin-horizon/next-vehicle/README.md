@@ -86,3 +86,14 @@ SHA-256 `2943944c0db6bbd6ccf0d38f097f6e0af8721818ec4be21ddbb60221a8b212ec`
 și pack SHA-1 `c4b0ccc2ec583a50e2a5f99d3e9a9d6601d66f4f`. Restartul automat a
 fost refuzat HTTP 403: serverul trebuie repornit manual. Aspectul geamurilor,
 scaunelor, roților și al barei necesită verificare în client după restart.
+
+### Referință pentru noua caroserie
+
+Am consultat fotografii cu Logan II facelift de poliție, de exemplu
+https://commons.wikimedia.org/wiki/File:Romanian_Police_Dacia_Logan_II_Facelift_(2017)_1.jpg.
+Fotografia este folosită ca referință vizuală, nu ca textură în pack. Adaptarea
+își păstrează stilul Minecraft și cerința de a nu avea inscripția POLICE:
+față și spate remodelate, grilă și faruri noi, capotă lărgită, patru panouri
+de ușă, oglinzi noi și marcaje cu dungi/checker fără text. Structura cabinei și
+părți din modelul utilizatorului sunt reutilizate, nu este o scanare fidelă a
+modelului real. Pentru această versiune este necesară verificare în client.
