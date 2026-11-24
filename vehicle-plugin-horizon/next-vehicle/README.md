@@ -105,3 +105,14 @@ pack SHA-1 `8bd4d0043b7dde65dc761b87cfc667041acd8ec5`; perechea instalată a
 fost verificată. Falix a refuzat repornirea automată cu HTTP 403
 `verification_required`; este necesară repornirea manuală. Nu există încă o
 validare vizuală reală a noii caroserii sau a alinierii elementelor în client.
+
+### Caroserie nouă și interior
+
+`custom_logan_body.py` înlocuiește toate elementele vechii caroserii Dacia cu
+un model nou, desenat în coordonatele rigului existent, folosind texturile
+Horizon și resursele deja aprobate. Include două scaune față independente,
+banchetă, bord, consolă, schimbător, frână de mână și trei pedale **vizuale**;
+acestea nu adaugă controale mecanice. Are deschideri pentru roți și geamuri,
+girofar cu fazele sirenei existente și păstrează cele patru poziții de pasageri.
+Testele verifică geometric elementele și resursele, dar nu pot confirma poziția
+jucătorului sau aspectul în client; verificarea vizuală este obligatorie.
