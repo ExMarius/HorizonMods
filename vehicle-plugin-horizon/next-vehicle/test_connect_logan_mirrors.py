@@ -33,6 +33,15 @@ class MirrorsTest(unittest.TestCase):
         self.assertLess(swept,4.72)
         for x0,x1 in ((4.72,4.75),(11.25,11.28)):
             self.assertIn(c.cube([x0,.9,18.5],[x1,8.55,29.35],'trim'),self.e)
+    def test_restore_arch_to_pre_shift_geometry(self):
+        # The previously shifted arch was centred at -7.975, not the
+        # pre-shift -6.975. Axle offset -14.95 is relative to model centre 8.
+        for x0,x1 in ((-1.8,-.65),(16.65,17.8)):
+            self.assertIn(c.cube([x0,1.35,-15.3],[x1,5.5,-11.65],'body'),self.e)
+            self.assertIn(c.cube([x0,1.35,-2.3],[x1,5.5,19.0],'body'),self.e)
+            self.assertAlmostEqual((-11.65-2.3)/2,-6.975)
+            self.assertAlmostEqual(8-14.95,-6.95)
+
     def test_wing_mirrors_connected_and_central_mirror_under_roof(self):
         self.assertIn(c.cube([-1.8,8.65,16.],[-.65,9.5,17.5],'trim'),self.e)
         self.assertIn(c.cube([16.65,8.65,16.],[17.8,9.5,17.5],'trim'),self.e)
