@@ -68,3 +68,21 @@ SHA-1 `162d4dd9ff52d0980d1eb4adbe9057f024b779c7`. Backup verificat cu prefix
 Restartul automat a eșuat cu HTTP 403 `verification_required`, deci serverul
 necesită restart manual și poate încă rula vechiul JAR. Culorile, poziționarea
 marcajelor, efectul de girofar și sunetul trebuie verificate într-un client real.
+
+### Reconstrucție după feedback vizual
+
+Run `45406628530`: eliminate elementele textului original `POLICE`, marcajele
+cu text ale versiunii precedente, panourile opace ale geamurilor laterale din
+spate și vechea bară; păstrate restul elementelor sursei și forma caroseriei.
+Scaunele folosesc textura închisă Horizon Off-Roader, iar modelul primește
+marcaje fără text și o nouă bară cu faze alternante. Dacia folosește grupurile
+roții sports Horizon la axele ei; când se montează alt tip de roată la mecanic,
+roata off-road nativă rămâne disponibilă. Comenzile sirenei sunt neschimbate.
+
+Testele au trecut pentru pack, patru călători, condus, salvare, F și Off-Roader;
+nu înlocuiesc verificarea de randare în Minecraft. Falix a verificat backupul
+`mcv-before-horizon-45406628530-` (online, fără backup de lume), instalarea JAR
+SHA-256 `2943944c0db6bbd6ccf0d38f097f6e0af8721818ec4be21ddbb60221a8b212ec`
+și pack SHA-1 `c4b0ccc2ec583a50e2a5f99d3e9a9d6601d66f4f`. Restartul automat a
+fost refuzat HTTP 403: serverul trebuie repornit manual. Aspectul geamurilor,
+scaunelor, roților și al barei necesită verificare în client după restart.
