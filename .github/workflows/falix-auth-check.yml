@@ -85,5 +85,29 @@ jobs:
                   print('::notice title=Falix server ID::' + identifier)
               else:
                   print('::notice title=Falix server ID::Non-numeric ID; manual inspection required.')
+          if found == ['3500167']:
+              for label, endpoint in [
+                  ('Server', '/servers/3500167'),
+                  ('Server status', '/servers/3500167/console/status'),
+                  ('Root files', '/servers/3500167/files?directory=%2F&limit=100'),
+                  ('Plugins directory', '/servers/3500167/files?directory=%2Fplugins&limit=100'),
+              ]:
+                  try:
+                      req = urllib.request.Request(audience + endpoint, headers={'Authorization': 'Bearer ' + access_token})
+                      with urllib.request.urlopen(req, timeout=30) as response:
+                          payload = json.load(response).get('data')
+                      if isinstance(payload, list):
+                          names = [x.get('name') for x in payload if isinstance(x, dict) and isinstance(x.get('name'), str)]
+                          import re
+                          safe = [x for x in names if re.fullmatch(r'[A-Za-z0-9._-]{1,100}', x)]
+                          text = ', '.join(safe[:100]) or '(none)'
+                      elif isinstance(payload, dict):
+                          allowed = ('status', 'state', 'node_ready', 'name', 'identifier', 'version', 'software', 'application', 'lifecycle_status')
+                          text = ', '.join(f'{k}={payload[k]}' for k in allowed if isinstance(payload.get(k), (str, int, bool)))[:1000] or 'response OK'
+                      else:
+                          text = 'response OK'
+                      print(f'::notice title={label}::{text.replace(chr(10), " ").replace(chr(13), " ")}')
+                  except urllib.error.HTTPError as exc:
+                      print(f'::warning title={label}::HTTP {exc.code}')
           print('No server operation was performed.')
           PY
