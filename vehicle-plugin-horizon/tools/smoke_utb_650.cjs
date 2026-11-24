@@ -23,7 +23,7 @@ async function drive(target){
  if(!bot.vehicle || target.position.distanceTo(start)<.3)throw new Error('tractor did not drive')
  if(JSON.stringify(bot.inventory.slots)!==before)throw new Error('inventory changed while driving')
  if(packs!==originalPacks)throw new Error('pack resent after spawn')
- bot.chat('/vehicle save');await wait(1200);success()
+ bot.chat('/vehicle save');await wait(1200);console.log('POSITION tractor='+JSON.stringify(target.position)+' horse='+JSON.stringify(bot.vehicle?.position)+' yaw='+bot.entity.yaw);success()
 }
 const interval=setInterval(()=>{
  if(done){clearInterval(interval);return}

@@ -35,6 +35,7 @@ def main(jar):
                 garage=root/'plugins/MrCrayfishVehiclePlugin/garages.yml'
                 garage_data=garage.read_text() if garage.exists() else ''
                 if 'utb_650' not in data and 'utb_650' not in garage_data:
+                    print('BOT DIAGNOSTIC:',bot.stdout,bot.stderr,flush=True)
                     print('Active data:',data,'Garage data:',garage_data,flush=True)
                     lines=text.splitlines()
                     for i,line in enumerate(lines):
