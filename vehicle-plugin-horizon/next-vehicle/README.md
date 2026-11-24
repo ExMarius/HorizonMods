@@ -125,3 +125,15 @@ Perechea instalată pe disc a fost verificată: JAR SHA-256
 SHA-1 `0a0105a9f19d90d5cb37425265692a333012379b`. Falix a refuzat restartul
 automat cu HTTP 403; este necesară repornirea manuală. Caroseria, scaunele,
 interiorul și alinierea roților nu au fost verificate vizual în client.
+
+### Reparații de geometrie în urma feedbackului
+
+`repair_logan_body.py` elimină cele patru panouri de ușă duplicate, depărtează
+liveria de suprafață, adaugă o podea continuă și înlocuiește panoul de capotă
+care intra în bara din față cu secțiuni legate. Cele două scaune față sunt
+separate, plasate după stâlpul dintre uși spre fața mașinii și redimensionate
+la dimensiunile fizice ale scaunelor Horizon Off-Roader, ținând cont de scara
+celor două modele. Pozițiile pasagerilor/condusul nu sunt modificate. Auditul
+numeric pentru cuburi fără rotație reduce perechile de fețe coplanare suprapuse
+de la 36 la 0; acesta nu dovedește că toate glitch-urile sau golurile au dispărut
+în client. Este necesară o nouă verificare în joc.
