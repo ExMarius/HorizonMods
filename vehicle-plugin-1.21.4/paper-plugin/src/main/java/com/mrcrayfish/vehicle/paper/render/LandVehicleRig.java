@@ -228,6 +228,30 @@ public final class LandVehicleRig {
     /** BL16: scaunul poate fi si ARMOR STAND (entitate vie fara AI, deci nu se
      *  roteste dupa camera cum face calul). Implicit: calul = varianta C
      *  validata de user; comutabil live cu /vehicle seatkind. */
+    // Off by default: user can compare the stable display interpolation with
+    // same-tick updates. This does not claim vanilla client visual parity.
+    private static volatile VehicleSyncMode syncMode = VehicleSyncMode.NORMAL;
+
+    public static VehicleSyncMode syncMode() { return syncMode; }
+
+    public static void setSyncMode(VehicleSyncMode mode) {
+        syncMode = java.util.Objects.requireNonNull(mode);
+    }
+
+    private void updateSyncMode(VehicleSyncMode mode) {
+        for (Entity entity : entities) {
+            if (entity instanceof ItemDisplay display && display.isValid()) {
+                if (display.getTeleportDuration() != mode.teleportTicks()) {
+                    display.setTeleportDuration(mode.teleportTicks());
+                }
+                if (display.getInterpolationDuration() != mode.transformTicks()) {
+                    display.setInterpolationDelay(0);
+                    display.setInterpolationDuration(mode.transformTicks());
+                }
+            }
+        }
+    }
+
     private static volatile String seatKind = "cal";
 
     /* BL66 (confirmat de user: "/vehicle boatdemo face 1 la 1 vizualul din mod"):
@@ -642,6 +666,8 @@ public final class LandVehicleRig {
             return;
         }
 
+        VehicleSyncMode mode = syncMode;
+        updateSyncMode(mode);
         float yaw = root.getYaw();
         Quaternionf chassisRotation = usesAircraftBodyRotation()
                 ? SourceTransforms.aircraftRotation(wheelieAngle, bodyRoll)
@@ -1007,7 +1033,13 @@ public final class LandVehicleRig {
          * pozitia de ACUM, apare cu un tick inaintea masinii => "pe alt loc".
          * Solutie: scaunul primeste pozitia din tickul precedent (aceeasi
          * intarziere ca desenul masinii). */
-        if (variantGlueEveryTick && !seat.isInsideVehicle() && !(seat instanceof org.bukkit.entity.Boat)) {
+        if (syncMode == VehicleSyncMode.DIRECT && !seat.isInsideVehicle()
+                && !(seat instanceof org.bukkit.entity.Boat)) {
+            // Keep the actual mount and passenger together at this tick's anchor.
+            // Boat physics is deliberately untouched by this experiment.
+            seat.teleport(seatTarget, TeleportFlag.EntityState.RETAIN_PASSENGERS);
+            carrier.boatDelayReady = false;
+        } else if (variantGlueEveryTick && !seat.isInsideVehicle() && !(seat instanceof org.bukkit.entity.Boat)) {
             Location delayed = carrier.boatDelayReady
                     ? carrier.boatDelayLocation.clone() : seatTarget.clone();
             delayed.setYaw(carrier.boatDelayReady ? carrier.boatDelayYaw : seatTarget.getYaw());
