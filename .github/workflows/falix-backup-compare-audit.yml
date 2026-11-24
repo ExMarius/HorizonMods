@@ -1,0 +1,45 @@
+name: Inspect Paper 1.21.4 rollback candidate
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: [.github/workflows/falix-backup-compare-audit.yml]
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch candidate release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download vehicle-plugin-prototype-v0.1.0 --repo ExMarius/MrCrayfishVehicleMod --pattern 'MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar' --dir /tmp
+      - name: Check candidate and backup API
+        run: |
+          python3 - <<'PY'
+          import hashlib,zipfile,importlib.util,json,re,urllib.request
+          p='/tmp/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar'
+          data=open(p,'rb').read()
+          assert hashlib.sha256(data).hexdigest()=='cdc946652883d728ed5413d97cbcc968f4cce0486772087c9da89da683fd54b3'
+          with zipfile.ZipFile(p) as z:
+              plugin=z.read('plugin.yml').decode()
+              main=z.read('com/mrcrayfish/vehicle/paper/VehiclePlugin.class')
+              ver=re.search(r"(?m)^api-version:.*",plugin).group(0)
+              print('::notice title=Candidate JAR::'+ver+'; Java major '+str(int.from_bytes(main[6:8],'big')))
+              config=z.read('config.yml').decode()
+              for k in ('rider-height-correction','glue-every-tick','url','sha1'):
+                  print('::notice title=Candidate config '+k+'::'+('present' if re.search(r'(?m)^\s*'+re.escape(k)+r':',config) else 'absent'))
+          spec=importlib.util.spec_from_file_location('falix','paper-vehicles/deploy/falix_auto_update.py'); f=importlib.util.module_from_spec(spec); spec.loader.exec_module(f)
+          api=f.Falix(f.login())
+          for dirname in ('/plugins/MrCrayfishVehiclePlugin','/plugins'):
+              import urllib.parse
+              entries=api.api('/files?'+urllib.parse.urlencode({'directory':dirname,'limit':100}))
+              safe=[x.get('name') for x in entries if isinstance(x,dict) and re.fullmatch(r'[A-Za-z0-9._-]{1,100}',str(x.get('name','')))]
+              print('::notice title=Directory '+dirname+'::'+', '.join(safe))
+          with urllib.request.urlopen(f.BASE+'/openapi.json', timeout=30) as r: doc=json.load(r)
+          for path in ('/servers/{server_id}/files/compress','/servers/{server_id}/files/archive'):
+              op=doc['paths'][path].get('post',doc['paths'][path].get('get',{})); schema=op.get('requestBody',{}).get('content',{}).get('application/json',{}).get('schema',{}); ref=schema.get('$ref','').split('/')[-1];schema=doc['components']['schemas'].get(ref,schema)
+              print('::notice title=Schema '+path+'::'+json.dumps(schema))
+          PY
