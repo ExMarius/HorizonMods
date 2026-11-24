@@ -333,3 +333,13 @@ instalatorul s-a oprit înainte de backup și modificări: Falix raporta serveru
 într-o stare de tranziție. Inspecția read-only `45445936653` a raportat starea
 `sleeping`. Nu presupune că serverul este oprit în siguranță; pornește-l din
 panou și reia instalarea numai după ce starea devine `running` sau `offline`.
+
+### Conturul roților spate și revenirea la pozițiile cerute
+
+`fix_logan_rear_arch.py` pornește de la perechea instalată `45442315730` și
+include modificările de oglinzi pregătite, dar neinstalate în `45444972812`.
+Roțile vizuale revin la pozițiile vechi. Conturul și infill-ul aripilor spate
+sunt recalculate față de centrul roții readuse, iar peretele și placa de sub
+spate care intrau în volumul roții sunt retrase; sunt păstrate și panourile
+întunecate din spatele roților. Testele verifică îmbinările și o limită
+conservatoare statică; rezultatul trebuie inspectat în Minecraft.
