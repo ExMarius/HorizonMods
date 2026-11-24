@@ -57,6 +57,9 @@ final class DaciaHorizonWheels {
         return new Vector3f(w.axleX() + visualOffset * (float)Math.cos(angle), w.centerY(),
                 w.axleZ() - visualOffset * (float)Math.sin(angle));
     }
+    // Match the Horizon Off-Roader sports wheel dimensions without changing
+    // the Logan's axle positions, steering offset, or physics/contact values.
+    static Vector3f visualScale() { return new Vector3f(1.55F, 1.56F, 1.56F); }
     void update(Location anchor, Vector3f driverSeat, Quaternionf chassis, Vector3f pivot,
                 float steer, float frontSpin, float rearSpin, float wheelie, float roll) {
         for (Piece p : pieces) {
@@ -69,7 +72,7 @@ final class DaciaHorizonWheels {
             p.display().teleport(anchor, TeleportFlag.EntityState.RETAIN_PASSENGERS);
             p.display().setRotation(anchor.getYaw(),0);
             p.display().setTransformation(new Transformation(center, animation,
-                    new Vector3f(w.scaleX(),w.scaleY(),w.scaleZ()),
+                    visualScale(),
                     new Quaternionf().rotateY((float)Math.PI)));
         }
     }
