@@ -21,6 +21,7 @@ jobs:
           import json, urllib.parse
           import falix_auto_update as f
           api=f.Falix(f.login())
+          print('::notice title=Server status::'+str(api.status()), flush=True)
           entries=api.api('/files?'+urllib.parse.urlencode({'directory':'/plugins/MrCrayfishVehiclePlugin','limit':100}))
           for e in entries:
               print('::notice title=Plugin entry::'+json.dumps(e,ensure_ascii=True).replace('%','%25'))
