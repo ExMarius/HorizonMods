@@ -156,3 +156,12 @@ este avansat spre capotă. Pardoseala, fețele interioare ale ușilor și antena
 înclinată invers sunt incluse în toate fazele girofarului. Testele verifică
 continuitatea și dimensiunile geometrice, dar nu înlocuiesc un test vizual cu
 roțile și jucătorii în client.
+
+Livrarea ajustării: `45418479212` a trecut testele geometrice, build-ul,
+testele de protocol ale ambelor vehicule și verificarea că restul packului nu
+s-a schimbat. Backupul `mcv-before-horizon-45418479212-` include datele
+pluginului și `garages.yml`. Instalarea a fost verificată: JAR SHA-256
+`2943944c0db6bbd6ccf0d38f097f6e0af8721818ec4be21ddbb60221a8b212ec`,
+pack SHA-1 `566045f084e745bf4b76706435c573763ec07e74`. Restartul automat a
+fost respins de Falix (HTTP 403 `verification_required`); este necesar restart
+manual și verificare vizuală/audio în client.
