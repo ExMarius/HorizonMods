@@ -317,3 +317,13 @@ SHA-256 `a2c0d24b67862b72c871d980fb0e20337b4bf3ec23cd2c00dfae7f76020b4852`,
 pack SHA-1 `2069088cc44c8c55157ed6baceba8eda16bcd9a0`. Falix a refuzat
 restartul automat HTTP 403 `verification_required`; restart manual și verificare
 vizuală a roților, inclusiv în viraj, sunt necesare.
+
+### Repoziționare roți și oglinzi
+
+În urma feedbackului, `DaciaHorizonWheels` revine la pozițiile vizuale de axă
+anterioare inversării longitudinale. `connect_logan_mirrors.py` folosește panouri
+închise la culoare în spatele roților pentru a ascunde interiorul, fără a
+muta roțile în afară, cu spațiu suplimentar calculat pentru bracajul față.
+Suporturile ating oglinzile laterale și caroseria; oglinda centrală este un
+model decorativ, fără reflexie dinamică. Testele matematice și de protocol nu
+înlocuiesc verificarea vizuală a roților în viraj și a montajului oglinzilor.
