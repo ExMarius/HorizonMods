@@ -351,3 +351,18 @@ garaje. Instalate și verificate: JAR SHA-256
 SHA-1 `88c00d83de155aa9dba76cea5a0aaac6c174b4db`. Restartul Falix a fost
 refuzat HTTP 403 `verification_required`; restart manual și verificare
 vizuală în client rămân necesare.
+
+### Horizon Go-Kart separat
+
+Integrarea `horizon_go_kart` folosește modelele Horizon originale împărțite în
+grupuri, fără înlocuirea `go_kart`, `horizon_off_roader` sau Dacia. Pozițiile
+vizuale sunt preluate din `mixins/gokart_native/runtime.rs`; fizica și poziția
+jucătorului în Paper sunt adaptări și necesită verificare în client vanilla.
+Testele pe server temporar au verificat spawn, montare, mișcare, inventar,
+salvare/reîncărcare, precum și Dacia și Off-Roaderul; nu redau modelele.
+
+Livrarea Actions `45482837773` a verificat backupul (inclusiv garajele), JAR-ul
+`23976bd0c8231d841f2df06b1fc1487d5fb6aa6dc2a98cd702bff6ca27b64e78`
+și packul SHA-1 `17f288e0a4abd966c161150fd10edf2502249272`. Falix a refuzat
+restartul cu HTTP 403 `verification_required`; pornirea sau repornirea trebuie
+făcută din panou. Aspectul în joc rămâne neconfirmat.
