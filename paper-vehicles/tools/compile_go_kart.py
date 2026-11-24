@@ -16,6 +16,8 @@ ROOT = Path(__file__).resolve().parents[2]
 ASSETS = ROOT / 'content/assets/gokart'
 PARTS = ('go_kart_body', 'wheel_standard', 'go_kart_steering_wheel', 'engine_iron')
 LEGAL = {-45, -22.5, 0, 22.5, 45}
+# Optional per-model source overrides; texture paths still come from Horizon.
+MODEL_OVERRIDES = {}
 
 
 def build(output):
@@ -28,7 +30,7 @@ def build(output):
     (output / 'LICENSE.txt').write_bytes((ROOT / 'LICENSE').read_bytes())
     descriptor = {'status': 'experimental, not playable', 'parts': {}}
     for name in PARTS:
-        source = json.loads((ASSETS / 'models/block' / (name + '.json')).read_text())
+        source = json.loads(MODEL_OVERRIDES.get(name, ASSETS / 'models/block' / (name + '.json')).read_text())
         textures = {}
         for slot, ref in source['textures'].items():
             if not ref.startswith('gokart:block/'):

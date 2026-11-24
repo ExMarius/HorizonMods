@@ -1,0 +1,47 @@
+name: Verify user Go-Kart edit
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['.github/workflows/horizon-user-kart-check.yml', 'vehicle-plugin-horizon/tools/apply_user_kart_body.py', 'vehicle-plugin-horizon/next-vehicle/assets/user-edits/go_kart_body.json']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify pack patch tests
+        run: |
+          python3 -m unittest discover -s vehicle-plugin-horizon/tools -p test_apply_user_kart_body.py -v
+          python3 -m unittest discover -s vehicle-plugin-horizon/tools -p test_add_horizon_kart_pack.py -v
+      - name: Patch deployed pack with no unrelated changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download horizon-offroader-45488524699 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
+          python3 vehicle-plugin-horizon/tools/apply_user_kart_body.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/kart-pack.zip
+          python3 - <<'PY'
+          import zipfile
+          allowed={f'assets/horizonvehicles/models/item/go_kart_body_part_{i:02}.json' for i in (3,4,6,7)}
+          with zipfile.ZipFile('/tmp/base/HorizonOffRoader-1.21.4.zip') as a,zipfile.ZipFile('/tmp/kart-pack.zip') as b:
+              assert a.namelist()==b.namelist() or set(a.namelist())==set(b.namelist())
+              for n in a.namelist():
+                  if n not in allowed: assert a.read(n)==b.read(n),n
+          PY
+      - name: Build and run unit tests
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build
+      - name: Test vehicles on disposable servers
+        run: |
+          npm install --prefix /tmp/horizon-test mineflayer@4.39.0
+          export NODE_PATH=/tmp/horizon-test/node_modules
+          for test in smoke_horizon_kart smoke_police smoke_off_roader; do
+            python3 "vehicle-plugin-horizon/tools/${test}.py" vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
+          done

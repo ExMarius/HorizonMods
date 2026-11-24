@@ -15,6 +15,7 @@ def build(data,expected=BASE_SHA1):
         if len(z.namelist())!=len(set(z.namelist())):raise ValueError('duplicate pack entries')
         files={n:z.read(n) for n in z.namelist()}
     converter.PARTS=PARTS
+    converter.MODEL_OVERRIDES={"go_kart_body":ROOT/"vehicle-plugin-horizon/next-vehicle/assets/user-edits/go_kart_body.json"}
     with tempfile.TemporaryDirectory() as td:
         root=Path(td);desc=converter.build(root)
         for path in root.rglob('*'):
