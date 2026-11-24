@@ -37,6 +37,14 @@ def rebuild(data,expected=BASE_SHA1):
         # Discrete lower sill trim follows the existing door rectangle.
         m['elements'].append({'from':[x,1.3,-2.3], 'to':[x,1.8,15.4],
                               'faces':{side:{'texture':'#trim','uv':[0,0,16,16]}}})
+    # Fine continuation marks on front and rear fenders, above the wheel arches.
+    for side,x in [('west',-2.025),('east',18.025)]:
+        for z0,z1 in ((-10.2,-3.8),(18.0,26.5)):
+            m['elements'].append({'from':[x,6.45,z0], 'to':[x,7.25,z1],
+                                  'faces':{side:{'texture':'#livery','uv':[0,5,16,11]}}})
+    # Narrow word-free bonnet graphic sits just above the flat source bonnet.
+    m['elements'].append({'from':[4.5,8.985,20.8], 'to':[11.5,8.985,25.4],
+                          'faces':{'up':{'texture':'#livery','uv':[0,0,16,16]}}})
     # Sleek roof bar replacing every original roof-light piece.
     m['elements'] += [cube([2,16.7,7.0],[3,17.2,9.0],'trim'),
                       cube([13,16.7,7.0],[14,17.2,9.0],'trim'),
