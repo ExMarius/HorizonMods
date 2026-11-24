@@ -224,3 +224,14 @@ JAR instalat SHA-256 `f57d6bece18145136b457e8198fdba1f2d72e8daaf071d7bc9f9ffeaa6
 pack SHA-1 `e2df98516df738c740e1160c81ce8dc0cd870963`. Falix a respins
 restartul automat HTTP 403 `verification_required`; este necesar restart
 manual și o verificare vizuală și audio în client.
+
+### Îmbinările banchetei și barele complete
+
+`detail_police_logan.py` prelungește stâlpii existenți de la geamuri până la
+podea pe conturul lor original, duce grilajul de la podea la acoperiș, extinde
+capacul portbagajului cu un pixel și unește bancheta cu căptușelile pasajelor
+și cotierele. Un perete de închidere acoperă partea dinspre portbagaj. Pentru
+roata din stânga, compunerea rotațiilor este corectată: oglindirea se aplică
+modelului asamblat, nu pieselor înainte de rotație. Pozițiile axelor rămân
+neschimbate. Testele matematice verifică dimensiuni statice și transformări;
+aspectul și spațiul la viraj trebuie verificate în client.

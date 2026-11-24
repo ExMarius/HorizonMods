@@ -63,6 +63,14 @@ final class DaciaHorizonWheels {
         return new Vector3f(w.axleX() + visualOffset * (float)Math.cos(angle), w.centerY(),
                 w.axleZ() - visualOffset * (float)Math.sin(angle));
     }
+    // Mirror the assembled group, not each raw group before its rotation.
+    // Otherwise the 67.5-degree tire segment turns the opposite way from the
+    // baked 22.5/45-degree segments on one side and overlaps an existing spoke.
+    static Quaternionf wheelGroupRotation(Quaternionf groupRotation, int side) {
+        Quaternionf itemYaw = new Quaternionf();
+        if (side < 0) itemYaw.rotateY((float)Math.PI);
+        return itemYaw.mul(groupRotation);
+    }
     void update(Location anchor, Vector3f driverSeat, Quaternionf chassis, Vector3f pivot,
                 float steer, float frontSpin, float rearSpin, float wheelie, float roll) {
         for (Piece p : pieces) {
@@ -74,9 +82,7 @@ final class DaciaHorizonWheels {
                     .rotateX((float)Math.toRadians(-(w.front() ? frontSpin : rearSpin)));
             Transformation t=HorizonPartTransform.group(center,new Vector3f(w.scaleX(),w.scaleY(),w.scaleZ()),
                     p.group().origin(),p.group().rotation(),animation);
-            Quaternionf right=new Quaternionf(t.getRightRotation());
-            if (w.side()>0) right.rotateY((float)Math.PI);
-            right.rotateY((float)Math.PI);
+            Quaternionf right=wheelGroupRotation(t.getRightRotation(), w.side());
             p.display().teleport(anchor, TeleportFlag.EntityState.RETAIN_PASSENGERS);
             p.display().setRotation(anchor.getYaw(),0);
             p.display().setTransformation(new Transformation(t.getTranslation(),t.getLeftRotation(),t.getScale(),right));
