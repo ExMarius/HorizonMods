@@ -37,10 +37,11 @@ def main(jar):
                 if 'utb_650' not in data and 'utb_650' not in garage_data:
                     print('Active data:',data,'Garage data:',garage_data,flush=True)
                     lines=text.splitlines()
-                    print('Relevant server lines:',*[line for line in lines if any(x in line.lower() for x in ('utb','vehicle','horizonbot','garaj','watchdog'))][:90],sep='\n',flush=True)
                     for i,line in enumerate(lines):
                         if 'Current Thread: Server thread' in line:
-                            print('SERVER THREAD:',*lines[i:i+45],sep='\n',flush=True)
+                            print('SERVER THREAD:',*lines[i:i+32],sep='\n',flush=True)
+                            break
+                    print('Relevant server lines:',*[line for line in lines if any(x in line.lower() for x in ('utb','vehicle','horizonbot','garaj','watchdog'))][:30],sep='\n',flush=True)
                     raise RuntimeError('vehicle missing from both active and garage persisted data')
                 print('Persisted in '+('active vehicles' if 'utb_650' in data else 'garage'),flush=True)
                 if 'Could not pass event' in text or 'Exception in server tick loop' in text: raise RuntimeError('server reported event or tick failure')
