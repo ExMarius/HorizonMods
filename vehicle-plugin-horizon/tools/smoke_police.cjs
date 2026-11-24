@@ -64,6 +64,10 @@ async function testPassengers(target) {
   if(sirenOn!==2 || sirenOff!==4) throw new Error('siren command toggle failed')
   const after=[bot.heldItem?.name,bot.heldItem?.count,bot.inventory.slots[45]?.name,bot.inventory.slots[45]?.count]
   if(before.join(',')!==after.join(',')) throw new Error('F changed inventory: '+after)
+  bot.chat('/item replace entity HorizonBot weapon.mainhand with minecraft:air')
+  bot.chat('/item replace entity HorizonBot weapon.offhand with minecraft:air')
+  await wait(700); pressF(); await wait(700); bot.chat('/vehicle sirena'); await wait(700)
+  if(sirenOff!==5) throw new Error('F failed with empty hands')
   bot.chat('/vehicle save'); await wait(1000); success()
 }
 const interval=setInterval(()=>{
