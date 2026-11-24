@@ -1,0 +1,24 @@
+name: Compare November Paper 1.21.4 release
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: [.github/workflows/falix-compare-nov10.yml, paper-vehicles/deploy/falix_compare_nov10.py]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: falix-vehicle-deploy
+  cancel-in-progress: false
+jobs:
+  compare:
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods' && startsWith(github.event.head_commit.message, 'Compare November 1.21.4 release on Falix')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download exact November release JAR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download vehicle-plugin-prototype-v0.1.0 --repo ExMarius/MrCrayfishVehicleMod --pattern 'MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar' --dir /tmp
+      - name: Verify backups and install comparison build
+        run: python3 paper-vehicles/deploy/falix_compare_nov10.py /tmp/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
