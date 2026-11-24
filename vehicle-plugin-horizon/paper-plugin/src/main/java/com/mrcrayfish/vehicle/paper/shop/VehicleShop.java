@@ -24,6 +24,7 @@ public final class VehicleShop {
     static {
         DEFAULT_PRICES.put("shopping_cart", 100.0D);
         DEFAULT_PRICES.put("go_kart", 2000.0D);
+        DEFAULT_PRICES.put("horizon_go_kart", 2000.0D);
         DEFAULT_PRICES.put("lawn_mower", 2000.0D);
         DEFAULT_PRICES.put("bumper_car", 2000.0D);
         DEFAULT_PRICES.put("mini_bike", 2000.0D);

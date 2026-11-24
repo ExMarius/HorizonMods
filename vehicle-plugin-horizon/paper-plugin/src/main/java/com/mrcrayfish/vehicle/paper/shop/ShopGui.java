@@ -253,6 +253,7 @@ public final class ShopGui {
             // GUI icon: the dedicated scale-to-slot model (visuals backed by vehicle_icon/<id>).
             meta.setItemModel("horizon_off_roader".equals(spec.id())
                     ? new NamespacedKey("horizonvehicles", "off_roader_body_part_00")
+                    : "horizon_go_kart".equals(spec.id()) ? new NamespacedKey("horizonvehicles", "go_kart_body_part_00")
                     : "dacia_logan_police".equals(spec.id()) ? new NamespacedKey("daciapolice", "body")
                     : new NamespacedKey("vehicle", "vehicle_icon/" + spec.id()));
             meta.displayName(Component.text(spec.displayName(), NamedTextColor.WHITE,

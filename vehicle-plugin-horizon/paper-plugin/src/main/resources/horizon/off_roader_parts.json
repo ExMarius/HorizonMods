@@ -301,6 +301,293 @@
         },
         "element_count": 1
       }
+    ],
+    "go_kart_body": [
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_00",
+        "rotation": null,
+        "element_count": 44
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_01",
+        "rotation": {
+          "axis": "y",
+          "angle": -8.0,
+          "origin": [
+            8.4,
+            2.75,
+            17.5
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_02",
+        "rotation": {
+          "axis": "y",
+          "angle": 8.0,
+          "origin": [
+            7.6,
+            2.75,
+            17.5
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_03",
+        "rotation": {
+          "axis": "y",
+          "angle": 20.0,
+          "origin": [
+            15.4,
+            1.8,
+            25.9
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_04",
+        "rotation": {
+          "axis": "y",
+          "angle": -20.0,
+          "origin": [
+            0.6,
+            1.8,
+            25.9
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_05",
+        "rotation": {
+          "axis": "x",
+          "angle": 12.0,
+          "origin": [
+            8.0,
+            2.7,
+            28.5
+          ]
+        },
+        "element_count": 2
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_06",
+        "rotation": {
+          "axis": "y",
+          "angle": 18.0,
+          "origin": [
+            14.4,
+            2.6,
+            26.0
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_07",
+        "rotation": {
+          "axis": "y",
+          "angle": -18.0,
+          "origin": [
+            1.6,
+            2.6,
+            26.0
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_08",
+        "rotation": {
+          "axis": "x",
+          "angle": 14.0,
+          "origin": [
+            8.0,
+            4.1,
+            23.6
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_09",
+        "rotation": {
+          "axis": "x",
+          "angle": 22.0,
+          "origin": [
+            8.0,
+            6.4,
+            16.4
+          ]
+        },
+        "element_count": 2
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_10",
+        "rotation": {
+          "axis": "y",
+          "angle": -16.0,
+          "origin": [
+            17.0,
+            3.4,
+            12.9
+          ]
+        },
+        "element_count": 2
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_11",
+        "rotation": {
+          "axis": "y",
+          "angle": 16.0,
+          "origin": [
+            -1.0,
+            3.4,
+            12.9
+          ]
+        },
+        "element_count": 2
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_12",
+        "rotation": {
+          "axis": "x",
+          "angle": -6.0,
+          "origin": [
+            8.0,
+            3.3,
+            2.0
+          ]
+        },
+        "element_count": 2
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_13",
+        "rotation": {
+          "axis": "x",
+          "angle": -5.0,
+          "origin": [
+            8.0,
+            14.0,
+            1.8
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_14",
+        "rotation": {
+          "axis": "x",
+          "angle": 26.0,
+          "origin": [
+            8.0,
+            8.8,
+            13.3
+          ]
+        },
+        "element_count": 2
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_15",
+        "rotation": {
+          "axis": "x",
+          "angle": 30.0,
+          "origin": [
+            8.0,
+            10.5,
+            10.95
+          ]
+        },
+        "element_count": 2
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_16",
+        "rotation": {
+          "axis": "x",
+          "angle": -18.0,
+          "origin": [
+            10.8,
+            2.0,
+            16.0
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_body_part_17",
+        "rotation": {
+          "axis": "x",
+          "angle": -18.0,
+          "origin": [
+            5.2,
+            2.0,
+            16.0
+          ]
+        },
+        "element_count": 1
+      }
+    ],
+    "engine_iron": [
+      {
+        "item_model": "horizonvehicles:engine_iron_part_00",
+        "rotation": null,
+        "element_count": 6
+      },
+      {
+        "item_model": "horizonvehicles:engine_iron_part_01",
+        "rotation": {
+          "axis": "x",
+          "angle": -18.0,
+          "origin": [
+            8.0,
+            7.2,
+            8.0
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:engine_iron_part_02",
+        "rotation": {
+          "axis": "x",
+          "angle": 10.0,
+          "origin": [
+            8.0,
+            10.5,
+            5.8
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:engine_iron_part_03",
+        "rotation": {
+          "axis": "x",
+          "angle": 12.0,
+          "origin": [
+            6.2,
+            7.9,
+            6.0
+          ]
+        },
+        "element_count": 3
+      },
+      {
+        "item_model": "horizonvehicles:engine_iron_part_04",
+        "rotation": {
+          "axis": "x",
+          "angle": 12.0,
+          "origin": [
+            9.8,
+            7.9,
+            6.0
+          ]
+        },
+        "element_count": 3
+      }
     ]
   }
 }

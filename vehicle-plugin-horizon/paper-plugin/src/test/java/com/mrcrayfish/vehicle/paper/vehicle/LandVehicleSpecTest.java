@@ -28,6 +28,18 @@ class LandVehicleSpecTest {
     }
 
     @Test
+    void horizonGoKartIsSeparateWithSourceWheelLayout() {
+        var spec = LandVehicleSpec.byId("horizon_go_kart");
+        assertEquals(LandVehicleSpec.HORIZON_GO_KART, spec);
+        assertEquals(LandVehicleSpec.GO_KART, LandVehicleSpec.byId("go_kart"));
+        assertEquals(4, spec.wheels().size());
+        assertEquals(1, spec.seats().size());
+        assertEquals(11.64F / 16F, spec.wheels().getFirst().axleX(), EPSILON);
+        assertEquals(11.2F * 1.18F / 16F, spec.firstFrontWheel().axleZ(), EPSILON);
+        assertEquals(4_000F, spec.energyCapacity(), EPSILON);
+    }
+
+    @Test
     void policeDaciaPreservesSourceSeatsAndWheels() {
         LandVehicleSpec spec = LandVehicleSpec.byId("dacia_logan_police");
         assertEquals(LandVehicleSpec.DACIA_LOGAN_POLICE, spec);
@@ -409,7 +421,7 @@ class LandVehicleSpecTest {
         assertEquals(180.0F, spec.seats().get(3).yawOffset(), EPSILON);
         assertFalse(spec.canTowTrailers());
         assertEquals(spec, LandVehicleSpec.byId("golf_cart"));
-        assertEquals(25, LandVehicleSpec.ids().size());
+        assertEquals(26, LandVehicleSpec.ids().size());
     }
 
     @Test

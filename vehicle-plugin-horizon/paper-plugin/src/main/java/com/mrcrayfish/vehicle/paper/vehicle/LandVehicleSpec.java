@@ -81,6 +81,23 @@ public record LandVehicleSpec(
             null, null, List.of(), false
     );
 
+    /** Separate Horizon kart: source display geometry and Paper driving adaptation. */
+    public static final LandVehicleSpec HORIZON_GO_KART = new LandVehicleSpec(
+            "horizon_go_kart", "Horizon Go Kart", "horizon_go_kart_anchor",
+            1.86F, 0.9F, 1.06F, 1.0F, 0F, 0F,
+            18F, 25F, 11.2F * 1.18F / 16F, -11.4F * 1.18F / 16F, 5F,
+            4_000F, .5F, .9F, 2F, "vehicle:entity.go_kart.engine",
+            true, new Point(0F, .48F, -18.4F * 1.18F / 16F),
+            null, null, null, null, List.of(),
+            List.of(
+                    new Wheel(1, true, 11.64F / 16F, .295F, 11.2F * 1.18F / 16F, 0F, 0F, 1.15F, 1.18F, 1.18F),
+                    new Wheel(-1, true, -11.64F / 16F, .295F, 11.2F * 1.18F / 16F, 0F, 0F, 1.15F, 1.18F, 1.18F),
+                    new Wheel(1, false, 12.16F / 16F, .320F, -11.4F * 1.18F / 16F, 0F, 0F, 1.34F, 1.28F, 1.28F),
+                    new Wheel(-1, false, -12.16F / 16F, .320F, -11.4F * 1.18F / 16F, 0F, 0F, 1.34F, 1.28F, 1.28F)),
+            List.of(new Seat(true, new Point(0F, 3.3F * 1.14F / 16F - RIDER_HEIGHT_CORRECTION, -3.8F * 1.18F / 16F), 0F)),
+            false, "tow_bar", new Point(0, 0, 0), new Point(0, 0, 0), null, null, List.of(), false
+    );
+
     /* wheelOffset = (8 * 0.97 / 2) - 0.8 = 3.08; auto-scaled front wheels become 0.77. */
     public static final LandVehicleSpec LAWN_MOWER = new LandVehicleSpec(
             "lawn_mower", "Lawn Mower", "lawn_mower_body",
@@ -950,6 +967,7 @@ public record LandVehicleSpec(
 
     private static final Map<String, LandVehicleSpec> BY_ID = Map.ofEntries(
             Map.entry(GO_KART.id, GO_KART),
+            Map.entry(HORIZON_GO_KART.id, HORIZON_GO_KART),
             Map.entry(LAWN_MOWER.id, LAWN_MOWER),
             Map.entry(QUAD_BIKE.id, QUAD_BIKE),
             Map.entry(DUNE_BUGGY.id, DUNE_BUGGY),
@@ -1076,7 +1094,7 @@ public record LandVehicleSpec(
      *  urca pe el cu step-up-ul normal (altfel jucaria trece prin el si nu mai
      *  poate fi „parcata" curat pe placa). Restul vehiculelor trec prin statii. */
     private static final java.util.Set<String> STATION_CLIMBING_IDS = java.util.Set.of(
-            "bumper_car", "go_kart", "dune_buggy", "lawn_mower", "moped");
+            "bumper_car", "go_kart", "horizon_go_kart", "dune_buggy", "lawn_mower", "moped");
 
     public boolean climbsStationSlabs() {
         return STATION_CLIMBING_IDS.contains(id);

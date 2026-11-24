@@ -59,6 +59,7 @@ public final class LandVehicleRig {
     private final Interaction interaction;
     private final ItemDisplay body;
     private HorizonOffRoaderRig horizonRig;
+    private HorizonGoKartRig kartRig;
     private DaciaHorizonWheels daciaWheels;
     private final ItemDisplay engine;
     private final ItemDisplay steering;
@@ -141,7 +142,8 @@ public final class LandVehicleRig {
         all.add(interaction);
 
         boolean horizon = "horizon_off_roader".equals(spec.id());
-        ItemDisplay body = display(world, location, horizon ? new ItemStack(Material.AIR) : model(spec.bodyModel()));
+        boolean horizonKart = "horizon_go_kart".equals(spec.id());
+        ItemDisplay body = display(world, location, (horizon || horizonKart) ? new ItemStack(Material.AIR) : model(spec.bodyModel()));
         mark(body, vehicleId);
         all.add(body);
 
@@ -181,7 +183,7 @@ public final class LandVehicleRig {
         }
 
         List<WheelDisplay> wheels = new ArrayList<>();
-        for (LandVehicleSpec.Wheel properties : horizon ? List.<LandVehicleSpec.Wheel>of() : spec.wheels()) {
+        for (LandVehicleSpec.Wheel properties : (horizon || horizonKart) ? List.<LandVehicleSpec.Wheel>of() : spec.wheels()) {
             ItemDisplay wheel = display(world, location, model("standard_wheel"));
             mark(wheel, vehicleId);
             all.add(wheel);
@@ -211,6 +213,7 @@ public final class LandVehicleRig {
                 Collections.unmodifiableList(forkParts), storageChest, storageInteraction,
                 Collections.unmodifiableList(wheels), Collections.unmodifiableList(seats), all);
         if (horizon) rig.horizonRig = new HorizonOffRoaderRig(location, vehicleId, all);
+        if (horizonKart) rig.kartRig = new HorizonGoKartRig(location, vehicleId, all);
         if ("dacia_logan_police".equals(spec.id())) {
             rig.daciaWheels = new DaciaHorizonWheels(location, vehicleId, all, spec);
             rig.setWheelModel("standard_wheel");
@@ -364,6 +367,9 @@ public final class LandVehicleRig {
             horizonRig.update(renderAnchor, driverSeat, chassisRotation, renderSteeringAngle,
                     frontWheelRotation, rearWheelRotation, wheelieAngle, bodyRoll, point(spec.wheeliePivot()));
         }
+
+        if (kartRig != null) kartRig.update(renderAnchor, driverSeat, chassisRotation, renderSteeringAngle,
+                frontWheelRotation, rearWheelRotation, wheelieAngle, bodyRoll, point(spec.wheeliePivot()));
 
         if (engine != null) {
             LandVehicleSpec.Part part = spec.engine();
@@ -875,6 +881,7 @@ public final class LandVehicleRig {
                 && (storageChest == null || storageChest.isValid())
                 && (storageInteraction == null || storageInteraction.isValid())
                 && (horizonRig == null || horizonRig.valid())
+                && (kartRig == null || kartRig.valid())
                 && (daciaWheels == null || daciaWheels.valid())
                 && wheels.stream().allMatch(wheel -> wheel.entity.isValid())
                 && seats.stream().allMatch(seat -> seat.anchor.isValid());
@@ -964,6 +971,7 @@ public final class LandVehicleRig {
      *  2026-10-24): stack gol = ItemDisplay complet invizibil. Re-montarea se face
      *  prin setEngineModel(...), care inlocuieste stack-ul - nu e nevoie de "show". */
     public void hideEngine() {
+        if (kartRig != null) kartRig.hideEngine();
         if (!removed && engine != null && engine.isValid()) {
             engine.setItemStack(new org.bukkit.inventory.ItemStack(org.bukkit.Material.AIR));
         }
@@ -976,6 +984,7 @@ public final class LandVehicleRig {
             return;
         }
         if (horizonRig != null) horizonRig.hideWheels();
+        if (kartRig != null) kartRig.hideWheels();
         if (daciaWheels != null) daciaWheels.hide();
         org.bukkit.inventory.ItemStack empty =
                 new org.bukkit.inventory.ItemStack(org.bukkit.Material.AIR);
@@ -989,6 +998,7 @@ public final class LandVehicleRig {
     /** Schimba si PART-ul vizual al motorului la upgrade (ex. iron_small_engine ->
      *  diamond_small_engine), exact ca in mod, la schimbarea tier-ului. */
     public void setEngineModel(String modelName) {
+        if (kartRig != null) kartRig.setEngine(modelName);
         if (!removed && engine != null && engine.isValid()) {
             engine.setItemStack(model(modelName));
         }
@@ -1000,6 +1010,7 @@ public final class LandVehicleRig {
             return;
         }
         if (horizonRig != null) horizonRig.setWheels(modelName);
+        if (kartRig != null) kartRig.setWheels(modelName);
         if (daciaWheels != null) daciaWheels.setModel(modelName);
         ItemStack stack = daciaWheels != null && daciaWheels.handles(modelName)
                 ? new ItemStack(Material.AIR) : model(modelName);
@@ -1018,7 +1029,8 @@ public final class LandVehicleRig {
             return;
         }
         if (horizonRig != null) horizonRig.applyColor(rgb);
-        if (horizonRig == null && body != null && body.isValid()) {
+        if (kartRig != null) kartRig.applyColor(rgb);
+        if (horizonRig == null && kartRig == null && body != null && body.isValid()) {
             policeColor = rgb;
             body.setItemStack(coloredStack(policeBodyModel(), rgb));
         }

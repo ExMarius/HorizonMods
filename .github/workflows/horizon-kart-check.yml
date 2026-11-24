@@ -1,0 +1,46 @@
+name: Verify Horizon Go-Kart
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths:
+      - 'vehicle-plugin-horizon/paper-plugin/**'
+      - 'vehicle-plugin-horizon/tools/*horizon_kart*'
+      - '.github/workflows/horizon-kart-check.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test scoped pack conversion
+        run: python3 -m unittest discover -s vehicle-plugin-horizon/tools -p test_add_horizon_kart_pack.py -v
+      - name: Verify actual installed resource pack is preserved
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download horizon-offroader-45479473394 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
+          python3 vehicle-plugin-horizon/tools/add_horizon_kart_pack.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/kart-pack.zip
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('/tmp/base/HorizonOffRoader-1.21.4.zip') as a,zipfile.ZipFile('/tmp/kart-pack.zip') as b:
+              assert b.testzip() is None and set(a.namelist()).issubset(b.namelist())
+              for n in a.namelist(): assert a.read(n)==b.read(n),n
+          PY
+      - name: Build and test plugin
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build
+      - name: Test spawn, driving, saving and existing vehicles
+        run: |
+          npm install --prefix /tmp/horizon-test mineflayer@4.39.0
+          export NODE_PATH=/tmp/horizon-test/node_modules
+          for test in smoke_horizon_kart smoke_police smoke_off_roader; do
+            python3 "vehicle-plugin-horizon/tools/${test}.py" vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
+          done
