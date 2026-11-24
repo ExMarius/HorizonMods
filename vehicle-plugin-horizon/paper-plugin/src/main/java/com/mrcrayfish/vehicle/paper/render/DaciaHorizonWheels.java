@@ -52,8 +52,12 @@ final class DaciaHorizonWheels {
     boolean valid() { return pieces.stream().allMatch(p -> p.display().isValid()); }
     static Vector3f visualCenter(LandVehicleSpec.Wheel w, float angle) {
         float visualOffset = w.halfWidthOffset();
+        // Body item geometry uses the 180-degree item display correction. Its
+        // +Z wheel arch therefore sits at the inverse of source axle Z in the
+        // display-local frame. Keep the physics axle unchanged; align only
+        // the visual wheel with the corresponding authored front/rear arch.
         return new Vector3f(w.axleX() + visualOffset * (float)Math.cos(angle), w.centerY(),
-                w.axleZ() - visualOffset * (float)Math.sin(angle));
+                -w.axleZ() - visualOffset * (float)Math.sin(angle));
     }
     void update(Location anchor, Vector3f driverSeat, Quaternionf chassis, Vector3f pivot,
                 float steer, float frontSpin, float rearSpin, float wheelie, float roll) {

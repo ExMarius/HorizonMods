@@ -298,3 +298,14 @@ SHA-256 `01ea6f68ecea941d1b3af04b21a2e5134e6bb6c1fe5e16183b990778df6446f6`,
 pack SHA-1 `c8a29468657a7a4b08c47bc657a372280073e924`. Falix a refuzat
 restartul automat HTTP 403 `verification_required`; restart manual și
 verificare vizuală în Minecraft sunt necesare.
+
+### Închiderea pasajelor după fotografia din joc
+
+`close_logan_wheelwells.py` extinde panourile interioare ale pasajelor până la
+capetele deschiderilor și aliniază închiderea de lângă bancheta spate. Toate
+fețele lor sunt închise la culoare. Testul eșantionează fiecare față interioară
+pentru goluri, inclusiv extremitățile, și verifică cele trei faze de sirenă.
+Coordonata longitudinală vizuală a roților a fost corectată în raport cu
+rotația de 180° a caroseriei afișate: centrele corespund astfel pasajelor
+autorate față/spate, în timp ce axele fizice rămân nemodificate. Testele
+matematice și de protocol nu confirmă aspectul sau virarea în client.
