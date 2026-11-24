@@ -216,3 +216,11 @@ este de 1,37 pixeli model (nu 4), deoarece 4 ar introduce grilajul în scaune;
 prinderile ating spătarele. Un raft închide zona din spatele banchetei și
 cotierele acoperă pasajele roților, păstrând roțile în pozițiile originale.
 Testele sunt geometrice și de protocol, nu verificare vizuală în client.
+
+Livrare `45426294538`: testele geometrice, build-ul, testele de protocol
+pentru ambele vehicule și verificarea celorlalte resurse au trecut. Backupul
+verificat (inclusiv garaje) are prefixul `mcv-before-horizon-45426294538-`.
+JAR instalat SHA-256 `f57d6bece18145136b457e8198fdba1f2d72e8daaf071d7bc9f9ffeaa6100b3e`,
+pack SHA-1 `e2df98516df738c740e1160c81ce8dc0cd870963`. Falix a respins
+restartul automat HTTP 403 `verification_required`; este necesar restart
+manual și o verificare vizuală și audio în client.
