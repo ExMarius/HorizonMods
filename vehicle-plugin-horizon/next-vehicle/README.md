@@ -17,7 +17,7 @@ scaune, roților, volanului și culorilor pe baza codului original MrCrayfish;
 teste Paper, verificare în joc și abia apoi livrare. Geometria verificată
 structural nu dovedește redarea sau poziția jucătorilor în client.
 
-## Dacia Logan poliție — în lucru
+## Dacia Logan poliție
 
 `prepare_police.py` folosește modelul și configurația distincte de poliție,
 cele 268 de elemente și textura/sunetul din arhiva aprobată. Combină resursele
@@ -35,11 +35,16 @@ modului. Fizica, dimensiunile hitboxului, modelul și poziția volanului sunt
 adaptări Paper inițiale, nu valori de performanță documentate pentru Dacia.
 Necesită verificare vizuală și de condus în clientul real.
 
-Șoferul poate folosi `/vehicle sirena` pentru o singură redare a înregistrării
-originale de aproximativ 25,5 secunde, cu pauză de 26 secunde între declanșări.
-Aceasta este o adaptare Paper, nu o reproducere demonstrată a funcției originale;
-nu există girofar animat. Testul de protocol verifică răspunsul comenzii și
-limitarea repetării, nu dacă sunetul este auzit sau dacă packul se vede corect.
+Șoferul poate porni sau opri sirena cu F (în locul claxonului) sau cu
+`/vehicle sirena`. F este interceptat fără a muta obiectele între mâini;
+Q nu este folosit. Înregistrarea originală se repetă, iar cele două lentile de
+pe plafon alternează culorile; sirena se oprește automat când nu mai este șofer.
+Acestea sunt adaptări Paper, nu o reproducere demonstrată a efectelor originale.
+Marcajele sunt din texturile Horizon, adăugate ca panouri fără schimbarea celor
+268 de elemente originale ale caroseriei. Testele de protocol verifică F,
+mâinile goale și ocupate, pasagerii și pachetele de oprire a sunetului, dar nu
+demonstrează aspectul sau sunetul efectiv în client. Nu se promite iluminare
+reală a blocurilor sau lentile emisive pe întuneric.
 
 ### Livrare 16 noiembrie 2026
 
@@ -52,3 +57,14 @@ de date plugin și server.properties), verificat; nu este backup de lume și a
 fost făcut cât timp serverul era activ. Repornirea cerută automat a fost refuzată
 de Falix cu HTTP 403 `verification_required`: este necesar restart manual, iar
 procesul curent poate folosi versiunea veche până atunci.
+
+### Actualizare culori și sirenă
+
+Workflowul `45402788222` a trecut testele ambelor vehicule și a verificat backupul
+și instalarea pe Falix: JAR SHA-256
+`ec7995898e3ee4372a78fe33487ef9d183701be9e8f676210a97e6481148ba00`, pack
+SHA-1 `162d4dd9ff52d0980d1eb4adbe9057f024b779c7`. Backup verificat cu prefix
+`mcv-before-horizon-45402788222-`; este făcut online și nu include lumea.
+Restartul automat a eșuat cu HTTP 403 `verification_required`, deci serverul
+necesită restart manual și poate încă rula vechiul JAR. Culorile, poziționarea
+marcajelor, efectul de girofar și sunetul trebuie verificate într-un client real.
