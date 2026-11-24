@@ -1,0 +1,36 @@
+name: Check Off-Roader cowl correction
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['vehicle-plugin-horizon/tools/patch_offroader_gap.py', 'vehicle-plugin-horizon/tools/test_patch_offroader_gap.py', '.github/workflows/horizon-gap-check.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit tests
+        run: python3 -m unittest discover -s vehicle-plugin-horizon/tools -p test_patch_offroader_gap.py -v
+      - name: Verify precise change against published Horizon pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download horizon-offroader-45392102009 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp
+          python3 vehicle-plugin-horizon/tools/patch_offroader_gap.py /tmp/HorizonOffRoader-1.21.4.zip /tmp/cowl-pack.zip
+          python3 - <<'PY'
+          import json,zipfile
+          path='assets/horizonvehicles/models/item/off_roader_body_part_00.json'
+          with zipfile.ZipFile('/tmp/HorizonOffRoader-1.21.4.zip') as a,zipfile.ZipFile('/tmp/cowl-pack.zip') as b:
+              assert set(a.namelist()) == set(b.namelist())
+              for n in a.namelist():
+                  if n != path: assert a.read(n)==b.read(n),n
+              before=json.loads(a.read(path));after=json.loads(b.read(path))
+              edits=[(x,y) for x,y in zip(before['elements'],after['elements'],strict=True) if x!=y]
+              assert len(edits)==1
+              prev,cur=edits[0]; assert prev['to']==[18.55,13.5,16.4] and cur['to']==[18.55,13.5,17.25]
+              cur['to'][2]=16.4
+              assert before==after
+              print('::notice::One cowl element extended to overlap hood; every other pack file unchanged; visual verification needed')
+          PY
