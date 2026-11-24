@@ -2,7 +2,7 @@
 const mineflayer = require('mineflayer')
 const bot = mineflayer.createBot({ host:'127.0.0.1', port:25568, username:'HorizonBot', version:'1.21.4', auth:'offline' })
 const others=[]
-let done=false, started=false, mounting=false, driving=false, packs=0, packsAtSpawn=0, sirenPlayed=false, sirenCooldown=false
+let done=false, started=false, mounting=false, driving=false, packs=0, packsAtSpawn=0, sirenOn=0, sirenOff=0, stopPackets=0
 const timeout=setTimeout(()=>fail('timeout'), 100000)
 function fail(s) { if(done)return; done=true; clearTimeout(timeout); console.error('FAIL: '+s); for(const b of others)b.quit(); bot.quit(); process.exitCode=1 }
 function success() { if(done)return; done=true; clearTimeout(timeout); console.log('Four distinct riders mounted and stayed aboard during movement; no visual assertion.'); for(const b of others)b.quit(); bot.quit() }
@@ -10,8 +10,8 @@ const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms))
 bot.on('error', e=>fail(e.message))
 bot.on('kicked', r=>fail('kicked '+String(r).slice(0,200)))
 bot.on('end', ()=>{ if(!done)fail('unexpected disconnect') })
-bot._client.on('packet', (data, meta)=>{ if(meta.name==='add_resource_pack') packs++ })
-bot.on('messagestr', s=>{ if(s.includes('Dacia Logan Politie creat')) started=true; if(s.includes('inregistrarea este redata'))sirenPlayed=true; if(s.includes('Sirena este deja'))sirenCooldown=true })
+bot._client.on('packet', (data, meta)=>{ if(meta.name==='add_resource_pack') packs++; if(meta.name==='stop_sound') stopPackets++ })
+bot.on('messagestr', s=>{ if(s.includes('Dacia Logan Politie creat')) started=true; if(s.includes('Sirena pornita.'))sirenOn++; if(s.includes('Sirena oprita.'))sirenOff++ })
 bot.once('spawn', ()=>{
   setTimeout(()=>bot.chat('/fill ~-12 ~-1 ~-12 ~12 ~-1 ~12 stone'),1000)
   setTimeout(()=>bot.chat('/fill ~-12 ~ ~-12 ~12 ~5 ~12 air'),2200)
@@ -44,7 +44,23 @@ async function testPassengers(target) {
   if([bot,...others].some(b=>!b.vehicle))throw new Error('a rider left their seat while moving')
   if(target.position.distanceTo(start)<0.3)throw new Error('driver did not move vehicle')
   if(packs!==packsAtSpawn)throw new Error('resource pack resent during driving')
-  bot.chat('/vehicle sirena'); await wait(500); bot.chat('/vehicle sirena'); await wait(1000); if (!sirenPlayed || !sirenCooldown) throw new Error('siren command or cooldown failed'); bot.chat('/vehicle save'); await wait(1000); success()
+  bot.chat('/item replace entity HorizonBot weapon.mainhand with minecraft:diamond 3')
+  bot.chat('/item replace entity HorizonBot weapon.offhand with minecraft:torch 2')
+  await wait(1000)
+  const before=[bot.heldItem?.name,bot.heldItem?.count,bot.inventory.slots[45]?.name,bot.inventory.slots[45]?.count]
+  if(before.join(',')!=='diamond,3,torch,2') throw new Error('test inventory setup failed: '+before)
+  function pressF(){ bot._client.write('block_dig',{status:6,location:{x:0,y:0,z:0},face:0,sequence:0}) }
+  pressF(); await wait(1000)
+  bot.chat('/vehicle sirena'); await wait(1000)
+  if(sirenOff!==1 || stopPackets<1) throw new Error('F did not start siren or stop packet missing')
+  pressF(); await wait(1000)
+  bot.chat('/vehicle sirena'); await wait(1000)
+  if(sirenOff!==2) throw new Error('F did not restart siren')
+  bot.chat('/vehicle sirena'); await wait(600); bot.chat('/vehicle sirena'); await wait(600)
+  if(sirenOn!==1 || sirenOff!==3) throw new Error('siren command toggle failed')
+  const after=[bot.heldItem?.name,bot.heldItem?.count,bot.inventory.slots[45]?.name,bot.inventory.slots[45]?.count]
+  if(before.join(',')!==after.join(',')) throw new Error('F changed inventory: '+after)
+  bot.chat('/vehicle save'); await wait(1000); success()
 }
 const interval=setInterval(()=>{
   if(done) {clearInterval(interval); return}

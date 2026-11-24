@@ -55,6 +55,7 @@ public final class LandVehicle {
     private final TrailerManager trailers;
     private final LandVehicleRig rig;
     private final EngineSoundController soundController;
+    private final com.mrcrayfish.vehicle.paper.runtime.PoliceSiren policeSiren;
     private final double[] wheelPositions;
     private final Inventory storageInventory;
     private final Map<String, Inventory> compartmentInventories;
@@ -159,6 +160,7 @@ public final class LandVehicle {
         this.trailers = trailers;
         this.rig = rig;
         this.soundController = new EngineSoundController(spec, rig);
+        this.policeSiren = new com.mrcrayfish.vehicle.paper.runtime.PoliceSiren(rig);
         this.wheelPositions = new double[spec.wheels().size() * 3];
         this.storageInventory = spec.mopedParts() == null ? null
                 : Bukkit.createInventory(null, 27, Component.text("Moped Chest"));
@@ -189,6 +191,7 @@ public final class LandVehicle {
 
     public void tick(com.mrcrayfish.vehicle.paper.vehicle.DriveTuning tuning) {
         age++;
+        policeSiren.tick(location, age, driver().isPresent());
         // Showcase podium car: a pure static display. Run the first ticks so parts settle,
         // then skip ALL physics/render work - a showroom on a weak host costs ~nothing.
         if (showcase && age > 10) {
@@ -1670,27 +1673,19 @@ public final class LandVehicle {
         return Optional.of(player);
     }
 
-    // One-shot playback of the supplied 25.5-second recording, attached to the
-    // moving vehicle. This is a Paper adaptation, not an upstream siren toggle.
-    private long sirenAvailableAtNanos;
+    public boolean isPoliceSirenOn() { return policeSiren.enabled(); }
 
-    public boolean playPoliceSiren() {
-        if (!"dacia_logan_police".equals(spec.id()) || location.getWorld() == null
-                || (sirenAvailableAtNanos != 0 && System.nanoTime() - sirenAvailableAtNanos < 0)) return false;
-        sirenAvailableAtNanos = System.nanoTime() + 26_000_000_000L;
-        net.kyori.adventure.sound.Sound sample = net.kyori.adventure.sound.Sound.sound(
-                net.kyori.adventure.key.Key.key("daciapolice:sirena"),
-                net.kyori.adventure.sound.Sound.Source.NEUTRAL, 1.0F, 1.0F);
-        for (Player listener : location.getWorld().getPlayers()) {
-            if (listener.getLocation().distanceSquared(location) <= 48.0D * 48.0D)
-                listener.playSound(sample, rig.driverSeat());
-        }
-        return true;
+    /** Returns false only if there are no free simultaneous-siren sound channels. */
+    public boolean togglePoliceSiren() {
+        if (!"dacia_logan_police".equals(spec.id())) return false;
+        if (policeSiren.enabled()) { policeSiren.stop(); return true; }
+        return policeSiren.enable();
     }
 
     public void remove() {
         closeStorageViewers();
         soundController.stop(location);
+        policeSiren.stop();
         rig.remove();
     }
 

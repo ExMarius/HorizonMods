@@ -98,6 +98,8 @@ public final class LandVehicleRig {
     private float helicopterJoystickForward;
     private float helicopterJoystickStrafe;
     private boolean removed;
+    private int policeFlash = -1;
+    private Integer policeColor;
 
     private LandVehicleRig(UUID vehicleId, LandVehicleSpec spec, Interaction interaction,
                            ItemDisplay body, ItemDisplay engine, ItemDisplay steering,
@@ -314,8 +316,8 @@ public final class LandVehicleRig {
         // cu tintindex deveneau transparente - "gol la interior" la roti, body invizibil).
         ItemStack item = new ItemStack(Material.LEATHER_HORSE_ARMOR);
         ItemMeta meta = item.getItemMeta();
-        meta.setItemModel("dacia_police_body".equals(name)
-                ? new NamespacedKey("daciapolice", "body") : new NamespacedKey("vehicle", name));
+        meta.setItemModel(name.startsWith("dacia_police_body")
+                ? new NamespacedKey("daciapolice", name.replace("dacia_police_body", "body")) : new NamespacedKey("vehicle", name));
         if (meta instanceof org.bukkit.inventory.meta.LeatherArmorMeta armor) {
             armor.setColor(org.bukkit.Color.fromRGB(0xF9FFFE));
         }
@@ -1004,7 +1006,8 @@ public final class LandVehicleRig {
         }
         if (horizonRig != null) horizonRig.applyColor(rgb);
         if (horizonRig == null && body != null && body.isValid()) {
-            body.setItemStack(coloredStack(spec.bodyModel(), rgb));
+            policeColor = rgb;
+            body.setItemStack(coloredStack(policeBodyModel(), rgb));
         }
         // Modul inroseste TOATE partile caroseriei (capota/usile/acoperisul etc.), nu
         // doar corpul principal: replicam acelasi comportament ca sa nu ramana masina
@@ -1021,6 +1024,17 @@ public final class LandVehicleRig {
         }
     }
 
+    private String policeBodyModel() {
+        return "dacia_logan_police".equals(spec.id()) && policeFlash >= 0
+                ? "dacia_police_body_flash_" + policeFlash : spec.bodyModel();
+    }
+
+    public void setPoliceFlash(int frame) {
+        if (!"dacia_logan_police".equals(spec.id()) || removed || policeFlash == frame) return;
+        policeFlash = frame;
+        if (body.isValid()) body.setItemStack(coloredStack(policeBodyModel(), policeColor));
+    }
+
     /** Stack vopsit (dyed_color) pentru un model de caroserie; stack normal cand rgb e
      *  null (nevopsit). Pack-ul are pentru modelele de caroserie definitie cu tint
      *  "dye" implicit alb, deci pe stack-uri nevopsite nu se schimba NIMIC vizual. */
@@ -1031,8 +1045,8 @@ public final class LandVehicleRig {
         ItemStack stack = new ItemStack(Material.LEATHER_HORSE_ARMOR);
         ItemMeta meta = stack.getItemMeta();
         if (meta instanceof org.bukkit.inventory.meta.LeatherArmorMeta armor) {
-            armor.setItemModel("dacia_police_body".equals(modelName)
-                    ? new NamespacedKey("daciapolice", "body") : new NamespacedKey("vehicle", modelName));
+            armor.setItemModel(modelName.startsWith("dacia_police_body")
+                    ? new NamespacedKey("daciapolice", modelName.replace("dacia_police_body", "body")) : new NamespacedKey("vehicle", modelName));
             armor.setColor(org.bukkit.Color.fromRGB(rgb));
         }
         stack.setItemMeta(meta);

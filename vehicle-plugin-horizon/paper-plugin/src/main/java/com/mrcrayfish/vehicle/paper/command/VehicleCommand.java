@@ -147,9 +147,9 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
         for (LandVehicle vehicle : vehicles.vehicles()) {
             if ("dacia_logan_police".equals(vehicle.spec().id())
                     && vehicle.driver().filter(player::equals).isPresent()) {
-                player.sendMessage(vehicle.playPoliceSiren()
-                        ? "Sirena: inregistrarea este redata o data (aprox. 25 secunde)."
-                        : "Sirena este deja in curs; asteapta sa se termine.");
+                boolean changed = vehicle.togglePoliceSiren();
+                player.sendMessage(!changed ? "Prea multe sirene active." :
+                        vehicle.isPoliceSirenOn() ? "Sirena pornita." : "Sirena oprita.");
                 return;
             }
         }
@@ -577,7 +577,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
     private void help(CommandSender sender, String label) {
         sender.sendRichMessage("<gold>Vehicle Plugin</gold> <gray>vehicule pentru clienți vanilla</gray>");
         sender.sendRichMessage("<yellow>/" + label + " spawn <tip></yellow> <gray>- creează un vehicul sau una dintre cele 5 remorci</gray>");
-        sender.sendRichMessage("<yellow>/" + label + " sirena</yellow> <gray>- redă înregistrarea sirenei la volanul Daciei de poliție</gray>");
+        sender.sendRichMessage("<yellow>/" + label + " sirena</yellow> <gray>- pornește/oprește sirena la volanul Daciei de poliție (sau F)</gray>");
         sender.sendRichMessage("<yellow>/" + label + " remove</yellow> <gray>- elimină vehiculul apropiat</gray>");
         sender.sendRichMessage("<yellow>/" + label + " refuel</yellow> <gray>- umple rezervorul vehiculului apropiat</gray>");
         sender.sendRichMessage("<yellow>/" + label + " gaspump</yellow> <gray>- primești o pompă de benzină plasabilă</gray>");

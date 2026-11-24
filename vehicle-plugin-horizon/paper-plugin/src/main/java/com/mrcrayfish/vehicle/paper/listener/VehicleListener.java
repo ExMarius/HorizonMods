@@ -381,6 +381,15 @@ public final class VehicleListener implements Listener {
                     net.kyori.adventure.text.format.NamedTextColor.YELLOW));
             return;
         }
+        LandVehicle vehicle = maybeVehicle.get();
+        if ("dacia_logan_police".equals(vehicle.spec().id())) {
+            if (!vehicle.togglePoliceSiren()) {
+                player.sendActionBar(Component.text("Prea multe sirene active.", NamedTextColor.RED));
+            } else {
+                player.sendActionBar(Component.text(vehicle.isPoliceSirenOn() ? "Sirena pornită" : "Sirena oprită", NamedTextColor.YELLOW));
+            }
+            return;
+        }
         honk(player, ridden);
     }
 

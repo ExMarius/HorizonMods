@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify police livery and pack preservation
+        run: python3 -m unittest discover -s vehicle-plugin-horizon/next-vehicle -p test_style_police.py -v
       - name: Build and run unit tests
         run: |
           set -o pipefail
