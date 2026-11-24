@@ -12,6 +12,18 @@ class LandVehicleSpecTest {
     private static final float EPSILON = 1.0E-6F;
 
     @Test
+    void horizonOffRoaderIsSeparateAndUsesSourceLayout() {
+        LandVehicleSpec spec = LandVehicleSpec.byId("horizon_off_roader");
+        assertEquals(LandVehicleSpec.HORIZON_OFF_ROADER, spec);
+        assertEquals(LandVehicleSpec.OFF_ROADER, LandVehicleSpec.byId("off_roader"));
+        assertEquals(4, spec.wheels().size());
+        assertEquals(1, spec.seats().size());
+        assertEquals(4000.0F, spec.energyCapacity(), EPSILON);
+        assertEquals(1.06F, spec.stepHeight(), EPSILON);
+        assertEquals(14.74F / 16F, spec.wheels().getFirst().axleX(), EPSILON);
+    }
+
+    @Test
     void goKartKeepsAcceptedGeometryAndRuntimeProperties() {
         LandVehicleSpec spec = LandVehicleSpec.GO_KART;
         assertEquals(0.6375F, spec.bodyOrigin().y(), EPSILON);
@@ -374,7 +386,7 @@ class LandVehicleSpecTest {
         assertEquals(180.0F, spec.seats().get(3).yawOffset(), EPSILON);
         assertFalse(spec.canTowTrailers());
         assertEquals(spec, LandVehicleSpec.byId("golf_cart"));
-        assertEquals(23, LandVehicleSpec.ids().size());
+        assertEquals(24, LandVehicleSpec.ids().size());
     }
 
     @Test

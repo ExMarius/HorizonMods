@@ -58,6 +58,7 @@ public final class LandVehicleRig {
     private final LandVehicleSpec spec;
     private final Interaction interaction;
     private final ItemDisplay body;
+    private HorizonOffRoaderRig horizonRig;
     private final ItemDisplay engine;
     private final ItemDisplay steering;
     private final ItemDisplay towBar;
@@ -136,7 +137,8 @@ public final class LandVehicleRig {
         mark(interaction, vehicleId);
         all.add(interaction);
 
-        ItemDisplay body = display(world, location, model(spec.bodyModel()));
+        boolean horizon = "horizon_off_roader".equals(spec.id());
+        ItemDisplay body = display(world, location, horizon ? new ItemStack(Material.AIR) : model(spec.bodyModel()));
         mark(body, vehicleId);
         all.add(body);
 
@@ -176,7 +178,7 @@ public final class LandVehicleRig {
         }
 
         List<WheelDisplay> wheels = new ArrayList<>();
-        for (LandVehicleSpec.Wheel properties : spec.wheels()) {
+        for (LandVehicleSpec.Wheel properties : horizon ? List.<LandVehicleSpec.Wheel>of() : spec.wheels()) {
             ItemDisplay wheel = display(world, location, model("standard_wheel"));
             mark(wheel, vehicleId);
             all.add(wheel);
@@ -205,6 +207,7 @@ public final class LandVehicleRig {
                 towBar, Collections.unmodifiableList(chassisParts),
                 Collections.unmodifiableList(forkParts), storageChest, storageInteraction,
                 Collections.unmodifiableList(wheels), Collections.unmodifiableList(seats), all);
+        if (horizon) rig.horizonRig = new HorizonOffRoaderRig(location, vehicleId, all);
         rig.update(location, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, false, 0);
         return rig;
     }
@@ -349,6 +352,10 @@ public final class LandVehicleRig {
         place(body, renderAnchor, relativeToSeat(bodyCenter, driverSeat), yaw, chassisRotation,
                 new Vector3f(spec.bodyScale() * spec.modelScaleCorrection(spec.bodyModel())),
                 new Quaternionf());
+        if (horizonRig != null) {
+            horizonRig.update(renderAnchor, driverSeat, chassisRotation, renderSteeringAngle,
+                    frontWheelRotation, rearWheelRotation, wheelieAngle, bodyRoll, point(spec.wheeliePivot()));
+        }
 
         if (engine != null) {
             LandVehicleSpec.Part part = spec.engine();
@@ -855,6 +862,7 @@ public final class LandVehicleRig {
                 && forkParts.stream().allMatch(part -> part.entity.isValid())
                 && (storageChest == null || storageChest.isValid())
                 && (storageInteraction == null || storageInteraction.isValid())
+                && (horizonRig == null || horizonRig.valid())
                 && wheels.stream().allMatch(wheel -> wheel.entity.isValid())
                 && seats.stream().allMatch(seat -> seat.anchor.isValid());
     }
@@ -954,6 +962,7 @@ public final class LandVehicleRig {
         if (removed) {
             return;
         }
+        if (horizonRig != null) horizonRig.hideWheels();
         org.bukkit.inventory.ItemStack empty =
                 new org.bukkit.inventory.ItemStack(org.bukkit.Material.AIR);
         for (WheelDisplay wheel : wheels) {
@@ -976,6 +985,7 @@ public final class LandVehicleRig {
         if (removed) {
             return;
         }
+        if (horizonRig != null) horizonRig.setWheels(modelName);
         ItemStack stack = model(modelName);
         for (WheelDisplay wheel : wheels) {
             if (wheel.entity != null && wheel.entity.isValid()) {
@@ -991,7 +1001,7 @@ public final class LandVehicleRig {
         if (removed) {
             return;
         }
-        if (body != null && body.isValid()) {
+        if (horizonRig == null && body != null && body.isValid()) {
             body.setItemStack(coloredStack(spec.bodyModel(), rgb));
         }
         // Modul inroseste TOATE partile caroseriei (capota/usile/acoperisul etc.), nu

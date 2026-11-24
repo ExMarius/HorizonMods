@@ -15,5 +15,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Verify generated group constants
+        run: |
+          python3 vehicle-plugin-horizon/generate_groups.py
+          git diff --exit-code -- vehicle-plugin-horizon/paper-plugin/src/main/java/com/mrcrayfish/vehicle/paper/render/HorizonGroups.java
       - name: Build and test isolated Paper 1.21.4 working copy
         run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build

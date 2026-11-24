@@ -322,6 +322,25 @@ public record LandVehicleSpec(
             null, null, List.of(), false
     );
 
+    /** Horizon geometry is separate from the original four-seat Off Roader.
+     * Physics values are an initial Paper adaptation, not measured visual parity. */
+    public static final LandVehicleSpec HORIZON_OFF_ROADER = new LandVehicleSpec(
+            "horizon_off_roader", "Horizon Off Roader", "horizon_off_roader_anchor",
+            2.0F, 1.4F, 1.06F,
+            1.0F, 0.0F, 0.0F,
+            16.0F, 35.0F, 14.5F * 1.42F / 16F, -14.5F * 1.42F / 16F, 5.0F,
+            4_000.0F, 0.25F, 0.8F, 1.6F, "vehicle:entity.jet_ski.engine",
+            false, new Point(0, 0, 0), null, null, null, null, List.of(),
+            List.of(
+                    new Wheel(1, true, 14.74F / 16F, .390F, 14.5F * 1.42F / 16F, 0, 0, 1.55F, 1.56F, 1.56F),
+                    new Wheel(-1, true, -14.74F / 16F, .390F, 14.5F * 1.42F / 16F, 0, 0, 1.55F, 1.56F, 1.56F),
+                    new Wheel(1, false, 14.74F / 16F, .390F, -14.5F * 1.42F / 16F, 0, 0, 1.55F, 1.56F, 1.56F),
+                    new Wheel(-1, false, -14.74F / 16F, .390F, -14.5F * 1.42F / 16F, 0, 0, 1.55F, 1.56F, 1.56F)),
+            List.of(new Seat(true, new Point(6.816F / 16F, 9.108F / 16F - RIDER_HEIGHT_CORRECTION, -3.550F / 16F), 0)),
+            false, "tow_bar", new Point(0, 0, 0), new Point(0, 0, 0),
+            null, null, List.of(), false
+    );
+
     /* Generated Sports Car geometry uses the default body scale/ground offset and
      * a wheelOffset of (8 * 1.4 / 2) - 3 = 2.6 model pixels. Its seven generated
      * cosmetic models are required to complete the body; four retain the source
@@ -900,6 +919,7 @@ public record LandVehicleSpec(
             Map.entry(DIRT_BIKE.id, DIRT_BIKE),
             Map.entry(MOPED.id, MOPED),
             Map.entry(OFF_ROADER.id, OFF_ROADER),
+            Map.entry(HORIZON_OFF_ROADER.id, HORIZON_OFF_ROADER),
             Map.entry(SPORTS_CAR.id, SPORTS_CAR),
             Map.entry(MINI_BUS.id, MINI_BUS),
             Map.entry(GOLF_CART.id, GOLF_CART),
@@ -988,7 +1008,7 @@ public record LandVehicleSpec(
             }
             switch (id) {
                 // Grele/mari = LARGE_MOTOR (off_roader, sporturile, utilitarele):
-                case "off_roader", "sports_car", "mini_bus", "tractor", "speed_boat",
+                case "off_roader", "horizon_off_roader", "sports_car", "mini_bus", "tractor", "speed_boat",
                         "sports_plane", "compact_helicopter" -> {
                     return com.mrcrayfish.vehicle.paper.mechanic.EngineType.LARGE_MOTOR;
                 }
