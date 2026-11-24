@@ -243,3 +243,13 @@ SHA-256 `524fda2ba813a140622e2e2d23113ba0aec9163736177921c78295c4626f3771`,
 pack SHA-1 `b2db5a9cec7d4d81eeaba9d3dcd77c3ca3efa235`. Falix a refuzat
 restartul automat HTTP 403 `verification_required`; restart manual și
 verificare vizuală/audio în client rămân necesare.
+
+### Închiderea îmbinărilor și podeaua de dedesubt
+
+`complete_police_logan.py` adaugă îmbinările inferioare spre stâlpii laterali
+și extensii de spătar peste pasajele din spate. Aripile au elemente de tablă
+între conturul în trepte și panoul de sus, cu pasajele roților lăsate deschise.
+Dedesubt sunt panouri legate de caroserie și traversa centrală, cu decupaje
+pentru roți; piesa izolată din spate care putea părea cârlig a fost eliminată.
+Testele verifică modelul și spațiul geometric conservator în repaus/rotire;
+nu înlocuiesc verificarea vizuală a virajului și a părții inferioare în joc.
