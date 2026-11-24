@@ -19,7 +19,12 @@ jobs:
         with:
           node-version: '22'
       - name: Build and run unit tests
-        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build
+        run: |
+          set -o pipefail
+          ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build 2>&1 | tee /tmp/build-dacia.log || {
+            python3 -c "from pathlib import Path; print('::error::'+' | '.join(Path('/tmp/build-dacia.log').read_text().splitlines()[-45:]).replace('%','%25')[:8000])"
+            exit 1
+          }
       - name: Test driver, passengers, siren command and persistence
         run: |
           npm install --prefix /tmp/horizon-test mineflayer@4.39.0
