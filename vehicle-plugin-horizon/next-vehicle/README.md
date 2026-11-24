@@ -253,3 +253,11 @@ Dedesubt sunt panouri legate de caroserie și traversa centrală, cu decupaje
 pentru roți; piesa izolată din spate care putea părea cârlig a fost eliminată.
 Testele verifică modelul și spațiul geometric conservator în repaus/rotire;
 nu înlocuiesc verificarea vizuală a virajului și a părții inferioare în joc.
+
+Livrare `45433382850`: testele geometrice, build-ul, testele Paper ale ambelor
+vehicule și verificarea celorlalte resurse au trecut. Backup verificat cu prefix
+`mcv-before-horizon-45433382850-`, inclusiv garajele. JAR instalat SHA-256
+`524fda2ba813a140622e2e2d23113ba0aec9163736177921c78295c4626f3771`,
+pack SHA-1 `13521f225f298923a18b6cdc8dc6fd0f9330259b`. Restartul automat a
+fost refuzat de Falix cu HTTP 403 `verification_required`: este necesar restart
+manual și verificare vizuală în client.
