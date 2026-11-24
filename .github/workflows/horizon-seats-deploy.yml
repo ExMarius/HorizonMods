@@ -1,0 +1,77 @@
+name: Install Horizon seats and cowl update
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: [.github/workflows/horizon-seats-deploy.yml, paper-vehicles/deploy/falix_update_horizon_seats.py]
+permissions:
+  contents: write
+  id-token: write
+concurrency:
+  group: falix-vehicle-deploy
+  cancel-in-progress: false
+jobs:
+  deliver:
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods' && startsWith(github.event.head_commit.message, 'Deploy Horizon seats and cowl update')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test pack patch and deployment safeguards
+        run: |
+          python3 -m unittest discover -s vehicle-plugin-horizon/tools -p test_patch_offroader_gap.py -v
+          python3 -m unittest discover -s paper-vehicles/tests -p test_falix_install_horizon.py -v
+          python3 vehicle-plugin-horizon/generate_groups.py
+          git diff --exit-code -- vehicle-plugin-horizon/paper-plugin/src/main/java/com/mrcrayfish/vehicle/paper/render/HorizonGroups.java
+      - name: Build and test plugin
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build
+      - name: Test four riders and persistence on disposable Paper
+        run: |
+          npm install --prefix /tmp/horizon-test mineflayer@4.39.0
+          export NODE_PATH=/tmp/horizon-test/node_modules
+          set -o pipefail
+          python3 vehicle-plugin-horizon/tools/smoke_off_roader.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar 2>&1 | tee /tmp/smoke.log || {
+            python3 -c "from pathlib import Path; print('::error::'+' | '.join(Path('/tmp/smoke.log').read_text().splitlines()[-20:]).replace('%','%25')[:8000])"
+            exit 1
+          }
+      - name: Patch only the cowl in the existing pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download horizon-offroader-45392102009 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp
+          mv /tmp/HorizonOffRoader-1.21.4.zip /tmp/old-pack.zip
+          python3 vehicle-plugin-horizon/tools/patch_offroader_gap.py /tmp/old-pack.zip /tmp/HorizonOffRoader-1.21.4.zip
+          python3 - <<'PY'
+          import json,zipfile
+          path='assets/horizonvehicles/models/item/off_roader_body_part_00.json'
+          with zipfile.ZipFile('/tmp/old-pack.zip') as a,zipfile.ZipFile('/tmp/HorizonOffRoader-1.21.4.zip') as b:
+              assert set(a.namelist()) == set(b.namelist())
+              for n in a.namelist():
+                  if n!=path: assert a.read(n)==b.read(n),n
+              before=json.loads(a.read(path));after=json.loads(b.read(path))
+              edits=[(x,y) for x,y in zip(before['elements'],after['elements'],strict=True) if x!=y]
+              assert len(edits)==1
+              prev,cur=edits[0];assert prev['to']==[18.55,13.5,16.4] and cur['to']==[18.55,13.5,17.25]
+              cur['to'][2]=16.4
+              assert before==after and b.testzip() is None
+          PY
+          cp vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/HorizonVehicles-1.21.4.jar
+      - name: Publish matching plugin and pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="horizon-offroader-${GITHUB_RUN_ID}"
+          gh release create "$tag" /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Horizon Off-Roader seats and cowl' --notes 'Four seats, boost wheel fix and one targeted cowl extension. Four-player protocol and persistence tests passed; visuals and passenger fit require an in-game client. Dacia remains under development.'
+          echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
+      - name: Verify published pack
+        run: |
+          curl -fsSL --retry 3 "$PACK_URL" -o /tmp/public-pack.zip
+          cmp /tmp/public-pack.zip /tmp/HorizonOffRoader-1.21.4.zip
+      - name: Backup and install verified pair
+        run: python3 paper-vehicles/deploy/falix_update_horizon_seats.py /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip "$PACK_URL"

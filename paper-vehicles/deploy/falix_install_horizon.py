@@ -17,6 +17,7 @@ spec = importlib.util.spec_from_file_location('falix', Path(__file__).with_name(
 f = importlib.util.module_from_spec(spec); spec.loader.exec_module(f)
 OLD_JAR = '8d45843ea6664415e5027d5b957dead70ac1d290e5c8abd67bfb9d70acc5bf59'
 OLD_PACK = 'd1b55da29e79f91f2299c40c3f7413656f349ff4'
+OLD_CONFIG_SUFFIX = 'MrCrayfishVehiclePlugin-resource-pack-1.21.4-r39.zip'
 NAMES = {'config.yml','dealer.yml','gas_pumps.yml','mechanics.yml','trailers.yml','vehicles.yml'}
 
 
@@ -33,7 +34,7 @@ def replace_pack(config, url, sha1):
         found = re.findall(pattern, body)
         if len(found) != 1: raise ValueError('ambiguous pack configuration')
         current = found[0].strip().strip('"\'')
-        if current and not (key == 'url' and current.endswith('MrCrayfishVehiclePlugin-resource-pack-1.21.4-r39.zip')
+        if current and not (key == 'url' and current.endswith(OLD_CONFIG_SUFFIX)
                             or key == 'sha1' and current.lower() == OLD_PACK):
             raise ValueError('unexpected plugin pack configuration')
         body = re.sub(pattern, lambda m: '  '+key+': '+json.dumps(value), body, count=1)
