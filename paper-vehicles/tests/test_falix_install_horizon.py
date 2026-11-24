@@ -55,6 +55,18 @@ class DeployTest(unittest.TestCase):
         self.assertEqual(self.api.files['/mcv-before-horizon-123-plugin.jar.bak'],b'old jar')
         self.assertEqual(self.api.files['/mcv-before-horizon-123-config.yml.bak'],CONFIG)
         self.assertEqual(self.api.props['resource-pack'],URL)
+    def test_garage_data_backed_up_and_unchanged(self):
+        old_names=m.NAMES
+        try:
+            m.NAMES=old_names | {'garages.yml'}
+            api=Fake()
+            original=api.files['/plugins/MrCrayfishVehiclePlugin/garages.yml']
+            m.deploy(api,b'new jar',pack(),URL,'124')
+            self.assertEqual(api.files['/mcv-before-horizon-124-garages.yml.bak'],original)
+            self.assertEqual(api.files['/plugins/MrCrayfishVehiclePlugin/garages.yml'],original)
+        finally:
+            m.NAMES=old_names
+
     def test_failed_upload_rolls_back_all_three(self):
         self.api.fail_new_jar=True
         with self.assertRaises(RuntimeError): m.deploy(self.api,b'new jar',pack(),URL,'123')
