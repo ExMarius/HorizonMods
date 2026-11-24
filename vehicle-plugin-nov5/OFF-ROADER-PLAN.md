@@ -34,5 +34,5 @@ Nicio schimbare de server sau în pack nu se face prin acest document.
 `tools/merge_horizon_pack.py` creează un pack candidat separat doar din r39 cu
 hash verificat, păstrând conținutul fișierelor existente și adăugând namespace-ul
 Horizon și licența; refuză coliziunile. Testele sunt în `tests/`, iar workflow-ul
-`horizon-pack-integration.yml` verifică pe packul r39 real. Nu publică și nu
-instalează packul: rigul vehiculului nu este încă implementat.
+`horizon-pack-integration.yml` verifică pe packul r39 real. Workflow-ul separat `horizon-release-deploy.yml` poate publica și instala perechea
+plugin + pack. Vezi `vehicle-plugin-horizon/DELIVERY.md` pentru starea actuală.
