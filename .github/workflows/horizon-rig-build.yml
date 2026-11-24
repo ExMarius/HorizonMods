@@ -21,3 +21,17 @@ jobs:
           git diff --exit-code -- vehicle-plugin-horizon/paper-plugin/src/main/java/com/mrcrayfish/vehicle/paper/render/HorizonGroups.java
       - name: Build and test isolated Paper 1.21.4 working copy
         run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install offline test client
+        run: npm install --prefix /tmp/horizon-test mineflayer@4.39.0
+      - name: Exercise separate Off-Roader on disposable Paper
+        env:
+          NODE_PATH: /tmp/horizon-test/node_modules
+        run: |
+          set -o pipefail
+          python3 vehicle-plugin-horizon/tools/smoke_off_roader.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar 2>&1 | tee /tmp/offroader-smoke.log || {
+            python3 -c "from pathlib import Path; print('::error::' + ' | '.join(Path('/tmp/offroader-smoke.log').read_text().splitlines()[-20:]).replace('%','%25')[:8000])"
+            exit 1
+          }
