@@ -359,7 +359,7 @@ public record LandVehicleSpec(
             false, new Point(0, 0, 0), null,
             new Part("dacia_police_steering", new Point(3.8F * MODEL_UNIT * 1.7F,
                     (0.5F + 2.6F * MODEL_UNIT) * 1.7F, 4.8F * MODEL_UNIT * 1.7F),
-                    .73F * 1.7F, -65.0F, 0, 0),
+                    .50F * 1.7F, -65.0F, 0, 0),
             itemPart("fuel_door_closed", -9.98F, 6.0F, -15.5F,
                     .2F, 0, -90, 0, 1.7F, -1, 3.6F),
             itemPart("key_hole", .5F, 2.7F, 6.85F,

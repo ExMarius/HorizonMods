@@ -206,3 +206,13 @@ pentru ambele vehicule au trecut; backupul verificat al pluginului, datelor
 pack SHA-1 `0dc8d1a76098d8ab752a34366ab3c91fe1dcb010`. Restartul automat
 Falix a fost refuzat HTTP 403 `verification_required`; trebuie restart manual
 și verificare vizuală și audio în Minecraft.
+
+### Finisarea interiorului
+
+`finish_police_logan.py` înlocuiește volanul cu unul mai mic și rotunjit și
+extinde coloana sa până la bord, scoate geamurile fumurii, uniformizează
+podeaua de la pedale și mută grilajul până lângă spătarele din față. Deplasarea
+este de 1,37 pixeli model (nu 4), deoarece 4 ar introduce grilajul în scaune;
+prinderile ating spătarele. Un raft închide zona din spatele banchetei și
+cotierele acoperă pasajele roților, păstrând roțile în pozițiile originale.
+Testele sunt geometrice și de protocol, nu verificare vizuală în client.
