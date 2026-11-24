@@ -97,3 +97,11 @@ față și spate remodelate, grilă și faruri noi, capotă lărgită, patru pan
 de ușă, oglinzi noi și marcaje cu dungi/checker fără text. Structura cabinei și
 părți din modelul utilizatorului sunt reutilizate, nu este o scanare fidelă a
 modelului real. Pentru această versiune este necesară verificare în client.
+
+Livrarea redesignului `45409075758` a verificat buildul, testele, ambele smoke
+Paper și backupul anterior cu prefix `mcv-before-horizon-45409075758-` (online,
+fără lume). JAR SHA-256 `2943944c0db6bbd6ccf0d38f097f6e0af8721818ec4be21ddbb60221a8b212ec`,
+pack SHA-1 `8bd4d0043b7dde65dc761b87cfc667041acd8ec5`; perechea instalată a
+fost verificată. Falix a refuzat repornirea automată cu HTTP 403
+`verification_required`; este necesară repornirea manuală. Nu există încă o
+validare vizuală reală a noii caroserii sau a alinierii elementelor în client.
