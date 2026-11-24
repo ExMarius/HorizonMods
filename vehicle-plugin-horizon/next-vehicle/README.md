@@ -261,3 +261,14 @@ vehicule și verificarea celorlalte resurse au trecut. Backup verificat cu prefi
 pack SHA-1 `13521f225f298923a18b6cdc8dc6fd0f9330259b`. Restartul automat a
 fost refuzat de Falix cu HTTP 403 `verification_required`: este necesar restart
 manual și verificare vizuală în client.
+
+### Roți Horizon complete și căptușeli de pasaj
+
+`restore_police_wheels.py` reconstruiește anvelopa sports Horizon într-un singur
+model vanilla per roată. Sunt păstrate toate cele 17 piese sursă; cele două la
+67,5° sunt convertite geometric echivalent la -22,5° cu axe schimbate, pentru
+ca întregul ansamblu să fie randat într-un singur ItemDisplay. Testele compară
+colțurile tuturor pieselor cu geometria Horizon. Roțile nu sunt mutate în afară.
+Au fost adăugate căptușeli de pasaj și un volan derivat din modelul Horizon,
+cu coloană. Scuturile sunt verificate geometric în repaus; testarea virajelor,
+aspectului și audio în client este în continuare necesară.

@@ -78,10 +78,10 @@ const interval=setInterval(()=>{
   if(!driving && bot.vehicle && target) {
     driving=true
     if(bot.vehicle.name!=='horse')return fail('unexpected mount '+bot.vehicle.name)
-    if(displays.length<14)return fail('not all grouped displays present: '+displays.length)
+    if(displays.length<13)return fail('not all expected displays present: '+displays.length)
     if(packs!==packsAtSpawn)return fail('resource pack resent on spawn')
     testPassengers(target).catch(e=>fail(e.message))
-  } else if(!bot.vehicle && target && displays.length>=14 && !mounting) {
+  } else if(!bot.vehicle && target && displays.length>=13 && !mounting) {
     mounting=true; bot.activateEntity(target); setTimeout(()=>{mounting=false},1500)
   }
 },500)
