@@ -60,3 +60,5 @@ jobs:
           cmp /tmp/public-pack.zip /tmp/HorizonOffRoader-1.21.4.zip
       - name: Back up and install matching pair
         run: python3 paper-vehicles/deploy/falix_update_logan_redesign.py /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip "$PACK_URL"
+
+# The disposable smoke servers run peaceful so hostile mobs cannot invalidate the test.
