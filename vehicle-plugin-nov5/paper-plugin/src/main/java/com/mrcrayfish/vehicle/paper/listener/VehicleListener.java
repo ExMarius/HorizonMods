@@ -1,0 +1,415 @@
+package com.mrcrayfish.vehicle.paper.listener;
+
+import com.mrcrayfish.vehicle.paper.ResourcePackSender;
+import com.mrcrayfish.vehicle.paper.VehiclePlugin;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.sound.Sound;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import com.mrcrayfish.vehicle.paper.render.LandVehicleRig;
+import com.mrcrayfish.vehicle.paper.vehicle.LandVehicle;
+import com.mrcrayfish.vehicle.paper.vehicle.VehicleManager;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityTransformEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerResourcePackStatusEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.server.ServerCommandEvent;
+import org.bukkit.event.world.WorldLoadEvent;
+
+import java.util.Locale;
+import java.util.regex.Pattern;
+
+public final class VehicleListener implements Listener {
+    private static final Pattern GLOBAL_ENTITY_KILL = Pattern.compile(
+            "(?:^|[\\s/])(?:minecraft:)?kill\\s+@e(?:\\b|\\[)", Pattern.CASE_INSENSITIVE);
+    private static final Key HORN_SOUND = Key.key("vehicle:entity.vehicle.horn");
+
+    private static final long HORN_COOLDOWN_MS = 800L;
+
+    private final VehiclePlugin plugin;
+    private final VehicleManager vehicles;
+    private final java.util.Map<java.util.UUID, Long> hornCooldowns = new java.util.HashMap<>();
+
+    public VehicleListener(VehiclePlugin plugin, VehicleManager vehicles) {
+        this.plugin = plugin;
+        this.vehicles = vehicles;
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
+        String protectedCommand = protectEntityKill(event.getMessage());
+        if (!protectedCommand.equals(event.getMessage())) {
+            dismountPlayersFromUnprotectedVehicles();
+            event.setMessage(protectedCommand);
+            event.getPlayer().sendRichMessage(
+                    "<yellow>Selector protejat automat:</yellow> "
+                            + "<gray>jucătorii și entitățile vehiculelor au fost excluse.</gray>");
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onServerCommand(ServerCommandEvent event) {
+        String protectedCommand = protectEntityKill(event.getCommand());
+        if (!protectedCommand.equals(event.getCommand())) {
+            dismountPlayersFromUnprotectedVehicles();
+            event.setCommand(protectedCommand);
+            event.getSender().sendRichMessage(
+                    "<yellow>Selector protejat automat: jucătorii și vehiculele au fost excluse.</yellow>");
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onVehicleEntityDamage(EntityDamageEvent event) {
+        if (event.getEntity().getScoreboardTags().contains(LandVehicleRig.ENTITY_TAG)) {
+            if (event instanceof EntityDamageByEntityEvent damage
+                    && damage.getDamager() instanceof Player player) {
+                vehicles.handleAttack(player, event.getEntity());
+            }
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onVehicleEntityTransform(EntityTransformEvent event) {
+        if (event.getEntity().getScoreboardTags().contains(LandVehicleRig.ENTITY_TAG)) {
+            event.setCancelled(true);
+        }
+    }
+
+    /**
+     * Paper can loop in AbstractHorse's dismount-location search if a ridden
+     * ordinary horse is removed directly by /kill. Plugin seat carriers are
+     * excluded by the rewritten selector; riders of every other mount are
+     * detached while that mount is still valid, before the command executes.
+     */
+    private static void dismountPlayersFromUnprotectedVehicles() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            Entity mount = player.getVehicle();
+            if (mount != null && !mount.getScoreboardTags().contains(LandVehicleRig.ENTITY_TAG)) {
+                player.leaveVehicle();
+            }
+        }
+    }
+
+    static String protectEntityKill(String command) {
+        String lower = command.toLowerCase(Locale.ROOT);
+        java.util.regex.Matcher matcher = GLOBAL_ENTITY_KILL.matcher(command);
+        StringBuilder protectedCommand = new StringBuilder(command.length() + 80);
+        int copiedUntil = 0;
+        boolean changed = false;
+        while (matcher.find()) {
+            int selectorStart = lower.indexOf("@e", matcher.start());
+            int selectorEnd = selectorStart + 2;
+            if (selectorEnd < command.length() && command.charAt(selectorEnd) == '[') {
+                int closingBracket = command.indexOf(']', selectorEnd + 1);
+                if (closingBracket < 0) {
+                    continue;
+                }
+                selectorEnd = closingBracket + 1;
+            }
+            String selector = command.substring(selectorStart, selectorEnd);
+            String replacement = protectSelector(selector);
+            if (!replacement.equals(selector)) {
+                protectedCommand.append(command, copiedUntil, selectorStart).append(replacement);
+                copiedUntil = selectorEnd;
+                changed = true;
+            }
+        }
+        if (!changed) {
+            return command;
+        }
+        return protectedCommand.append(command, copiedUntil, command.length()).toString();
+    }
+
+    private static String protectSelector(String selector) {
+        String lower = selector.toLowerCase(Locale.ROOT);
+        boolean excludesVehicles = lower.contains("tag=!mcv_plugin_vehicle");
+        boolean excludesPlayers = lower.contains("type=!minecraft:player")
+                || lower.contains("type=!player");
+        if (excludesVehicles && excludesPlayers) {
+            return selector;
+        }
+
+        StringBuilder additions = new StringBuilder();
+        if (!excludesVehicles) {
+            additions.append("tag=!mcv_plugin_vehicle");
+        }
+        if (!excludesPlayers) {
+            if (!additions.isEmpty()) {
+                additions.append(',');
+            }
+            additions.append("type=!minecraft:player");
+        }
+        if (selector.length() == 2) {
+            return "@e[" + additions + "]";
+        }
+        String content = selector.substring(3, selector.length() - 1);
+        return "@e[" + content + (content.isEmpty() ? "" : ",") + additions + "]";
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onInteract(PlayerInteractEntityEvent event) {
+        if (vehicles.trailers().handleWaterPlacementInteraction(
+                event.getPlayer(), event.getRightClicked())) {
+            event.setCancelled(true);
+        } else if (vehicles.byEntity(event.getRightClicked()).isPresent()) {
+            event.setCancelled(true);
+            com.mrcrayfish.vehicle.paper.vehicle.LandVehicle clickedVehicle =
+                    vehicles.byEntity(event.getRightClicked()).get();
+            if (clickedVehicle.showcase()) {
+                // FiveM podium: clicking the spinning car = buying it, never mounting.
+                com.mrcrayfish.vehicle.paper.shop.VehicleShop shopBooth =
+                        plugin.vehicleShop();
+                if (shopBooth != null) {
+                    // Pretul propriu al podiumului castiga in fata celui global din config.
+                    shopBooth.buy(event.getPlayer(), clickedVehicle.spec().id(),
+                            plugin.dealerStations().priceForVehicle(clickedVehicle.id()));
+                }
+                return;
+            }
+            vehicles.handleInteraction(event.getPlayer(), event.getRightClicked());
+        } else if (vehicles.trailers().byEntity(event.getRightClicked()).isPresent()) {
+            event.setCancelled(true);
+            vehicles.trailers().handleInteraction(event.getPlayer(), event.getRightClicked());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPlaceCarriedVehicle(PlayerInteractEvent event) {
+        boolean carryingWaterVehicle = vehicles.trailers().isCarryingWaterVehicle(event.getPlayer());
+        if (event.getHand() == null
+                || event.getHand() != EquipmentSlot.HAND && !carryingWaterVehicle
+                || !acceptsCarriedVehiclePlacement(
+                event.getAction(), carryingWaterVehicle, event.isCancelled(), event.getPlayer().isSneaking())) {
+            return;
+        }
+
+        Location location = carryingWaterVehicle ? waterPlacement(event.getPlayer()) : null;
+        if (location == null && !carryingWaterVehicle && !event.isCancelled()
+                && event.getAction() == Action.RIGHT_CLICK_BLOCK
+                && event.getClickedBlock() != null && event.getBlockFace() != null) {
+            location = event.getClickedBlock().getRelative(event.getBlockFace())
+                    .getLocation().add(0.5D, 0.0D, 0.5D);
+            location.setYaw(event.getPlayer().getLocation().getYaw());
+        }
+        if (location == null && carryingWaterVehicle) {
+            event.getPlayer().sendActionBar(Component.text(
+                    "Țintește suprafața apei de la maximum 6 blocuri.", NamedTextColor.YELLOW));
+            return;
+        }
+        if (location != null && vehicles.trailers().placeCarriedVehicle(event.getPlayer(), location)) {
+            event.setCancelled(true);
+        }
+    }
+
+    /**
+     * Sneaking is the explicit placement gesture; normal right clicks always keep
+     * their original item, block, and roleplay-plugin behavior. Cancelled events
+     * are never overridden. Empty-hand placement is delivered by the private
+     * interaction target instead of bypassing another plugin's cancellation.
+     */
+    static boolean acceptsCarriedVehiclePlacement(Action action, boolean carryingWaterVehicle,
+                                                   boolean cancelled, boolean sneaking) {
+        if (cancelled || (carryingWaterVehicle && !sneaking)) {
+            return false;
+        }
+        return action == Action.RIGHT_CLICK_BLOCK
+                || carryingWaterVehicle && action == Action.RIGHT_CLICK_AIR;
+    }
+
+    private static Location waterPlacement(Player player) {
+        return LandVehicle.tracedWaterPlacement(player, 6.0D);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onToggleSneak(PlayerToggleSneakEvent event) {
+        if (event.isSneaking()) {
+            vehicles.trailers().releaseHeldTrailer(event.getPlayer());
+        }
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        vehicles.trailers().hideWaterPlacementTargetsFrom(event.getPlayer());
+        if (!vehicles.garagedOf(event.getPlayer()).isEmpty()) {
+            event.getPlayer().sendRichMessage("<gray>🚗 Mai ai vehicule in garaj: "
+                    + "<gold>/vehicle garaj</gold>. La iesire de pe server intra singure inapoi.</gray>");
+        }
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            // Default OFF: the login-time pack from server.properties is synced on
+            // every deploy, and an in-world resource reload is fragile (on weak
+            // clients it fails with the world renderer live and vanilla discards
+            // the whole pack, leaving magenta/black models). /vehicle pack resends
+            // manually with the same dedupe UUID when an admin really needs it.
+            // Randare: clientul primeste de la server entitatile display la incarcare,
+            // dar daca jucatorul intra cu vehicule deja urcate in chunk-uri vechi ele
+            // pot ajunge inaintea pachetelor metadate - forteaza starea vizuala (BUG 1).
+            if (plugin.mechanic() != null && event.getPlayer().isOnline()) {
+                vehicles.syncVisualsAround(event.getPlayer());
+            }
+            boolean resendOnJoin = plugin.getConfig().getBoolean("resource-pack.resend-on-join", false);
+            if (resendOnJoin && event.getPlayer().isOnline()
+                    && !ResourcePackSender.suppliedByServer(plugin)) {
+                ResourcePackSender.send(plugin, event.getPlayer());
+            }
+        }, 20L);
+    }
+
+    @EventHandler
+    public void onResourcePackStatus(PlayerResourcePackStatusEvent event) {
+        switch (event.getStatus()) {
+            case SUCCESSFULLY_LOADED -> event.getPlayer().sendRichMessage(
+                    "<green>[Vehicle] Resource pack-ul a fost încărcat.</green>");
+            case DECLINED, FAILED_DOWNLOAD, FAILED_RELOAD, INVALID_URL, DISCARDED -> {
+                plugin.getLogger().warning("Resource pack " + event.getStatus() + " for "
+                        + event.getPlayer().getName());
+                event.getPlayer().sendRichMessage(
+                        "<red>[Vehicle] Resource pack-ul nu s-a încărcat: " + event.getStatus()
+                                + ". Folosește /vehicle pack pentru reîncercare.</red>");
+            }
+            default -> {
+                // ACCEPTED and DOWNLOADED are intermediate states.
+            }
+        }
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        vehicles.trailers().onPlayerQuit(event.getPlayer());
+        // Bukkit removes the player from the seat. Vehicle tick resets its input on the next tick.
+        // QUIT: the ONE global garage - everything of his is stored on the spot.
+        // Price depends only on WHERE he pulls it out (/garaj): home = free, public = fee.
+        int stored = vehicles.parkAllOwnedBy(event.getPlayer().getUniqueId());
+        // Ciclul AD: si masinile ALTUIVA pe care le conducea cu trust intra instant
+        // in garajul PROPRIETARULUI (trust = doar volan, cu proprietarul in preajma).
+        stored += vehicles.parkDrivenByNonOwner(event.getPlayer().getUniqueId());
+        if (stored > 0) {
+            plugin.getLogger().info("[Garaj] " + event.getPlayer().getName() + " a iesit - "
+                    + stored + " vehicule au intrat in garajul global (zero consum).");
+        }
+    }
+
+    /** Stepping out inside a marked circle = parked: the car stays on the asphalt and
+     *  slips into resting (0 CPU) on the next tick when it settles. Anti-theft remains
+     *  the vehicle's own trust gate (canDrive: owner + trusted only). */
+    @EventHandler
+    public void onVehicleDismount(org.bukkit.event.entity.EntityDismountEvent event) {
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
+        mountedVehicle(event.getDismounted()).ifPresent(vehicle -> {
+            if (plugin.garageStations().isLegallyParked(player.getUniqueId(), vehicle.location())) {
+                player.sendRichMessage("<green>\ud83c\udfc1 Ai parcat in zona marcata - "
+                        + "masina ramane pe asfalt (0 consum).</green>");
+            }
+        });
+    }
+
+    @EventHandler
+    public void onDeath(PlayerDeathEvent event) {
+        vehicles.trailers().onPlayerQuit(event.getPlayer());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onInventoryClick(InventoryClickEvent event) {
+        vehicles.trailers().handleInventoryClick(event);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onInventoryDrag(InventoryDragEvent event) {
+        vehicles.trailers().handleInventoryDrag(event);
+    }
+
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent event) {
+        vehicles.handleInventoryClose(event.getInventory());
+    }
+
+    @EventHandler
+    public void onWorldLoad(WorldLoadEvent event) {
+        vehicles.onWorldLoaded(event.getWorld());
+    }
+    /** Seats may be spawned outside the rig index depending on mount order, so accept the
+     *  direct match first and fall back to the nearest vehicle of our fleet. */
+    private java.util.Optional<com.mrcrayfish.vehicle.paper.vehicle.LandVehicle> mountedVehicle(Entity ridden) {
+        java.util.Optional<com.mrcrayfish.vehicle.paper.vehicle.LandVehicle> direct = vehicles.byEntity(ridden);
+        if (direct.isPresent()) {
+            return direct;
+        }
+        return vehicles.nearest(ridden.getLocation(), 6.0D);
+    }
+
+    /** The mod's horn key is H, but a vanilla client never sends H to the server at all.
+     *  F (swap hand items) IS sent: while riding one of our vehicles, cancel the swap (no
+     *  visual side-effect at all) and honk - the ONE dedicated horn key, user-approved. */
+    @EventHandler(ignoreCancelled = true)
+    public void onHornKey(org.bukkit.event.player.PlayerSwapHandItemsEvent event) {
+        Player player = event.getPlayer();
+        Entity ridden = player.getVehicle();
+        if (ridden == null) {
+            return;
+        }
+        java.util.Optional<com.mrcrayfish.vehicle.paper.vehicle.LandVehicle> maybeVehicle = mountedVehicle(ridden);
+        if (maybeVehicle.isEmpty()) {
+            return;
+        }
+        event.setCancelled(true);
+        // USER RULE: only the DRIVER honks - passengers pressing F get a nudge instead.
+        java.util.Optional<Player> driver = maybeVehicle.get().driver();
+        if (driver.isEmpty() || !driver.get().getUniqueId().equals(player.getUniqueId())) {
+            player.sendActionBar(Component.text("Doar șoferul claxonează!",
+                    net.kyori.adventure.text.format.NamedTextColor.YELLOW));
+            return;
+        }
+        honk(player, ridden);
+    }
+
+    private void honk(Player player, Entity ridden) {
+        long now = System.currentTimeMillis();
+        Long last = hornCooldowns.get(player.getUniqueId());
+        if (last != null && now - last < HORN_COOLDOWN_MS) {
+            return;
+        }
+        hornCooldowns.put(player.getUniqueId(), now);
+        // Predict ~2 ticks ahead (like the fuel chain tip) so a fast vehicle hears the horn
+        // centered on itself instead of trailing behind where the key was pressed.
+        Location at = ridden.getLocation();
+        org.bukkit.util.Vector vel = ridden.getVelocity();
+        at.add(vel.getX() * 2.0D, vel.getY() * 2.0D, vel.getZ() * 2.0D);
+        final java.util.List<Player> listeners = new java.util.ArrayList<>();
+        for (Player nearby : at.getWorld().getPlayers()) {
+            if (nearby.getLocation().distanceSquared(at) <= 20.0D * 20.0D) {
+                listeners.add(nearby);
+                nearby.playSound(Sound.sound(HORN_SOUND, Sound.Source.VOICE, 1.0F, 1.0F),
+                        at.getX(), at.getY(), at.getZ());
+            }
+        }
+        // Keep it a short honk: the mod's horn.ogg is a long-press sample.
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            for (Player nearby : listeners) {
+                nearby.stopSound(HORN_SOUND.asString(), org.bukkit.SoundCategory.VOICE);
+            }
+        }, 10L);
+    }
+
+}
