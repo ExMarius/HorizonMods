@@ -146,3 +146,13 @@ Instalarea JAR și configurației packului a fost verificată (JAR SHA-256
 pack SHA-1 `9d73687b1be4272c02c7acd91ed8408e9f3faf02`). Falix a respins
 restartul automat cu HTTP 403 `verification_required`; restartul din panoul
 Falix și validarea vizuală/audio în client sunt necesare.
+
+### Ajustarea Loganului după feedbackul final
+
+`final_logan_body.py` scurtează doar fața dincolo de marginea pasajului roții,
+păstrând axele, anvelopele și contururile pasajelor. Bancheta spate este
+continuă și lată, spătarele față pornesc puțin în spatele stâlpului, iar bordul
+este avansat spre capotă. Pardoseala, fețele interioare ale ușilor și antena
+înclinată invers sunt incluse în toate fazele girofarului. Testele verifică
+continuitatea și dimensiunile geometrice, dar nu înlocuiesc un test vizual cu
+roțile și jucătorii în client.
