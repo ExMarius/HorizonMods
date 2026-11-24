@@ -197,3 +197,12 @@ laterale spate folosesc o textură fumurie cu pixeli transparenți alternanți
 Sunt verificate matematic dimensiunile statice, resursele, fazele sirenei și
 pozițiile originale, dar roțile în viraj și aspectul real rămân de verificat
 în client.
+
+Livrare `45423974565`: testele de geometrie, build-ul și testele de protocol
+pentru ambele vehicule au trecut; backupul verificat al pluginului, datelor
+(inclusiv garaje) și server.properties are prefixul
+`mcv-before-horizon-45423974565-`. Instalate și verificate: JAR SHA-256
+`d412e636ee5b51f875fc7cec397dd8f661398acf36aa12ca41040291edd3cd0c`,
+pack SHA-1 `0dc8d1a76098d8ab752a34366ab3c91fe1dcb010`. Restartul automat
+Falix a fost refuzat HTTP 403 `verification_required`; trebuie restart manual
+și verificare vizuală și audio în Minecraft.
