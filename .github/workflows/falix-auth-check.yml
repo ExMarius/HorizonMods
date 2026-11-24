@@ -78,11 +78,11 @@ jobs:
                   break
           else:
               sys.exit('List servers: pagination limit reached')
-          print('::notice title=Falix server count::' + str(len(found)))
+          print('Accessible servers:', len(found))
           # Only expose numeric IDs; avoid printing account details or server names.
           for identifier in found:
               if identifier.isdecimal():
-                  print('::notice title=Falix server ID::' + identifier)
+                  print('Server ID:', identifier)
               else:
                   print('::notice title=Falix server ID::Non-numeric ID; manual inspection required.')
           if found == ['3500167']:
@@ -107,7 +107,7 @@ jobs:
                           if label == 'Version history' and isinstance(payload.get('content'), str):
                               import re
                               matches = re.findall(r'(?<![0-9])1\.21\.[0-9]+(?![0-9])', payload['content'])
-                              print('::notice title=Version history matches::' + ', '.join(sorted(set(matches))))
+                              print('Version history matches:', ', '.join(sorted(set(matches))))
                           allowed = ('status', 'state', 'node_ready', 'name', 'identifier', 'version', 'software', 'application', 'lifecycle_status')
                           text = ', '.join(f'{k}={payload[k]}' for k in allowed if isinstance(payload.get(k), (str, int, bool)))[:1000] or 'response OK'
                       else:
@@ -116,7 +116,7 @@ jobs:
                   except urllib.error.HTTPError as exc:
                       print(f'::warning title={label}::HTTP {exc.code}')
           doc = request_json(urllib.request.Request(audience + '/openapi.json'), 'Falix OpenAPI')
-          for path, method in [('/servers/{server_id}/files/upload', 'post'), ('/servers/{server_id}/files/download', 'post')]:
+          for path, method in [('/servers/{server_id}/files/download', 'post')]:
               op = doc.get('paths', {}).get(path, {}).get(method, {})
               body_schema = op.get('requestBody', {}).get('content', {}).get('application/json', {}).get('schema', {})
               responses = op.get('responses', {})
@@ -126,5 +126,9 @@ jobs:
                   ref=x.get('$ref','') if isinstance(x,dict) else ''
                   return schemas.get(ref.rsplit('/',1)[-1],x) if ref else x
               print(f'::notice title=API {method} {path}::request={json.dumps(resolve(body_schema))} response={json.dumps(resolve(response_schema))}')
+          log = request_json(urllib.request.Request(audience + '/servers/3500167/console/log?lines=40', headers={'Authorization':'Bearer '+access_token}), 'Console log').get('data', {})
+          lines = log.get('lines', []) if isinstance(log, dict) else []
+          enabled = any(isinstance(x, str) and ('Vehicle plugin enabled.' in x or 'Enabling MrCrayfishVehiclePlugin' in x) for x in lines)
+          print('::notice title=Plugin startup::' + ('startup message found' if enabled else 'startup message not in log tail'))
           print('No server operation was performed.')
           PY
