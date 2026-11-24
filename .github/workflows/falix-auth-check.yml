@@ -130,5 +130,19 @@ jobs:
           lines = log.get('lines', []) if isinstance(log, dict) else []
           enabled = any(isinstance(x, str) and ('Vehicle plugin enabled.' in x or 'Enabling MrCrayfishVehiclePlugin' in x) for x in lines)
           print('::notice title=Plugin startup::' + ('startup message found' if enabled else 'startup message not in log tail'))
+          # Read back the installed JAR using Falix's short-lived download URL.
+          import hashlib
+          endpoint=audience+'/servers/3500167/files/download'
+          payload=json.dumps({'path':'/plugins/MrCrayfishVehiclePlugin.jar'}).encode()
+          req=urllib.request.Request(endpoint, data=payload, headers={'Authorization':'Bearer '+access_token,'Content-Type':'application/json'}, method='POST')
+          signed=request_json(req, 'File download URL').get('data', {}).get('url', '')
+          parsed=urllib.parse.urlsplit(signed)
+          if parsed.scheme != 'https' or not ((parsed.hostname or '').endswith('.falixserver.net') or (parsed.hostname or '').endswith('.falixnodes.net')):
+              sys.exit('Unexpected download URL host')
+          print('::add-mask::'+signed, flush=True)
+          with urllib.request.urlopen(signed, timeout=60) as response:
+              remote=response.read(20 * 1024 * 1024 + 1)
+          if len(remote) > 20 * 1024 * 1024: sys.exit('File exceeds safety limit')
+          print('::notice title=Remote plugin SHA-256::'+hashlib.sha256(remote).hexdigest())
           print('No server operation was performed.')
           PY
