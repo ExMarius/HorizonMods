@@ -23,5 +23,20 @@ structural nu dovedește redarea sau poziția jucătorilor în client.
 cele 268 de elemente și textura/sunetul din arhiva aprobată. Combină resursele
 numai cu packul curent identificat prin SHA-1, refuză coliziunile și păstrează
 intrările existente; testele automate nu confirmă aspectul în Minecraft. Sunetul
-de sirenă este inclus ca resursă, dar comanda/comportamentul nu sunt implementate.
-Nu este încă înregistrată ca vehicul și nu este instalată pe server.
+de sirenă este inclus ca resursă; integrarea și limitările sunt descrise mai jos.
+Instalarea pe server depinde de verificarea și execuția workflowului de livrare.
+
+### Integrare Paper
+
+ID-ul este `dacia_logan_police`, separat de toate celelalte vehicule. Cele
+patru locuri, dimensiunile și pozițiile roților, axele, caroseria și porturile
+provin din configurația arhivei; offsetul roților este calculat după formula
+modului. Fizica, dimensiunile hitboxului, modelul și poziția volanului sunt
+adaptări Paper inițiale, nu valori de performanță documentate pentru Dacia.
+Necesită verificare vizuală și de condus în clientul real.
+
+Șoferul poate folosi `/vehicle sirena` pentru o singură redare a înregistrării
+originale de aproximativ 25,5 secunde, cu pauză de 26 secunde între declanșări.
+Aceasta este o adaptare Paper, nu o reproducere demonstrată a funcției originale;
+nu există girofar animat. Testul de protocol verifică răspunsul comenzii și
+limitarea repetării, nu dacă sunetul este auzit sau dacă packul se vede corect.
