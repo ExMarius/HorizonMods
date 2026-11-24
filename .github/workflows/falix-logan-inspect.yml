@@ -1,0 +1,27 @@
+name: Inspect Logan plugin data safely
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['.github/workflows/falix-logan-inspect.yml']
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: falix-vehicle-deploy
+  cancel-in-progress: false
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect names and file types only
+        run: |
+          PYTHONPATH=paper-vehicles/deploy python3 - <<'PY'
+          import json, urllib.parse
+          import falix_auto_update as f
+          api=f.Falix(f.login())
+          entries=api.api('/files?'+urllib.parse.urlencode({'directory':'/plugins/MrCrayfishVehiclePlugin','limit':100}))
+          for e in entries:
+              print('::notice title=Plugin entry::'+json.dumps(e,ensure_ascii=True).replace('%','%25'))
+          PY
