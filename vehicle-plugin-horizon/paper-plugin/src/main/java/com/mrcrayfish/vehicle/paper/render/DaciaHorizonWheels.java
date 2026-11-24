@@ -22,12 +22,12 @@ final class DaciaHorizonWheels {
     private record Piece(ItemDisplay display, HorizonGroups.Group group, LandVehicleSpec.Wheel wheel) {}
     private final List<Piece> pieces = new ArrayList<>();
     private boolean visible = true;
-    private String model = "wheel_standard";
+    private String model = "wheel_sports";
 
     DaciaHorizonWheels(Location location, UUID id, List<Entity> all, LandVehicleSpec spec) {
         for (LandVehicleSpec.Wheel wheel : spec.wheels()) for (HorizonGroups.Group group : HorizonGroups.WHEEL_STANDARD) {
             ItemDisplay display = location.getWorld().spawn(location, ItemDisplay.class, d -> {
-                d.setItemStack(stack(group.name()));
+                d.setItemStack(stack(group.name().replace("wheel_standard", "wheel_sports")));
                 d.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.NONE);
                 d.setInterpolationDelay(0); d.setInterpolationDuration(1); d.setTeleportDuration(3);
                 d.setInvulnerable(true); d.setPersistent(false); d.setShadowRadius(0); d.setShadowStrength(0);
@@ -45,7 +45,8 @@ final class DaciaHorizonWheels {
     }
     void setModel(String name) {
         visible = "standard_wheel".equals(name) || "sports_wheel".equals(name);
-        model = "sports_wheel".equals(name) ? "wheel_sports" : "wheel_standard";
+        // Both stock and sports tires use the accepted Horizon Off-Roader look.
+        model = "wheel_sports";
         refresh();
     }
     void hide() { visible = false; refresh(); }
