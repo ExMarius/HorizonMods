@@ -24,13 +24,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download horizon-offroader-45491237890 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
-          python3 vehicle-plugin-horizon/next-vehicle/utb/build_utb_650.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/utb-pack.zip
+          gh release download horizon-offroader-45510103071 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
+          python3 vehicle-plugin-horizon/next-vehicle/utb/update_utb_body.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/utb-pack.zip
           python3 - <<'PY'
           import zipfile
           with zipfile.ZipFile('/tmp/base/HorizonOffRoader-1.21.4.zip') as old,zipfile.ZipFile('/tmp/utb-pack.zip') as new:
               assert new.testzip() is None and set(old.namelist()).issubset(new.namelist())
-              for name in old.namelist(): assert old.read(name)==new.read(name),name
+              for name in old.namelist():
+                  if name != 'assets/vehicle/models/item/utb_650_body.json': assert old.read(name)==new.read(name),name
           PY
       - name: Build plugin and unit tests
         run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build

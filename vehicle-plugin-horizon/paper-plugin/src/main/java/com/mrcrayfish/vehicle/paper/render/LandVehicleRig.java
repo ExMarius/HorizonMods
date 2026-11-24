@@ -184,7 +184,7 @@ public final class LandVehicleRig {
 
         List<WheelDisplay> wheels = new ArrayList<>();
         for (LandVehicleSpec.Wheel properties : (horizon || horizonKart) ? List.<LandVehicleSpec.Wheel>of() : spec.wheels()) {
-            ItemDisplay wheel = display(world, location, model("standard_wheel"));
+            ItemDisplay wheel = display(world, location, model(wheelModelFor(spec, properties, "standard_wheel")));
             mark(wheel, vehicleId);
             all.add(wheel);
             wheels.add(new WheelDisplay(wheel, properties));
@@ -1017,9 +1017,17 @@ public final class LandVehicleRig {
                 ? new ItemStack(Material.AIR) : model(modelName);
         for (WheelDisplay wheel : wheels) {
             if (wheel.entity != null && wheel.entity.isValid()) {
-                wheel.entity.setItemStack(stack);
+                // Keep front and rear UTB tires distinct and pivoted at their own hubs.
+                String selectedModel = wheelModelFor(spec, wheel.properties, modelName);
+                ItemStack selected = selectedModel.equals(modelName) ? stack : model(selectedModel);
+                wheel.entity.setItemStack(selected);
             }
         }
+    }
+
+    static String wheelModelFor(LandVehicleSpec spec, LandVehicleSpec.Wheel wheel, String requested) {
+        return "utb_650".equals(spec.id()) && "standard_wheel".equals(requested)
+                ? (wheel.front() ? "utb_650_wheel_front" : "utb_650_wheel_rear") : requested;
     }
 
     /** Vopsire cu spray can: caroseria trece pe un stack vopsibil (dyed_color) purtand

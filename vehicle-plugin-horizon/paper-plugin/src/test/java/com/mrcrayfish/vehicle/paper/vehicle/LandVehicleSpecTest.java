@@ -99,15 +99,22 @@ class LandVehicleSpecTest {
     }
 
     @Test
-    void utbIsSeparateAndRetainsProvenTractorControlsAndHitch() {
+    void utbHasSpecifiedRealScaleAndIndependentWheelCenters() {
         var utb = LandVehicleSpec.byId("utb_650");
         assertEquals(LandVehicleSpec.UTB_650, utb);
         assertEquals(LandVehicleSpec.TRACTOR, LandVehicleSpec.byId("tractor"));
-        assertEquals("utb_650_body",utb.bodyModel());
-        assertEquals(LandVehicleSpec.TRACTOR.wheels(),utb.wheels());
-        assertEquals(LandVehicleSpec.TRACTOR.seats(),utb.seats());
+        assertEquals("utb_650_body", utb.bodyModel());
+        assertEquals(2.05F, utb.entityWidth(), EPSILON);
+        assertEquals(2.55F, utb.entityHeight(), EPSILON);
+        assertEquals(38.88F / 16.0F, utb.frontAxleOffset() - utb.rearAxleOffset(), EPSILON);
+        assertEquals(6.56F / 16.0F, utb.firstFrontWheel().centerY(), EPSILON);
+        assertEquals(11.6F / 16.0F, utb.firstRearWheel().centerY(), EPSILON);
+        assertEquals(0.0F, utb.firstFrontWheel().halfWidthOffset(), EPSILON);
+        assertEquals(0.0F, utb.firstRearWheel().halfWidthOffset(), EPSILON);
+        assertEquals(4, utb.wheels().size());
+        assertEquals(1, utb.seats().size());
         assertTrue(utb.canTowTrailers());
-        assertEquals(LandVehicleSpec.TRACTOR.towBarOffset(),utb.towBarOffset());
+        assertEquals(com.mrcrayfish.vehicle.paper.mechanic.EngineType.LARGE_MOTOR, utb.defaultEngineType());
     }
 
     @Test
