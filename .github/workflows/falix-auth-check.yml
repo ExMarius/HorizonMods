@@ -2,6 +2,11 @@ name: Verify Falix connection
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - arena/fb5f91ff-horizonmods
+    paths:
+      - .github/workflows/falix-auth-check.yml
 
 permissions:
   id-token: write
