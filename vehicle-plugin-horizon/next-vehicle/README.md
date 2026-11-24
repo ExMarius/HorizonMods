@@ -290,3 +290,11 @@ Testele verifică toate cele trei faze, perechile de fețe coplanare pentru
 cuburile fără rotație și acoperirea eșantionată a plafonului pasajelor din
 spate. Aceste verificări nu garantează lipsa tuturor golurilor în client sau
 spațiul în orice unghi de virare; modelul trebuie inspectat și în joc.
+
+Livrare `45439432075`: testele geometrice, build-ul, testele Paper pentru Dacia
+și Off-Roader și verificarea celorlalte resurse au trecut. Backup verificat cu
+prefix `mcv-before-horizon-45439432075-`, inclusiv garajele. JAR instalat
+SHA-256 `01ea6f68ecea941d1b3af04b21a2e5134e6bb6c1fe5e16183b990778df6446f6`,
+pack SHA-1 `c8a29468657a7a4b08c47bc657a372280073e924`. Falix a refuzat
+restartul automat HTTP 403 `verification_required`; restart manual și
+verificare vizuală în Minecraft sunt necesare.
