@@ -1,0 +1,2587 @@
+#!/usr/bin/env python3
+# Deterministic rebuild: same inputs -> same zip -> same SHA-1 (pin in tools/test_fresh_paper_server.sh).
+"""Build the vanilla-client resource pack used by the Paper prototype."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import shutil
+import sys
+import tempfile
+import zipfile
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import restyle  # noqa: E402  (local helper: deterministic emblem/PNG pass)
+import restyle_geometry  # noqa: E402  (local helper: body silhouette restyle)
+
+
+ROOT = Path(__file__).resolve().parents[1]
+ASSETS = ROOT / "src/main/resources/assets/vehicle"
+
+
+def write_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def item_definition(model: str, tint: int = 0xFFFFFF) -> dict[str, object]:
+    return {
+        "model": {
+            "type": "minecraft:model",
+            "model": model,
+            "tints": [
+                {
+                    "type": "minecraft:constant",
+                    "value": tint,
+                }
+            ],
+        }
+    }
+
+
+VANILLA_1_21_4_ELEMENT_ANGLES = (-45.0, -22.5, 0.0, 22.5, 45.0)
+
+# Conversion output before the r41 silhouette restyle, keyed by model name.
+# The tests that audit "did we convert the source faithfully?" read this, while
+# the restyle itself is covered by tools/test_restyle_geometry.py.
+PRE_RESTYLE_MODELS: dict[str, dict] = {}
+
+
+def convert_model(source: Path, destination: Path, textures: dict[str, str] | None = None,
+                  geometry_scale: float = 1.0, legalize_rotations: bool = False,
+                  texture_size: list[int] | None = None,
+                  element_patch: dict | None = None,
+                  texture_uv_scale: dict[str, float] | None = None) -> None:
+    """Normalize Forge/Blockbench model metadata to vanilla model JSON.
+
+    Framework accepts oversized elements, but vanilla rejects element coordinates
+    outside -16..32 and replaces the whole model with its black/magenta fallback.
+    Oversized geometry is scaled around the item origin (8, 8, 8); the display
+    rig applies the exact inverse scale so the model keeps its source dimensions.
+
+    Minecraft 1.21.4 also accepts only 22.5-degree element-rotation increments.
+    Framework's complex-model loader accepts arbitrary values. Models using those
+    source angles must opt into nearest legal rotation conversion; arbitrary angles
+    did not become a vanilla feature until after the server's 1.21.4 protocol.
+
+    texture_size is retained purely as Blockbench-editing metadata (so the model can
+    be reopened and edited against its originally-authored canvas); per Minecraft's
+    own model-format documentation it is one of the fields "used by Blockbench" that
+    "aren't used by Minecraft" at all, so the game itself never reads it or rescales
+    anything because of it — writing it alone does NOT fix oversized UV. (An earlier
+    r36/r37 round of this port incorrectly assumed the game honored it; see
+    SOURCE_POSITION_AUDIT.md for the correction.) Any UV value actually needs to be
+    baked into real 0-16 numbers up front — see texture_uv_scale below — for models
+    whose source authors UV past the substitute sprite's real 16x16 bounds.
+
+    texture_uv_scale optionally multiplies every uv coordinate on faces that use a
+    given "#name" texture variable by a fixed factor, baked directly into the
+    emitted numbers (not relying on any engine-side rescaling). Use this when a
+    source model's own UV for a specific texture was authored 1:1 against an
+    element's real pixel length exceeding 16 (the vanilla sprite this port
+    substitutes for the source's own dedicated art is only 16x16), which Minecraft's
+    model format documents as having "inconsistent" results; see
+    SOURCE_POSITION_AUDIT.md (Vehicle Trailer side rails).
+
+    element_patch optionally corrects a specific face's authored UV on a single
+    element, identified by its own "from"/"to" coordinates, when the source's own
+    value is an isolated authoring error (not a UV-overflow mismatch) rather than
+    a reproducible discrepancy; see SOURCE_POSITION_AUDIT.md for the one documented
+    use of this (Golf Cart's roof strut).
+    """
+    model = json.loads(source.read_text(encoding="utf-8"))
+    if textures is not None:
+        model["textures"] = textures
+    components = model.pop("components", None)
+    if components is not None:
+        model["elements"] = components
+    if geometry_scale != 1.0:
+        def scaled(vector: list[float]) -> list[float]:
+            return [8.0 + (coordinate - 8.0) * geometry_scale for coordinate in vector]
+
+        for element in model.get("elements", []):
+            element["from"] = scaled(element["from"])
+            element["to"] = scaled(element["to"])
+            rotation = element.get("rotation")
+            if rotation is not None and "origin" in rotation:
+                rotation["origin"] = scaled(rotation["origin"])
+    if legalize_rotations:
+        for element in model.get("elements", []):
+            rotation = element.get("rotation")
+            if rotation is None or "angle" not in rotation:
+                continue
+            source_angle = float(rotation["angle"])
+            rotation["angle"] = min(
+                VANILLA_1_21_4_ELEMENT_ANGLES,
+                key=lambda candidate: abs(candidate - source_angle),
+            )
+    if element_patch is not None:
+        target_from = element_patch["from"]
+        target_to = element_patch["to"]
+        for element in model.get("elements", []):
+            if element.get("from") == target_from and element.get("to") == target_to:
+                for face_name, uv in element_patch["faces"].items():
+                    element["faces"][face_name]["uv"] = uv
+                break
+        else:
+            raise ValueError(f"element_patch target not found in {source}")
+    if texture_uv_scale is not None:
+        for texture_name, scale in texture_uv_scale.items():
+            variable = f"#{texture_name}"
+            for element in model.get("elements", []):
+                for face in element.get("faces", {}).values():
+                    if face.get("texture") == variable and "uv" in face:
+                        face["uv"] = [round(coordinate * scale, 4) for coordinate in face["uv"]]
+    model.pop("loader", None)
+    model.pop("groups", None)
+    if texture_size is not None:
+        model["texture_size"] = texture_size
+    else:
+        # texture_size is understood by the source loader but unnecessary for vanilla
+        # item models whose UV was authored against the default 16x16 canvas.
+        model.pop("texture_size", None)
+    write_json(destination, model)
+
+
+
+def copy(source: Path, destination: Path) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, destination)
+
+
+def build(output: Path, pack_format: int = 97) -> tuple[Path, str]:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="vehicle-resource-pack-") as temporary:
+        pack = Path(temporary)
+        manifest = {
+            "description": "FleetCraft 26.3 — 23 de vehicule + 5 remorci | modele GPLv3 (MrCrayfish), reskin propriu",
+            "pack_format": pack_format,
+        }
+        if pack_format >= 97:
+            # 26.x reads min/max_format; older clients only look at pack_format.
+            manifest["min_format"] = [pack_format, 0]
+            manifest["max_format"] = pack_format
+        write_json(pack / "pack.mcmeta", {"pack": manifest})
+        copy(ROOT / "src/main/resources/vehicle_mod.png", pack / "pack.png")
+        copy(ROOT / "MOD-LICENSE.txt", pack / "LICENSE.txt")
+
+        namespace = pack / "assets/vehicle"
+        for item, (model, tint) in {
+            # VehicleEntity's default white dye and the default wheel item tint.
+            "go_kart_body": ("vehicle:item/go_kart_body", 16383998),
+            "lawn_mower_body": ("vehicle:item/lawn_mower_body", 16383998),
+            "quad_bike_body": ("vehicle:item/quad_bike_body", 16383998),
+            "quad_bike_handles": ("vehicle:item/quad_bike_handles", 0xFFFFFF),
+            "dune_buggy_body": ("vehicle:item/dune_buggy_body", 0xF2B116),
+            "dune_buggy_handles": ("vehicle:item/dune_buggy_handles", 0xF2B116),
+            "tractor_body": ("vehicle:item/tractor_body", 16383998),
+            "dirt_bike_body": ("vehicle:item/dirt_bike_body", 16383998),
+            "dirt_bike_handles": ("vehicle:item/dirt_bike_handles", 16383998),
+            "moped_body": ("vehicle:item/moped_body", 16383998),
+            "moped_handles": ("vehicle:item/moped_handles", 16383998),
+            "moped_mud_guard": ("vehicle:item/moped_mud_guard", 16383998),
+            "moped_stock_seat": ("vehicle:item/moped_stock_seat", 16383998),
+            "moped_stock_tray": ("vehicle:item/moped_stock_tray", 16383998),
+            "moped_stock_front_light": ("vehicle:item/moped_stock_front_light", 16383998),
+            "off_roader_body": ("vehicle:item/off_roader_body", 16383998),
+            "sports_car_body": ("vehicle:item/sports_car_body", 16383998),
+            "sports_car_steering_wheel": ("vehicle:item/sports_car_steering_wheel", 0xFFFFFF),
+            "sports_car_hood": ("vehicle:item/sports_car_hood", 16383998),
+            "sports_car_left_door": ("vehicle:item/sports_car_left_door", 16383998),
+            "sports_car_right_door": ("vehicle:item/sports_car_right_door", 16383998),
+            "sports_car_boot": ("vehicle:item/sports_car_boot", 16383998),
+            "sports_car_seat": ("vehicle:item/sports_car_seat", 16383998),
+            "sports_car_dashboard": ("vehicle:item/sports_car_dashboard", 16383998),
+            "sports_car_roof": ("vehicle:item/sports_car_roof", 16383998),
+            "mini_bus_body": ("vehicle:item/mini_bus_body", 16383998),
+            "mini_bus_stock_roof": ("vehicle:item/mini_bus_stock_roof", 16383998),
+            "mini_bus_front_roof": ("vehicle:item/mini_bus_front_roof", 16383998),
+            "mini_bus_roof_racks": ("vehicle:item/mini_bus_roof_racks", 16383998),
+            "mini_bus_left_door": ("vehicle:item/mini_bus_left_door", 16383998),
+            "mini_bus_right_door": ("vehicle:item/mini_bus_right_door", 16383998),
+            "mini_bus_sliding_door": ("vehicle:item/mini_bus_sliding_door", 16383998),
+            "police_car_body": ("vehicle:item/police_car_body", 16383998),
+            "mini_bus_rear": ("vehicle:item/mini_bus_rear", 16383998),
+            "mini_bus_seat": ("vehicle:item/mini_bus_seat", 16383998),
+            "mini_bus_dashboard": ("vehicle:item/mini_bus_dashboard", 16383998),
+            "big_tow_bar": ("vehicle:item/big_tow_bar", 16383998),
+            "golf_cart_body": ("vehicle:item/golf_cart_body", 16383998),
+            "jet_ski_body": ("vehicle:item/jet_ski_body", 16383998),
+            "sports_plane_body": ("vehicle:item/sports_plane_body", 16383998),
+            "sports_plane_wings": ("vehicle:item/sports_plane_wings", 16383998),
+            "sports_plane_seat": ("vehicle:item/sports_plane_seat", 16383998),
+            "sports_plane_propeller": ("vehicle:item/sports_plane_propeller", 16383998),
+            "sports_plane_left_aileron": ("vehicle:item/sports_plane_left_aileron", 16383998),
+            "sports_plane_right_aileron": ("vehicle:item/sports_plane_right_aileron", 16383998),
+            "sports_plane_elevator": ("vehicle:item/sports_plane_elevator", 16383998),
+            "sports_plane_joystick": ("vehicle:item/sports_plane_joystick", 16383998),
+            "compact_helicopter_body": ("vehicle:item/compact_helicopter_body", 16383998),
+            "compact_helicopter_blades": ("vehicle:item/compact_helicopter_blades", 16383998),
+            "compact_helicopter_joystick": ("vehicle:item/compact_helicopter_joystick", 16383998),
+            "compact_helicopter_seat": ("vehicle:item/compact_helicopter_seat", 16383998),
+            "compact_helicopter_tail_rotor": ("vehicle:item/compact_helicopter_tail_rotor", 16383998),
+            "sofacopter_sofa": ("vehicle:item/sofacopter_sofa", 0xFFFFFF),
+            "sofacopter_arm": ("vehicle:item/sofacopter_arm", 0xFFFFFF),
+            "sofacopter_blades": ("vehicle:item/sofacopter_blades", 0xFFFFFF),
+            "go_kart_steering_wheel": ("vehicle:item/go_kart_steering_wheel", 0xFFFFFF),
+            "tow_bar": ("vehicle:item/tow_bar", 0xFFFFFF),
+            "fertilizer_body": ("vehicle:item/fertilizer_body", 16383998),
+            "seeder_body": ("vehicle:item/seeder_body", 16383998),
+            "storage_trailer_body": ("vehicle:item/storage_trailer_body", 16383998),
+            "fluid_trailer_body": ("vehicle:item/fluid_trailer_body", 16383998),
+            "vehicle_trailer_body": ("vehicle:item/vehicle_trailer_body", 16383998),
+            "seed_spiker": ("vehicle:item/seed_spiker", 0xFFFFFF),
+            "standard_wheel": ("vehicle:item/standard_wheel", 0xFFFFFF),
+            "iron_small_engine": ("vehicle:item/iron_small_engine", 0xFFFFFF),
+            "iron_large_engine": ("vehicle:item/iron_large_engine", 0xFFFFFF),
+            "fuel_door_closed": ("vehicle:item/fuel_door_closed", 16383998),
+            "small_fuel_door_closed": ("vehicle:item/small_fuel_door_closed", 16383998),
+            "key_hole": ("vehicle:item/key_hole", 16383998),
+            "atv_body": ("vehicle:item/atv_body", 16383998),
+            "atv_handles": ("vehicle:item/atv_handles", 16383998),
+            "mini_bike_body": ("vehicle:item/mini_bike_body", 16383998),
+            "mini_bike_handles": ("vehicle:item/mini_bike_handles", 16383998),
+            "smart_car_body": ("vehicle:item/smart_car_body", 16383998),
+            "speed_boat_body": ("vehicle:item/speed_boat_body", 16383998),
+            "aluminum_boat_body": ("vehicle:item/aluminum_boat_body", 16383998),
+            "bumper_car_body": ("vehicle:item/bumper_car_body", 16383998),
+            "shopping_cart_body": ("vehicle:item/shopping_cart_body", 16383998),
+            "gas_pump": ("vehicle:item/gas_pump", 16383998),
+            "gas_pump_bottom": ("vehicle:item/gas_pump_bottom", 16383998),
+            "gas_pump_top": ("vehicle:item/gas_pump_top", 16383998),
+            "nozzle": ("vehicle:item/nozzle", 16383998),
+            "hose_segment": ("vehicle:item/hose_segment", 16383998),
+            "jerry_can": ("vehicle:item/jerry_can", 16383998),
+            "industrial_jerry_can": ("vehicle:item/industrial_jerry_can", 16383998),
+            "garage_terminal": ("vehicle:item/garage_terminal", 16383998),
+        }.items():
+            write_json(namespace / f"items/{item}.json", item_definition(model, tint))
+
+        convert_model(
+            ASSETS / "models/vehicle/go_kart/base.json",
+            namespace / "models/item/go_kart_body.json",
+            {"2": "vehicle:item/go_kart_body", "particle": "vehicle:item/go_kart_body"},
+        )
+        convert_model(
+            ASSETS / "models/vehicle/lawn_mower_body.json",
+            namespace / "models/item/lawn_mower_body.json",
+            {
+                "seat": "minecraft:block/black_wool",
+                "axel": "minecraft:block/light_gray_concrete",
+                "blade_cover": "minecraft:block/black_concrete",
+                "logo": "vehicle:item/lawn_mower_logo",
+                "body": "minecraft:block/white_concrete",
+                "particle": "minecraft:block/white_concrete",
+            },
+        )
+        convert_model(
+            ASSETS / "models/vehicle/quad_bike/base.json",
+            namespace / "models/item/quad_bike_body.json",
+            {"1": "vehicle:item/quad_bike_body", "particle": "vehicle:item/quad_bike_body"},
+        )
+        convert_model(
+            ASSETS / "models/vehicle/quad_bike/handles.json",
+            namespace / "models/item/quad_bike_handles.json",
+            {"texture": "vehicle:item/quad_bike_handles", "particle": "vehicle:item/quad_bike_handles"},
+        )
+        convert_model(
+            ROOT / "tools/source_assets/police_car_body.json",
+            namespace / "models/item/police_car_body.json",
+            {
+                "indicator_light": "minecraft:block/orange_stained_glass",
+                "brake_light": "minecraft:block/red_stained_glass",
+                "headlight_glass": "minecraft:block/white_stained_glass",
+                "headlight": "minecraft:block/redstone_lamp",
+                "body": "minecraft:block/white_concrete",
+                "seat": "minecraft:block/black_wool",
+                "spring": "vehicle:item/off_roader_spring",
+                "axel": "minecraft:block/light_gray_concrete",
+                "trim": "minecraft:block/white_concrete",
+                "logo": "vehicle:item/off_roader_logo",
+                "window_frame": "minecraft:block/black_concrete",
+                "windshield": "minecraft:block/glass",
+                "bumper": "minecraft:block/iron_block",
+                "grill": "vehicle:item/off_roader_grill",
+                "frame": "minecraft:block/gray_concrete",
+                "particle": "minecraft:block/white_concrete",
+                "siren_red": "vehicle:item/siren_red",
+                "siren_blue": "vehicle:item/siren_blue",
+                "lightbar_base": "minecraft:block/black_concrete",
+            },
+        )
+        for police_texture in ("siren_red", "siren_blue"):
+            copy(ASSETS / f"textures/item/{police_texture}.png",
+                 namespace / f"textures/item/{police_texture}.png")
+
+        convert_model(
+            ROOT / "tools/source_assets/vehicle_dune_buggy_body.json",
+            namespace / "models/item/dune_buggy_body.json",
+            {
+                "seat": "minecraft:block/yellow_wool",
+                "engine_base": "minecraft:block/light_gray_concrete",
+                "engine_part": "minecraft:block/gray_concrete",
+                "body": "minecraft:block/yellow_concrete",
+                "particle": "minecraft:block/yellow_concrete",
+            },
+        )
+        convert_model(
+            ROOT / "tools/source_assets/vehicle_dune_buggy_handles.json",
+            namespace / "models/item/dune_buggy_handles.json",
+            {
+                "handles": "minecraft:block/yellow_concrete",
+                "axel": "minecraft:block/light_gray_concrete",
+                "base": "minecraft:block/red_concrete",
+                "particle": "minecraft:block/yellow_concrete",
+            },
+        )
+        convert_model(
+            ASSETS / "models/vehicle/tractor_body.json",
+            namespace / "models/item/tractor_body.json",
+            {
+                "seat": "minecraft:block/black_wool",
+                "axel": "minecraft:block/light_gray_concrete",
+                "color": "minecraft:block/white_concrete",
+                # The source uses the anvil atlas and a tiny Cray Industries badge.
+                # Some 1.21.4 clients resolve those two legacy references as the
+                # missing-texture checkerboard. Keep the body clean and deterministic.
+                "detail": "minecraft:block/gray_concrete",
+                "cray_industries_logo": "minecraft:block/white_concrete",
+                "particle": "minecraft:block/white_concrete",
+            },
+        )
+        convert_model(
+            ASSETS / "models/vehicle/dirt_bike/body.json",
+            namespace / "models/item/dirt_bike_body.json",
+            {"1": "vehicle:item/dirt_bike_body", "particle": "vehicle:item/dirt_bike_body"},
+        )
+        convert_model(
+            ASSETS / "models/vehicle/dirt_bike/handles.json",
+            namespace / "models/item/dirt_bike_handles.json",
+            {"2": "vehicle:item/dirt_bike_handles", "particle": "vehicle:item/dirt_bike_handles"},
+        )
+        for source, target in {
+            "body": "moped_body",
+            "handles": "moped_handles",
+            "mud_guard": "moped_mud_guard",
+            "cosmetics/stock_seat": "moped_stock_seat",
+            "cosmetics/stock_tray": "moped_stock_tray",
+            "cosmetics/stock_front_light": "moped_stock_front_light",
+        }.items():
+            convert_model(
+                ASSETS / f"models/vehicle/moped/{source}.json",
+                namespace / f"models/item/{target}.json",
+                {"1": f"vehicle:item/{target}", "2": f"vehicle:item/{target}",
+                 "particle": f"vehicle:item/{target}"},
+            )
+        convert_model(
+            ASSETS / "models/vehicle/off_roader_body.json",
+            namespace / "models/item/off_roader_body.json",
+            {
+                "indicator_light": "minecraft:block/orange_stained_glass",
+                "brake_light": "minecraft:block/red_stained_glass",
+                "headlight_glass": "minecraft:block/white_stained_glass",
+                "headlight": "minecraft:block/redstone_lamp",
+                "body": "minecraft:block/white_concrete",
+                "seat": "minecraft:block/black_wool",
+                "spring": "vehicle:item/off_roader_spring",
+                "axel": "minecraft:block/light_gray_concrete",
+                "trim": "minecraft:block/white_concrete",
+                "logo": "vehicle:item/off_roader_logo",
+                "window_frame": "minecraft:block/black_concrete",
+                "windshield": "minecraft:block/glass",
+                "bumper": "minecraft:block/iron_block",
+                "grill": "vehicle:item/off_roader_grill",
+                # Keep the source's dark metal look without relying on the
+                # legacy anvil atlas path that can become missing-texture art.
+                "frame": "minecraft:block/gray_concrete",
+                "particle": "minecraft:block/white_concrete",
+            },
+        )
+        convert_model(
+            ASSETS / "models/vehicle/sports_car/base.json",
+            namespace / "models/item/sports_car_body.json",
+            {"8": "vehicle:item/sports_car_body", "particle": "vehicle:item/sports_car_body"},
+            geometry_scale=0.5,
+        )
+        convert_model(
+            ASSETS / "models/vehicle/sports_car/steering_wheel.json",
+            namespace / "models/item/sports_car_steering_wheel.json",
+            {"texture": "vehicle:item/sports_car_steering_wheel",
+             "particle": "vehicle:item/sports_car_steering_wheel"},
+        )
+        for source, target, texture_key in (
+            ("hood", "sports_car_hood", "9"),
+            ("left_door", "sports_car_left_door", "11"),
+            ("right_door", "sports_car_right_door", "12"),
+            ("boot", "sports_car_boot", "13"),
+            ("seat", "sports_car_seat", "14"),
+            ("dashboard", "sports_car_dashboard", "7"),
+            ("roof", "sports_car_roof", "10"),
+        ):
+            convert_model(
+                ASSETS / f"models/vehicle/sports_car/cosmetics/{source}.json",
+                namespace / f"models/item/{target}.json",
+                {texture_key: f"vehicle:item/{target}", "particle": f"vehicle:item/{target}"},
+                geometry_scale=0.5,
+            )
+        convert_model(
+            ASSETS / "models/vehicle/mini_bus/body.json",
+            namespace / "models/item/mini_bus_body.json",
+            {"2": "vehicle:item/mini_bus_body", "particle": "vehicle:item/mini_bus_body"},
+        )
+        for source, target, texture_key in (
+            ("stock_roof", "mini_bus_stock_roof", "1"),
+            ("front_roof", "mini_bus_front_roof", "1"),
+            ("roof_racks", "mini_bus_roof_racks", "2"),
+            ("stock_left_door", "mini_bus_left_door", "2"),
+            ("stock_right_door", "mini_bus_right_door", "2"),
+            ("stock_sliding_door", "mini_bus_sliding_door", "1"),
+            ("aircon_ladder", "mini_bus_rear", "2"),
+            ("stock_seat", "mini_bus_seat", "2"),
+            ("stock_dashboard", "mini_bus_dashboard", "2"),
+        ):
+            convert_model(
+                ASSETS / f"models/vehicle/mini_bus/cosmetics/{source}.json",
+                namespace / f"models/item/{target}.json",
+                {texture_key: f"vehicle:item/{target}", "particle": f"vehicle:item/{target}"},
+            )
+        convert_model(
+            ASSETS / "models/vehicle/big_tow_bar.json",
+            namespace / "models/item/big_tow_bar.json",
+            {"texture": "vehicle:item/big_tow_bar", "particle": "vehicle:item/big_tow_bar"},
+        )
+        convert_model(
+            ASSETS / "models/vehicle/golf_cart_body.json",
+            namespace / "models/item/golf_cart_body.json",
+            element_patch={
+                # This tiny roof-strut element's own "west" and "up" faces author UV
+                # dimensions that match none of this same element's four other faces
+                # or its own real geometry (10x1.1x1.1 model pixels): "west" is
+                # [0,0,-11.9,5.1] instead of matching "east"'s correctly-sized
+                # [0,0,1.1,1.1], and "up" is [0,0,12,6.1] instead of matching
+                # "down"'s correctly-sized [0,0,10,1.1]. Every sibling face proves
+                # the element's real UV footprint; this is an isolated authoring
+                # error in the source's own asset, not a reproducible discrepancy
+                # (the other five faces across this model and the rest of the body
+                # are internally consistent). Per explicit user direction, the two
+                # mismatched faces are patched here to mirror their correctly-sized
+                # counterparts rather than left to sample whatever sprite happens to
+                # sit next to white concrete in the atlas; see SOURCE_POSITION_AUDIT.md
+                # r36 entry. This is a disclosed deviation from the literal source
+                # value, not a literal reproduction of it.
+                "from": [11, 28.5, 19],
+                "to": [21, 29.6, 20.1],
+                "faces": {
+                    "west": [0, 0, 1.1, 1.1],
+                    "up": [0, 0, 10, 1.1],
+                },
+            },
+        )
+        convert_model(
+            ASSETS / "models/vehicle/jet_ski_body.json",
+            namespace / "models/item/jet_ski_body.json",
+            {
+                # The source model's "seat"/"white"/"detail"/"body" keys already resolve
+                # cleanly in modern vanilla and are carried over unchanged. r35: "logo"
+                # was the literal, unconverted "vehicle:model/cray_industries" path, which
+                # is not covered by Minecraft's default "blocks" sprite atlas sources and
+                # renders as a missing-texture black/purple square in-game. Point it at
+                # the same dedicated textures/item/ copy convention used by every other
+                # vehicle's Cray Industries decal; see SOURCE_POSITION_AUDIT.md r35 entry
+                # for the full root-cause analysis.
+                "seat": "minecraft:block/black_wool",
+                "white": "minecraft:block/white_concrete",
+                "logo": "vehicle:item/jet_ski_logo",
+                "detail": "minecraft:block/anvil",
+                "body": "minecraft:block/white_concrete",
+            },
+        )
+        for source, target, texture_key, geometry_scale in (
+            ("base", "sports_plane_body", "base", 1.0 / 3.0),
+            ("cosmetics/wings", "sports_plane_wings", "wings", 1.0 / 3.0),
+            ("cosmetics/seat", "sports_plane_seat", "seat", 1.0),
+            ("cosmetics/propeller", "sports_plane_propeller", "propeller", 1.0),
+            ("cosmetics/left_aileron", "sports_plane_left_aileron", "left_aileron", 1.0 / 3.0),
+            ("cosmetics/right_aileron", "sports_plane_right_aileron", "right_aileron", 1.0 / 3.0),
+            ("cosmetics/elevator", "sports_plane_elevator", "elevator", 1.0),
+            ("cosmetics/joystick", "sports_plane_joystick", "joystick", 1.0),
+        ):
+            convert_model(
+                ASSETS / f"models/vehicle/sports_plane/{source}.json",
+                namespace / f"models/item/{target}.json",
+                {texture_key: f"vehicle:item/{target}",
+                 "particle": f"vehicle:item/{target}"},
+                geometry_scale=geometry_scale,
+                legalize_rotations=True,
+            )
+        for source, target, texture_key, geometry_scale in (
+            ("base", "compact_helicopter_body", "base", 0.25),
+            ("cosmetics/blades", "compact_helicopter_blades", "blades", 1.0 / 3.0),
+            ("cosmetics/joystick", "compact_helicopter_joystick", "joystick", 1.0),
+            ("cosmetics/seat", "compact_helicopter_seat", "seat", 1.0),
+            ("cosmetics/tail_rotor", "compact_helicopter_tail_rotor", "tail_rotor", 1.0),
+        ):
+            convert_model(
+                ASSETS / f"models/vehicle/helicopter/{source}.json",
+                namespace / f"models/item/{target}.json",
+                {texture_key: f"vehicle:item/{target}",
+                 "particle": f"vehicle:item/{target}"},
+                geometry_scale=geometry_scale,
+                legalize_rotations=True,
+            )
+        convert_model(
+            ROOT / "tools/source_assets/cfm_sofa_single.json",
+            namespace / "models/item/sofacopter_sofa.json",
+            {
+                "wool": "minecraft:block/red_wool",
+                "support": "minecraft:block/oak_log",
+                "particle": "minecraft:block/red_wool",
+            },
+        )
+        convert_model(
+            ASSETS / "models/vehicle/sofa_helicopter_arm.json",
+            namespace / "models/item/sofacopter_arm.json",
+            {
+                "0": "minecraft:block/gray_concrete",
+                "1": "minecraft:block/light_gray_concrete",
+                "particle": "minecraft:block/light_gray_concrete",
+            },
+            legalize_rotations=True,
+        )
+        convert_model(
+            ROOT / "tools/source_assets/cfm_ceiling_fan_fans.json",
+            namespace / "models/item/sofacopter_blades.json",
+            {
+                "0": "minecraft:block/gray_concrete",
+                "1": "minecraft:block/white_concrete",
+                "particle": "minecraft:block/white_concrete",
+            },
+            legalize_rotations=True,
+        )
+        convert_model(
+            ROOT / "tools/source_assets/vehicle_atv_body.json",
+            namespace / "models/item/atv_body.json",
+            {
+                # The vendored source model (exported with MrCrayfish's own Model
+                # Creator, the closest available reference for this un-decompiled
+                # vehicle) declares "body": white_concrete and "frame": anvil itself.
+                # An earlier port substituted lime_concrete/gray_concrete here with
+                # no documented reason, turning the dyeable default-white ATV green;
+                # restored to the vendored file's own choices. See
+                # SOURCE_POSITION_AUDIT.md r37 entry.
+                "seat": "minecraft:block/black_wool",
+                "axel": "minecraft:block/light_gray_concrete",
+                "body": "minecraft:block/white_concrete",
+                "frame": "minecraft:block/anvil",
+                "particle": "minecraft:block/white_concrete",
+            },
+        )
+        convert_model(
+            ROOT / "tools/source_assets/vehicle_atv_handles.json",
+            namespace / "models/item/atv_handles.json",
+            {
+                # Same restoration as atv_body above: the vendored source model
+                # declares "handles": black_concrete and "frame_alt": stone itself.
+                "handles": "minecraft:block/black_concrete",
+                "frame_alt": "minecraft:block/stone",
+                "frame_main": "minecraft:block/gray_concrete",
+                "particle": "minecraft:block/black_concrete",
+            },
+        )
+        convert_model(
+            ROOT / "tools/source_assets/vehicle_mini_bike_body.json",
+            namespace / "models/item/mini_bike_body.json",
+            {
+                "seat": "minecraft:block/black_wool",
+                "axel": "minecraft:block/light_gray_concrete",
+                "body": "minecraft:block/white_concrete",
+                "particle": "minecraft:block/white_concrete",
+            },
+        )
+        convert_model(
+            ROOT / "tools/source_assets/vehicle_mini_bike_handles.json",
+            namespace / "models/item/mini_bike_handles.json",
+            {
+                "handles": "minecraft:block/white_concrete",
+                "axel": "minecraft:block/light_gray_concrete",
+                "body": "minecraft:block/gray_concrete",
+                "particle": "minecraft:block/white_concrete",
+            },
+        )
+        convert_model(
+            ROOT / "tools/source_assets/vehicle_smart_car_body.json",
+            namespace / "models/item/smart_car_body.json",
+            {
+                "seat": "minecraft:block/black_wool",
+                "indicator_light": "minecraft:block/orange_stained_glass",
+                "axel": "minecraft:block/light_gray_concrete",
+                "brake_light": "minecraft:block/red_stained_glass",
+                "steering_wheel_shaft": "minecraft:block/gray_concrete",
+                "headlights": "minecraft:block/white_stained_glass",
+                "logo": "minecraft:block/light_gray_concrete",
+                "windshield": "minecraft:block/light_blue_stained_glass",
+                "grill": "minecraft:block/gray_concrete",
+                "frame": "minecraft:block/black_concrete",
+                "base": "minecraft:block/white_concrete",
+                "particle": "minecraft:block/white_concrete",
+            },
+        )
+        convert_model(
+            ROOT / "tools/source_assets/vehicle_speed_boat_body.json",
+            namespace / "models/item/speed_boat_body.json",
+            {
+                "seat": "minecraft:block/white_wool",
+                "glass": "minecraft:block/light_blue_stained_glass",
+                "steering_wheel_shaft": "minecraft:block/gray_concrete",
+                "logo": "minecraft:block/light_gray_concrete",
+                "detail": "minecraft:block/light_gray_concrete",
+                "tint": "minecraft:block/white_concrete",
+                "base": "minecraft:block/red_concrete",
+                "particle": "minecraft:block/red_concrete",
+            },
+        )
+        convert_model(
+            ROOT / "tools/source_assets/vehicle_aluminum_boat_body.json",
+            namespace / "models/item/aluminum_boat_body.json",
+            {
+                # The released 1.16.X source model's own texture map already resolves
+                # cleanly in modern vanilla: a plain white-concrete hull/particle (like
+                # several sibling r29-batch vehicles), the mod's own real Cray Industries
+                # decal for "logo", and "minecraft:block/anvil" for "seat" (a legitimate,
+                # resolvable vanilla texture also used as-is by the Fluid Trailer's "base"
+                # key below). None of these need substituting; see SOURCE_POSITION_AUDIT.md
+                # for why r31's "recovered aluminum hull texture" was reverted in r34.
+                # r35: "logo" now points at a dedicated textures/item/ copy (like every
+                # other vehicle's Cray Industries decal) instead of the non-standard
+                # textures/model/ path, which Minecraft's default "blocks" sprite atlas
+                # does not stitch sprites from; see SOURCE_POSITION_AUDIT.md r35 entry.
+                "seat": "minecraft:block/anvil",
+                "logo": "vehicle:item/aluminum_boat_logo",
+                "body": "minecraft:block/white_concrete",
+                "particle": "minecraft:block/white_concrete",
+            },
+
+        )
+        convert_model(
+            ROOT / "tools/source_assets/vehicle_bumper_car_body.json",
+            namespace / "models/item/bumper_car_body.json",
+            {
+                "seat": "minecraft:block/black_wool",
+                "rubber": "minecraft:block/black_concrete",
+                # Keep the source's dark detailing without the legacy anvil atlas path.
+                "detail": "minecraft:block/gray_concrete",
+                "body": "minecraft:block/white_concrete",
+                "shaft": "minecraft:block/light_gray_concrete",
+                "particle": "minecraft:block/white_concrete",
+            },
+        )
+        convert_model(
+            ROOT / "tools/source_assets/vehicle_shopping_cart_body.json",
+            namespace / "models/item/shopping_cart_body.json",
+            {
+                # All of this body's source textures are the mod's own existing
+                # vehicle:model assets (mesh patterns and the Cray Industries logo),
+                # not CFM or the legacy anvil atlas, so they carry over unchanged.
+                # r35: each one is now copied to its own textures/item/ file and
+                # referenced via vehicle:item/, matching the convention already used
+                # for every other vehicle's mesh/logo decals (e.g. off_roader_grill,
+                # off_roader_logo). The old textures/model/ path is not covered by
+                # Minecraft's default "blocks" sprite atlas sources, so sprites placed
+                # there never get stitched in and render as the missing-texture
+                # black/purple checkerboard in-game; see SOURCE_POSITION_AUDIT.md r35.
+                "plastic_frame": "minecraft:block/light_gray_concrete",
+                "plastic_mesh_two": "vehicle:item/shopping_cart_mesh_angled",
+                "metal_mesh": "vehicle:item/shopping_cart_white_mesh",
+                "metal": "minecraft:block/white_concrete",
+                "logo": "vehicle:item/shopping_cart_logo",
+                "plastic_mesh_one": "vehicle:item/shopping_cart_mesh_angled_flipped",
+                "plastic_mesh_three": "vehicle:item/shopping_cart_mesh",
+                "particle": "minecraft:block/light_gray_concrete",
+            },
+        )
+        convert_model(
+            ASSETS / "models/vehicle/go_kart_steering_wheel.json",
+            namespace / "models/item/go_kart_steering_wheel.json",
+        )
+        convert_model(
+            ASSETS / "models/vehicle/tow_bar.json",
+            namespace / "models/item/tow_bar.json",
+        )
+        convert_model(
+            ASSETS / "models/vehicle/fuel_door_closed.json",
+            namespace / "models/item/fuel_door_closed.json",
+            {"1": "vehicle:item/fuel_port_closed", "particle": "vehicle:item/fuel_port_closed"},
+        )
+        convert_model(
+            ASSETS / "models/vehicle/small_fuel_door_closed.json",
+            namespace / "models/item/small_fuel_door_closed.json",
+            {"1": "vehicle:item/small_fuel_port_closed",
+             "particle": "vehicle:item/small_fuel_port_closed"},
+        )
+        convert_model(
+            ASSETS / "models/vehicle/key_hole.json",
+            namespace / "models/item/key_hole.json",
+            {
+                "detail": "minecraft:block/gray_concrete",
+                "inner": "minecraft:block/black_concrete",
+                "base": "minecraft:block/white_concrete",
+                "particle": "minecraft:block/white_concrete",
+            },
+        )
+        for source, target in {
+            "trailer_fertilizer_body": "fertilizer_body",
+            "trailer_seeder_body": "seeder_body",
+            "trailer_chest_body": "storage_trailer_body",
+            "trailer_fluid_body": "fluid_trailer_body",
+            "trailer_body": "vehicle_trailer_body",
+            "seed_spiker": "seed_spiker",
+        }.items():
+            textures = None
+            texture_uv_scale = None
+            if source == "trailer_fluid_body":
+                # The four Cray Industries side panels use the original pixels,
+                # but move them from the legacy model/ path to a normal item
+                # texture path that 1.21.4 ItemDisplay resolves reliably.
+                textures = {
+                    "glass": "minecraft:block/glass",
+                    "cray_industries": "vehicle:item/fluid_trailer_logo",
+                    "tank": "minecraft:block/white_concrete",
+                    "base": "minecraft:block/anvil",
+                    "frame": "minecraft:block/light_gray_concrete",
+                }
+            if source == "trailer_body":
+                # The two 17-model-pixel-long side rails ("frame" texture, substituted
+                # with vanilla's 16x16 light_gray_concrete) author their UV 1:1 against
+                # their own real length, consistent across all four of their faces, up
+                # to UV coordinate 17 -- one unit past the substitute sprite's real
+                # 16x16 bounds. Minecraft's own model-format documentation states UV
+                # outside 0-16 has "inconsistent" results (it does not clamp or tile;
+                # it samples past the sprite's edge into whatever the atlas happens to
+                # stitch next to it), which is the source of the purple/stray pixels
+                # reported under the trailer's sides. r36 tried to fix this by
+                # declaring texture_size: [17, 17] on the model, assuming the game
+                # would rescale UV to fit -- but that field is Blockbench-only editing
+                # metadata the game never reads (see convert_model's docstring), so
+                # that round silently fixed nothing. Bake the 16/17 scale into the
+                # "frame" faces' own UV numbers instead, which is engine-agnostic and
+                # actually changes what gets sampled; the substitute texture is a flat
+                # solid color, so the sub-pixel shift this introduces is invisible.
+                # The other two textures sharing this same model ("bed_frame",
+                # "bed_panel") already stay within 0-16 and are left untouched. See
+                # SOURCE_POSITION_AUDIT.md for the full correction.
+                texture_uv_scale = {"frame": 16.0 / 17.0}
+            convert_model(
+                ASSETS / f"models/vehicle/{source}.json",
+                namespace / f"models/item/{target}.json",
+                textures,
+                texture_uv_scale=texture_uv_scale,
+            )
+
+        convert_model(
+            ASSETS / "models/item/standard_wheel.json",
+            namespace / "models/item/standard_wheel.json",
+            {"particle": "vehicle:item/standard_wheel", "wheel": "vehicle:item/standard_wheel"},
+            # r37 declared texture_size: [32, 32] here on the theory that Minecraft
+            # would otherwise reinterpret this model's own UV (confined to a max
+            # coordinate of 11, i.e. the top-left region of wheel.png where its real
+            # 22x22-pixel artwork lives out of the full 32x32 canvas) against a wrong
+            # 16x16 assumption. That theory does not hold: Minecraft always scales a
+            # model's declared 0-16 UV space proportionally against the texture's own
+            # real resolution, whatever it is (this is exactly how higher-resolution
+            # resource packs already work against unmodified vanilla models), so
+            # wheel.png's unmodified 32x32 copy was already read correctly before and
+            # after r37 -- 11/16 of its full size lands exactly on its drawn 22/32
+            # boundary either way. texture_size is additionally Blockbench-only
+            # editing metadata the game does not use at all (see convert_model's
+            # docstring); r37's declaration here was a harmless no-op kept only so
+            # Blockbench shows the model's real authored canvas if ever reopened.
+            # See SOURCE_POSITION_AUDIT.md for the correction and for where a
+            # genuine instance of this same UV-overflow family of bug was found and
+            # actually fixed (the Vehicle Trailer's side rails).
+            texture_size=[32, 32],
+        )
+        convert_model(
+            ASSETS / "models/item/small_engine.json",
+            namespace / "models/item/small_engine.json",
+            {"small_engine": "vehicle:item/small_engine", "particle": "vehicle:item/small_engine"},
+        )
+        convert_model(
+            ASSETS / "models/item/iron_small_engine.json",
+            namespace / "models/item/iron_small_engine.json",
+            {"small_engine": "vehicle:item/iron_small_engine"},
+        )
+        # Flatten the iron engine onto the complete source geometry. This avoids
+        # relying on Forge's parent-model lookup when the item is shown by a Display.
+        convert_model(
+            ASSETS / "models/item/large_engine.json",
+            namespace / "models/item/iron_large_engine.json",
+            {"large_engine": "vehicle:item/iron_large_engine",
+             "particle": "vehicle:item/iron_large_engine"},
+        )
+
+        copy(
+            ASSETS / "textures/vehicle/go_kart/base.png",
+            namespace / "textures/item/go_kart_body.png",
+        )
+        copy(
+            ASSETS / "textures/vehicle/quad_bike/base.png",
+            namespace / "textures/item/quad_bike_body.png",
+        )
+        copy(
+            ASSETS / "textures/vehicle/quad_bike/handles.png",
+            namespace / "textures/item/quad_bike_handles.png",
+        )
+        copy(
+            ASSETS / "textures/vehicle/dirt_bike/body.png",
+            namespace / "textures/item/dirt_bike_body.png",
+        )
+        copy(
+            ASSETS / "textures/vehicle/dirt_bike/handles.png",
+            namespace / "textures/item/dirt_bike_handles.png",
+        )
+        for source, target in {
+            "body.png": "moped_body.png",
+            "handles.png": "moped_handles.png",
+            "mud_guard.png": "moped_mud_guard.png",
+            "cosmetics/stock_seat.png": "moped_stock_seat.png",
+            "cosmetics/stock_tray.png": "moped_stock_tray.png",
+            "cosmetics/stock_front_light.png": "moped_stock_front_light.png",
+        }.items():
+            copy(
+                ASSETS / f"textures/vehicle/moped/{source}",
+                namespace / f"textures/item/{target}",
+            )
+        copy(
+            ASSETS / "textures/vehicle/mini_bus/body.png",
+            namespace / "textures/item/mini_bus_body.png",
+        )
+        for source, target in {
+            "stock_roof": "mini_bus_stock_roof",
+            "front_roof": "mini_bus_front_roof",
+            "roof_racks": "mini_bus_roof_racks",
+            "stock_left_door": "mini_bus_left_door",
+            "stock_right_door": "mini_bus_right_door",
+            "stock_sliding_door": "mini_bus_sliding_door",
+            "aircon_ladder": "mini_bus_rear",
+            "stock_seats": "mini_bus_seat",
+            "stock_dashboard": "mini_bus_dashboard",
+        }.items():
+            copy(
+                ASSETS / f"textures/vehicle/mini_bus/cosmetics/{source}.png",
+                namespace / f"textures/item/{target}.png",
+            )
+        copy(
+            ASSETS / "textures/vehicle/big_tow_bar.png",
+            namespace / "textures/item/big_tow_bar.png",
+        )
+        copy(
+            ASSETS / "textures/vehicle/sports_car/base.png",
+            namespace / "textures/item/sports_car_body.png",
+        )
+        copy(
+            ASSETS / "textures/vehicle/sports_car/steering_wheel.png",
+            namespace / "textures/item/sports_car_steering_wheel.png",
+        )
+        for source, target in {
+            "hood": "sports_car_hood",
+            "left_door": "sports_car_left_door",
+            "right_door": "sports_car_right_door",
+            "boot": "sports_car_boot",
+            "seat": "sports_car_seat",
+            "dashboard": "sports_car_dashboard",
+            "roof": "sports_car_roof",
+        }.items():
+            copy(
+                ASSETS / f"textures/vehicle/sports_car/cosmetics/{source}.png",
+                namespace / f"textures/item/{target}.png",
+            )
+        for source, target in {
+            "base": "sports_plane_body",
+            "wings": "sports_plane_wings",
+            "seat": "sports_plane_seat",
+            "propeller": "sports_plane_propeller",
+            "left_aileron": "sports_plane_left_aileron",
+            "right_aileron": "sports_plane_right_aileron",
+            "elevator": "sports_plane_elevator",
+            "joystick": "sports_plane_joystick",
+        }.items():
+            copy(
+                ASSETS / f"textures/vehicle/sports_plane/{source}.png",
+                namespace / f"textures/item/{target}.png",
+            )
+        for source, target in {
+            "base": "compact_helicopter_body",
+            "blades": "compact_helicopter_blades",
+            "joystick": "compact_helicopter_joystick",
+            "seat": "compact_helicopter_seat",
+            "tail_rotor": "compact_helicopter_tail_rotor",
+        }.items():
+            copy(
+                ASSETS / f"textures/vehicle/helicopter/{source}.png",
+                namespace / f"textures/item/{target}.png",
+            )
+        copy(
+            ASSETS / "textures/model/spring.png",
+            namespace / "textures/item/off_roader_spring.png",
+        )
+        copy(
+            ASSETS / "textures/model/white_mesh.png",
+            namespace / "textures/item/off_roader_grill.png",
+        )
+        copy(
+            ASSETS / "textures/model/cray_industries.png",
+            namespace / "textures/item/off_roader_logo.png",
+        )
+        copy(
+            ASSETS / "textures/model/cray_industries.png",
+            namespace / "textures/item/lawn_mower_logo.png",
+        )
+        copy(
+            ASSETS / "textures/model/cray_industries.png",
+            namespace / "textures/item/fluid_trailer_logo.png",
+        )
+        copy(
+            ASSETS / "textures/model/cray_industries.png",
+            namespace / "textures/item/aluminum_boat_logo.png",
+        )
+        copy(
+            ASSETS / "textures/model/cray_industries.png",
+            namespace / "textures/item/shopping_cart_logo.png",
+        )
+        copy(
+            ASSETS / "textures/model/cray_industries.png",
+            namespace / "textures/item/jet_ski_logo.png",
+        )
+        copy(
+            ASSETS / "textures/model/mesh.png",
+            namespace / "textures/item/shopping_cart_mesh.png",
+        )
+        copy(
+            ASSETS / "textures/model/mesh_angled.png",
+            namespace / "textures/item/shopping_cart_mesh_angled.png",
+        )
+        copy(
+            ASSETS / "textures/model/mesh_angled_flipped.png",
+            namespace / "textures/item/shopping_cart_mesh_angled_flipped.png",
+        )
+        copy(
+            ASSETS / "textures/model/white_mesh.png",
+            namespace / "textures/item/shopping_cart_white_mesh.png",
+        )
+        copy(
+            ASSETS / "textures/model/wheel.png",
+            namespace / "textures/item/standard_wheel.png",
+        )
+        copy(
+            ASSETS / "textures/model/small_engine.png",
+            namespace / "textures/item/small_engine.png",
+        )
+        copy(
+            ASSETS / "textures/model/iron_small_engine.png",
+            namespace / "textures/item/iron_small_engine.png",
+        )
+        copy(
+            ASSETS / "textures/model/iron_large_engine.png",
+            namespace / "textures/item/iron_large_engine.png",
+        )
+        copy(
+            ASSETS / "textures/model/fuel_port_closed.png",
+            namespace / "textures/item/fuel_port_closed.png",
+        )
+        copy(
+            ASSETS / "textures/model/small_fuel_port_closed.png",
+            namespace / "textures/item/small_fuel_port_closed.png",
+        )
+
+        # --- Gas pump --------------------------------------------------------
+        # A faithful port of the original mod's own GasPumpBlock: same models,
+        # textures and nozzle pickup/put-down sounds, reused directly from the
+        # mod's assets (see tools/build_resource_pack.py's established pattern
+        # above of copying real vehicle art into this vanilla-client pack).
+        # The pump is placed/broken as a two-part display rig instead of a real
+        # block (a vanilla client cannot register new block types), and fuel is
+        # free/instant instead of draining a real Forge FluidTank (no vanilla
+        # equivalent exists yet); see GasPumpManager for the exact behaviour.
+        convert_model(
+            ASSETS / "models/item/gas_pump.json",
+            namespace / "models/item/gas_pump.json",
+            {"8": "vehicle:item/gas_pump", "particle": "vehicle:item/gas_pump"},
+        )
+        convert_model(
+            ASSETS / "models/block/gas_pump_bottom.json",
+            namespace / "models/item/gas_pump_bottom.json",
+            {"1": "vehicle:item/gas_pump_bottom", "particle": "vehicle:item/gas_pump_bottom"},
+        )
+        convert_model(
+            ASSETS / "models/block/gas_pump_top.json",
+            namespace / "models/item/gas_pump_top.json",
+            {"1": "vehicle:item/gas_pump_top", "particle": "vehicle:item/gas_pump_top"},
+        )
+        convert_model(
+            ASSETS / "models/vehicle/nozzle.json",
+            namespace / "models/item/nozzle.json",
+            {"2": "vehicle:item/nozzle", "particle": "vehicle:item/nozzle"},
+        )
+        # The nozzle is also carried as a real hand item. The source Blockbench model
+        # ships no display block at all, so vanilla defaults made it oversized crooked
+        # in hand; transforms below mirror the original mod's FuelingHandler exactly
+        # (FP: translate(±0.65, -0.27, -0.72) + rotX(45); TP: rotZ(180) + translate
+        # (±1px, -7px, -4.25px) after translateToHand). They affect ONLY held-item
+        # rendering; ItemDisplay entities (context NONE, e.g. the docked nozzle) and
+        # the pump's own rig stay untouched.
+        _nozzle_path = namespace / "models/item/nozzle.json"
+        _nozzle = json.loads(_nozzle_path.read_text(encoding="utf-8"))
+        _nozzle["display"] = {
+            "firstperson_righthand": {"rotation": [45.0, 0.0, 0.0], "translation": [10.4, -4.32, -11.52], "scale": [1.0, 1.0, 1.0]},
+            "firstperson_lefthand": {"rotation": [45.0, 0.0, 0.0], "translation": [-10.4, -4.32, -11.52], "scale": [1.0, 1.0, 1.0]},
+            "thirdperson_righthand": {"rotation": [0.0, 0.0, 180.0], "translation": [-1.0, 7.0, -4.25], "scale": [1.0, 1.0, 1.0]},
+            "thirdperson_lefthand": {"rotation": [0.0, 0.0, 180.0], "translation": [1.0, 7.0, -4.25], "scale": [1.0, 1.0, 1.0]},
+        }
+        write_json(_nozzle_path, _nozzle)
+        copy(
+            ASSETS / "textures/model/gas_pump.png",
+            namespace / "textures/item/gas_pump.png",
+        )
+        copy(
+            ASSETS / "textures/model/gas_pump.png",
+            namespace / "textures/item/gas_pump_bottom.png",
+        )
+        copy(
+            ASSETS / "textures/model/gas_pump.png",
+            namespace / "textures/item/gas_pump_top.png",
+        )
+        copy(
+            ASSETS / "textures/model/nozzle.png",
+            namespace / "textures/item/nozzle.png",
+        )
+        copy(
+            ASSETS / "textures/model/jerry_can.png",
+            namespace / "textures/item/jerry_can.png",
+        )
+        copy(
+            ASSETS / "textures/model/industrial_jerry_can.png",
+            namespace / "textures/item/industrial_jerry_can.png",
+        )
+        convert_model(
+            ASSETS / "models/item/jerry_can.json",
+            namespace / "models/item/jerry_can.json",
+            {"1": "vehicle:item/jerry_can", "particle": "vehicle:item/jerry_can"},
+        )
+        convert_model(
+            ASSETS / "models/item/industrial_jerry_can.json",
+            namespace / "models/item/industrial_jerry_can.json",
+            {"2": "vehicle:item/industrial_jerry_can", "particle": "vehicle:item/industrial_jerry_can"},
+        )
+        # Physical GTA-style garage terminal: the mod's workbench block as an item model.
+        copy(
+            ASSETS / "textures/model/workstation.png",
+            namespace / "textures/item/workstation.png",
+        )
+        convert_model(
+            ASSETS / "models/block/workstation.json",
+            namespace / "models/item/garage_terminal.json",
+            {"workstation": "vehicle:item/workstation", "particle": "vehicle:item/workstation"},
+        )
+        # The mod authors pointed these models at parent "vehicle:block/workstation", which is
+        # NOT exported to the pack: vanilla fails to resolve the parent and falls back to the
+        # magenta/black missing-model cube. Geometry is fully inlined, so just drop the parent.
+        for _can_model in ("jerry_can", "industrial_jerry_can"):
+            _can_path = namespace / f"models/item/{_can_model}.json"
+            _can_json = json.loads(_can_path.read_text(encoding="utf-8"))
+            if _can_json.get("parent") == "vehicle:block/workstation":
+                del _can_json["parent"]
+                write_json(_can_path, _can_json)
+        # The original renders the hose as a custom curved mesh built directly in
+        # Java (GasPumpRenderer#drawHose); there is no separate model/texture for
+        # it to reuse. A vanilla client cannot render that mesh either, so this is
+        # the one genuinely new asset: a plain thin rod, one display per hose
+        # segment, tinted with a vanilla dark texture like the other all-new parts
+        # above (e.g. the trailer's black wool/concrete trim).
+        write_json(namespace / "models/item/hose_segment.json", {
+            "textures": {"0": "minecraft:block/black_concrete", "particle": "minecraft:block/black_concrete"},
+            "elements": [
+                {
+                    "from": [7, 7, 0],
+                    "to": [9, 9, 16],
+                    "faces": {
+                        "north": {"uv": [7, 7, 9, 9], "texture": "#0"},
+                        "south": {"uv": [7, 7, 9, 9], "texture": "#0"},
+                        "east": {"uv": [0, 7, 16, 9], "texture": "#0"},
+                        "west": {"uv": [0, 7, 16, 9], "texture": "#0"},
+                        "up": {"uv": [7, 0, 9, 16], "texture": "#0"},
+                        "down": {"uv": [7, 0, 9, 16], "texture": "#0"},
+                    },
+                }
+            ],
+        })
+        copy(
+            ASSETS / "sounds/block/gas_pump/nozzle/pick_up.ogg",
+            namespace / "sounds/block/gas_pump/nozzle_pick_up.ogg",
+        )
+        copy(
+            ASSETS / "sounds/block/gas_pump/nozzle/put_down.ogg",
+            namespace / "sounds/block/gas_pump/nozzle_put_down.ogg",
+        )
+        # FuelingHandler plays this (originally the Jerry Can's own sample) every
+        # 20 ticks while fuel is actively flowing; reused here for the same cue.
+        copy(
+            ASSETS / "sounds/item/jerry_can/liquid_glug.ogg",
+            namespace / "sounds/item/jerry_can/liquid_glug.ogg",
+        )
+        copy(
+            ASSETS / "sounds/entity/vehicle/horn.ogg",
+            namespace / "sounds/entity/vehicle/horn.ogg",
+        )
+
+        # ==== Sistem mecanic (motoare / roti / unelte / jack / props) ==========
+        # Totul reuseste modelele + texturile proprii ale modului original
+        # (engines 3x4 tier, wheels, wrench/key/hammer/spray can, jack, cone,
+        # boost pad, fluid pipe); vectorii "vehicle:model//block(s)" sunt
+        # redirigati spre copii in textures/item/ ca la celelalte iteme.
+        _MECHANIC_TEXTURE_SOURCES = (
+            (ASSETS / "textures/model", "vehicle:model/"),
+            (ASSETS / "textures/block", "vehicle:block/"),
+            # the mod wrote "vehicle:blocks/boost_pad" but the png actually lives
+            # in Forge's textures/block/ (same folder as vehicle:block/*).
+            (ASSETS / "textures/block", "vehicle:blocks/"),
+        )
+
+        def mechanic_convert(source: Path, destination: Path,
+                             texture_overrides: dict[str, str] | None = None) -> None:
+            """Copy a mod item/block model into the pack as a self-contained item
+            model: parent refs into vehicle:* are dropped and every texture value
+            under vehicle:model/, vehicle:block/ or vehicle:blocks/ is rerouted to
+            a copied textures/item/ file (same convention as the rest of the pack)."""
+            model = json.loads(source.read_text(encoding="utf-8"))
+            parent = model.get("parent", "")
+            if isinstance(parent, str) and parent.startswith("vehicle:"):
+                del model["parent"]
+            textures = {}
+            for key, value in (model.get("textures") or {}).items():
+                if not isinstance(value, str) or not value.startswith("vehicle:"):
+                    textures[key] = value
+                    continue
+                rerouted = value
+                for source_dir, prefix in _MECHANIC_TEXTURE_SOURCES:
+                    if value.startswith(prefix):
+                        name = value[len(prefix):]
+                        copy(source_dir / f"{name}.png", namespace / f"textures/item/{name}.png")
+                        rerouted = f"vehicle:item/{name}"
+                        break
+                textures[key] = (texture_overrides or {}).get(key, rerouted)
+            model["textures"] = textures
+            write_json(destination, model)
+
+        MOTOR_DIR = ASSETS / "models/item"
+        for _tier in ("iron", "gold", "diamond", "netherite"):
+            for _etype in ("small", "large", "electric"):
+                _key = f"{_etype}_engine"          # texture key in the base parent model
+                _name = f"{_tier}_{_etype}_engine"
+                _base = json.loads((MOTOR_DIR / f"{_etype}_engine.json").read_text(encoding="utf-8"))
+                _base["textures"] = {_key: f"vehicle:item/{_name}", "particle": f"vehicle:item/{_name}"}
+                copy(ASSETS / f"textures/model/{_name}.png", namespace / f"textures/item/{_name}.png")
+                write_json(namespace / f"models/item/{_name}.json", _base)
+                write_json(namespace / f"items/{_name}.json", item_definition(f"vehicle:item/{_name}"))
+
+        mechanic_convert(ASSETS / "models/item/sports_wheel.json",
+                         namespace / "models/item/sports_wheel.json")
+        mechanic_convert(ASSETS / "models/item/off_road_wheel.json",
+                         namespace / "models/item/off_road_wheel.json")
+        mechanic_convert(ASSETS / "models/item/wrench.json",
+                         namespace / "models/item/wrench.json")
+        mechanic_convert(ASSETS / "models/item/hammer.json",
+                         namespace / "models/item/hammer.json")
+        mechanic_convert(ASSETS / "models/item/key.json",
+                         namespace / "models/item/key.json")
+        mechanic_convert(ASSETS / "models/item/spray_can_default.json",
+                         namespace / "models/item/spray_can.json")
+        mechanic_convert(ASSETS / "models/item/jack.json",
+                         namespace / "models/item/jack.json")
+        mechanic_convert(ASSETS / "models/block/jack_head.json",
+                         namespace / "models/item/jack_head.json")
+        mechanic_convert(ASSETS / "models/block/disabled_jack.json",
+                         namespace / "models/item/disabled_jack.json")
+        mechanic_convert(ASSETS / "models/block/workstation.json",
+                         namespace / "models/item/mechanic_workstation.json")
+        mechanic_convert(ASSETS / "models/block/traffic_cone.json",
+                         namespace / "models/item/traffic_cone.json")
+        mechanic_convert(ASSETS / "models/block/boost_pad.json",
+                         namespace / "models/item/boost_pad.json")
+        mechanic_convert(ASSETS / "models/block/fluid_pipe.json",
+                         namespace / "models/item/fluid_pipe.json")
+        # Ciclul AO: rampa abrupta - model JSON recreat 1:1 din BakedModelSteepRamp
+        # (in mod era model programatic comentat, nu JSON; vezi commentul din fisier).
+        mechanic_convert(ASSETS / "models/block/steep_boost_ramp.json",
+                         namespace / "models/item/steep_boost_ramp.json")
+        # Ciclul AP: pompa + extractorul de fluid (decor, ca teava)
+        mechanic_convert(ASSETS / "models/block/fluid_pump.json",
+                         namespace / "models/item/fluid_pump.json")
+        mechanic_convert(ASSETS / "models/block/fluid_extractor.json",
+                         namespace / "models/item/fluid_extractor.json")
+        mechanic_convert(ASSETS / "models/item/panel.json",
+                         namespace / "models/item/panel.json")
+        mechanic_convert(ASSETS / "models/item/fluid_mixer.json",
+                         namespace / "models/item/fluid_mixer.json")
+        mechanic_convert(ASSETS / "models/item/vehicle_crate.json",
+                         namespace / "models/item/vehicle_crate.json")
+        # === STATII CA BLOCURI SOLIDE (misiunea anti-lag: 200+ vehicule pe server) ===
+        # Gazdele (v2, dupa feedback live): NEOPACE, ca sa nu taie fetele vecinilor
+        # (note_block era OPAC => X-ray/gol spre void pe la colturile statiilor).
+        #  - elevator = petrified_oak_slab (nu exista in survival; bottom = JOS,
+        #    double = SUS, top = ramane vanilla pentru orice slab legit)
+        #  - banc = composter[level=7] (neopac, coliziune de masa, spargere normala;
+        #    conflicte cosmetice acceptate cu compostoarele de ferma la nivelul 7)
+        for _solid, _src in (("mcv_workstation", "workstation"),):
+            mechanic_convert(ASSETS / f"models/block/{_src}.json",
+                             namespace / f"models/block/{_solid}.json")
+        # Cricul = UN bloc cu model compozit bazie+cap, ca in mod: JOS (cap impaturit
+        # in bloc) vs SUS (cap ridicat cu 8 unitati = 0.5 blocuri, exact lift-height
+        # implicit; capul trade vizual peste spatiul blocului, ca modelul modului).
+        mechanic_convert(ASSETS / "models/block/jack.json",
+                         namespace / "models/block/mcv_jack_down.json")
+        mechanic_convert(ASSETS / "models/block/jack_head.json",
+                         namespace / "models/block/mcv_jack_parts.json")
+        _jack_down = json.loads((namespace / "models/block/mcv_jack_down.json").read_text(encoding="utf-8"))
+        _jack_head = json.loads((namespace / "models/block/mcv_jack_parts.json").read_text(encoding="utf-8"))
+
+        def _jack_composite(down: dict, head: dict, lift_units: float) -> dict:
+            merged = {"textures": {**head.get("textures", {}), **down.get("textures", {})},
+                      "elements": list(down.get("elements", []))}
+            for _el in head.get("elements", []):
+                _copy_el = json.loads(json.dumps(_el))
+                for _vec in ("from", "to"):
+                    if _vec in _copy_el:
+                        _copy_el[_vec][1] += lift_units
+                if "rotation" in _copy_el and "origin" in _copy_el["rotation"]:
+                    _copy_el["rotation"]["origin"][1] += lift_units
+                merged["elements"].append(_copy_el)
+            return merged
+        write_json(namespace / "models/block/mcv_jack_down.json",
+                   _jack_composite(_jack_down, _jack_head, 0.0))
+        write_json(namespace / "models/block/mcv_jack_up.json",
+                   _jack_composite(_jack_down, _jack_head, 8.0))
+
+        # BRIEF 2026-10-24 (vizual lume): statiile NU mai au plan opac full-bloc
+        # la baza - blocul de sub ele (stone etc.) ramane vizibil, exact ca in mod.
+        # Picioarele/elementele care stau PE podea pierd si fata "down" (altfel
+        # se suprapune coplanar cu fata de sus a blocului de dedesubt => flicker).
+        def _unfloor_bottom_faces(model_path: Path) -> None:
+            _model = json.loads(model_path.read_text(encoding="utf-8"))
+            for _el in _model.get("elements", []):
+                if _el.get("from", [1])[1] <= 0.0:
+                    _el.get("faces", {}).pop("down", None)
+            write_json(model_path, _model)
+        _unfloor_bottom_faces(namespace / "models/block/mcv_workstation.json")
+        _unfloor_bottom_faces(namespace / "models/block/mcv_jack_down.json")
+        _unfloor_bottom_faces(namespace / "models/block/mcv_jack_up.json")
+
+        def _add_foundation_plate(model_path: Path) -> None:
+            # Placa de fund (1/100 bloc grosime) cu textura proprie a statiei:
+            #  - acopera golul (vedere din lateral/dedesubt => fara void, raporteaza
+            #    userul dupa Ciclul D);
+            #  - 0.005 deasupra lui y=0 => NU e coplanara cu blocul de dedesubt
+            #    (stone-ul ramane vizibil si nu se bat fetele).
+            _model = json.loads(model_path.read_text(encoding="utf-8"))
+            _textures = _model.get("textures", {}) or {}
+            _tex = next(iter(_textures.values()), "vehicle:item/hammer")
+            _key = "foundation"
+            _textures[_key] = _tex
+            _model["textures"] = _textures
+            _model.setdefault("elements", []).append({
+                "from": [0, 0.005, 0], "to": [16, 0.015, 16],
+                "faces": {
+                    "up": {"uv": [0, 0, 16, 16], "texture": "#" + _key},
+                    "down": {"uv": [0, 0, 16, 16], "texture": "#" + _key},
+                },
+            })
+            write_json(model_path, _model)
+        _add_foundation_plate(namespace / "models/block/mcv_workstation.json")
+        _add_foundation_plate(namespace / "models/block/mcv_jack_down.json")
+        _add_foundation_plate(namespace / "models/block/mcv_jack_up.json")
+        # Rafturile din spatele bancului (z=15..16) stau coplanar cu fata SUD a
+        # corpului principal => z-fighting vizibil; le decalajam 0.05 px spre
+        # exterior (nesesizabil la ochi liber, elimina complet flicker-ul).
+        _ws = json.loads((namespace / "models/block/mcv_workstation.json").read_text(
+            encoding="utf-8"))
+        for _el in _ws.get("elements", []):
+            if _el.get("from") and _el["from"][2] >= 15.0:
+                for _vec in ("from", "to"):
+                    _el[_vec][2] = round(_el[_vec][2] + 0.05, 3)
+        write_json(namespace / "models/block/mcv_workstation.json", _ws)
+
+        # Blockstates: gazde NEOPACE peste tot (niciun culling pe nicio parte):
+        #  - elevator: petrified_oak_slab bottom=JOS, top=SUS (platforma la +0.5)
+        #  - RELICVA con (Al): slab[double] ramase in lume randeaza TOT conul 1:1,
+        #    pana la conversia lazy in fir (prima atingere, vezi TrafficProps.kindOf)
+        #  - banc: composter[level=7], level 0-6+8 = composter vanilla
+        _mc_namespace = namespace.parent / "minecraft"
+        write_json(_mc_namespace / "blockstates/petrified_oak_slab.json", {"variants": {
+            "type=bottom,waterlogged=false": {"model": "vehicle:block/mcv_jack_down"},
+            "type=bottom,waterlogged=true": {"model": "vehicle:block/mcv_jack_down"},
+            "type=top,waterlogged=false": {"model": "vehicle:block/mcv_jack_up"},
+            "type=top,waterlogged=true": {"model": "vehicle:block/mcv_jack_up"},
+            "type=double,waterlogged=false": {"model": "vehicle:block/mcv_traffic_cone"},
+            "type=double,waterlogged=true": {"model": "vehicle:block/mcv_traffic_cone"},
+        }})
+        # Ciclul AN: lecternul ramane doar RELICVA din AM - cele 4 combinatii orfane
+        # (has_book=false, powered=true) randeaza conul pana la conversia lazy in fir.
+        # Cele 12 combinatii legitime = pupitru vanilla, intacte. Chei FULL pentru
+        # fiecare combinatie (16) => zero ambiguitate de rezolutie client-side.
+        _lectern_v = {}
+        for _f, _y in (("north", 0), ("east", 90), ("south", 180), ("west", 270)):
+            for _book in ("false", "true"):
+                for _pw in ("false", "true"):
+                    _key = f"facing={_f},has_book={_book},powered={_pw}"
+                    if _book == "false" and _pw == "true":
+                        _lectern_v[_key] = {"model": "vehicle:block/mcv_traffic_cone"}
+                    else:
+                        _lectern_v[_key] = {"model": "minecraft:block/lectern",
+                                            **({"y": _y} if _y else {})}
+        write_json(_mc_namespace / "blockstates/lectern.json", {"variants": _lectern_v})
+        write_json(_mc_namespace / "blockstates/composter.json", {"multipart": [
+            {"when": {"level": "0|1|2|3|4|5|6|8"},
+             "apply": {"model": "minecraft:block/composter"}},
+            {"when": {"level": "7"},
+             "apply": {"model": "vehicle:block/mcv_workstation"}},
+        ]})
+
+        # === CICLUL AH: con de trafic + placa de boost ca blocuri reale ===
+        # Gazda = minecraft:tripwire (firul de sarma): unicul bloc vanilla plasabil
+        # FARA coliziune - jucatorii si masinile trec prin el, exact cerinta userului.
+        # Stari hijack-uite = ORFANE: disarmed=true nu apare natural (firul pus de
+        # mana ramane disarmed=false). Nicio latura => CON; exact o latura => PLACA,
+        # latura fiind directia sagetii (y=90 in MC roteste nord -> est).
+        mechanic_convert(ASSETS / "models/block/traffic_cone.json",
+                         namespace / "models/block/mcv_traffic_cone.json")
+        # Ciclul AL: particulele de spargere ale conului = textura lui reala
+        _cone_json = json.loads((namespace / "models/block/mcv_traffic_cone.json").read_text())
+        _cone_json.setdefault("textures", {})
+        _cone_json["textures"]["particle"] = "vehicle:item/traffic_cone"
+        (namespace / "models/block/mcv_traffic_cone.json").write_text(
+            json.dumps(_cone_json, separators=(",", ":")))
+        mechanic_convert(ASSETS / "models/block/boost_pad.json",
+                         namespace / "models/block/mcv_boost_pad.json")
+        # Ciclul AJ: si teava de fluid devine bloc real (state attached=true orfan)
+        mechanic_convert(ASSETS / "models/block/fluid_pipe.json",
+                         namespace / "models/block/mcv_fluid_pipe.json")
+        # Ciclul AO: rampa de boost abrupta (BoostTileEntity 1.0F in mod = dublu)
+        mechanic_convert(ASSETS / "models/block/steep_boost_ramp.json",
+                         namespace / "models/block/mcv_steep_boost_ramp.json")
+        # particulele rampei = textura sagetilor de boost (ca in fisierul autor)
+        _ramp_json = json.loads((namespace / "models/block/mcv_steep_boost_ramp.json").read_text())
+        _ramp_json.setdefault("textures", {})
+        _ramp_json["textures"]["particle"] = "vehicle:item/boost_pad"
+        (namespace / "models/block/mcv_steep_boost_ramp.json").write_text(
+            json.dumps(_ramp_json, separators=(",", ":")))
+        # Ciclul AP: pompa (capat de teava, cubul cu camera spre sud in model) si
+        # extractorul (cub 16x16 cu ghidaj, "enabled" look) devin blocuri decor.
+        mechanic_convert(ASSETS / "models/block/fluid_pump.json",
+                         namespace / "models/block/mcv_fluid_pump.json")
+        mechanic_convert(ASSETS / "models/block/fluid_extractor.json",
+                         namespace / "models/block/mcv_fluid_extractor.json")
+        # Ciclul AL: particulele tevii = textura proprie (nu dark_metal compus)
+        _pipe_json = json.loads((namespace / "models/block/mcv_fluid_pipe.json").read_text())
+        _pipe_json.setdefault("textures", {})
+        _pipe_json["textures"]["particle"] = "vehicle:item/fluid_pipe"
+        (namespace / "models/block/mcv_fluid_pipe.json").write_text(
+            json.dumps(_pipe_json, separators=(",", ":")))
+        # animatia de curgere a sagetilor calare pe copia texturii din pack
+        copy(ASSETS / "textures/block/boost_pad.png.mcmeta",
+             namespace / "textures/item/boost_pad.png.mcmeta")
+        # placa e o fasie subtire la y=0 => scoatem fata "down" (anti-flicker, ca la statii)
+        _unfloor_bottom_faces(namespace / "models/block/mcv_boost_pad.json")
+        _BOOST = "vehicle:block/mcv_boost_pad"
+        _CONE = "vehicle:block/mcv_traffic_cone"
+        _RAMP = "vehicle:block/mcv_steep_boost_ramp"
+        _PUMP = "vehicle:block/mcv_fluid_pump"
+        _EXTRACTOR = "vehicle:block/mcv_fluid_extractor"
+        # Ciclul AK: CRITICA 1.21.4 - tile-ul vanilla tripwire foloseste VARIANTS cu
+        # fete BOOLEENE ("east": "true"/"false"), nu multipart enum ("none"/"side")
+        # cum era in 1.20! Un when cu valori inexistente e ignorat de client =>
+        # props-urile randeau missing-model (mov/negru). Bug-ul ascuns care dura
+        # de la AH pana in AJ - gasit prin /vehicle propsdebug (stare live:
+        # "east=false"). Iar modelul vanilla de fir = block/tripwire_ns (fara _).
+        # CONDITII FINALE:
+        #   CON:  disarmed=true, attached=false, toate 4 fetele false
+        #   PAD:  disarmed=true, attached=false, exact o fata true (directia sagetii)
+        #   TEAVA: disarmed=true, attached=TRUE, N+S sau E+V true (axe opuse)
+        #   FIR VANILLA: orice disarmed=false (nemodificat)
+        write_json(_mc_namespace / "blockstates/tripwire.json", {"multipart": [
+            # Ciclul AN: CONUL REVINE PE FIR (gazda originala AH..AK). Firul e
+            # transparent + fara coliziune nativa => clientul nu poate cule nicio
+            # fata vecina: "gaura in jos" de la gazdele solide (AL slab, AM lectern)
+            # dispare DEFINITIV. Soliditatea s-a mutat in plugin (gard virtual).
+            {"when": {"disarmed": "true", "attached": "false", "north": "false",
+                      "east": "false", "south": "false", "west": "false"},
+             "apply": {"model": _CONE}},
+            {"when": {"disarmed": "true", "attached": "false", "north": "true",
+                      "east": "false", "south": "false", "west": "false"},
+             "apply": {"model": _BOOST}},
+            {"when": {"disarmed": "true", "attached": "false", "east": "true",
+                      "north": "false", "south": "false", "west": "false"},
+             "apply": {"model": _BOOST, "y": 90}},
+            {"when": {"disarmed": "true", "attached": "false", "south": "true",
+                      "north": "false", "east": "false", "west": "false"},
+             "apply": {"model": _BOOST, "y": 180}},
+            {"when": {"disarmed": "true", "attached": "false", "west": "true",
+                      "north": "false", "east": "false", "south": "false"},
+             "apply": {"model": _BOOST, "y": 270}},
+            # TEAVA (ciclul AJ): attached=true + axe opuse. Ultima regula = firul
+            # vanilla (disarmed=false), separatorul care nu se compune peste props.
+            {"when": {"disarmed": "true", "attached": "true", "north": "true",
+                      "south": "true", "east": "false", "west": "false"},
+             "apply": {"model": "vehicle:block/mcv_fluid_pipe"}},
+            # Ciclul AO - RAMPA: 3 laturi active, cea LIPSA = sensul urcarii
+            # (modelul JSON urca implicit spre NORD, aceeasi conventie ca placa:
+            # y=0 nord, y=90 est, y=180 sud, y=270 vest).
+            {"when": {"disarmed": "true", "attached": "false", "north": "false",
+                      "east": "true", "south": "true", "west": "true"},
+             "apply": {"model": _RAMP}},
+            {"when": {"disarmed": "true", "attached": "false", "east": "false",
+                      "north": "true", "south": "true", "west": "true"},
+             "apply": {"model": _RAMP, "y": 90}},
+            {"when": {"disarmed": "true", "attached": "false", "south": "false",
+                      "north": "true", "east": "true", "west": "true"},
+             "apply": {"model": _RAMP, "y": 180}},
+            {"when": {"disarmed": "true", "attached": "false", "west": "false",
+                      "north": "true", "east": "true", "south": "true"},
+             "apply": {"model": _RAMP, "y": 270}},
+            # Ciclul AP - POMPA: doua laturi ADIACENTE, neatasat; perechea =
+            # {facing, urmatorul-orar}. Modelul are camera spre SUD nativ, deci
+            # rotatiile incep de la 180 (fata nord urca cu y=180 in fata).
+            {"when": {"disarmed": "true", "attached": "false", "north": "true",
+                      "east": "true", "south": "false", "west": "false"},
+             "apply": {"model": _PUMP, "y": 180}},
+            {"when": {"disarmed": "true", "attached": "false", "east": "true",
+                      "south": "true", "north": "false", "west": "false"},
+             "apply": {"model": _PUMP, "y": 270}},
+            {"when": {"disarmed": "true", "attached": "false", "south": "true",
+                      "west": "true", "north": "false", "east": "false"},
+             "apply": {"model": _PUMP}},
+            {"when": {"disarmed": "true", "attached": "false", "west": "true",
+                      "north": "true", "east": "false", "south": "false"},
+             "apply": {"model": _PUMP, "y": 90}},
+            # Ciclul AP - EXTRACTORUL: doua laturi OPUSE NEATASATE (teava are
+            # attached=true => disjunct). Modelul e nativ nord.
+            {"when": {"disarmed": "true", "attached": "false", "north": "true",
+                      "south": "true", "east": "false", "west": "false"},
+             "apply": {"model": _EXTRACTOR}},
+            {"when": {"disarmed": "true", "attached": "false", "east": "true",
+                      "west": "true", "north": "false", "south": "false"},
+             "apply": {"model": _EXTRACTOR, "y": 90}},
+            # Ciclul AQ (polish): partitie EXHAUSTIVA - cele 15 combinatii
+            # disarmed=TRUE care nu sunt ale noastre (un fir vanilla poate ajunge
+            # in ele doar printr-un mozaic forfecat cu tot cu carlige) randeaza
+            # firul vanilla obisnuit, nu "nimic invizibil". Reguli EXACTE pe 6
+            # chei => inca zero compunere peste props.
+            {"when": {"disarmed": "true", "attached": "true", "north": "true",
+                      "east": "false", "south": "false", "west": "false"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "east": "true",
+                      "north": "false", "south": "false", "west": "false"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "south": "true",
+                      "north": "false", "east": "false", "west": "false"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "west": "true",
+                      "north": "false", "east": "false", "south": "false"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "north": "true",
+                      "east": "true", "south": "false", "west": "false"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "east": "true",
+                      "south": "true", "north": "false", "west": "false"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "south": "true",
+                      "west": "true", "north": "false", "east": "false"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "west": "true",
+                      "north": "true", "east": "false", "south": "false"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "north": "false",
+                      "east": "true", "south": "true", "west": "true"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "east": "false",
+                      "north": "true", "south": "true", "west": "true"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "south": "false",
+                      "north": "true", "east": "true", "west": "true"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "west": "false",
+                      "north": "true", "east": "true", "south": "true"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "north": "true",
+                      "east": "true", "south": "true", "west": "true"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "north": "false",
+                      "east": "false", "south": "false", "west": "false"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "false", "north": "true",
+                      "east": "true", "south": "true", "west": "true"},
+             "apply": {"model": "minecraft:block/tripwire_ns"}},
+            {"when": {"disarmed": "true", "attached": "true", "east": "true",
+                      "west": "true", "north": "false", "south": "false"},
+             "apply": {"model": "vehicle:block/mcv_fluid_pipe", "y": 90}},
+            {"when": {"disarmed": "false"}, "apply": {"model": "minecraft:block/tripwire_ns"}},
+        ]})
+        copy(ASSETS / "textures/item/wrench.png", namespace / "textures/item/wrench.png")
+        copy(ASSETS / "textures/item/hammer.png", namespace / "textures/item/hammer.png")
+        copy(ASSETS / "textures/item/key.png", namespace / "textures/item/key.png")
+        for _extra_item in ("sports_wheel", "off_road_wheel", "wrench", "hammer", "key",
+                            "jack", "jack_head", "disabled_jack", "mechanic_workstation",
+                            "traffic_cone", "boost_pad", "fluid_pipe",
+                            "steep_boost_ramp", "fluid_pump", "fluid_extractor",
+                            "spray_can"):
+            write_json(namespace / f"items/{_extra_item}.json",
+                       item_definition(f"vehicle:item/{_extra_item}"))
+        # Panel + galeti cu fluid (iteme din ModItems): panel-ul are modelul propriu
+        # convertit de la mod; galetile folosesc modelul vanilla de galetă cu o nuanță
+        # constantă = culoare fluidului (fuellium = verde acid, ender sap = smarald
+        # opacus, blaze juice = chihlimbar) - nu exista textura de galetă dedicată in
+        # mod (Forge o calculeaza din fluid), asa ca nuanța e reprezentarea ei.
+        write_json(namespace / "items/panel.json", item_definition("vehicle:item/panel"))
+        write_json(namespace / "items/fluid_mixer.json", item_definition("vehicle:item/fluid_mixer"))
+        write_json(namespace / "items/vehicle_crate.json", item_definition("vehicle:item/vehicle_crate"))
+        for _fluid, _tint in (("fuelium_bucket", 0x95F42E),
+                              ("ender_sap_bucket", 0x0A5D50),
+                              ("blaze_juice_bucket", 0xFFC800)):
+            write_json(namespace / f"items/{_fluid}.json",
+                       item_definition("minecraft:item/bucket", _tint))
+        # Spray can = dye-tinted icon: the can hints the paint color it carries.
+        write_json(namespace / "items/spray_can.json", {
+            "model": {
+                "type": "minecraft:model",
+                "model": "vehicle:item/spray_can",
+                "tints": [{"type": "minecraft:dye", "default": 0xF2F2F2}],
+            }
+        })
+        # Vopsea pe vehicul, MASCA AUTORULUI (1-la-1 cu modul): doar fetele pe care
+        # modelele sursa ale modului le au tintindex autor se recoloreaza la spray;
+        # restul (interior, scaune, crom, geamuri) raman cu textura lor. Geometria
+        # NU se atinge deloc - doar scriem definitiile cu tint DYE default alb opac
+        # (-1 = 0xFFFFFFFF): pe clientii noi (ARGB) alfa e opaca; nevopsit = alb,
+        # vopsit = culoarea din dyed_color de pe stack.
+        for _body_path in sorted((namespace / "models/item").glob("*_body.json")):
+            _body = json.loads(_body_path.read_text(encoding="utf-8"))
+            if _body.get("elements"):
+                _body_name = _body_path.stem
+                write_json(namespace / f"items/{_body_name}.json", {
+                    "model": {
+                        "type": "minecraft:model",
+                        "model": f"vehicle:item/{_body_name}",
+                        "tints": [{"type": "minecraft:dye", "default": -1}],
+                    }
+                })
+        # Vopsea pe PARTILE caroseriei (capota, usi, acoperis, aripi...) cu aceeasi
+        # masca a autorului: compunerea modelelor a pastrat deja tintindex-ul autor
+        # din sursa modului, deci aici numai scriem definitiile item cu tint DYE
+        # implicit alb opac - geometria ramane neatinsa. Exclusiv: roti, motoare,
+        # cockpit (volane/manere/scaune/tablou), unelte si statii - acelea NU se
+        # recoloreaza cand vopsesti caroseria.
+        _DYE_EXCLUDES = ("wheel",)
+        def _dyeable_part(name: str) -> bool:
+            if name.endswith("_body"):
+                return False  # tratat deja mai sus
+            if name.endswith("_wheel") or "_engine" in name:
+                return False
+            if "steering" in name or "handles" in name:
+                return False
+            if name.endswith("_seat") or "dashboard" in name:
+                return False
+            if name in ("wrench", "hammer", "key", "jack", "jack_head", "disabled_jack",
+                        "mechanic_workstation", "traffic_cone", "boost_pad", "fluid_pipe",
+                        "steep_boost_ramp", "fluid_pump", "fluid_extractor",
+                        "spray_can", "hose_segment", "nozzle", "jerry_can",
+                        "industrial_jerry_can", "garage_terminal", "tow_bar",
+                        "go_kart_body", "fluid_tank"):
+                return False
+            return True
+        for _part_path in sorted((namespace / "models/item").glob("*.json")):
+            _part_name = _part_path.stem
+            if not _dyeable_part(_part_name):
+                continue
+            _part = json.loads(_part_path.read_text(encoding="utf-8"))
+            if "parent" in _part and isinstance(_part["parent"], str) \
+                    and _part["parent"].startswith("minecraft:"):
+                continue  # wrapper vanilla, nu geometrie proprie
+            if not _part.get("elements"):
+                continue
+            _def_path = namespace / f"items/{_part_name}.json"
+            _tints = []
+            if _def_path.exists():
+                _tints = (json.loads(_def_path.read_text(encoding="utf-8"))
+                          .get("model", {}).get("tints", []))
+            if not any(t.get("type") == "minecraft:dye" for t in _tints):
+                write_json(_def_path, {
+                    "model": {
+                        "type": "minecraft:model",
+                        "model": f"vehicle:item/{_part_name}",
+                        "tints": [{"type": "minecraft:dye", "default": -1}],
+                    }
+                })
+        # Sunetele originale ale jack-ului si spray can-ului din mod.
+        for _snd_dir, _snd_names in (
+                ("sounds/block/jack", ("head_up", "head_down", "air_wrench_gun")),
+                ("sounds/item/spray_can", ("shake", "spray"))):
+            for _snd in _snd_names:
+                copy(ASSETS / f"{_snd_dir}/{_snd}.ogg", namespace / f"{_snd_dir}/{_snd}.ogg")
+
+        copy(
+            ASSETS / "sounds/entity/go_kart/engine.ogg",
+            namespace / "sounds/entity/go_kart/engine.ogg",
+        )
+        copy(
+            ASSETS / "sounds/entity/quad_bike/engine.ogg",
+            namespace / "sounds/entity/quad_bike/engine.ogg",
+        )
+        copy(
+            ROOT / "tools/source_assets/vehicle_bumper_car_engine.ogg",
+            namespace / "sounds/entity/bumper_car/engine.ogg",
+        )
+        copy(
+            ASSETS / "sounds/entity/bumper_car/bonk.ogg",
+            namespace / "sounds/entity/bumper_car/bonk.ogg",
+        )
+        copy(
+            ASSETS / "sounds/entity/tractor/engine.ogg",
+            namespace / "sounds/entity/tractor/engine.ogg",
+        )
+        copy(
+            ASSETS / "sounds/entity/dirt_bike/engine.ogg",
+            namespace / "sounds/entity/dirt_bike/engine.ogg",
+        )
+        copy(
+            ASSETS / "sounds/entity/moped/engine.ogg",
+            namespace / "sounds/entity/moped/engine.ogg",
+        )
+        copy(
+            ASSETS / "sounds/entity/jet_ski/engine.ogg",
+            namespace / "sounds/entity/jet_ski/engine.ogg",
+        )
+        copy(
+            ASSETS / "sounds/entity/atv/engine.ogg",
+            namespace / "sounds/entity/atv/engine.ogg",
+        )
+        copy(
+            ASSETS / "sounds/entity/speed_boat/engine.ogg",
+            namespace / "sounds/entity/speed_boat/engine.ogg",
+        )
+        copy(
+            ASSETS / "sounds/entity/sports_car/engine.ogg",
+            namespace / "sounds/entity/sports_car/engine.ogg",
+        )
+        copy(
+            ASSETS / "sounds/entity/sports_plane/engine.ogg",
+            namespace / "sounds/entity/sports_plane/engine.ogg",
+        )
+        copy(
+            ASSETS / "sounds/entity/mini_bus/engine.ogg",
+            namespace / "sounds/entity/mini_bus/engine.ogg",
+        )
+        copy(
+            ASSETS / "sounds/entity/vehicle/helicopter_rotor.ogg",
+            namespace / "sounds/entity/vehicle/helicopter_rotor.ogg",
+        )
+        for source in (
+            "entity/vehicle/door/open.ogg",
+            "entity/vehicle/door/close.ogg",
+            "entity/vehicle/hood/open.ogg",
+            "entity/vehicle/hood/close.ogg",
+        ):
+            copy(ASSETS / f"sounds/{source}", namespace / f"sounds/{source}")
+        write_json(namespace / "sounds.json", {
+            "entity.go_kart.engine": {
+                "sounds": [{"name": "vehicle:entity/go_kart/engine", "preload": True}]
+            },
+            "entity.quad_bike.engine": {
+                "sounds": [{"name": "vehicle:entity/quad_bike/engine", "preload": True}]
+            },
+            "entity.bumper_car.engine": {
+                "sounds": [{"name": "vehicle:entity/bumper_car/engine", "preload": True}]
+            },
+            "entity.bumper_car.bonk": {
+                "sounds": [{"name": "vehicle:entity/bumper_car/bonk", "preload": True}]
+            },
+            "entity.tractor.engine": {
+                "sounds": [{"name": "vehicle:entity/tractor/engine", "preload": True}]
+            },
+            "entity.dirt_bike.engine": {
+                "sounds": [{"name": "vehicle:entity/dirt_bike/engine", "preload": True}]
+            },
+            "entity.moped.engine": {
+                "sounds": [{"name": "vehicle:entity/moped/engine", "preload": True}]
+            },
+            "entity.jet_ski.engine": {
+                "sounds": [{"name": "vehicle:entity/jet_ski/engine", "preload": True}]
+            },
+            "entity.atv.engine": {
+                "sounds": [{"name": "vehicle:entity/atv/engine", "preload": True}]
+            },
+            "entity.speed_boat.engine": {
+                "sounds": [{"name": "vehicle:entity/speed_boat/engine", "preload": True}]
+            },
+            "entity.sports_car.engine": {
+                "sounds": [{"name": "vehicle:entity/sports_car/engine", "preload": True}]
+            },
+            "entity.sports_plane.engine": {
+                "sounds": [{"name": "vehicle:entity/sports_plane/engine", "preload": True}]
+            },
+            "entity.mini_bus.engine": {
+                "sounds": [{"name": "vehicle:entity/mini_bus/engine", "preload": True}]
+            },
+            "entity.vehicle.helicopter_rotor": {
+                "sounds": [{"name": "vehicle:entity/vehicle/helicopter_rotor", "preload": True}]
+            },
+            "entity.vehicle.horn": {
+                "sounds": [{"name": "vehicle:entity/vehicle/horn", "preload": True}]
+            },
+            "entity.vehicle.door.open": {
+                "sounds": [{"name": "vehicle:entity/vehicle/door/open", "preload": True}]
+            },
+            "entity.vehicle.door.close": {
+                "sounds": [{"name": "vehicle:entity/vehicle/door/close", "preload": True}]
+            },
+            "entity.vehicle.hood.open": {
+                "sounds": [{"name": "vehicle:entity/vehicle/hood/open", "preload": True}]
+            },
+            "entity.vehicle.hood.close": {
+                "sounds": [{"name": "vehicle:entity/vehicle/hood/close", "preload": True}]
+            },
+            "block.gas_pump.nozzle_pick_up": {
+                "sounds": [{"name": "vehicle:block/gas_pump/nozzle_pick_up"}]
+            },
+            "block.gas_pump.nozzle_put_down": {
+                "sounds": [{"name": "vehicle:block/gas_pump/nozzle_put_down"}]
+            },
+            "item.jerry_can.liquid_glug": {
+                "sounds": [{"name": "vehicle:item/jerry_can/liquid_glug"}]
+            },
+            "block.jack.head_up": {
+                "sounds": [{"name": "vehicle:block/jack/head_up"}]
+            },
+            "block.jack.head_down": {
+                "sounds": [{"name": "vehicle:block/jack/head_down"}]
+            },
+            "block.jack.air_wrench_gun": {
+                "sounds": [{"name": "vehicle:block/jack/air_wrench_gun"}]
+            },
+            "item.spray_can.shake": {
+                "sounds": [{"name": "vehicle:item/spray_can/shake"}]
+            },
+            "item.spray_can.spray": {
+                "sounds": [{"name": "vehicle:item/spray_can/spray"}]
+            },
+        })
+
+        # ==== Own badge (r40) ================================================
+        # The user asked for a fleet that no longer looks like the original mod,
+        # and explicitly for no MrCrayfish naming/branding. Every "logo" sprite
+        # in the pack used to be the mod's Cray Industries mark; it is replaced
+        # here by our own chevron, generated procedurally in tools/restyle.py.
+        # The bodies stay neutral (white) on purpose: the spray-can paints them
+        # through a dye tint, so a pre-coloured atlas would ruin repainting.
+        # Per-vehicle identity therefore comes from the factory paint colour in
+        # LandVehicleSpec (Java side) + this badge + our own vehicle names.
+        badges = 0
+        for texture in sorted((namespace / "textures/item").glob("*logo*.png")):
+            restyle.write_emblem(texture)
+            badges += 1
+        print(f"Embleme proprii: {badges}")
+
+        # ==== Geometry restyle (r40) =========================================
+        # The user wants the bodies themselves to be different, not just the
+        # colours. Each body model gets its own stance (width/height/length),
+        # an optional chopped/raised greenhouse and a bolted-on kit (roof rack,
+        # light bar, roll hoop, exhaust stack, antenna, side rails) generated
+        # from the model's own bounding box. Purely additive parts cannot
+        # distort the source geometry, and everything is clamped to the vanilla
+        # element limits; tools/model_preview.py renders the result offline.
+        restyled = 0
+        for path in sorted((namespace / "models/item").glob("*.json")):
+            profile = restyle_geometry.PROFILES.get(path.stem)
+            if profile is None:
+                continue
+            model = json.loads(path.read_text(encoding="utf-8"))
+            PRE_RESTYLE_MODELS[path.stem] = json.loads(json.dumps(model))
+            restyle_geometry.restyle_model(model, profile)
+            write_json(path, model)
+            restyled += 1
+        print(f"Modele restilizate: {restyled}")
+
+        emit_vehicle_icons(namespace)
+        emit_vehicle_previews(namespace)
+        emit_jack_gui_backdrop(namespace)
+        emit_hud_speed_font(namespace)
+
+        if output.exists():
+            output.unlink()
+        with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+            for path in sorted(pack.rglob("*")):
+                if path.is_file():
+                    info = zipfile.ZipInfo(path.relative_to(pack).as_posix())
+                    info.date_time = (2020, 1, 1, 0, 0, 0)
+                    info.compress_type = zipfile.ZIP_DEFLATED
+                    info.external_attr = 0o644 << 16
+                    archive.writestr(info, path.read_bytes(), compresslevel=9)
+
+    sha1 = hashlib.sha1(output.read_bytes()).hexdigest()
+    return output, sha1
+
+
+
+def emit_vehicle_icons(namespace: Path) -> None:
+    """GUI icons: copies of each vehicle BODY model with a proper `display.gui`
+    transform (center + scale-to-slot + 3/4 view), so garage/shop inventory entries
+    look like the actual car instead of an untamed world-scale model."""
+    items_dir = namespace / "models/item"
+    for body_path in sorted(items_dir.glob("*_body.json")):
+        name = body_path.stem
+        icon_id = name.removesuffix("_body")
+        try:
+            source = json.loads(body_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        elements = source.get("elements", [])
+        if elements:
+            xs, ys, zs = [], [], []
+            for element in elements:
+                for corner in ("from", "to"):
+                    xs.append(float(element[corner][0]))
+                    ys.append(float(element[corner][1]))
+                    zs.append(float(element[corner][2]))
+            lo = (min(xs), min(ys), min(zs))
+            hi = (max(xs), max(ys), max(zs))
+        else:
+            lo, hi = (0.0, 0.0, 0.0), (16.0, 16.0, 16.0)
+        center = [-(a + b) / 2.0 for a, b in zip(lo, hi)]
+        size = max(b - a for a, b in zip(lo, hi))
+        scale = 14.0 / size if size > 0 else 0.8
+        icon_model = {
+            "parent": f"vehicle:item/{name}",
+            "display": {
+                "gui": {
+                    "rotation": [30, -135, 0],
+                    "translation": [round(v, 3) for v in center],
+                    "scale": [round(scale, 4)] * 3,
+                }
+            },
+        }
+        write_json(namespace / f"models/item/vehicle_icon/{icon_id}.json", icon_model)
+        write_json(
+            namespace / f"items/vehicle_icon/{icon_id}.json",
+            item_definition(f"vehicle:item/vehicle_icon/{icon_id}", 16383998),
+        )
+        # Varianta MARE (preview-ul din meniul cricului = fereastra din mod, 4x):
+        # acelasi model 3D real, aceeasi vedere 3/4 [30,-135], scalat sa umple
+        # fereastra de 4x8 sloturi (in jur de 56px inaltime) in loc de 1 slot (14px).
+        big_scale = scale * 4.0
+        big_model = {
+            "parent": f"vehicle:item/{name}",
+            "display": {
+                "gui": {
+                    "rotation": [30, -135, 0],
+                    "translation": [round(v, 3) for v in center],
+                    "scale": [round(big_scale, 4)] * 3,
+                }
+            },
+        }
+        write_json(namespace / f"models/item/vehicle_icon_big/{icon_id}.json", big_model)
+        write_json(
+            namespace / f"items/vehicle_icon_big/{icon_id}.json",
+            item_definition(f"vehicle:item/vehicle_icon_big/{icon_id}", 16383998),
+        )
+
+
+# =====================================================================
+# PREVIEW ROTATIV pentru meniul cricului (fereastra EditVehicleScreen din mod):
+# pe client vanilla un item din GUI nu se poate invarti cu mouse-ul, deci animam
+# SERVER-SIDE: 8 cadre statice (45 grade) cu modelul 3D COMPUS (caroserie + roti
+# reale ale modului), schimbate de plugin la cateva tick-uri. Geometria rotilor e
+# citita din LandVehicleSpec.java - SURSA de adevar validata de rig-ul live:
+#   pozitie (pixeli model) = (side*offsetX, wheelOffset+offsetY, offsetZ),
+#   scara = scaleX/Y/Z, oglinda X pe partea dreapta - exact LandVehicleSpec.wheel().
+# =====================================================================
+
+MODELUNIT = 1.0 / 16.0
+
+
+def _parse_java_args(text: str, start: int) -> tuple:
+    """Top-level comma-separated args of the call whose '(' is right before `start`.
+    Keeps NESTED parentheses intact (we need `new Point(...)` contents)."""
+    depth = 1
+    i = start
+    args, cur = [], []
+    while i < len(text):
+        ch = text[i]
+        if ch == '(':
+            depth += 1
+            cur.append(ch)
+        elif ch == ')':
+            depth -= 1
+            if depth == 0:
+                if cur:
+                    args.append(''.join(cur))
+                return [a.strip() for a in args], i + 1
+            cur.append(ch)
+        elif ch == ',' and depth == 1:
+            args.append(''.join(cur))
+            cur = []
+        else:
+            cur.append(ch)
+        i += 1
+    raise RuntimeError('unbalanced parens in LandVehicleSpec.java')
+
+
+def _parse_float_args(text: str, start: int) -> tuple:
+    args, end = _parse_java_args(text, start)
+    out = []
+    for a in args:
+        token = a.strip()
+        if token == 'true':
+            out.append(1.0)
+        elif token == 'false':
+            out.append(0.0)
+        else:
+            out.append(float(token.replace('F', '').replace('_', '')))
+    return out, end
+
+
+def _eval_num(expr: str, mu: float) -> float:
+    """Evaluate a pure-arithmetic Java constant expression (MODEL_UNIT/RIDER_
+    HEIGHT_CORRECTION known); rejects anything with identifiers/method calls."""
+    import re as _re
+    text = expr.strip().replace('RIDER_HEIGHT_CORRECTION', repr(4.0 * mu)) \
+        .replace('MODEL_UNIT', repr(mu))
+    text = _re.sub(r'([0-9.])F\b', r'\1', text)
+    if not _re.fullmatch(r'[0-9eE._+\-*/() ]+', text):
+        raise ValueError(f'unsupported expression: {expr!r}')
+    return float(eval(text, {'__builtins__': {}}))
+
+
+def _corrections(text: str) -> dict:
+    """modelScaleCorrection values per model (case lists in the switch)."""
+    import re as _re
+    out = {}
+    for match in _re.finditer(
+            r'case\s+((?:\s*"[^"]+"\s*,)*\s*"[^"]+")\s*->\s*([0-9.]+)F', text):
+        for name in _re.findall(r'"([^"]+)"', match.group(1)):
+            out[name] = float(match.group(2))
+    return out
+
+
+def parse_preview_spec() -> tuple:
+    """Per-vehicle preview data from LandVehicleSpec.java - the SAME source of
+    truth as the live world rig:
+      wheels: [(side, front, ox, oy, oz, sx, sy, sz, bodyScale, ax, wheelOffset)]
+      parts:  [{model, center(world), scale, rot}] - engines/steering/handles,
+              i.e. every literal `new Part("model", new Point(...), s, rx, ry, rz)`
+              with pure numeric expressions (motorcycle/spec-field refs skipped).
+    Returns (specs, corrections)."""
+    import re as _re
+    text = (ROOT / 'paper-plugin/src/main/java/com/mrcrayfish/vehicle/paper/vehicle/'
+            'LandVehicleSpec.java').read_text(encoding='utf-8')
+    decls = [(m.start(), m.group(1))
+             for m in _re.finditer(r'new LandVehicleSpec\(\s*"([a-z_0-9]+)"', text)]
+
+    def owner(pos: int):
+        vid = None
+        for start, name in decls:
+            if start < pos:
+                vid = name
+            else:
+                break
+        return vid
+
+    specs: dict = {}
+    for match in _re.finditer(r'\bwheel\(', text):
+        try:
+            values, _ = _parse_float_args(text, match.end())
+        except (ValueError, RuntimeError):
+            continue  # helper DEFINITION (typed params), not a data call
+        if len(values) != 11:
+            continue
+        vid = owner(match.start())
+        if vid is not None:
+            specs.setdefault(vid, {'wheels': [], 'parts': []})['wheels'].append(values)
+    for match in _re.finditer(r'\bnew Part\(', text):
+        try:
+            args, _ = _parse_java_args(text, match.end())
+        except RuntimeError:
+            continue
+        if len(args) < 6 or not args[0].strip().startswith('"') or 'new Point(' not in args[1]:
+            continue
+        try:
+            coords, _ = _parse_java_args(
+                args[1], args[1].index('new Point(') + len('new Point('))
+            center = tuple(_eval_num(c, MODELUNIT) for c in coords)
+            scale = _eval_num(args[2], MODELUNIT)
+            rot = tuple(_eval_num(a, MODELUNIT) for a in args[3:6])
+        except (ValueError, RuntimeError):
+            continue  # references spec fields / motorcycle helpers - skip gracefully
+        if len(center) != 3 or len(rot) != 3:
+            continue
+        vid = owner(match.start())
+        if vid is not None:
+            specs.setdefault(vid, {'wheels': [], 'parts': []})['parts'].append(
+                {'model': args[0].strip().strip('"'), 'center': center,
+                 'scale': scale, 'rot': rot})
+    return specs, _corrections(text)
+
+
+def _bbox(elements: list) -> tuple:
+    xs, ys, zs = [], [], []
+    for element in elements:
+        for corner in ('from', 'to'):
+            xs.append(float(element[corner][0]))
+            ys.append(float(element[corner][1]))
+            zs.append(float(element[corner][2]))
+    return (min(xs), min(ys), min(zs)), (max(xs), max(ys), max(zs))
+
+
+def _transformed_element(element: dict, scale: tuple, offset: tuple, mirrored: bool) -> dict:
+    """Scale around model centre (8,8,8), then translate so the centre lands at
+    (8+offset) - i.e. offset = centre_final - 8 on each axis. mirrored flips X
+    around the element's own scaled centre (the right-side wheel, as the mod does)."""
+    sx, sy, sz = scale
+    ox, oy, oz = offset
+    out = json.loads(json.dumps(element))
+    for corner in ('from', 'to'):
+        vx, vy, vz = (float(element[corner][0]), float(element[corner][1]),
+                      float(element[corner][2]))
+        tx, ty, tz = (vx - 8.0) * sx + ox, (vy - 8.0) * sy + oy, (vz - 8.0) * sz + oz
+        if mirrored:
+            tx = -tx
+        out[corner][0] = round(tx + 8.0, 3)
+        out[corner][1] = round(ty + 8.0, 3)
+        out[corner][2] = round(tz + 8.0, 3)
+    if mirrored:
+        out['from'][0], out['to'][0] = out['to'][0], out['from'][0]
+    return out
+
+
+def _flip_element_y(element: dict) -> dict:
+    """Rotate an element 180° around Y about the model origin (0,0,0) - the exact
+    rotationY=180 the mod renderer applies to most engines."""
+    out = json.loads(json.dumps(element))
+    for corner in ('from', 'to'):
+        out[corner][0] = -float(element[corner][0])
+        out[corner][2] = -float(element[corner][2])
+    if out['from'][0] > out['to'][0]:
+        out['from'][0], out['to'][0] = out['to'][0], out['from'][0]
+    if out['from'][2] > out['to'][2]:
+        out['from'][2], out['to'][2] = out['to'][2], out['from'][2]
+    return out
+
+
+def compose_preview_model(namespace: Path, vehicle_id: str, spec: dict,
+                          corrections: dict, wheel_model: str = 'standard_wheel',
+                          include_engine: bool = True,
+                          include_wheels: bool = True) -> dict:
+    """FULL 1:1 montaj ca fereastra din mod: caroserie + roti (formula
+    LandVehicleSpec.wheel, oglinda dreapta, grup aliniat sub caroserie) + TOATE
+    piesele (motor/volan/manere) pozitionate cu aceeasi matematica ca rig-ul live:
+    distanta piesa->grupul de roti din lume e pastrata EXACT; maparea in pixeli
+    model foloseste bodyScale si modelScaleCorrection. Ancorare la colt ca place()
+    din rig: punctul (0,0,0) al piesei = part.center()."""
+    body = json.loads((namespace / f'models/item/{vehicle_id}_body.json').read_text(encoding='utf-8'))
+    # include_wheels=False => stare "fara roti" (demontate): pozitiile/anclarea
+    # din spec se pastreaza pentru motor, dar geometria rotilor nu se compune.
+    wheel = json.loads((namespace / f'models/item/{wheel_model}.json').read_text(
+        encoding='utf-8')) if include_wheels else None
+    textures = dict(body.get('textures', {}))
+    elements = list(body.get('elements', []))
+    wheels = spec.get('wheels', [])
+    if not elements:
+        return {'textures': textures, 'elements': elements}
+
+    tex_counter = [0]
+
+    def merge_model(model: dict) -> dict:
+        prefix = f'm{tex_counter[0]}_'
+        tex_counter[0] += 1
+        remap = {}
+        for key, value in model.get('textures', {}).items():
+            new_key = prefix + key
+            remap[key] = new_key
+            textures.setdefault(new_key, value)
+        return remap
+
+    def remap_faces(element: dict, remap: dict, strip_tint: bool = False) -> None:
+        # modelele lipite (roti/motor/volan) NU se vopsesc odata cu caroseria:
+        # fara tintindex pe fetele lor tint-ul din definitia de item nu le atinge.
+        for face in element.get('faces', {}).values():
+            tex = face.get('texture', '')
+            if tex.startswith('#'):
+                face['texture'] = '#' + remap.get(tex[1:], tex[1:])
+            if strip_tint:
+                face.pop('tintindex', None)
+
+    menu_centers: list = []
+    world_centers: list = []
+    if wheels:
+        (lo_x, _ly, lo_z), (hi_x, _hy, hi_z) = _bbox(elements)
+        for side, _f, ox, oy, oz, _sx, _sy, _sz, bs, _ax, wo in wheels:
+            world_centers.append((side * ox * MODELUNIT * bs,
+                                  (wo + oy) * MODELUNIT * bs,
+                                  oz * MODELUNIT * bs))
+        raw = [(side * ox, wo + oy, oz) for side, _f, ox, oy, oz, *_rest in wheels]
+        fit_x = (lo_x + hi_x) / 2.0 - sum(p[0] for p in raw) / len(raw)
+        fit_z = (lo_z + hi_z) / 2.0 - sum(p[2] for p in raw) / len(raw)
+        wheel_remap = merge_model(wheel) if wheel else {}
+        for side, _f, ox, oy, oz, sx, sy, sz, _bs, _ax, wo in wheels:
+            # centrele de meniu se calculeaza INTOTDEAUNA (motorul se ancoreaza pe
+            # ele chiar si cand rotile sunt demontate); doar geometria dispare.
+            centre = (side * ox + fit_x, wo + oy, oz + fit_z)
+            menu_centers.append(centre)
+            for element in wheel.get('elements', []) if wheel else []:
+                transformed = _transformed_element(
+                    element, (sx, sy, sz),
+                    (centre[0] - 8.0, centre[1] - 8.0, centre[2] - 8.0), side > 0)
+                remap_faces(transformed, wheel_remap, strip_tint=True)
+                elements.append(transformed)
+
+    if wheels and menu_centers:
+        body_scale = float(wheels[0][8])
+        correction = corrections.get(f'{vehicle_id}_body', 1.0)
+        world_anchor = tuple(sum(c[i] for c in world_centers) / len(world_centers)
+                             for i in range(3))
+        menu_anchor = tuple(sum(c[i] for c in menu_centers) / len(menu_centers)
+                            for i in range(3))
+        vanilla_rotations = {-45.0, -22.5, 0.0, 22.5, 45.0}
+        for part in spec.get('parts', []):
+            # motorul participa la montaj DOAR cand e instalat (brief 2026-10-24:
+            # slot gol = piesa nu apare pe model, nici in lume, nici in GUI)
+            if not include_engine and 'engine' in part['model']:
+                continue
+            part_path = namespace / f"models/item/{part['model']}.json"
+            if not part_path.exists():
+                continue
+            part_model = json.loads(part_path.read_text(encoding='utf-8'))
+            if not part_model.get('elements'):
+                continue
+            position = [menu_anchor[i]
+                        + (part['center'][i] - world_anchor[i])
+                        / (MODELUNIT * body_scale * correction)
+                        for i in range(3)]
+            p_scale = part['scale'] / (body_scale * correction)
+            raw_rx, raw_ry, raw_rz = (round(a % 360.0, 3) for a in part['rot'])
+            flip_y180 = raw_ry == 180.0
+            rx = 0.0 if raw_rx == 180.0 else raw_rx
+            ry = 0.0 if raw_ry == 180.0 else raw_ry
+            rz = 0.0 if raw_rz == 180.0 else raw_rz
+            axes = [a for a in (rx, ry, rz) if a != 0.0]
+            element_rotation = None
+            if len(axes) == 1:
+                axis_name = 'x' if rx != 0.0 else ('y' if ry != 0.0 else 'z')
+                angle = axes[0] if axes[0] <= 180.0 else axes[0] - 360.0
+                if angle in vanilla_rotations:
+                    element_rotation = {'origin': [round(v, 3) for v in position],
+                                        'axis': axis_name, 'angle': angle, 'rescale': False}
+            part_remap = merge_model(part_model)
+            for element in part_model.get('elements', []):
+                if flip_y180:
+                    element = _flip_element_y(element)
+                flat = {
+                    'from': [round(position[0] + float(element['from'][0]) * p_scale, 3),
+                             round(position[1] + float(element['from'][1]) * p_scale, 3),
+                             round(position[2] + float(element['from'][2]) * p_scale, 3)],
+                    'to': [round(position[0] + float(element['to'][0]) * p_scale, 3),
+                           round(position[1] + float(element['to'][1]) * p_scale, 3),
+                           round(position[2] + float(element['to'][2]) * p_scale, 3)],
+                    'faces': element['faces'],
+                }
+                if element_rotation is not None:
+                    flat['rotation'] = element_rotation
+                remap_faces(flat, part_remap, strip_tint=True)
+                elements.append(flat)
+    return {'textures': textures, 'elements': elements}
+
+
+# --- Preview GUI: SINCRONIZARE LIVE 1:1 (roti x motor x vopsea) + rotatie lina.
+# Matrice de stari per vehicul:
+#   roti:   standard/sports/off_road (sau "none" la vehiculele fara roti)
+#   motor:  eng (instalat) / noe (slot gol) - doar acolo unde spec are montura
+#   vopsea: default (alb) + cele 16 culori din PaintColors
+# Geometrie: models/item/vehicle_preview/<id>/<roti>/<motor>/base.json
+# Cadre rotatie: frame_0..PREVIEW_FRAMES-1 (parent=base, doar display.gui.rotaie)
+# Definitii item cu range_dispatch pe custom_model_data (cadru = numar intreg):
+#   items/vehicle_preview/<id>/<roti>/<motor>/<culoare>.json -> tint fix per culoare.
+PREVIEW_FRAMES = 24
+WHEEL_STATES = ("standard", "sports", "off_road")
+PAINT_STATES = {
+    "default": 0xFFFFFF,
+    "white": 0xF9FFFE, "light_gray": 0x9D9D97, "gray": 0x474F52, "black": 0x1D1D21,
+    "brown": 0x835432, "red": 0xB02E26, "orange": 0xF9801D, "yellow": 0xFED83D,
+    "lime": 0x80C71F, "green": 0x5E7C16, "cyan": 0x169C9C, "light_blue": 0x3AB3DA,
+    "blue": 0x3C44AA, "purple": 0x8932B8, "magenta": 0xC74EBD, "pink": 0xF38BAA,
+}
+
+
+def preview_range_def(vehicle_id: str, wheel: str, engine: str, tint: int) -> dict:
+    """Item model definition: cadru de rotatie ales prin custom_model_data
+    (floats[0] = setCustomModelData(int) de pe server), tint constant per culoare."""
+    entries = []
+    for frame in range(PREVIEW_FRAMES):
+        entries.append({
+            "threshold": float(frame),
+            "model": {
+                "type": "minecraft:model",
+                "model": f"vehicle:item/vehicle_preview/{vehicle_id}/{wheel}/{engine}/frame_{frame}",
+                "tints": [{"type": "minecraft:constant", "value": tint}],
+            },
+        })
+    return {
+        "model": {
+            "type": "minecraft:range_dispatch",
+            "property": "minecraft:custom_model_data",
+            "entries": entries,
+            "fallback": entries[0]["model"],
+        }
+    }
+
+
+def emit_vehicle_previews(namespace: Path) -> None:
+    """Preview-ul din monitorul GUI: matrice completa (roti x motor x vopsea) cu
+    rotatie lina - serverul schimba doar custom_model_data, deci modelul urmareste
+    LIVE starea reala a masinii de pe cric (brief 2026-10-24)."""
+    try:
+        specs, corrections = parse_preview_spec()
+    except (OSError, RuntimeError) as exc:
+        print(f'[preview] LandVehicleSpec parse skipped: {exc}')
+        specs, corrections = {}, {}
+    for body_path in sorted((namespace / 'models/item').glob('*_body.json')):
+        vehicle_id = body_path.stem.removesuffix('_body')
+        spec = specs.get(vehicle_id, {'wheels': [], 'parts': []})
+        wheels = WHEEL_STATES + ("none",) if spec.get('wheels') else ("none",)
+        has_engine_mount = any('engine' in part.get('model', '')
+                               for part in spec.get('parts', []))
+        engines = ("eng", "noe") if has_engine_mount else ("noe",)
+        for wheel_state in wheels:
+            for engine_state in engines:
+                composed = compose_preview_model(
+                    namespace, vehicle_id, spec, corrections,
+                    wheel_model=wheel_state + "_wheel",
+                    include_engine=engine_state == "eng",
+                    include_wheels=wheel_state != "none")
+                elements = composed.get('elements', [])
+                if not elements:
+                    continue
+                # Vanilla refuza elementele in afara [-16, 32]: micsoram uniform in
+                # jurul (8,8,8) si recentram pana incapem in cubul legal.
+                lo, hi = _bbox(elements)
+                biggest = max(hi[i] - lo[i] for i in range(3))
+                if biggest > 47.9:
+                    factor = 47.9 / biggest
+                    for element in elements:
+                        for corner in ('from', 'to'):
+                            for i in range(3):
+                                element[corner][i] = round(
+                                    8.0 + (element[corner][i] - 8.0) * factor, 3)
+                    lo, hi = _bbox(elements)
+                shift = [max(-16.0 - lo[i] + 0.05, 0.0) - max(hi[i] - 31.95, 0.0)
+                         for i in range(3)]
+                if any(abs(s) > 1.0E-9 for s in shift):
+                    for element in elements:
+                        for corner in ('from', 'to'):
+                            for i in range(3):
+                                element[corner][i] = round(element[corner][i] + shift[i], 3)
+                    lo, hi = _bbox(elements)
+                center = [-(a + b) / 2.0 for a, b in zip(lo, hi)]
+                size = max(b - a for a, b in zip(lo, hi))
+                scale = 52.0 / size if size > 0 else 1.0
+                base_dir = f'vehicle_preview/{vehicle_id}/{wheel_state}/{engine_state}'
+                write_json(namespace / f'models/item/{base_dir}/base.json', {
+                    'textures': composed.get('textures', {}),
+                    'elements': elements,
+                })
+                for frame in range(PREVIEW_FRAMES):
+                    yaw = -135.0 + frame * (360.0 / PREVIEW_FRAMES)
+                    write_json(namespace / f'models/item/{base_dir}/frame_{frame}.json', {
+                        'parent': f'vehicle:item/{base_dir}/base',
+                        'display': {
+                            'gui': {
+                                # acelasi unghi initial ca in EditVehicleScreen din mod
+                                'rotation': [20.0, round(yaw, 3), 0.0],
+                                'translation': [round(v, 3) for v in center],
+                                'scale': [round(scale, 4)] * 3,
+                            }
+                        },
+                    })
+                for color_name, rgb in PAINT_STATES.items():
+                    write_json(
+                        namespace / f'items/{base_dir}/{color_name}.json',
+                        preview_range_def(vehicle_id, wheel_state, engine_state, rgb),
+                    )
+
+
+# =====================================================================
+# GUI-UL CRICULUI = TEXTURA REALA A MODULUI (fereastra EditVehicleScreen):
+# pe client vanilla, containerul unui meniu nu poate fi inlocuit, DAR textul
+# TITLULUI se randeaza cu fonturile pack-ului - asa ca desenam intreaga textura
+# a GUI-ului din mod ca GLIF de font, plasat pixel-perfect sub inventar, cu
+# spatii negative ca sa acopere exact fereastra 9x6 (176x222 = generic_54).
+# Glifa = edit_vehicle.png remapat pe pozitiile reale ale sloturilor chest:
+#   mod (184px)              chest 54-slot (222px)
+#   titlu+motor+roti+window  -> y 0..88 identic (grila sloturilor coincide!)
+#   separator                -> y 88..103
+#   label „Inventory"        -> gri (vanilla il deseneaza la y=128)
+#   randuri inventar jucator -> mod y 103..157 la y 140 (grila exacta)
+#   hotbar                   -> mod y 161..179 la y 198
+# =====================================================================
+
+import struct
+import zlib
+
+
+def _png_decode_rgba(path: Path) -> tuple:
+    """"Minimal stdlib PNG decoder: RGBA8, non-interlaced (the mod GUI files)."""
+    data = path.read_bytes()
+    if data[:8] != b'\x89PNG\r\n\x1a\n':
+        raise RuntimeError(f'{path}: not a PNG')
+    pos = 8
+    width = height = None
+    idat = bytearray()
+    while pos < len(data):
+        length, ctype = struct.unpack('>I4s', data[pos:pos + 8])
+        chunk = data[pos + 8:pos + 8 + length]
+        if ctype == b'IHDR':
+            width, height, bitdepth, color, _c, _f, interlace = struct.unpack('>IIBBBBB', chunk)
+            if bitdepth != 8 or color != 6 or interlace != 0:
+                raise RuntimeError(f'{path}: unsupported PNG variant '
+                                   f'(bitdepth={bitdepth} color={color} interlace={interlace})')
+        elif ctype == b'IDAT':
+            idat.extend(chunk)
+        elif ctype == b'IEND':
+            break
+        pos += 12 + length
+    raw = zlib.decompress(bytes(idat))
+    stride = width * 4
+    out = bytearray(width * height * 4)
+    prev = bytearray(stride)
+    src = 0
+    for y in range(height):
+        filt = raw[src]
+        src += 1
+        row = bytearray(raw[src:src + stride])
+        src += stride
+        if filt == 1:      # Sub
+            for i in range(4, stride):
+                row[i] = (row[i] + row[i - 4]) & 0xFF
+        elif filt == 2:    # Up
+            for i in range(stride):
+                row[i] = (row[i] + prev[i]) & 0xFF
+        elif filt == 3:    # Average
+            for i in range(stride):
+                left = row[i - 4] if i >= 4 else 0
+                row[i] = (row[i] + ((left + prev[i]) >> 1)) & 0xFF
+        elif filt == 4:    # Paeth
+            for i in range(stride):
+                a = row[i - 4] if i >= 4 else 0
+                b = prev[i]
+                c = prev[i - 4] if i >= 4 else 0
+                p = a + b - c
+                pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+                pr = a if (pa <= pb and pa <= pc) else (b if pb <= pc else c)
+                row[i] = (row[i] + pr) & 0xFF
+        elif filt != 0:
+            raise RuntimeError(f'{path}: unknown PNG filter {filt}')
+        out[y * stride:(y + 1) * stride] = row
+        prev = row
+    return width, height, bytes(out)
+
+
+def _png_encode_rgba(width: int, height: int, rgba: bytes) -> bytes:
+    """"Deterministic minimal PNG encoder (filter 0 per row)."""
+    def chunk(ctype: bytes, payload: bytes) -> bytes:
+        return (struct.pack('>I', len(payload)) + ctype + payload
+                + struct.pack('>I', zlib.crc32(ctype + payload) & 0xFFFFFFFF))
+    scan = b''.join(b'\x00' + rgba[y * width * 4:(y + 1) * width * 4] for y in range(height))
+    return (b'\x89PNG\r\n\x1a\n'
+            + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0))
+            + chunk(b'IDAT', zlib.compress(scan, 9))
+            + chunk(b'IEND', b''))
+
+
+def emit_jack_gui_backdrop(namespace: Path) -> None:
+    """"Font-backdrop: textures/font/gui/edit_vehicle_bg.png (176x222) remapat din
+    textura reala a modului + assets/vehicle/font/jack_gui.json cu glifa + spatii
+    negative. Titlul meniului o invoca (vezi MechanicGui)."""
+    src_w, _src_h, src = _png_decode_rgba(ASSETS / 'textures/gui/edit_vehicle.png')
+    width, height = 176, 222
+    canvas = bytearray()
+    for _y in range(height):
+        canvas.extend(b'\xc6\xc6\xc6\xff' * width)          # griul GUI standard
+
+    def paste(src_y0: int, src_y1: int, dst_y0: int) -> None:
+        for row in range(src_y1 - src_y0):
+            s_off = ((src_y0 + row) * src_w) * 4
+            d_off = ((dst_y0 + row) * width) * 4
+            canvas[d_off:d_off + width * 4] = src[s_off:s_off + width * 4]
+
+    paste(0, 89, 0)       # titlu + motor(8,17) + roti(8,35) + fereastra (17..87)
+    # y 89..100: banda gri separator (ramane din prefill)
+    paste(101, 155, 139)  # 3 randuri inventar: border la y139 => continut 140.. (grila chest)
+    # y 193..196: banda gri dintre grila si hotbar (ramane din prefill)
+    paste(159, 176, 197)  # hotbar: border la y197 => continut 198.. (grila chest)
+    paste(176, 183, 214)  # marginea de jos a ferestrei modului (border + umbra)
+    # ultimul rand al ferestrei chest (221) primeste borderul inchis al modului (v183)
+    for x in range(width):
+        s_off = (183 * src_w + x) * 4
+        d_off = (221 * width + x) * 4
+        canvas[d_off:d_off + 4] = src[s_off:s_off + 4]
+    # sub slotul de roti: BRIEF 2026-10-24 => butonul VOPSEA primeste ACEEASI
+    # casuta vizuala ca sloturile de motor/roti (copie 1:1 a sprite-ului slotului,
+    # sursa = chenarul desenat de mod la coordonatele (7..25, 16..34)).
+    slot_w, slot_h = 19, 19
+    for row in range(slot_h):
+        s_off = ((16 + row) * width + 7) * 4
+        d_off = ((52 + row) * width + 7) * 4
+        canvas[d_off:d_off + slot_w * 4] = canvas[s_off:s_off + slot_w * 4]
+    # fereastra de preview: in mod framebuffer-ul 3D acopera tot interiorul;
+    # noi desenam modelul compus - curatam panourile ajutatoare ale texturii
+    # pe fundalul intunecat al ferestrei (bordurile raman).
+    dark = b'\x1c\x1c\x1c\xff'
+    for y in range(18, 87):
+        for x in range(27, 168):
+            d_off = (y * width + x) * 4
+            if canvas[d_off:d_off + 4] != dark:
+                canvas[d_off:d_off + 4] = dark
+    tex_path = namespace / 'textures/font/gui/edit_vehicle_bg.png'
+    tex_path.parent.mkdir(parents=True, exist_ok=True)
+    tex_path.write_bytes(_png_encode_rgba(width, height, bytes(canvas)))
+    write_json(namespace / 'font/jack_gui.json', {
+        'providers': [
+            {'type': 'space', 'advances': {'\ue7f0': -8, '\ue7f1': -168}},
+            {'type': 'bitmap', 'file': 'vehicle:font/gui/edit_vehicle_bg.png',
+             'ascent': 13, 'height': 222, 'chars': ['\ue700']},
+        ],
+    })
+
+
+def emit_hud_speed_font(namespace: Path) -> None:
+    """CICLUL BA+BC (feedback user): HUD cu font propriu. In STANGA (x =
+    jumatate-91, randul inimilor): viteza (cifre LCD bold + km/h) si odometrul.
+    In DREAPTA (x = jumatate+10, PE POZITIA exacta a inimilor de
+    cal/montura): 10 INIMI-COMBUSTIBIL - forme de inima LCD cu fundal OPAC
+    care acopera complet inimile vanilla ale porcului purtator (9px, pas 8px),
+    colorate dupa nivel (verde/galben/rosu). La coborare nu exista mesaj =>
+    inimile monturilor normale din joc raman 100% vanilla (cerinta user:
+    fara sa afectezi inimile cailor normali - NU atingem nicio textura).
+
+    Action bar-ul vanilla e CENTRAT pe ecran; pozitionarea stanga/dreapta
+    precisa se face prin completare cu SPATII de avans fix (64/32/16/8/4/2/1)
+    pana la latimea totala 182 (= latimea hotbar-ului). Calculurile de
+    avans sunt replicare in LandVehicle.showFuelOverlay (constantele de mai
+    jos trebuie sa ramana sincronizate la orice schimbare de masca).
+    Ascent -12 = glifele coboara ~20px sub linia action bar-ului -> rindul
+    deasupra hotbar-ului (BA: -4 era "prea sus").
+
+    LATIMI (px), formula vanilla = ceil(pngW * fontHeight / pngH),
+    fontHeight = 9, pngH = 14:
+      cifra  (png 12x14) -> 8
+      '.'    (png  4x14) -> 3
+      'm'    (png 12x14) -> 8
+      'km/h' (png 48x14) -> 31
+      'km'   (png 24x14) -> 16
+      segment bara (png 12x14) -> 8  (10 buc = 80px = zona inimilor)
+    Chars: E200..E209 cifre, E20A 'km/h', E20B 'm', E20C '.', E20D 'km'
+    (E210..E212 au fost starse in ciclul BK - bara si pompa de combustibil nu
+    se mai deseneaza; inimile de cal ramaneau postul de combustibil).
+    F800..F806 spatii de avans 64/32/16/8/4/2/1 (descompunere binara)."""
+    masks = {
+        '0': ("01110", "10001", "10011", "10101", "11001", "10001", "01110"),
+        '1': ("00100", "01100", "00100", "00100", "00100", "00100", "01110"),
+        '2': ("01110", "10001", "00001", "00010", "00100", "01000", "11111"),
+        '3': ("11110", "00001", "00001", "01110", "00001", "00001", "11110"),
+        '4': ("00010", "00110", "01010", "10010", "11111", "00010", "00010"),
+        '5': ("11111", "10000", "11110", "00001", "00001", "10001", "01110"),
+        '6': ("00110", "01000", "10000", "11110", "10001", "10001", "01110"),
+        '7': ("11111", "00001", "00010", "00100", "01000", "01000", "01000"),
+        '8': ("01110", "10001", "10001", "01110", "10001", "10001", "01110"),
+        '9': ("01110", "10001", "10001", "01111", "00001", "00010", "01100"),
+        'k': ("10000", "10010", "10100", "11000", "10100", "10010", "10001"),
+        'm': ("00000", "00000", "11010", "10101", "10101", "10101", "10101"),
+        '/': ("00001", "00001", "00010", "00100", "00100", "01000", "01000"),
+        'h': ("10000", "10000", "10110", "11001", "10001", "10001", "10001"),
+        '.': ("0", "0", "0", "0", "0", "1", "1"),
+    }
+    scale = 2  # bold: fiecare pixel din masca => 2x2 pixeli in PNG (stroke gros)
+    white = (255, 255, 255, 255)
+
+    def render_png(rows: tuple, rgba=white) -> bytes:
+        cols = len(rows[0])
+        width, height = cols * scale + scale, len(rows) * scale  # +margine dreapta
+        buf = bytearray(width * height * 4)
+        for y, row in enumerate(rows):
+            for x, cell in enumerate(row):
+                if cell == '1':
+                    for dy in range(scale):
+                        for dx in range(scale):
+                            off = ((y * scale + dy) * width + x * scale + dx) * 4
+                            buf[off:off + 4] = bytes(rgba)
+        return _png_encode_rgba(width, height, bytes(buf))
+
+    def glue(*letters: str) -> tuple:
+        rows = [""] * 7
+        for i, letter in enumerate(letters):
+            for r in range(7):
+                rows[r] += masks[letter][r] + ("0" if i < len(letters) - 1 else "")
+        return tuple(rows)
+
+    hud_dir = namespace / 'textures/font/hud'
+    hud_dir.mkdir(parents=True, exist_ok=True)
+    ascent = -12  # BJ: textul sta DEASUPRA inimilor (un rand); -22 il punea PESTE inimi
+    providers = [{'type': 'space', 'advances': {
+        chr(0xF800 + i): advance
+        for i, advance in enumerate((64, 32, 16, 8, 4, 2, 1))}}]
+    glyphs = [(chr(0xE200 + int(d)), f'digit_{d}.png', masks[d], white)
+              for d in '0123456789']
+    glyphs += [
+        (chr(0xE20A), 'kmh.png', glue('k', 'm', '/', 'h'), white),
+        (chr(0xE20B), 'm.png', masks['m'], white),
+        (chr(0xE20C), 'dot.png', masks['.'], white),
+        (chr(0xE20D), 'km.png', glue('k', 'm'), white),
+    ]
+    for char, filename, rows, rgba in glyphs:
+        (hud_dir / filename).write_bytes(render_png(rows, rgba))
+        providers.append({'type': 'bitmap', 'file': f'vehicle:font/hud/{filename}',
+                          'ascent': ascent, 'height': 9, 'chars': [char]})
+    write_json(namespace / 'font/hud_speed.json', {'providers': providers})
+
+    # CICLUL BH (feedback user): inimile de cal stau la alt nivel cand GUI-ul
+    # nu mai are randul inimilor de jucator (creative/spectator -> status
+    # bars oprite => stiva de jos coboara cu ~10px / un rand de inimi).
+    # Replica de font identic, doar ascentul coboara cu inca ~10px (-22 -> -32),
+    # astfel randul ramane LIPIT de inimi indiferent de modul de joc.
+    creative_providers = []
+    for provider in providers:
+        copy = dict(provider)
+        if copy['type'] == 'bitmap':
+            copy['ascent'] = ascent - 10  # BH: creative/spectator = un rand mai jos
+        creative_providers.append(copy)
+    write_json(namespace / 'font/hud_speed_creative.json',
+               {'providers': creative_providers})
+
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", type=Path,
+                        default=ROOT / "paper-plugin/build/MrCrayfishVehiclePlugin-resource-pack-26.3-r41.zip")
+    parser.add_argument("--pack-format", type=int, default=97,
+                        help="resource pack format (97 = Minecraft 26.3)")
+    args = parser.parse_args()
+    output, sha1 = build(args.output.resolve(), args.pack_format)
+    print(f"Resource pack: {output}")
+    print(f"SHA-1: {sha1}")
+
+
+if __name__ == "__main__":
+    main()# noop: retrigger CI dupa ciclul BH
+
+# noop: retrigger CI dupa ciclul BL (deploy verde, build a picat pe retea Maven)
+# noop: retrigger CI pentru ciclul BL3 (push nedeclansat)
+# noop 2: retrigger deploy pentru ciclul BL3 (release-publish a dat flake GitHub)

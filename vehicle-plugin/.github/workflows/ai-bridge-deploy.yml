@@ -1,0 +1,99 @@
+name: AI Bridge deploy (urca JAR-ul pe server prin SFTP)
+
+# Uca aibridge-*.jar din release-ul "ai-bridge-latest" in mods/ pe serverul
+# NeoForge (d496911d). Dupa rulare e nevoie de UN restart din panel.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/deploy-ai-bridge.trigger"
+
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-bridge-deploy
+  cancel-in-progress: false
+
+env:
+  SFTP_HOST: jacob.hidencloud.com
+  SFTP_PORT: "2022"
+  SFTP_USER: mariusuke-184939.d496911d
+
+jobs:
+  deploy:
+    name: Urc JAR-ul in mods/
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Descarc JAR-ul din release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          gh release download ai-bridge-latest --pattern 'aibridge-*.jar' --dir out --clobber
+          ls -l out
+
+      - name: Pregatesc cheia SFTP
+        env:
+          HIDENCLOUD_SFTP_KEY: ${{ secrets.HIDENCLOUD_SFTP_KEY }}
+        run: |
+          set -euo pipefail
+          # cheia vine din secretul HIDENCLOUD_SFTP_KEY; fisierul din repo e doar
+          # rezerva pentru build-urile vechi si trebuie sters dupa rotire
+          if [ -n "${HIDENCLOUD_SFTP_KEY:-}" ]; then
+            printf '%s\n' "$HIDENCLOUD_SFTP_KEY" > /tmp/hc_key
+            chmod 600 /tmp/hc_key
+          else
+            install -m 600 hidencloud/keys/arena_hc_ed25519 /tmp/hc_key
+          fi
+
+      - name: Verific unde e serverul (listare radacina)
+        run: |
+          set -euo pipefail
+          printf 'ls -a\n' > lsroot.txt
+          sftp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 \
+            -o BatchMode=yes -i /tmp/hc_key -b lsroot.txt -P "$SFTP_PORT" "$SFTP_USER@$SFTP_HOST" \
+            | grep -iE '^(mods|config|logs|libraries|server\.properties|world|eula\.txt|run)' || true
+
+      - name: Urc JAR-ul in mods/
+        run: |
+          set -euo pipefail
+          JAR=$(ls out/aibridge-*.jar | head -1)
+          NAME=$(basename "$JAR")
+          echo "Urc $NAME"
+          printf 'put %s mods/%s\n' "$JAR" "$NAME" > up.txt
+          sftp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 \
+            -o BatchMode=yes -i /tmp/hc_key -b up.txt -P "$SFTP_PORT" "$SFTP_USER@$SFTP_HOST"
+
+      - name: Pun si fisierul de autotest
+        run: |
+          set -euo pipefail
+          : > selftest.flag
+          printf 'put selftest.flag aibridge.selftest\n' > st.txt
+          sftp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 \
+            -o BatchMode=yes -i /tmp/hc_key -b st.txt -P "$SFTP_PORT" "$SFTP_USER@$SFTP_HOST"
+
+      - name: Cer restart (fisier aibridge.restart)
+        run: |
+          set -euo pipefail
+          : > restart.flag
+          printf 'put restart.flag aibridge.restart\n' > flag.txt
+          sftp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 \
+            -o BatchMode=yes -i /tmp/hc_key -b flag.txt -P "$SFTP_PORT" "$SFTP_USER@$SFTP_HOST"
+          echo "Fisier de restart urcat (modul opreste serverul curat in ~5s)."
+
+      - name: Verific ca e pe server
+        run: |
+          set -euo pipefail
+          NAME=$(basename "$(ls out/aibridge-*.jar | head -1)")
+          printf 'ls -l mods/%s\n' "$NAME" > check.txt
+          sftp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 \
+            -o BatchMode=yes -i /tmp/hc_key -b check.txt -P "$SFTP_PORT" "$SFTP_USER@$SFTP_HOST" \
+            | tee check_out.txt
+          grep -q "$NAME" check_out.txt
+          echo "OK: $NAME e in mods/ pe server. Restart din panel."

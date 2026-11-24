@@ -1,0 +1,79 @@
+name: Horizon resources (pregatesc datele jocului si le urc pe panel)
+
+# Nu are nevoie de PC-ul utilizatorului: ia server.jar oficial 26.3 de la Mojang,
+# ruleaza horizon-prepare, urca folderul 26.3 pe server prin SFTP.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/horizon-res.trigger"
+
+permissions:
+  contents: write
+
+env:
+  SFTP_HOST: jacob.hidencloud.com
+  SFTP_PORT: "2022"
+  SFTP_USER: mariusuke-184939.d496911d
+
+jobs:
+  prepare:
+    name: Prepare + upload
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Prepare (Horizon CLI + server.jar + horizon-prepare)
+        env:
+          HIDENCLOUD_SFTP_KEY: ${{ secrets.HIDENCLOUD_SFTP_KEY }}
+        run: |
+          set +e
+          bash horizon/tools/fetch_and_prepare.sh > prepare.log 2>&1
+          echo "script exit=$?" >> prepare.log
+          tail -25 prepare.log
+
+      - name: Pachetez 26.3
+        run: |
+          set +e
+          ls -lh 26.3.tar.gz >> prepare.log
+          tail -5 prepare.log
+
+      - name: Urc pe server prin SFTP
+        if: hashFiles('26.3.tar.gz') != ''
+        run: |
+          set +e
+          # cheia vine din secretul HIDENCLOUD_SFTP_KEY; fisierul din repo e doar
+          # rezerva pentru build-urile vechi si trebuie sters dupa rotire
+          if [ -n "${HIDENCLOUD_SFTP_KEY:-}" ]; then
+            printf '%s\n' "$HIDENCLOUD_SFTP_KEY" > /tmp/hc_key
+            chmod 600 /tmp/hc_key
+          else
+            install -m 600 hidencloud/keys/arena_hc_ed25519 /tmp/hc_key
+          fi
+          sftp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 \
+            -o BatchMode=yes -i /tmp/hc_key -P "$SFTP_PORT" "$SFTP_USER@$SFTP_HOST" <<'BATCH'
+          put 26.3.tar.gz 26.3.tar.gz
+          ls -l 26.3.tar.gz
+          BATCH
+
+      - name: Raport in repo
+        if: always()
+        run: |
+          set +e
+          mkdir -p horizon
+          cp prepare.log horizon/_resources-report.txt 2>/dev/null || echo "fara log" > horizon/_resources-report.txt
+          git config user.name arena-agent
+          git config user.email arena-agent@users.noreply.github.com
+          git add -f horizon/_resources-report.txt
+          git commit -m "raport prepare [skip ci]"
+          for i in 1 2 3; do
+            git pull --rebase --autostash origin "$GITHUB_REF_NAME" >/dev/null 2>&1
+            git push origin "HEAD:$GITHUB_REF_NAME" && break
+            sleep 5
+          done

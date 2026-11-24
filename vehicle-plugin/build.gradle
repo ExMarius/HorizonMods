@@ -1,0 +1,123 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+buildscript {
+    repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '4.1.+', changing: true
+    }
+}
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'maven-publish'
+
+version = "0.45.2-1.16.5"
+group = "com.mrcrayfish"
+archivesBaseName = "vehicle-mod"
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+minecraft {
+    mappings channel: "official", version: "1.16.5"
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                vehicle {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                vehicle {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            property 'forge.logging.console.level', 'debug'
+            args '--mod', 'vehicle', '--all', '--output', file('src/generated/resources/')
+            mods {
+                vehicle {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+repositories {
+    maven {
+        url = "https://www.cursemaven.com"
+    }
+}
+
+dependencies {
+    minecraft 'net.minecraftforge:forge:1.16.5-36.2.20'
+
+    compile fg.deobf('curse.maven:obfuscate-289380:3336021')
+    compile fg.deobf('curse.maven:controllable-317269:3519536')
+    compile fg.deobf('curse.maven:configured-457570:3546348')
+    compile fg.deobf('curse.maven:catalogue-459701:3529457')
+}
+
+processResources {
+    doLast {
+        fileTree(dir: outputs.files.asPath, include: "**/*.json").each {
+            File file -> file.text = JsonOutput.toJson(new JsonSlurper().parse(file))
+        }
+    }
+}
+
+jar {
+    manifest {
+        attributes([
+            "Specification-Title": "Vehicle Mod",
+            "Specification-Vendor": "MrCrayfish",
+            "Specification-Version": "1",
+            "Implementation-Title": "Vehicle Mod",
+            "Implementation-Version": project.version,
+            "Implementation-Vendor" : "MrCrayfish",
+            "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+def reobfFile = file("$buildDir/reobfJar/output.jar")
+def reobfArtifact = artifacts.add('default', reobfFile) {
+    type 'jar'
+    builtBy 'reobfJar'
+}
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifact reobfArtifact
+        }
+    }
+    repositories {
+        maven {
+            url "file:///X:/localmaven/mcmods"
+        }
+    }
+}

@@ -1,0 +1,60 @@
+name: Horizon launcher jar
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "horizon/launcher/Launcher.java"
+      - ".github/horizon-launcher.trigger"
+permissions:
+  contents: write
+jobs:
+  jar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Compilez
+        run: |
+          set +e
+          mkdir -p classes
+          javac -encoding UTF-8 -d classes horizon/launcher/Launcher.java > javac.log 2>&1
+          code=$?
+          echo "javac exit=$code" >> javac.log
+          cat javac.log
+          [ $code -eq 0 ] || exit 1
+          printf 'Main-Class: Launcher\n' > manifest.txt
+          jar cfm horizon-launch.jar manifest.txt -C classes .
+          ls -lh horizon-launch.jar
+      - name: Raport (daca a picat)
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          CONTENT=$(base64 -w0 javac.log 2>/dev/null || echo "bGlwc2E=")
+          SHA=$(gh api "repos/$GITHUB_REPOSITORY/contents/horizon/_launcher-build.md" --jq .sha 2>/dev/null)
+          if [ -n "$SHA" ]; then
+            gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/horizon/_launcher-build.md" \
+              -f message="raport javac (actualizare)" -f content="$CONTENT" -f sha="$SHA" -f branch="$GITHUB_REF_NAME" >/dev/null
+          else
+            gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/horizon/_launcher-build.md" \
+              -f message="raport javac" -f content="$CONTENT" -f branch="$GITHUB_REF_NAME" >/dev/null
+          fi
+          exit 0
+
+      - name: Public in release
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG=horizon-arm64
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" horizon-launch.jar --clobber
+          else
+            gh release create "$TAG" horizon-launch.jar --title "Horizon server (ARM64 + lansator)" --notes "binar aarch64 + jar lansator"
+          fi
