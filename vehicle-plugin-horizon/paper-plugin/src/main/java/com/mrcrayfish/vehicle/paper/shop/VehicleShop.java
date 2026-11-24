@@ -39,6 +39,7 @@ public final class VehicleShop {
         DEFAULT_PRICES.put("smart_car", 18000.0D);
         DEFAULT_PRICES.put("speed_boat", 20000.0D);
         DEFAULT_PRICES.put("off_roader", 25000.0D);
+        DEFAULT_PRICES.put("horizon_off_roader", 25000.0D);
         DEFAULT_PRICES.put("mini_bus", 40000.0D);
         DEFAULT_PRICES.put("sports_car", 60000.0D);
         DEFAULT_PRICES.put("compact_helicopter", 250000.0D);

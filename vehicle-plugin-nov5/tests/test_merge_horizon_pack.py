@@ -32,6 +32,12 @@ class MergeTest(unittest.TestCase):
         for name, data in m.files(self.base).items(): self.assertEqual(result[name], data)
         self.assertIn('assets/horizonvehicles/items/off_roader_body_part_00.json', result)
         self.assertIn('horizon-off-roader-LICENSE.txt', result)
+        body = json.loads(result['assets/horizonvehicles/models/item/off_roader_body_part_00.json'])
+        self.assertTrue(all(face['tintindex'] == 0 for element in body['elements'] for face in element['faces'].values()))
+        item = json.loads(result['assets/horizonvehicles/items/off_roader_body_part_00.json'])
+        self.assertEqual(item['model']['tints'][0]['type'], 'minecraft:dye')
+        wheel = json.loads(result['assets/horizonvehicles/models/item/wheel_sports_part_00.json'])
+        self.assertTrue(all('tintindex' not in face for e in wheel['elements'] for face in e['faces'].values()))
 
     def test_refuses_unexpected_base(self):
         with self.assertRaises(ValueError): m.merge(self.base, self.transfer)

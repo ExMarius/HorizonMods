@@ -172,6 +172,9 @@ public final class LandVehicle {
         // Motorul din fabrica (IRON de baza) e VIRTUAL: nu a fost niciodata un item
         // fizic in inventar => la demontare NU devine item (nu printezi motoare).
         this.engineVirtual = this.engineInstalled;
+        if ("horizon_off_roader".equals(spec.id())) {
+            this.wheelType = com.mrcrayfish.vehicle.paper.mechanic.WheelType.SPORTS;
+        }
     }
 
     public static LandVehicle spawn(VehiclePlugin plugin, UUID id, Location location, LandVehicleSpec spec,

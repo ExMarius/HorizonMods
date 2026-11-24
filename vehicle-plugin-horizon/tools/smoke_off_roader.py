@@ -34,7 +34,19 @@ def main(jar):
                 data=(root/'plugins/MrCrayfishVehiclePlugin/vehicles.yml').read_text()
                 if 'horizon_off_roader' not in data: raise RuntimeError('vehicle missing from persisted data')
                 if 'Could not pass event' in text or 'Exception in server tick loop' in text: raise RuntimeError('server reported event or tick failure')
-                print('Vehicle persistence verified; test server stopped cleanly.')
+                print('Vehicle save verified; restarting disposable server.',flush=True)
+                proc=subprocess.Popen(['java','-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=out,stderr=subprocess.STDOUT,text=True)
+                deadline=time.monotonic()+240
+                start_at=len(text)
+                while time.monotonic()<deadline:
+                    time.sleep(2); out.flush(); newlog=log.read_text(errors='replace')[start_at:]
+                    if proc.poll() is not None: raise RuntimeError('server exited during restart')
+                    if 'Done (' in newlog and 'Loaded 1 vehicle(s);' in newlog: break
+                else: raise RuntimeError('persisted vehicle did not load after restart')
+                proc.stdin.write('stop\n'); proc.stdin.flush(); proc.wait(timeout=90)
+                out.flush(); newlog=log.read_text(errors='replace')[start_at:]
+                if 'Could not pass event' in newlog or 'Exception in server tick loop' in newlog: raise RuntimeError('server reported error after reload')
+                print('Saved vehicle loaded after clean restart.')
             except Exception:
                 out.flush(); print('-----server log tail-----\n'+log.read_text(errors='replace')[-10000:],file=sys.stderr)
                 raise

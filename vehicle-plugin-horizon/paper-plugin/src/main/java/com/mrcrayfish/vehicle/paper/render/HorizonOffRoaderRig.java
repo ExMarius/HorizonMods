@@ -54,11 +54,12 @@ final class HorizonOffRoaderRig {
         }
     }
 
-    private static ItemStack model(String name) {
+    private static ItemStack model(String name) { return model(name, null); }
+    private static ItemStack model(String name, Integer rgb) {
         ItemStack stack = new ItemStack(Material.LEATHER_HORSE_ARMOR);
         LeatherArmorMeta meta = (LeatherArmorMeta) stack.getItemMeta();
         meta.setItemModel(new NamespacedKey("horizonvehicles", name));
-        meta.setColor(Color.fromRGB(0xF9FFFE));
+        meta.setColor(Color.fromRGB(rgb == null ? 0xFFFFFF : rgb));
         stack.setItemMeta(meta);
         return stack;
     }
@@ -75,15 +76,15 @@ final class HorizonOffRoaderRig {
                     float x = (p.wheel % 2 == 0 ? 1 : -1) * 14.74F / 16F;
                     center = new Vector3f(x, .390F, front ? Z : -Z);
                     scale = new Vector3f(1.55F, 1.56F, 1.56F);
-                    localRotation.rotateY((float)Math.toRadians(front ? steering : 0))
+                    // Horizon draws wheels before the sprung chassis transform.
+                    localRotation.identity().rotateY((float)Math.toRadians(front ? steering : 0))
                             .rotateX((float)Math.toRadians(-(front ? frontSpin : rearSpin)));
-                    if (x < 0) localRotation.rotateY((float)Math.PI);
                 }
                 case STEERING -> {
                     center = new Vector3f(6.816F / 16F, 17.30F / 16F, 4.45F / 16F);
                     scale = new Vector3f(1.16F);
                     localRotation.rotateX((float)Math.toRadians(32))
-                            .rotateZ((float)Math.toRadians(-steering));
+                            .rotateZ((float)Math.toRadians(-steering * 1.8F));
                 }
                 case SPARE -> {
                     center = new Vector3f(0, 14.8F / 16F, -34.6F / 16F);
@@ -92,7 +93,8 @@ final class HorizonOffRoaderRig {
                 }
                 default -> throw new IllegalStateException();
             }
-            center = SourceTransforms.chassisPoint(center, pivot, wheelie, roll).sub(driverSeat);
+            if (p.kind != Kind.WHEEL) center = SourceTransforms.chassisPoint(center, pivot, wheelie, roll);
+            center.sub(driverSeat);
             Transformation t = HorizonPartTransform.group(center, scale, p.group.origin(), p.group.rotation(), localRotation);
             Quaternionf right = new Quaternionf(t.getRightRotation()).mul(ITEM_YAW);
             p.display.teleport(anchor, TeleportFlag.EntityState.RETAIN_PASSENGERS);
@@ -102,6 +104,11 @@ final class HorizonOffRoaderRig {
     }
 
     boolean valid() { return pieces.stream().allMatch(p -> p.display.isValid()); }
+    void applyColor(Integer rgb) {
+        for (Piece p : pieces) if (p.kind == Kind.BODY && p.display.isValid()) {
+            p.display.setItemStack(model(p.group.name(), rgb));
+        }
+    }
     void hideWheels() { wheelsVisible = false; refreshWheels(); }
     void setWheels(String name) {
         wheelsVisible = true;
@@ -110,9 +117,9 @@ final class HorizonOffRoaderRig {
         refreshWheels();
     }
     private void refreshWheels() {
-        for (Piece p : pieces) if (p.kind == Kind.WHEEL && p.display.isValid()) {
+        for (Piece p : pieces) if ((p.kind == Kind.WHEEL || p.kind == Kind.SPARE) && p.display.isValid()) {
             String suffix = p.group.name().substring(p.group.name().lastIndexOf("_part_"));
-            p.display.setItemStack(wheelsVisible ? model(wheelModel + suffix) : new ItemStack(Material.AIR));
+            p.display.setItemStack(p.kind == Kind.SPARE || wheelsVisible ? model(wheelModel + suffix) : new ItemStack(Material.AIR));
         }
     }
 }

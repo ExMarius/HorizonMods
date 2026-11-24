@@ -1001,6 +1001,7 @@ public final class LandVehicleRig {
         if (removed) {
             return;
         }
+        if (horizonRig != null) horizonRig.applyColor(rgb);
         if (horizonRig == null && body != null && body.isValid()) {
             body.setItemStack(coloredStack(spec.bodyModel(), rgb));
         }

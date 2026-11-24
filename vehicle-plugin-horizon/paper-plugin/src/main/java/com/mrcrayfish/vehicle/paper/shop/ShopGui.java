@@ -251,7 +251,9 @@ public final class ShopGui {
         ItemMeta meta = stack.getItemMeta();
         if (meta != null) {
             // GUI icon: the dedicated scale-to-slot model (visuals backed by vehicle_icon/<id>).
-            meta.setItemModel(new NamespacedKey("vehicle", "vehicle_icon/" + spec.id()));
+            meta.setItemModel("horizon_off_roader".equals(spec.id())
+                    ? new NamespacedKey("horizonvehicles", "off_roader_body_part_00")
+                    : new NamespacedKey("vehicle", "vehicle_icon/" + spec.id()));
             meta.displayName(Component.text(spec.displayName(), NamedTextColor.WHITE,
                     TextDecoration.BOLD));
             List<Component> lore = new ArrayList<>();

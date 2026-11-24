@@ -15,6 +15,10 @@ class DescriptorTest(unittest.TestCase):
                 self.assertEqual(json.loads(descriptor.read_bytes()), json.loads(pack.read('go_kart_parts.json')))
                 groups = json.loads(descriptor.read_bytes())['parts']
                 self.assertEqual(sum(g['element_count'] for g in groups['off_roader_body']), 197)
+                # The mechanic switches between these two grouped wheel models
+                # without respawning displays; their pivots must be identical.
+                for a, b in zip(groups['wheel_standard'], groups['wheel_sports'], strict=True):
+                    self.assertEqual(a['rotation'], b['rotation'])
                 for part in groups.values():
                     for group in part:
                         namespace, name = group['item_model'].split(':')

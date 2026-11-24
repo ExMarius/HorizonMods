@@ -29,6 +29,18 @@ def merge(base, transfer, expected_sha=R39_SHA256):
     additions = {n: data for n, data in candidate.items() if n.startswith('assets/horizonvehicles/')}
     if not additions or not any(n.startswith('assets/horizonvehicles/items/') for n in additions):
         raise ValueError('transfer is missing item models')
+    # Horizon's renderer applies the paint tint to the complete body model.
+    # Only the new namespace is modified; the r39 files remain byte-for-byte intact.
+    for name in list(additions):
+        if name.startswith('assets/horizonvehicles/models/item/off_roader_body_part_'):
+            model = json.loads(additions[name])
+            for element in model['elements']:
+                for face in element.get('faces', {}).values(): face['tintindex'] = 0
+            additions[name] = json.dumps(model, separators=(',', ':')).encode()
+        elif name.startswith('assets/horizonvehicles/items/off_roader_body_part_'):
+            item = json.loads(additions[name])
+            item['model']['tints'] = [{'type':'minecraft:dye', 'default':-1}]
+            additions[name] = json.dumps(item, separators=(',', ':')).encode()
     additions['horizon-off-roader-LICENSE.txt'] = bundle['LICENSE.txt']
     if set(existing) & set(additions):
         raise ValueError('refusing to overwrite any existing pack file')
