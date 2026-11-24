@@ -327,3 +327,9 @@ muta roțile în afară, cu spațiu suplimentar calculat pentru bracajul față.
 Suporturile ating oglinzile laterale și caroseria; oglinda centrală este un
 model decorativ, fără reflexie dinamică. Testele matematice și de protocol nu
 înlocuiesc verificarea vizuală a roților în viraj și a montajului oglinzilor.
+
+Încercarea `45444972812` a trecut build-ul, testele și publicarea, dar
+instalatorul s-a oprit înainte de backup și modificări: Falix raporta serverul
+într-o stare de tranziție. Inspecția read-only `45445936653` a raportat starea
+`sleeping`. Nu presupune că serverul este oprit în siguranță; pornește-l din
+panou și reia instalarea numai după ce starea devine `running` sau `offline`.
