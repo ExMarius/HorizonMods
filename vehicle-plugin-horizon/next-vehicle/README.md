@@ -343,3 +343,11 @@ sunt recalculate față de centrul roții readuse, iar peretele și placa de sub
 spate care intrau în volumul roții sunt retrase; sunt păstrate și panourile
 întunecate din spatele roților. Testele verifică îmbinările și o limită
 conservatoare statică; rezultatul trebuie inspectat în Minecraft.
+
+Livrare `45446961259`: build, teste geometrice și smoke Paper pentru ambele
+vehicule au trecut. Backup verificat `mcv-before-horizon-45446961259-`, inclusiv
+garaje. Instalate și verificate: JAR SHA-256
+`6c39a187aa6b7f0343500998f7f1129e4b6e667f750d27e118ad8a154d4f53fe`, pack
+SHA-1 `88c00d83de155aa9dba76cea5a0aaac6c174b4db`. Restartul Falix a fost
+refuzat HTTP 403 `verification_required`; restart manual și verificare
+vizuală în client rămân necesare.
