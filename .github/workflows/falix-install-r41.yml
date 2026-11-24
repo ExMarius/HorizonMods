@@ -8,7 +8,7 @@ permissions:
   id-token: write
 jobs:
   install:
-    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods' && github.event.head_commit.message == 'Deploy stable r41 plugin to Falix'
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods' && startsWith(github.event.head_commit.message, 'Deploy stable r41 plugin to Falix')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
