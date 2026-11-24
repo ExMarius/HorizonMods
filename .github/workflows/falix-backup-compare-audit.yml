@@ -41,5 +41,6 @@ jobs:
           with urllib.request.urlopen(f.BASE+'/openapi.json', timeout=30) as r: doc=json.load(r)
           for path in ('/servers/{server_id}/files/compress','/servers/{server_id}/files/archive'):
               op=doc['paths'][path].get('post',doc['paths'][path].get('get',{})); schema=op.get('requestBody',{}).get('content',{}).get('application/json',{}).get('schema',{}); ref=schema.get('$ref','').split('/')[-1];schema=doc['components']['schemas'].get(ref,schema)
-              print('::notice title=Schema '+path+'::'+json.dumps(schema))
+              resp=op.get('responses',{}).get('200',{}).get('content',{}).get('application/json',{}).get('schema',{}); rr=resp.get('$ref','').split('/')[-1];resp=doc['components']['schemas'].get(rr,resp)
+              print('::notice title=Schema '+path+'::'+json.dumps(schema)+' RESPONSE '+json.dumps(resp))
           PY
