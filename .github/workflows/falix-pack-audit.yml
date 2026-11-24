@@ -32,6 +32,7 @@ jobs:
                       raw=z.read(name)
                       if re.search(b'all rights reserved',raw,re.I): found.append(name)
               print('::notice title=ARR model notices::'+str(len(found)))
+              print('::notice title=ARR model names::'+', '.join(found)[:10000])
               for model in ['off_roader_body','go_kart_body','standard_wheel']:
                   print('::notice title=Model '+model+'::'+str(any(n.endswith('/'+model+'.json') for n in z.namelist())))
           PY
