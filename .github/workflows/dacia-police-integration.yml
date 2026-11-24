@@ -20,6 +20,20 @@ jobs:
           node-version: '22'
       - name: Verify police livery and pack preservation
         run: python3 -m unittest discover -s vehicle-plugin-horizon/next-vehicle -p test_style_police.py -v
+      - name: Check current published pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download horizon-offroader-45399405882 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
+          python3 vehicle-plugin-horizon/next-vehicle/style_police.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/styled.zip
+          python3 - <<'PYCODE'
+          import zipfile
+          with zipfile.ZipFile('/tmp/base/HorizonOffRoader-1.21.4.zip') as a, zipfile.ZipFile('/tmp/styled.zip') as b:
+              assert b.testzip() is None
+              for n in a.namelist():
+                  if n not in ('assets/daciapolice/models/item/body.json','assets/daciapolice/sounds.json'):
+                      assert a.read(n)==b.read(n), n
+          PYCODE
       - name: Build and run unit tests
         run: |
           set -o pipefail

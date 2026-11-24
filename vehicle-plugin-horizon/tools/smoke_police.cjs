@@ -50,14 +50,18 @@ async function testPassengers(target) {
   const before=[bot.heldItem?.name,bot.heldItem?.count,bot.inventory.slots[45]?.name,bot.inventory.slots[45]?.count]
   if(before.join(',')!=='diamond,3,torch,2') throw new Error('test inventory setup failed: '+before)
   function pressF(){ bot._client.write('block_dig',{status:6,location:{x:0,y:0,z:0},face:0,sequence:0}) }
+  bot.chat('/vehicle sirena'); await wait(600)
+  others[0]._client.write('block_dig',{status:6,location:{x:0,y:0,z:0},face:0,sequence:0}); await wait(600)
+  bot.chat('/vehicle sirena'); await wait(700)
+  if(sirenOn!==1 || sirenOff!==1) throw new Error('passenger toggled siren')
   pressF(); await wait(1000)
   bot.chat('/vehicle sirena'); await wait(1000)
-  if(sirenOff!==1 || stopPackets<1) throw new Error('F did not start siren or stop packet missing')
+  if(sirenOff!==2 || stopPackets<1) throw new Error('F did not start siren or stop packet missing')
   pressF(); await wait(1000)
   bot.chat('/vehicle sirena'); await wait(1000)
-  if(sirenOff!==2) throw new Error('F did not restart siren')
+  if(sirenOff!==3) throw new Error('F did not restart siren')
   bot.chat('/vehicle sirena'); await wait(600); bot.chat('/vehicle sirena'); await wait(600)
-  if(sirenOn!==1 || sirenOff!==3) throw new Error('siren command toggle failed')
+  if(sirenOn!==2 || sirenOff!==4) throw new Error('siren command toggle failed')
   const after=[bot.heldItem?.name,bot.heldItem?.count,bot.inventory.slots[45]?.name,bot.inventory.slots[45]?.count]
   if(before.join(',')!==after.join(',')) throw new Error('F changed inventory: '+after)
   bot.chat('/vehicle save'); await wait(1000); success()
