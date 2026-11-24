@@ -16,6 +16,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   update:
+    # The source snapshot is r41, not the comparison build currently on Falix.
+    # Do not overwrite the selected 1.21.4 release until the source baseline matches.
+    if: vars.FALIX_R41_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

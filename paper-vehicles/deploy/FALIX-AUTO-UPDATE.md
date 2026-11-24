@@ -1,3 +1,6 @@
+> **Pauză de siguranță:** după instalarea versiunii 1.21.4 din 10 noiembrie,
+> deploy-ul automat r41 este dezactivat până sincronizăm sursa cu versiunea aleasă.
+
 # Falix: actualizarea automată a pluginului
 
 La un push pe branchul `arena/fb5f91ff-horizonmods` care modifică sursele sau
