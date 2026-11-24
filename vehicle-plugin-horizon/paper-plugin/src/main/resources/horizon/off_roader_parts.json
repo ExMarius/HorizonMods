@@ -1,0 +1,306 @@
+{
+  "status": "experimental, not playable",
+  "parts": {
+    "off_roader_body": [
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_00",
+        "rotation": null,
+        "element_count": 163
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_01",
+        "rotation": {
+          "axis": "x",
+          "angle": -18.0,
+          "origin": [
+            8.0,
+            3.9,
+            28.5
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_02",
+        "rotation": {
+          "axis": "x",
+          "angle": -12.0,
+          "origin": [
+            8.0,
+            8.25,
+            9.6
+          ]
+        },
+        "element_count": 2
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_03",
+        "rotation": {
+          "axis": "x",
+          "angle": -8.0,
+          "origin": [
+            7.0,
+            8.25,
+            10.85
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_04",
+        "rotation": {
+          "axis": "x",
+          "angle": 35.0,
+          "origin": [
+            8.0,
+            10.05,
+            24.95
+          ]
+        },
+        "element_count": 4
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_05",
+        "rotation": {
+          "axis": "x",
+          "angle": -35.0,
+          "origin": [
+            8.0,
+            10.05,
+            20.05
+          ]
+        },
+        "element_count": 4
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_06",
+        "rotation": {
+          "axis": "x",
+          "angle": 35.0,
+          "origin": [
+            8.0,
+            10.05,
+            -4.05
+          ]
+        },
+        "element_count": 4
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_07",
+        "rotation": {
+          "axis": "x",
+          "angle": -35.0,
+          "origin": [
+            8.0,
+            10.05,
+            -8.95
+          ]
+        },
+        "element_count": 4
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_08",
+        "rotation": {
+          "axis": "x",
+          "angle": 32.0,
+          "origin": [
+            12.8,
+            12.54,
+            11.13
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_09",
+        "rotation": {
+          "axis": "x",
+          "angle": -20.0,
+          "origin": [
+            11.7,
+            5.45,
+            15.2
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_10",
+        "rotation": {
+          "axis": "x",
+          "angle": -20.0,
+          "origin": [
+            13.9,
+            5.45,
+            15.2
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_11",
+        "rotation": {
+          "axis": "x",
+          "angle": -18.0,
+          "origin": [
+            8.0,
+            13.5,
+            15.4
+          ]
+        },
+        "element_count": 5
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_12",
+        "rotation": {
+          "axis": "z",
+          "angle": 4.0,
+          "origin": [
+            9.2,
+            13.7,
+            16.18
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_13",
+        "rotation": {
+          "axis": "z",
+          "angle": 4.0,
+          "origin": [
+            0.2,
+            13.7,
+            16.18
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_14",
+        "rotation": {
+          "axis": "x",
+          "angle": 32.0,
+          "origin": [
+            18.7,
+            13.0,
+            -12.0
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_15",
+        "rotation": {
+          "axis": "x",
+          "angle": 32.0,
+          "origin": [
+            -2.7,
+            13.0,
+            -12.0
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_16",
+        "rotation": {
+          "axis": "x",
+          "angle": -8.0,
+          "origin": [
+            12.8,
+            6.72,
+            2.4
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:off_roader_body_part_17",
+        "rotation": {
+          "axis": "x",
+          "angle": -8.0,
+          "origin": [
+            3.2,
+            6.72,
+            2.4
+          ]
+        },
+        "element_count": 1
+      }
+    ],
+    "wheel_sports": [
+      {
+        "item_model": "horizonvehicles:wheel_sports_part_00",
+        "rotation": null,
+        "element_count": 15
+      },
+      {
+        "item_model": "horizonvehicles:wheel_sports_part_01",
+        "rotation": {
+          "axis": "x",
+          "angle": 67.5,
+          "origin": [
+            8.0,
+            8.0,
+            8.0
+          ]
+        },
+        "element_count": 2
+      }
+    ],
+    "wheel_standard": [
+      {
+        "item_model": "horizonvehicles:wheel_standard_part_00",
+        "rotation": null,
+        "element_count": 15
+      },
+      {
+        "item_model": "horizonvehicles:wheel_standard_part_01",
+        "rotation": {
+          "axis": "x",
+          "angle": 67.5,
+          "origin": [
+            8.0,
+            8.0,
+            8.0
+          ]
+        },
+        "element_count": 2
+      }
+    ],
+    "go_kart_steering_wheel": [
+      {
+        "item_model": "horizonvehicles:go_kart_steering_wheel_part_00",
+        "rotation": null,
+        "element_count": 12
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_steering_wheel_part_01",
+        "rotation": {
+          "axis": "z",
+          "angle": 12.0,
+          "origin": [
+            8.0,
+            8.0,
+            8.0
+          ]
+        },
+        "element_count": 1
+      },
+      {
+        "item_model": "horizonvehicles:go_kart_steering_wheel_part_02",
+        "rotation": {
+          "axis": "z",
+          "angle": -12.0,
+          "origin": [
+            8.0,
+            8.0,
+            8.0
+          ]
+        },
+        "element_count": 1
+      }
+    ]
+  }
+}
