@@ -40,3 +40,15 @@ originale de aproximativ 25,5 secunde, cu pauză de 26 secunde între declanșă
 Aceasta este o adaptare Paper, nu o reproducere demonstrată a funcției originale;
 nu există girofar animat. Testul de protocol verifică răspunsul comenzii și
 limitarea repetării, nu dacă sunetul este auzit sau dacă packul se vede corect.
+
+### Livrare 16 noiembrie 2026
+
+Workflowul `45399405882` a trecut buildul, testele și smoke pe Paper pentru
+Dacia și Horizon Off-Roader, a publicat packul și a verificat instalarea pe
+Falix. JAR SHA-256 `69074d160c8f7b198a285a7ef2b820c7dd64808a83e36d84a1c1f07cb1473470`,
+pack SHA-1 `4357e64281b5889d4c24d3e85faf35010e0d709e`. Backupul dinainte
+este pe server cu prefix `mcv-before-horizon-45399405882-` (JAR, șase fișiere
+de date plugin și server.properties), verificat; nu este backup de lume și a
+fost făcut cât timp serverul era activ. Repornirea cerută automat a fost refuzată
+de Falix cu HTTP 403 `verification_required`: este necesar restart manual, iar
+procesul curent poate folosi versiunea veche până atunci.
