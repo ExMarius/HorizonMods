@@ -369,7 +369,8 @@ public final class LandVehicleRig {
         }
 
         if (kartRig != null) kartRig.update(renderAnchor, driverSeat, chassisRotation, renderSteeringAngle,
-                frontWheelRotation, rearWheelRotation, wheelieAngle, bodyRoll, point(spec.wheeliePivot()));
+                frontWheelRotation, rearWheelRotation, wheelieAngle, bodyRoll, point(spec.wheeliePivot()),
+                engineRunning, tickCount);
 
         if (engine != null) {
             LandVehicleSpec.Part part = spec.engine();

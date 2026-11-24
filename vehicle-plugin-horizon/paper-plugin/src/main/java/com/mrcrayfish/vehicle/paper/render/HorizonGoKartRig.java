@@ -29,6 +29,8 @@ final class HorizonGoKartRig {
     private String wheelModel = "wheel_standard";
     private String engineModel = "engine_iron";
     private boolean engineVisible = true;
+    private float lastRearSpin;
+    private boolean spinSeen;
 
     HorizonGoKartRig(Location location, UUID id, List<Entity> entities) {
         add(location, id, entities, HorizonGroups.GO_KART_BODY, Kind.BODY, -1);
@@ -67,28 +69,24 @@ final class HorizonGoKartRig {
         return stack;
     }
 
-    // These four groups form the two white nose fins and their dark backing.
-    // Move them together toward the nose, leaving every wheel centre unchanged.
-    static boolean isNoseFin(String name) {
-        return name.equals("go_kart_body_part_03") || name.equals("go_kart_body_part_04")
-                || name.equals("go_kart_body_part_06") || name.equals("go_kart_body_part_07");
+    // Horizon's exposed engine vibrates slightly side to side: .0015 blocks
+    // at idle or .004 while moving, using the original age-based frequencies.
+    static float engineVibration(int tick, boolean running, boolean moving) {
+        if (!running) return 0F;
+        return (float)Math.sin(tick * (moving ? 1.85F : .7F)) * (moving ? .004F : .0015F);
     }
-    static Vector3f noseFinOrigin(Vector3f sourceOrigin) {
-        // Item-display yaw mirrors both X and Z before the group rotation.
-        return new Vector3f(16F - sourceOrigin.x, sourceOrigin.y, 16F - sourceOrigin.z);
-    }
-    static final float NOSE_FIN_FORWARD = 2F * 1.18F / 16F;
 
     void update(Location anchor, Vector3f driverSeat, Quaternionf chassis, float steering,
-                float frontSpin, float rearSpin, float wheelie, float roll, Vector3f pivot) {
+                float frontSpin, float rearSpin, float wheelie, float roll, Vector3f pivot,
+                boolean engineRunning, int tickCount) {
+        boolean moving = spinSeen && Math.abs(rearSpin - lastRearSpin) > .01F;
+        lastRearSpin = rearSpin; spinSeen = true;
+        float vibration = engineVibration(tickCount, engineRunning && engineVisible, moving);
         for (Piece p : pieces) {
             Vector3f center, scale;
             Quaternionf localRotation = new Quaternionf(chassis);
             switch (p.kind) {
-                case BODY -> {
-                    center = new Vector3f(0, .57F, isNoseFin(p.group.name()) ? -NOSE_FIN_FORWARD : 0F);
-                    scale = new Vector3f(1.18F, 1.14F, 1.18F);
-                }
+                case BODY -> { center = new Vector3f(0, .57F, 0); scale = new Vector3f(1.18F, 1.14F, 1.18F); }
                 case WHEEL -> {
                     boolean front = p.wheel < 2;
                     float x = (p.wheel % 2 == 0 ? 1 : -1) * (front ? 11.64F : 12.16F) / 16F;
@@ -106,16 +104,14 @@ final class HorizonGoKartRig {
                             .rotateZ((float)Math.toRadians(-steering * 1.8F));
                 }
                 case ENGINE -> {
-                    center = new Vector3f(0, 6.5F * 1.14F / 16F, -11.6F * 1.18F / 16F);
+                    center = new Vector3f(vibration, 6.5F * 1.14F / 16F, -11.6F * 1.18F / 16F);
                     scale = new Vector3f(1.18F);
                 }
                 default -> throw new IllegalStateException();
             }
             center = SourceTransforms.chassisPoint(center, pivot, wheelie, roll);
             center.sub(driverSeat);
-            Vector3f groupOrigin = p.kind == Kind.BODY && isNoseFin(p.group.name())
-                    ? noseFinOrigin(p.group.origin()) : p.group.origin();
-            Transformation t = HorizonPartTransform.group(center, scale, groupOrigin, p.group.rotation(), localRotation);
+            Transformation t = HorizonPartTransform.group(center, scale, p.group.origin(), p.group.rotation(), localRotation);
             Quaternionf right = new Quaternionf(t.getRightRotation()).mul(ITEM_YAW);
             p.display.teleport(anchor, TeleportFlag.EntityState.RETAIN_PASSENGERS);
             p.display.setRotation(anchor.getYaw(), 0);
