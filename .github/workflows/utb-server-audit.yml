@@ -1,0 +1,35 @@
+name: Audit UTB installation
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['.github/workflows/utb-server-audit.yml']
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect current installation and plugin startup
+        run: |
+          python3 - <<'PY'
+          import importlib.util, hashlib, re
+          spec=importlib.util.spec_from_file_location('f','paper-vehicles/deploy/falix_auto_update.py')
+          f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
+          a=f.Falix(f.login())
+          print('::notice::Server status: '+str(a.status()),flush=True)
+          jar=a.download('/plugins/'+f.NAME)
+          print('::notice::Installed plugin SHA-256: '+f.sha(jar),flush=True)
+          props=a.api('/properties')
+          for p in props:
+              if p.get('key') in ('resource-pack-sha1','require-resource-pack'):
+                  print('::notice::'+p['key']+': '+str(p.get('value')),flush=True)
+          data=a.download('/logs/latest.log').decode('utf-8','replace').splitlines()
+          patterns=('Starting minecraft server version','Starting Minecraft server on','Loading server plugin MrCrayfishVehiclePlugin','Enabling MrCrayfishVehiclePlugin','Done (','Disabling MrCrayfishVehiclePlugin','Error occurred while enabling MrCrayfishVehiclePlugin')
+          for line in data:
+              if any(x in line for x in patterns):
+                  print('::notice::'+line[:500].replace('%','%25'),flush=True)
+          print('::notice::UTB command mentioned in current log: '+str(any('/vehicle spawn utb_650' in line for line in data)),flush=True)
+          PY
