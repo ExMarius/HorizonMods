@@ -1161,6 +1161,9 @@ public record LandVehicleSpec(
 
     /** Inverse of the resource-pack normalization required by vanilla's -16..32 model limit. */
     public float modelScaleCorrection(String model) {
+        // UTB body coordinates are authored at half scale around the item origin
+        // to accommodate the tall cab within vanilla model bounds.
+        if ("utb_650".equals(id) && "utb_650_body".equals(model)) return 2.0F;
         if ("sports_car".equals(id)) {
             return switch (model) {
                 case "sports_car_body", "sports_car_hood", "sports_car_left_door",

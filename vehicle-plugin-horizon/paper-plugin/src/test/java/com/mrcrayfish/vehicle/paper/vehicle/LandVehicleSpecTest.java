@@ -12,6 +12,13 @@ class LandVehicleSpecTest {
     private static final float EPSILON = 1.0E-6F;
 
     @Test
+    void utbBodyHasVanillaScaleCorrectionWithoutScalingTheWheels() {
+        assertEquals(2.0F, LandVehicleSpec.UTB_650.modelScaleCorrection("utb_650_body"));
+        assertEquals(1.0F, LandVehicleSpec.UTB_650.modelScaleCorrection("standard_wheel"));
+        assertEquals(1.0F, LandVehicleSpec.TRACTOR.modelScaleCorrection("tractor_body"));
+    }
+
+    @Test
     void horizonOffRoaderIsSeparateAndUsesSourceLayout() {
         LandVehicleSpec spec = LandVehicleSpec.byId("horizon_off_roader");
         assertEquals(LandVehicleSpec.HORIZON_OFF_ROADER, spec);
