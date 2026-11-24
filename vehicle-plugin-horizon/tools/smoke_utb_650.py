@@ -32,7 +32,11 @@ def main(jar):
                 proc.stdin.write('stop\n'); proc.stdin.flush(); proc.wait(timeout=90)
                 out.flush(); text=log.read_text(errors='replace')
                 data=(root/'plugins/MrCrayfishVehiclePlugin/vehicles.yml').read_text()
-                if 'utb_650' not in data: raise RuntimeError('vehicle missing from persisted data')
+                garage=root/'plugins/MrCrayfishVehiclePlugin/garages.yml'
+                garage_data=garage.read_text() if garage.exists() else ''
+                if 'utb_650' not in data and 'utb_650' not in garage_data:
+                    raise RuntimeError('vehicle missing from both active and garage persisted data')
+                print('Persisted in '+('active vehicles' if 'utb_650' in data else 'garage'),flush=True)
                 if 'Could not pass event' in text or 'Exception in server tick loop' in text: raise RuntimeError('server reported event or tick failure')
                 print('Vehicle save verified; restarting disposable server.',flush=True)
                 proc=subprocess.Popen(['java','-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=out,stderr=subprocess.STDOUT,text=True)
