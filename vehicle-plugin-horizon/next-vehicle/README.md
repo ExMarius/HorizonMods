@@ -280,3 +280,13 @@ instalat SHA-256 `01ea6f68ecea941d1b3af04b21a2e5134e6bb6c1fe5e16183b990778df6446
 pack SHA-1 `9159951f45d8449c9e70f4e9a925f1d537df207b`. Falix a respins
 restartul automat HTTP 403 `verification_required`; este necesar restart manual
 și verificare vizuală/audio în client.
+
+### Îmbinări și materialul de sub mașină
+
+`seal_police_logan.py` schimbă textura de banchetă de pe placa vizibilă sub
+șasiu și de pe fețele inferioare ale tapițeriei. Aliniază căptușelile
+pasajelor cu cotierele și spătarele și segmentează piesele care se suprapuneau.
+Testele verifică toate cele trei faze, perechile de fețe coplanare pentru
+cuburile fără rotație și acoperirea eșantionată a plafonului pasajelor din
+spate. Aceste verificări nu garantează lipsa tuturor golurilor în client sau
+spațiul în orice unghi de virare; modelul trebuie inspectat și în joc.
