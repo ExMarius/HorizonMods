@@ -235,3 +235,11 @@ roata din stânga, compunerea rotațiilor este corectată: oglindirea se aplică
 modelului asamblat, nu pieselor înainte de rotație. Pozițiile axelor rămân
 neschimbate. Testele matematice verifică dimensiuni statice și transformări;
 aspectul și spațiul la viraj trebuie verificate în client.
+
+Livrare `45430636180`: build, teste geometrice, teste de transformare și teste
+Paper pentru Dacia și Off-Roader au trecut. Backup verificat cu prefix
+`mcv-before-horizon-45430636180-`, inclusiv datele garajelor. JAR instalat
+SHA-256 `524fda2ba813a140622e2e2d23113ba0aec9163736177921c78295c4626f3771`,
+pack SHA-1 `b2db5a9cec7d4d81eeaba9d3dcd77c3ca3efa235`. Falix a refuzat
+restartul automat HTTP 403 `verification_required`; restart manual și
+verificare vizuală/audio în client rămân necesare.
