@@ -1670,6 +1670,24 @@ public final class LandVehicle {
         return Optional.of(player);
     }
 
+    // One-shot playback of the supplied 25.5-second recording, attached to the
+    // moving vehicle. This is a Paper adaptation, not an upstream siren toggle.
+    private long sirenAvailableAtNanos;
+
+    public boolean playPoliceSiren() {
+        if (!"dacia_logan_police".equals(spec.id()) || location.getWorld() == null
+                || (sirenAvailableAtNanos != 0 && System.nanoTime() - sirenAvailableAtNanos < 0)) return false;
+        sirenAvailableAtNanos = System.nanoTime() + 26_000_000_000L;
+        net.kyori.adventure.sound.Sound sample = net.kyori.adventure.sound.Sound.sound(
+                net.kyori.adventure.key.Key.key("daciapolice:sirena"),
+                net.kyori.adventure.sound.Sound.Source.NEUTRAL, 1.0F, 1.0F);
+        for (Player listener : location.getWorld().getPlayers()) {
+            if (listener.getLocation().distanceSquared(location) <= 48.0D * 48.0D)
+                listener.playSound(sample, rig.driverSeat());
+        }
+        return true;
+    }
+
     public void remove() {
         closeStorageViewers();
         soundController.stop(location);

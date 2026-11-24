@@ -48,6 +48,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
         }
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "spawn" -> spawn(sender, args);
+            case "sirena" -> siren(sender);
             case "remove" -> remove(sender);
             case "refuel" -> refuel(sender);
             case "gaspump" -> gaspump(sender);
@@ -137,6 +138,24 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
                 + "Apropie-te de bancul de lucru pentru cric si unelte.</gray>");
     }
 
+    /** Only the driver may play the supplied sample; no fabricated emergency lights. */
+    private void siren(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("Doar din joc.");
+            return;
+        }
+        for (LandVehicle vehicle : vehicles.vehicles()) {
+            if ("dacia_logan_police".equals(vehicle.spec().id())
+                    && vehicle.driver().filter(player::equals).isPresent()) {
+                player.sendMessage(vehicle.playPoliceSiren()
+                        ? "Sirena: inregistrarea este redata o data (aprox. 25 secunde)."
+                        : "Sirena este deja in curs; asteapta sa se termine.");
+                return;
+            }
+        }
+        player.sendMessage("Trebuie sa fii la volanul unei Dacia Logan Politie.");
+    }
+
     private void spawn(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendRichMessage("<red>Comanda trebuie executată de un jucător.</red>");
@@ -150,7 +169,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
         LandVehicleSpec vehicleSpec = LandVehicleSpec.byId(id);
         TrailerSpec trailerSpec = TrailerSpec.byId(id);
         if (vehicleSpec == null && trailerSpec == null) {
-            sender.sendRichMessage("<yellow>Utilizare: /vehicle spawn <go_kart|lawn_mower|quad_bike|dune_buggy|tractor|dirt_bike|moped|off_roader|horizon_off_roader|sports_car|mini_bus|golf_cart|jet_ski|sports_plane|compact_helicopter|sofacopter|atv|mini_bike|smart_car|speed_boat|aluminum_boat|couch|bumper_car|shopping_cart|fertilizer|seeder|storage_trailer|fluid_trailer|vehicle_trailer></yellow>");
+            sender.sendRichMessage("<yellow>Utilizare: /vehicle spawn <go_kart|lawn_mower|quad_bike|dune_buggy|tractor|dirt_bike|moped|off_roader|horizon_off_roader|dacia_logan_police|sports_car|mini_bus|golf_cart|jet_ski|sports_plane|compact_helicopter|sofacopter|atv|mini_bike|smart_car|speed_boat|aluminum_boat|couch|bumper_car|shopping_cart|fertilizer|seeder|storage_trailer|fluid_trailer|vehicle_trailer></yellow>");
             return;
         }
         if (vehicleSpec != null) {
@@ -558,6 +577,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
     private void help(CommandSender sender, String label) {
         sender.sendRichMessage("<gold>Vehicle Plugin</gold> <gray>vehicule pentru clienți vanilla</gray>");
         sender.sendRichMessage("<yellow>/" + label + " spawn <tip></yellow> <gray>- creează un vehicul sau una dintre cele 5 remorci</gray>");
+        sender.sendRichMessage("<yellow>/" + label + " sirena</yellow> <gray>- redă înregistrarea sirenei la volanul Daciei de poliție</gray>");
         sender.sendRichMessage("<yellow>/" + label + " remove</yellow> <gray>- elimină vehiculul apropiat</gray>");
         sender.sendRichMessage("<yellow>/" + label + " refuel</yellow> <gray>- umple rezervorul vehiculului apropiat</gray>");
         sender.sendRichMessage("<yellow>/" + label + " gaspump</yellow> <gray>- primești o pompă de benzină plasabilă</gray>");
@@ -772,7 +792,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
                                                  @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return filter(List.of("spawn", "remove", "refuel", "gaspump", "jerrycan", "trust", "untrust", "trusted", "magazin", "podium", "list", "save", "pack", "creative", "paint", "vopsea", "vopseste", "garaj", "perf", "consum", "stats", "give", "propsdebug", "seattest"), args[0]);
+            return filter(List.of("spawn", "sirena", "remove", "refuel", "gaspump", "jerrycan", "trust", "untrust", "trusted", "magazin", "podium", "list", "save", "pack", "creative", "paint", "vopsea", "vopseste", "garaj", "perf", "consum", "stats", "give", "propsdebug", "seattest"), args[0]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("trust") || args[0].equalsIgnoreCase("untrust"))) {
             return filter(onTabPlayers(), args[1]);

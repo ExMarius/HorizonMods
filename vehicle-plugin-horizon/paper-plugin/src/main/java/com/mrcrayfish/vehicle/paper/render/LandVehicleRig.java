@@ -314,7 +314,8 @@ public final class LandVehicleRig {
         // cu tintindex deveneau transparente - "gol la interior" la roti, body invizibil).
         ItemStack item = new ItemStack(Material.LEATHER_HORSE_ARMOR);
         ItemMeta meta = item.getItemMeta();
-        meta.setItemModel(new NamespacedKey("vehicle", name));
+        meta.setItemModel("dacia_police_body".equals(name)
+                ? new NamespacedKey("daciapolice", "body") : new NamespacedKey("vehicle", name));
         if (meta instanceof org.bukkit.inventory.meta.LeatherArmorMeta armor) {
             armor.setColor(org.bukkit.Color.fromRGB(0xF9FFFE));
         }
@@ -1030,7 +1031,8 @@ public final class LandVehicleRig {
         ItemStack stack = new ItemStack(Material.LEATHER_HORSE_ARMOR);
         ItemMeta meta = stack.getItemMeta();
         if (meta instanceof org.bukkit.inventory.meta.LeatherArmorMeta armor) {
-            armor.setItemModel(new NamespacedKey("vehicle", modelName));
+            armor.setItemModel("dacia_police_body".equals(modelName)
+                    ? new NamespacedKey("daciapolice", "body") : new NamespacedKey("vehicle", modelName));
             armor.setColor(org.bukkit.Color.fromRGB(rgb));
         }
         stack.setItemMeta(meta);

@@ -348,6 +348,37 @@ public record LandVehicleSpec(
             null, null, List.of(), false
     );
 
+    /** User-provided police model and layout. Power, dimensions and sound are
+     * initial Paper adaptations, not documented police-vehicle specifications. */
+    public static final LandVehicleSpec DACIA_LOGAN_POLICE = new LandVehicleSpec(
+            "dacia_logan_police", "Dacia Logan Politie", "dacia_police_body",
+            2.0F, 1.4F, 1.0F,
+            1.7F, -1.0F, 3.6F,
+            16.0F, 35.0F, 15.95F * MODEL_UNIT * 1.7F, -14.95F * MODEL_UNIT * 1.7F, 5.0F,
+            15_000.0F, 0.25F, 0.8F, 1.6F, "vehicle:entity.bumper_car.engine",
+            false, new Point(0, 0, 0), null,
+            new Part("go_kart_steering_wheel", new Point(3.8F * MODEL_UNIT * 1.7F,
+                    (0.5F + 2.6F * MODEL_UNIT) * 1.7F, 4.8F * MODEL_UNIT * 1.7F),
+                    .73F * 1.7F, -65.0F, 0, 0),
+            itemPart("fuel_door_closed", -9.98F, 6.0F, -15.5F,
+                    .2F, 0, -90, 0, 1.7F, -1, 3.6F),
+            itemPart("key_hole", .5F, 2.7F, 6.85F,
+                    .5F, -90, 0, 0, 1.7F, -1, 3.6F),
+            List.of(),
+            List.of(
+                    wheel(-1, true, 6.3F, .3F, 15.95F, .95F, .95F, .95F, 1.7F, -1, 3.6F),
+                    wheel(1, true, 6.3F, .3F, 15.95F, .95F, .95F, .95F, 1.7F, -1, 3.6F),
+                    wheel(-1, false, 6.3F, .2F, -14.95F, .95F, .95F, .95F, 1.7F, -1, 3.6F),
+                    wheel(1, false, 6.3F, .2F, -14.95F, .95F, .95F, .95F, 1.7F, -1, 3.6F)),
+            List.of(
+                    seat(true, -4, .5F, -.5F, 1.7F, -1, 3.6F),
+                    seat(false, 4, .5F, -.5F, 1.7F, -1, 3.6F),
+                    seat(false, 4, .5F, -8.4F, 1.7F, -1, 3.6F),
+                    seat(false, -4, .5F, -8.4F, 1.7F, -1, 3.6F)),
+            false, "tow_bar", new Point(0, 0, 0), new Point(0, 0, 0),
+            null, null, List.of(), false
+    );
+
     /* Generated Sports Car geometry uses the default body scale/ground offset and
      * a wheelOffset of (8 * 1.4 / 2) - 3 = 2.6 model pixels. Its seven generated
      * cosmetic models are required to complete the body; four retain the source
@@ -927,6 +958,7 @@ public record LandVehicleSpec(
             Map.entry(MOPED.id, MOPED),
             Map.entry(OFF_ROADER.id, OFF_ROADER),
             Map.entry(HORIZON_OFF_ROADER.id, HORIZON_OFF_ROADER),
+            Map.entry(DACIA_LOGAN_POLICE.id, DACIA_LOGAN_POLICE),
             Map.entry(SPORTS_CAR.id, SPORTS_CAR),
             Map.entry(MINI_BUS.id, MINI_BUS),
             Map.entry(GOLF_CART.id, GOLF_CART),
@@ -1015,7 +1047,7 @@ public record LandVehicleSpec(
             }
             switch (id) {
                 // Grele/mari = LARGE_MOTOR (off_roader, sporturile, utilitarele):
-                case "off_roader", "horizon_off_roader", "sports_car", "mini_bus", "tractor", "speed_boat",
+                case "off_roader", "horizon_off_roader", "dacia_logan_police", "sports_car", "mini_bus", "tractor", "speed_boat",
                         "sports_plane", "compact_helicopter" -> {
                     return com.mrcrayfish.vehicle.paper.mechanic.EngineType.LARGE_MOTOR;
                 }

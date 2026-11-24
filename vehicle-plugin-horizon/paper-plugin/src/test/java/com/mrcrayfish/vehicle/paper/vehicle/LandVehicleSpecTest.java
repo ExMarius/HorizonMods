@@ -28,6 +28,23 @@ class LandVehicleSpecTest {
     }
 
     @Test
+    void policeDaciaPreservesSourceSeatsAndWheels() {
+        LandVehicleSpec spec = LandVehicleSpec.byId("dacia_logan_police");
+        assertEquals(LandVehicleSpec.DACIA_LOGAN_POLICE, spec);
+        assertEquals(4, spec.seats().size());
+        assertEquals(4, spec.wheels().size());
+        assertEquals(1, spec.seats().stream().filter(LandVehicleSpec.Seat::driver).count());
+        assertTrue(spec.seats().getFirst().driver());
+        assertEquals(4F * 1.7F / 16F, spec.seats().getFirst().sourceOffset().x(), EPSILON);
+        assertEquals(-8.4F * 1.7F / 16F, spec.seats().get(2).sourceOffset().z(), EPSILON);
+        assertEquals(3.6F, spec.wheelOffset(), EPSILON);
+        assertEquals(0, spec.firstRearWheel().contactY(), EPSILON);
+        assertEquals(0.1F * 1.7F / 16F, spec.firstFrontWheel().contactY(), EPSILON);
+        assertEquals(com.mrcrayfish.vehicle.paper.mechanic.EngineType.LARGE_MOTOR, spec.defaultEngineType());
+        assertEquals(LandVehicleSpec.HORIZON_OFF_ROADER, LandVehicleSpec.byId("horizon_off_roader"));
+    }
+
+    @Test
     void goKartKeepsAcceptedGeometryAndRuntimeProperties() {
         LandVehicleSpec spec = LandVehicleSpec.GO_KART;
         assertEquals(0.6375F, spec.bodyOrigin().y(), EPSILON);
