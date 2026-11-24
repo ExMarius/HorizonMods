@@ -254,6 +254,7 @@ public final class ShopGui {
             meta.setItemModel("horizon_off_roader".equals(spec.id())
                     ? new NamespacedKey("horizonvehicles", "off_roader_body_part_00")
                     : "horizon_go_kart".equals(spec.id()) ? new NamespacedKey("horizonvehicles", "go_kart_body_part_00")
+                    : "utb_650".equals(spec.id()) ? new NamespacedKey("vehicle", "utb_650_body")
                     : "dacia_logan_police".equals(spec.id()) ? new NamespacedKey("daciapolice", "body")
                     : new NamespacedKey("vehicle", "vehicle_icon/" + spec.id()));
             meta.displayName(Component.text(spec.displayName(), NamedTextColor.WHITE,

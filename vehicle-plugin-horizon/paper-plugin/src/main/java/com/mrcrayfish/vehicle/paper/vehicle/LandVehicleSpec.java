@@ -225,6 +225,20 @@ public record LandVehicleSpec(
             null, null, List.of(), false
     );
 
+    /** Separate UTB-inspired tractor; retains the proven tractor drive and hitch layout. */
+    public static final LandVehicleSpec UTB_650 = new LandVehicleSpec(
+            "utb_650", "UTB 650", "utb_650_body",
+            TRACTOR.entityWidth(), TRACTOR.entityHeight(), TRACTOR.stepHeight(),
+            TRACTOR.bodyScale(), TRACTOR.axleOffset(), TRACTOR.wheelOffset(),
+            TRACTOR.enginePower(), TRACTOR.maxSteeringAngle(), TRACTOR.frontAxleOffset(),
+            TRACTOR.rearAxleOffset(), TRACTOR.maxReverseSpeed(), TRACTOR.energyCapacity(),
+            TRACTOR.energyPerTick(), TRACTOR.minEnginePitch(), TRACTOR.maxEnginePitch(), TRACTOR.engineSound(),
+            TRACTOR.exhaustFumes(), TRACTOR.exhaustPosition(), TRACTOR.engine(), TRACTOR.steering(),
+            TRACTOR.fuelFiller(), TRACTOR.ignition(), TRACTOR.bodyParts(), TRACTOR.wheels(), TRACTOR.seats(),
+            TRACTOR.canTowTrailers(), TRACTOR.towBarModel(), TRACTOR.towBarOffset(), TRACTOR.trailerOffset(),
+            TRACTOR.motorcycle(), TRACTOR.mopedParts(), TRACTOR.storageCompartments(), TRACTOR.lawnMower()
+    );
+
     /* DirtBikeRenderer steers both the handle assembly and the separately rendered
      * front wheel around a fork axis tilted 22.5 degrees toward the rider. */
     public static final LandVehicleSpec DIRT_BIKE = new LandVehicleSpec(
@@ -972,6 +986,7 @@ public record LandVehicleSpec(
             Map.entry(QUAD_BIKE.id, QUAD_BIKE),
             Map.entry(DUNE_BUGGY.id, DUNE_BUGGY),
             Map.entry(TRACTOR.id, TRACTOR),
+            Map.entry(UTB_650.id, UTB_650),
             Map.entry(DIRT_BIKE.id, DIRT_BIKE),
             Map.entry(MOPED.id, MOPED),
             Map.entry(OFF_ROADER.id, OFF_ROADER),

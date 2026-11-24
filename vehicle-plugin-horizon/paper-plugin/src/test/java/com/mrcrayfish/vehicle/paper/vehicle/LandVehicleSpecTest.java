@@ -92,6 +92,18 @@ class LandVehicleSpecTest {
     }
 
     @Test
+    void utbIsSeparateAndRetainsProvenTractorControlsAndHitch() {
+        var utb = LandVehicleSpec.byId("utb_650");
+        assertEquals(LandVehicleSpec.UTB_650, utb);
+        assertEquals(LandVehicleSpec.TRACTOR, LandVehicleSpec.byId("tractor"));
+        assertEquals("utb_650_body",utb.bodyModel());
+        assertEquals(LandVehicleSpec.TRACTOR.wheels(),utb.wheels());
+        assertEquals(LandVehicleSpec.TRACTOR.seats(),utb.seats());
+        assertTrue(utb.canTowTrailers());
+        assertEquals(LandVehicleSpec.TRACTOR.towBarOffset(),utb.towBarOffset());
+    }
+
+    @Test
     void tractorMatchesGeneratedPropertiesAndRendererTransforms() {
         LandVehicleSpec spec = LandVehicleSpec.TRACTOR;
         assertEquals(1.0F, spec.bodyScale(), EPSILON);
@@ -421,7 +433,7 @@ class LandVehicleSpecTest {
         assertEquals(180.0F, spec.seats().get(3).yawOffset(), EPSILON);
         assertFalse(spec.canTowTrailers());
         assertEquals(spec, LandVehicleSpec.byId("golf_cart"));
-        assertEquals(26, LandVehicleSpec.ids().size());
+        assertEquals(27, LandVehicleSpec.ids().size());
     }
 
     @Test
