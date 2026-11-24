@@ -24,3 +24,8 @@ vizuală. Fizica Paper este o adaptare provizorie, nu fidelitate demonstrată;
 roțile off-road folosesc vizualul standard Horizon. Aplicarea culorii urmează
 tintul integral aplicat de rendererul Horizon caroseriei, dar trebuie verificată
 în joc. Nu afirma validare vizuală înainte de feedbackul unui client real.
+
+Corecția ulterioară pentru turbo aplică transformarea wheelie a șasiului și
+roților, astfel încât roțile nu mai rămân în punctul inițial când partea din
+față se ridică. Testul numeric verifică pivotul și distanța rigidă; efectul
+vizual și fizica în joc necesită confirmare reală.

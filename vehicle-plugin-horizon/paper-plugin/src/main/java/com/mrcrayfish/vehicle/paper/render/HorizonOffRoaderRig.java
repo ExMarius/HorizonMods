@@ -76,8 +76,9 @@ final class HorizonOffRoaderRig {
                     float x = (p.wheel % 2 == 0 ? 1 : -1) * 14.74F / 16F;
                     center = new Vector3f(x, .390F, front ? Z : -Z);
                     scale = new Vector3f(1.55F, 1.56F, 1.56F);
-                    // Horizon draws wheels before the sprung chassis transform.
-                    localRotation.identity().rotateY((float)Math.toRadians(front ? steering : 0))
+                    // In Paper the boost pitches the body: keep both axles on the
+                    // same chassis transform so the wheels do not detach visually.
+                    localRotation.rotateY((float)Math.toRadians(front ? steering : 0))
                             .rotateX((float)Math.toRadians(-(front ? frontSpin : rearSpin)));
                 }
                 case STEERING -> {
@@ -93,7 +94,7 @@ final class HorizonOffRoaderRig {
                 }
                 default -> throw new IllegalStateException();
             }
-            if (p.kind != Kind.WHEEL) center = SourceTransforms.chassisPoint(center, pivot, wheelie, roll);
+            center = SourceTransforms.chassisPoint(center, pivot, wheelie, roll);
             center.sub(driverSeat);
             Transformation t = HorizonPartTransform.group(center, scale, p.group.origin(), p.group.rotation(), localRotation);
             Quaternionf right = new Quaternionf(t.getRightRotation()).mul(ITEM_YAW);
