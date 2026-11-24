@@ -184,3 +184,16 @@ SHA-256 `6ddf2f509eebfca58a0686f0378da74b324e78b3b79d8953e3e5978a06ae37a6`,
 pack SHA-1 `ba7b73145f5312aac04d4158d2340576da4afb9e`. Restartul automat a
 fost respins de Falix cu HTTP 403 `verification_required`: trebuie restartat
 manual și verificat efectul în client.
+
+### Reamenajare interior și repoziționare roți
+
+`refit_police_logan.py` readuce roțile la pozițiile vizuale originale ale
+rigului, restrânge bancheta și podeaua doar în dreptul pasajelor spate și
+adaugă căptușeli de pasaj și traverse dedesubt. Peretele de la pedale folosește
+aceeași textură ca podeaua. Volanul are model dedicat cu coloană și păstrează
+animația de direcție; grilajul din spatele scaunelor are goluri reale. Geamurile
+laterale spate folosesc o textură fumurie cu pixeli transparenți alternanți
+(pentru compatibilitate cu randarea vanilla cutout, nu transparență continuă).
+Sunt verificate matematic dimensiunile statice, resursele, fazele sirenei și
+pozițiile originale, dar roțile în viraj și aspectul real rămân de verificat
+în client.

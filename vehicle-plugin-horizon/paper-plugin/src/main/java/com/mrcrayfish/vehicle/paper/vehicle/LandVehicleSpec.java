@@ -357,7 +357,7 @@ public record LandVehicleSpec(
             16.0F, 35.0F, 15.95F * MODEL_UNIT * 1.7F, -14.95F * MODEL_UNIT * 1.7F, 5.0F,
             15_000.0F, 0.25F, 0.8F, 1.6F, "vehicle:entity.bumper_car.engine",
             false, new Point(0, 0, 0), null,
-            new Part("go_kart_steering_wheel", new Point(3.8F * MODEL_UNIT * 1.7F,
+            new Part("dacia_police_steering", new Point(3.8F * MODEL_UNIT * 1.7F,
                     (0.5F + 2.6F * MODEL_UNIT) * 1.7F, 4.8F * MODEL_UNIT * 1.7F),
                     .73F * 1.7F, -65.0F, 0, 0),
             itemPart("fuel_door_closed", -9.98F, 6.0F, -15.5F,

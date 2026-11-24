@@ -31,6 +31,7 @@ class LandVehicleSpecTest {
     void policeDaciaPreservesSourceSeatsAndWheels() {
         LandVehicleSpec spec = LandVehicleSpec.byId("dacia_logan_police");
         assertEquals(LandVehicleSpec.DACIA_LOGAN_POLICE, spec);
+        assertEquals("dacia_police_steering", spec.steering().model());
         assertEquals(4, spec.seats().size());
         assertEquals(4, spec.wheels().size());
         assertEquals(1, spec.seats().stream().filter(LandVehicleSpec.Seat::driver).count());
