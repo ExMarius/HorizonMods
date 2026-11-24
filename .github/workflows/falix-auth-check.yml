@@ -78,12 +78,12 @@ jobs:
                   break
           else:
               sys.exit('List servers: pagination limit reached')
-          print('Accessible server count:', len(found))
+          print('::notice title=Falix server count::' + str(len(found)))
           # Only expose numeric IDs; avoid printing account details or server names.
           for identifier in found:
               if identifier.isdecimal():
-                  print('Server ID:', identifier)
+                  print('::notice title=Falix server ID::' + identifier)
               else:
-                  print('A server has a non-numeric ID; manual inspection required.')
+                  print('::notice title=Falix server ID::Non-numeric ID; manual inspection required.')
           print('No server operation was performed.')
           PY
