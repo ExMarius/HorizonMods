@@ -41,11 +41,10 @@ def rebuild(data,expected=BASE_SHA1):
     m['elements'] += [cube([2,16.7,7.0],[3,17.2,9.0],'trim'),
                       cube([13,16.7,7.0],[14,17.2,9.0],'trim'),
                       cube([1.1,17.15,6.9],[14.9,17.65,9.4],'trim'),
-                      cube([1.3,17.65,7.0],[2.0,18.6,9.3],'silver'),
-                      cube([14.0,17.65,7.0],[14.7,18.6,9.3],'silver'),
+                      cube([1.3,18.6,7.0],[14.7,18.72,9.3],'trim'),
                       cube([7.4,17.65,7.0],[8.6,18.6,9.3],'silver')]
-    blue_index=len(m['elements']);m['elements'].append(cube([2,17.65,7.0],[7.4,18.6,9.3],'blue_dim'))
-    red_index=len(m['elements']);m['elements'].append(cube([8.6,17.65,7.0],[14,18.6,9.3],'red_dim'))
+    blue_index=len(m['elements']);m['elements'].append(cube([1.3,17.65,7.0],[7.4,18.6,9.3],'blue_dim'))
+    red_index=len(m['elements']);m['elements'].append(cube([8.6,17.65,7.0],[14.7,18.6,9.3],'red_dim'))
     files[BODY]=encode(m)
     for phase in (0,1):
         variant=copy.deepcopy(m)

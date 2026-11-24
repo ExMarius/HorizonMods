@@ -2,7 +2,7 @@ name: Test Dacia police integration
 on:
   push:
     branches: [arena/fb5f91ff-horizonmods]
-    paths: ['vehicle-plugin-horizon/paper-plugin/**', 'vehicle-plugin-horizon/tools/smoke_police.*', '.github/workflows/dacia-police-integration.yml']
+    paths: ['vehicle-plugin-horizon/paper-plugin/**', 'vehicle-plugin-horizon/next-vehicle/rebuild_police.py', 'vehicle-plugin-horizon/next-vehicle/test_rebuild_police.py', 'vehicle-plugin-horizon/next-vehicle/assets/**', 'vehicle-plugin-horizon/tools/smoke_police.*', '.github/workflows/dacia-police-integration.yml']
 permissions:
   contents: read
 jobs:
