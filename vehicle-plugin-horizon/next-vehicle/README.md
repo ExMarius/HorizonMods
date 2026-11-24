@@ -116,3 +116,12 @@ acestea nu adaugă controale mecanice. Are deschideri pentru roți și geamuri,
 girofar cu fazele sirenei existente și păstrează cele patru poziții de pasageri.
 Testele verifică geometric elementele și resursele, dar nu pot confirma poziția
 jucătorului sau aspectul în client; verificarea vizuală este obligatorie.
+
+Livrarea caroseriei noi, run `45411366753`: testele structurale, buildul și
+smoke pentru Dacia și Horizon Off-Roader au trecut. Backupul anterior a fost
+verificat cu prefix `mcv-before-horizon-45411366753-` (online, fără lume).
+Perechea instalată pe disc a fost verificată: JAR SHA-256
+`2943944c0db6bbd6ccf0d38f097f6e0af8721818ec4be21ddbb60221a8b212ec`, pack
+SHA-1 `0a0105a9f19d90d5cb37425265692a333012379b`. Falix a refuzat restartul
+automat cu HTTP 403; este necesară repornirea manuală. Caroseria, scaunele,
+interiorul și alinierea roților nu au fost verificate vizual în client.
