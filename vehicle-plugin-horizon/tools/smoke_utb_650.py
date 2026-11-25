@@ -38,6 +38,7 @@ def main(jar):
                     print('BOT DIAGNOSTIC:',bot.stdout,bot.stderr,flush=True)
                     print('Active data:',data,'Garage data:',garage_data,flush=True)
                     lines=text.splitlines()
+                    print('MOUNT STATE:',*[line for line in lines if '[UTB dismount diagnostic]' in line],sep='\n',flush=True)
                     for i,line in enumerate(lines):
                         if 'Current Thread: Server thread' in line:
                             print('SERVER THREAD:',*lines[i:i+32],sep='\n',flush=True)
