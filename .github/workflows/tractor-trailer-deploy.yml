@@ -44,13 +44,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download horizon-offroader-45584942989 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
-          python3 vehicle-plugin-horizon/next-vehicle/utb/add_tractor_trailer_pack.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/HorizonOffRoader-1.21.4.zip
+          gh release download horizon-offroader-45592585127 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
+          python3 vehicle-plugin-horizon/next-vehicle/utb/apply_tractor_cargo_details.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/HorizonOffRoader-1.21.4.zip
           python3 - <<'PYCODE'
           import zipfile
+          changed = {'assets/vehicle/models/item/utb_650_body.json', 'assets/vehicle/models/item/tractor_trailer_body.json'}
+          added = {'assets/vehicle/textures/item/utb_plate_blue.png'}
           with zipfile.ZipFile('/tmp/base/HorizonOffRoader-1.21.4.zip') as old, zipfile.ZipFile('/tmp/HorizonOffRoader-1.21.4.zip') as new:
-              assert new.testzip() is None and set(new.namelist()) == set(old.namelist()) | {'assets/vehicle/items/tractor_trailer_body.json', 'assets/vehicle/models/item/tractor_trailer_body.json'}
-              for name in old.namelist():
+              assert new.testzip() is None and set(new.namelist()) == set(old.namelist()) | added
+              for name in set(old.namelist()) - changed:
                   assert old.read(name)==new.read(name),name
           PYCODE
           cp vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/HorizonVehicles-1.21.4.jar
@@ -59,7 +61,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="horizon-offroader-${GITHUB_RUN_ID}"
-          gh release create "$tag" /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Dacia Logan Politie and Horizon vehicles' --notes 'Single-axle cargo trailer restricted to tractors; existing vehicles and attachments retained. Old tractor and all unrelated pack entries retained. Visual checks in the vanilla client remain necessary.'
+          gh release create "$tag" /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Dacia Logan Politie and Horizon vehicles' --notes 'Tractor hitch and decorative plates, trailer lights and visible cargo. Visual checks in the vanilla client remain necessary.'
           echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
       - name: Verify public pack
         run: |
