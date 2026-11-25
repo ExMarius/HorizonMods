@@ -18,9 +18,19 @@ class FarmTrailerKinematicsTest {
         assertTrue(Math.abs(r.yaw())<=5.0);
         assertTrue(Math.abs(r.steering())>1.0);
     }
-    @Test void frontAxleFollowsGentleSteeringWithoutWaitingForBedToRotate() {
-        var r=FarmTrailerKinematics.solve(0,0,0,0,3.335,15);
-        assertEquals(15.0F,r.steering(),0.001F);
-        assertEquals(0.0F,r.yaw(),0.001F);
+    @Test void frontAxleAndBodyRespondToGentleTurnWithoutCollision() {
+        double x=0,z=0,hx=0,hz=FarmTrailerKinematics.AXLE+FarmTrailerKinematics.EYE;
+        float yaw=0, firstTurnYaw=0;
+        for (int tick=1; tick<=30; tick++) {
+            float tractorYaw=tick;
+            hx-=Math.sin(Math.toRadians(tractorYaw))*0.08;
+            hz+=Math.cos(Math.toRadians(tractorYaw))*0.08;
+            var r=FarmTrailerKinematics.solve(x,z,yaw,hx,hz,tractorYaw);
+            assertTrue(Math.abs(r.yaw()-yaw)<=5.001F);
+            if(tick==10) firstTurnYaw=r.yaw();
+            x=r.x();z=r.z();yaw=r.yaw();
+        }
+        assertTrue(firstTurnYaw>0.5F,"body must start following the curve before hitting an obstacle");
+        assertTrue(yaw>firstTurnYaw,"body should continue turning smoothly");
     }
 }

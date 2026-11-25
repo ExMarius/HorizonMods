@@ -20,3 +20,10 @@ class DetailPackTest(unittest.TestCase):
         def overlaps(a,b):return all(a['from'][i] <= b['to'][i] and b['from'][i] <= a['to'][i] for i in range(3))
         for side,rail in [('left','main chassis -0.75'),('right','main chassis 0.65')]:
             bracket=e['rear bumper '+side+' chassis bracket'];self.assertTrue(overlaps(bracket,e['rear underrun bumper']));self.assertTrue(overlaps(bracket,e[rail]))
+
+    def test_rear_axle_reaches_leaf_springs_and_chassis(self):
+        m=json.loads(p.BODY_SOURCE.read_text());e={x['name']:x for x in m['elements']}
+        def overlaps(a,b):return all(a['from'][i] <= b['to'][i] and b['from'][i] <= a['to'][i] for i in range(3))
+        for side, spring,rail in [('left','rear leaf spring -0.77 0.66','main chassis -0.75'),('right','rear leaf spring 0.67 0.66','main chassis 0.65')]:
+            clamp=e['rear axle '+side+' suspension clamp']
+            for other in ('rear axle',spring,rail):self.assertTrue(overlaps(clamp,e[other]),other)

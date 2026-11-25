@@ -32,7 +32,11 @@ async function run(){
  const start=trailer.position.clone();const drive=setInterval(()=>bot._client.write('player_input',{inputs:{forward:true}}),50);await wait(6000);clearInterval(drive);bot._client.write('player_input',{inputs:{}});await wait(1000)
  check(trailer.position.distanceTo(start)>.5,'trailer did not follow tractor')
  if(farmId==='tractor_trailer_modern'){
+  const startTractorYaw=tractor.yaw, startTrailerYaw=trailer.yaw
   const curve=setInterval(()=>bot._client.write('player_input',{inputs:{forward:true,left:true}}),50);await wait(3000);clearInterval(curve);bot._client.write('player_input',{inputs:{}});await wait(700)
+  const delta=(a,b)=>Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)))
+  check(delta(tractor.yaw,startTractorYaw)>.01,'tractor did not turn during curve test')
+  check(delta(trailer.yaw,startTrailerYaw)>.01,'trailer body failed to follow tractor turn on flat open ground')
   check(trailer.position.distanceTo(tractor.position)<7.5,'trailer separated from tractor while turning')
  }
  bot.chat('/vehicle save');await wait(1000);pass()

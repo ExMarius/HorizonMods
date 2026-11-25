@@ -19,7 +19,7 @@ class ModernPackTest(unittest.TestCase):
         with self.assertRaises(ValueError):p.build(raw)
     def test_approved_body_and_hitch_height(self):
         body=json.loads((p.u.ASSETS/'tractor_trailer_modern_body.json').read_text());front=json.loads((p.u.ASSETS/'tractor_trailer_modern_front.json').read_text());p.u.validate(body);p.u.validate(front)
-        restored=dict(body); restored['elements']=[e for e in body['elements'] if not e['name'].startswith('rear bumper ') or not e['name'].endswith(' chassis bracket')]
+        restored=dict(body); restored['elements']=[e for e in body['elements'] if not (e['name'].endswith(' chassis bracket') or e['name'].endswith(' suspension clamp'))]
         self.assertEqual(restored,json.loads((p.u.ASSETS/'preview_rm5t/body.json').read_text()))
         parts={e['name']:e for e in front['elements']}
         self.assertIn('front axle',parts)
