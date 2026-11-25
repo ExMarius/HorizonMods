@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TrailerSpecTest {
     @Test
     void registersEveryOriginalTrailer() {
-        assertEquals(Set.of("fertilizer", "seeder", "storage_trailer", "fluid_trailer", "vehicle_trailer", "utb_plough", "tractor_trailer", "tractor_trailer_modern"),
+        assertEquals(Set.of("fertilizer", "seeder", "storage_trailer", "fluid_trailer", "vehicle_trailer", "utb_plough", "tractor_trailer", "tractor_trailer_modern", "disc_gd32"),
                 Set.copyOf(TrailerSpec.ids()));
     }
 
@@ -33,6 +33,9 @@ class TrailerSpecTest {
         assertTrue(TrailerSpec.UTB_PLOUGH.permitsVehicle("utb_650"));
         assertFalse(TrailerSpec.UTB_PLOUGH.permitsVehicle("tractor"));
         assertFalse(TrailerSpec.UTB_PLOUGH.permitsTrailerPuller());
+        assertTrue(TrailerSpec.DISC_GD32.permitsVehicle("utb_650"));
+        assertFalse(TrailerSpec.DISC_GD32.permitsVehicle("tractor"));
+        assertFalse(TrailerSpec.DISC_GD32.permitsTrailerPuller());
         assertTrue(TrailerSpec.SEEDER.permitsTrailerPuller());
         assertTrue(TrailerSpec.SEEDER.permitsVehicle("quad_bike"));
     }
