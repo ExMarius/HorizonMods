@@ -2,7 +2,7 @@
 const mineflayer = require('mineflayer')
 const bot = mineflayer.createBot({host:'127.0.0.1',port:25568,username:'HorizonBot',version:'1.21.4',auth:'offline'})
 let done=false,started=false,mounting=false,driving=false,packs=0,originalPacks=0,rideResult=''
-const timeout=setTimeout(()=>fail('timeout'),100000)
+const timeout=setTimeout(()=>fail('timeout started='+started+' mounted='+Boolean(bot.vehicle)+' mounting='+mounting+' driving='+driving+' entities='+Object.values(bot.entities).filter(e=>['interaction','item_display','horse'].includes(e.name)).map(e=>e.name).join(',')),100000)
 function fail(s){if(done)return;done=true;clearTimeout(timeout);console.error('FAIL: '+s);bot.quit();process.exitCode=1}
 function success(){if(done)return;done=true;clearTimeout(timeout);console.log('UTB tractor spawn, mount, movement, inventory and save passed; no visual assertion.');bot.quit()}
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms))

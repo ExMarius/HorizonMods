@@ -30,6 +30,7 @@ def main(jar):
                 if bot.returncode:
                     out.flush();lines=log.read_text(errors='replace').splitlines()
                     print('BOT DIAGNOSTIC:',bot.stdout,bot.stderr,flush=True)
+                    print('KEY SERVER EVENTS:',*[line for line in lines if any(x in line for x in ('HorizonBot','UTB','vehicle','ERROR','Watchdog'))][-35:],sep='\n',flush=True)
                     for i,line in enumerate(lines):
                         if 'Current Thread: Server thread' in line:
                             print('SERVER THREAD:',*lines[i:i+25],sep='\n',flush=True);break
