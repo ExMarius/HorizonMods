@@ -45,8 +45,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download horizon-offroader-45666237164 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
-          python3 vehicle-plugin-horizon/next-vehicle/utb/fix_utb_modern_details_pack.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/HorizonOffRoader-1.21.4.zip
+          gh release download horizon-offroader-45669921266 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
+          python3 vehicle-plugin-horizon/next-vehicle/utb/fix_utb_trailer_follow_pack.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/HorizonOffRoader-1.21.4.zip
           python3 - <<'PYCODE'
           import zipfile
           changed = {'assets/vehicle/models/item/tractor_trailer_modern_front.json', 'assets/vehicle/models/item/tractor_trailer_modern_body.json'}
@@ -62,7 +62,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="horizon-offroader-${GITHUB_RUN_ID}"
-          gh release create "$tag" /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Dacia Logan Politie and Horizon vehicles' --notes 'Removed unwanted axle braces and jack; attached rear bumper and refined hoses. Visual checks in the vanilla client remain necessary.'
+          gh release create "$tag" /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Dacia Logan Politie and Horizon vehicles' --notes 'Smooth trailer following, rear axle supports and slim front drawbar links. Visual checks in the vanilla client remain necessary.'
           echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
       - name: Verify public pack
         run: |
