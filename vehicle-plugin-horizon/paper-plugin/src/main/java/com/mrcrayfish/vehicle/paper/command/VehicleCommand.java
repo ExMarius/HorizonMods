@@ -49,6 +49,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "spawn" -> spawn(sender, args);
             case "sirena" -> siren(sender);
+            case "cupleaza" -> { if (sender instanceof Player player) vehicles.trailers().couplePlough(player); else sender.sendMessage("Doar din joc."); }
             case "plug" -> { if (sender instanceof Player player) vehicles.trailers().togglePlough(player); else sender.sendMessage("Doar din joc."); }
             case "remove" -> remove(sender);
             case "refuel" -> refuel(sender);
@@ -578,6 +579,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
     private void help(CommandSender sender, String label) {
         sender.sendRichMessage("<gold>Vehicle Plugin</gold> <gray>vehicule pentru clienți vanilla</gray>");
         sender.sendRichMessage("<yellow>/" + label + " spawn <tip></yellow> <gray>- creează un vehicul sau una dintre cele 5 remorci</gray>");
+        sender.sendRichMessage("<yellow>/" + label + " cupleaza</yellow> <gray>- cuplează plugul liber la UTB-ul apropiat</gray>");
         sender.sendRichMessage("<yellow>/" + label + " plug</yellow> <gray>- pornește/oprește aratul cu plugul UTB (prototip)</gray>");
         sender.sendRichMessage("<yellow>/" + label + " sirena</yellow> <gray>- pornește/oprește sirena la volanul Daciei de poliție (sau F)</gray>");
         sender.sendRichMessage("<yellow>/" + label + " remove</yellow> <gray>- elimină vehiculul apropiat</gray>");
@@ -794,7 +796,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
                                                  @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return filter(List.of("spawn", "plug", "sirena", "remove", "refuel", "gaspump", "jerrycan", "trust", "untrust", "trusted", "magazin", "podium", "list", "save", "pack", "creative", "paint", "vopsea", "vopseste", "garaj", "perf", "consum", "stats", "give", "propsdebug", "seattest"), args[0]);
+            return filter(List.of("spawn", "cupleaza", "plug", "sirena", "remove", "refuel", "gaspump", "jerrycan", "trust", "untrust", "trusted", "magazin", "podium", "list", "save", "pack", "creative", "paint", "vopsea", "vopseste", "garaj", "perf", "consum", "stats", "give", "propsdebug", "seattest"), args[0]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("trust") || args[0].equalsIgnoreCase("untrust"))) {
             return filter(onTabPlayers(), args[1]);

@@ -506,6 +506,29 @@ public final class TrailerManager {
                 .flatMap(LandVehicle::driver).filter(p -> p.hasPermission("vehicle.plough")).orElse(null);
     }
 
+    /** Convenience coupling with explicit nearby/ownership checks; never steals an attached implement. */
+    public void couplePlough(Player player) {
+        if (!player.hasPermission("vehicle.plough")) {
+            player.sendRichMessage("<red>Nu ai permisiunea vehicle.plough.</red>"); return;
+        }
+        Location here = player.getLocation();
+        LandVehicle tractor = vehicles.vehicles().stream()
+                .filter(v -> "utb_650".equals(v.spec().id()) && !v.showcase() && v.canDrive(player))
+                .filter(v -> v.location().getWorld().equals(here.getWorld()) && v.location().distanceSquared(here) <= 25.0D)
+                .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(here))).orElse(null);
+        PaperTrailer plough = trailers.values().stream()
+                .filter(t -> t.spec().kind() == TrailerSpec.Kind.UTB_PLOUGH && t.pullerType() == PaperTrailer.PullerType.NONE)
+                .filter(t -> t.location().getWorld().equals(here.getWorld()) && t.location().distanceSquared(here) <= 25.0D)
+                .min(java.util.Comparator.comparingDouble(t -> t.location().distanceSquared(here))).orElse(null);
+        if (tractor == null || plough == null || hasVehicleChild(tractor.id())
+                || tractor.towBarLocation().distanceSquared(plough.location()) > 16.0D) {
+            player.sendRichMessage("<red>Ai nevoie de un UTB autorizat și un plug liber, apropiate, fără altă remorcă.</red>"); return;
+        }
+        plough.attach(PaperTrailer.PullerType.VEHICLE, tractor.id());
+        playHitch(tractor.location());
+        player.sendRichMessage("<green>Plug UTB cuplat. La volan folosește /vehicle plug pentru arat.</green>");
+    }
+
     public boolean togglePlough(Player player) {
         if (!player.hasPermission("vehicle.plough")) {
             player.sendRichMessage("<red>Nu ai permisiunea vehicle.plough.</red>");
