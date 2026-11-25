@@ -33,6 +33,6 @@ class UpdateUTBTest(unittest.TestCase):
         with zipfile.ZipFile(io.BytesIO(result)) as z:
             self.assertEqual(z.read('vehicles/other'),b'unchanged');self.assertEqual(json.loads(z.read(u.BODY)),json.loads(u.MODEL.read_text()))
             for name in u.WHEELS:self.assertIn('assets/vehicle/items/'+name+'.json',z.namelist())
-            for name in u.TEXTURES:self.assertIn('assets/vehicle/textures/utb/'+name+'.png',z.namelist())
+            for name in u.TEXTURES:self.assertIn('assets/vehicle/textures/item/utb_'+name+'.png',z.namelist())
         self.assertEqual(result,u.build(data,expected))
         with self.assertRaises(ValueError):u.build(data)

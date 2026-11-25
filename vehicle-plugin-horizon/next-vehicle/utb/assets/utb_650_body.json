@@ -1,17 +1,17 @@
 {
   "credit": "Hand-authored UTB-inspired body: 1 unit = 1/16 m; transformed to half-size about item origin for Minecraft 1.21.4.",
   "textures": {
-    "red": "vehicle:utb/red",
-    "cream": "vehicle:utb/cream",
-    "roof": "vehicle:utb/roof",
-    "black": "vehicle:utb/black",
-    "frame": "vehicle:utb/frame",
-    "metal": "vehicle:utb/metal",
-    "silver": "vehicle:utb/silver",
-    "lamp": "vehicle:utb/lamp",
-    "tail": "vehicle:utb/tail",
-    "seat": "vehicle:utb/seat",
-    "logo": "vehicle:utb/logo"
+    "red": "vehicle:item/utb_red",
+    "cream": "vehicle:item/utb_cream",
+    "roof": "vehicle:item/utb_roof",
+    "black": "vehicle:item/utb_black",
+    "frame": "vehicle:item/utb_frame",
+    "metal": "vehicle:item/utb_metal",
+    "silver": "vehicle:item/utb_silver",
+    "lamp": "vehicle:item/utb_lamp",
+    "tail": "vehicle:item/utb_tail",
+    "seat": "vehicle:item/utb_seat",
+    "logo": "vehicle:item/utb_logo"
   },
   "elements": [
     {

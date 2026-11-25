@@ -36,7 +36,7 @@ def build(data,expected=BASE_SHA1):
         files[itempath]=json.dumps({'model':{'type':'minecraft:model','model':'vehicle:item/'+name}},separators=(',',':')).encode()
         files[modelpath]=json.dumps(model,separators=(',',':')).encode()
     for name in TEXTURES:
-        path=f'assets/vehicle/textures/utb/{name}.png'
+        path=f'assets/vehicle/textures/item/utb_{name}.png'
         if path in files:raise ValueError('texture already exists')
         files[path]=(ASSETS/'textures'/(name+'.png')).read_bytes()
     out=io.BytesIO()
