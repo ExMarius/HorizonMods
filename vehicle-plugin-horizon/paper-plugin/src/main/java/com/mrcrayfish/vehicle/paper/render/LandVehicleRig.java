@@ -488,7 +488,7 @@ public final class LandVehicleRig {
                 rotation = new Quaternionf(chassisRotation)
                         .rotateY(steerRadians)
                         .rotateX(radians(-spin));
-                sourceRotation = wheel.side() > 0
+                sourceRotation = wheel.side() > 0 && !"bmw_m6".equals(spec.id())
                         ? new Quaternionf().rotateY((float) Math.PI) : new Quaternionf();
             }
             place(wheelDisplay.entity, renderAnchor, relativeToSeat(center, driverSeat), yaw, rotation,
@@ -1040,6 +1040,10 @@ public final class LandVehicleRig {
     }
 
     static String wheelModelFor(LandVehicleSpec spec, LandVehicleSpec.Wheel wheel, String requested) {
+        if ("bmw_m6".equals(spec.id())) {
+            return "bmw_m6_" + (wheel.front() ? "front_" : "rear_")
+                    + (wheel.side() < 0 ? "left" : "right");
+        }
         return "utb_650".equals(spec.id()) && "standard_wheel".equals(requested)
                 ? (wheel.front() ? "utb_650_wheel_front" : "utb_650_wheel_rear") : requested;
     }

@@ -393,6 +393,27 @@ public record LandVehicleSpec(
             null, null, List.of(), false
     );
 
+    /** Experimental BMW: dimensions are scaled from the source model, not measured in-game. */
+    public static final LandVehicleSpec BMW_M6 = new LandVehicleSpec(
+            "bmw_m6", "BMW M6 1988", "bmw_m6_body",
+            2.0F, 1.4F, 1.0F,
+            1.7F, -8.0F, 0.0F,
+            16.0F, 35.0F, 1.0625F, -1.16875F, 5.0F,
+            15_000.0F, 0.25F, 0.8F, 1.6F, "vehicle:entity.bumper_car.engine",
+            false, new Point(0, 0, 0), null, null, null, null, List.of(),
+            List.of(
+                    new Wheel(-1, true, -.6640625F, .265625F, 1.0625F, 0, .02656F, 1.7F, 1.7F, 1.7F),
+                    new Wheel(1, true, .6640625F, .265625F, 1.0625F, 0, .02656F, 1.7F, 1.7F, 1.7F),
+                    new Wheel(-1, false, -.6640625F, .265625F, -1.16875F, 0, .02656F, 1.7F, 1.7F, 1.7F),
+                    new Wheel(1, false, .6640625F, .265625F, -1.16875F, 0, .02656F, 1.7F, 1.7F, 1.7F)),
+            List.of(new Seat(true, new Point(-.35F, .50F, .05F), 0),
+                    new Seat(false, new Point(.35F, .50F, .05F), 0),
+                    new Seat(false, new Point(-.35F, .50F, -.65F), 0),
+                    new Seat(false, new Point(.35F, .50F, -.65F), 0)),
+            false, "tow_bar", new Point(0, 0, 0), new Point(0, 0, 0),
+            null, null, List.of(), false
+    );
+
     /** User-provided police model and layout. Power, dimensions and sound are
      * initial Paper adaptations, not documented police-vehicle specifications. */
     public static final LandVehicleSpec DACIA_LOGAN_POLICE = new LandVehicleSpec(
@@ -1006,6 +1027,7 @@ public record LandVehicleSpec(
             Map.entry(OFF_ROADER.id, OFF_ROADER),
             Map.entry(HORIZON_OFF_ROADER.id, HORIZON_OFF_ROADER),
             Map.entry(DACIA_LOGAN_POLICE.id, DACIA_LOGAN_POLICE),
+            Map.entry(BMW_M6.id, BMW_M6),
             Map.entry(SPORTS_CAR.id, SPORTS_CAR),
             Map.entry(MINI_BUS.id, MINI_BUS),
             Map.entry(GOLF_CART.id, GOLF_CART),
@@ -1094,7 +1116,7 @@ public record LandVehicleSpec(
             }
             switch (id) {
                 // Grele/mari = LARGE_MOTOR (off_roader, sporturile, utilitarele):
-                case "off_roader", "horizon_off_roader", "dacia_logan_police", "sports_car", "mini_bus", "tractor", "utb_650", "speed_boat",
+                case "off_roader", "horizon_off_roader", "dacia_logan_police", "bmw_m6", "sports_car", "mini_bus", "tractor", "utb_650", "speed_boat",
                         "sports_plane", "compact_helicopter" -> {
                     return com.mrcrayfish.vehicle.paper.mechanic.EngineType.LARGE_MOTOR;
                 }

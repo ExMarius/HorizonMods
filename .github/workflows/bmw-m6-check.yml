@@ -1,0 +1,23 @@
+name: Verify BMW M6 candidate
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths:
+      - 'vehicle-plugin-horizon/next-vehicle/bmw-m6/**'
+      - 'vehicle-plugin-horizon/paper-plugin/**'
+      - '.github/workflows/bmw-m6-check.yml'
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Verify conversion and pack isolation
+        run: python3 -m unittest discover -s vehicle-plugin-horizon/next-vehicle/bmw-m6 -p 'test_*.py' -v
+      - name: Build and test plugin
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build
