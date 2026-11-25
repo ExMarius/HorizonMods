@@ -30,10 +30,10 @@ async function drive(target){
  bot.vehicle=null // Mineflayer does not clear the vehicle on an empty passenger packet.
  bot.activateEntity(target);await wait(2000)
  if(!bot.vehicle)throw new Error('remount after dismount failed')
- const start=target.position.clone(),before=JSON.stringify(bot.inventory.slots)
+ const start=target.position.clone(),before=JSON.stringify(bot.inventory.slots), mountId=bot.vehicle.id
  const send=setInterval(()=>bot._client.write('player_input',{inputs:{forward:true}}),50)
  await wait(5000);clearInterval(send);bot._client.write('player_input',{inputs:{}})
- if(!bot.vehicle || target.position.distanceTo(start)<.3)throw new Error('tractor did not drive')
+ if(!bot.vehicle || target.position.distanceTo(start)<.3)throw new Error('tractor did not drive: mount='+mountId+' current='+(bot.vehicle && bot.vehicle.id)+' start='+start+' end='+target.position+' distance='+target.position.distanceTo(start))
  if(JSON.stringify(bot.inventory.slots)!==before)throw new Error('inventory changed while driving')
  if(packs!==originalPacks)throw new Error('pack resent after spawn')
  bot.chat('/vehicle save');await wait(1200);success()
@@ -43,5 +43,5 @@ const interval=setInterval(()=>{
  if(!started)return
  const entities=Object.values(bot.entities),target=entities.find(e=>e.name==='interaction'), displays=entities.filter(e=>e.name==='item_display')
  if(!driving && bot.vehicle && target){driving=true;if(displays.length<6)return fail('missing display groups: '+displays.length);drive(target).catch(e=>fail(e.message))}
- else if(!bot.vehicle && target && displays.length>=6 && !mounting){mounting=true;bot.activateEntity(target);setTimeout(()=>mounting=false,1500)}
+ else if(!driving && !bot.vehicle && target && displays.length>=6 && !mounting){mounting=true;bot.activateEntity(target);setTimeout(()=>mounting=false,1500)}
 },500)
