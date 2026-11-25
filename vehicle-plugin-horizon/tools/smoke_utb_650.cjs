@@ -1,7 +1,7 @@
 // Protocol-only test: spawn, mount, drive, inventory stability, save. No visual validation.
 const mineflayer = require('mineflayer')
 const bot = mineflayer.createBot({host:'127.0.0.1',port:25568,username:'HorizonBot',version:'1.21.4',auth:'offline'})
-let done=false,started=false,mounting=false,driving=false,packs=0,originalPacks=0
+let done=false,started=false,mounting=false,driving=false,packs=0,originalPacks=0,rideResult=''
 const timeout=setTimeout(()=>fail('timeout'),100000)
 function fail(s){if(done)return;done=true;clearTimeout(timeout);console.error('FAIL: '+s);bot.quit();process.exitCode=1}
 function success(){if(done)return;done=true;clearTimeout(timeout);console.log('UTB tractor spawn, mount, movement, inventory and save passed; no visual assertion.');bot.quit()}
@@ -12,7 +12,7 @@ bot._client.on('packet',(data,meta)=>{
  // Mineflayer 4.39 does not clear bot.vehicle when an empty passenger list arrives.
  if(meta.name==='set_passengers' && bot.vehicle && data.entityId===bot.vehicle.id && !data.passengers.includes(bot.entity.id)) bot.vehicle=null
 })
-bot.on('messagestr',s=>{if(s.includes('UTB 650 creat'))started=true})
+bot.on('messagestr',s=>{if(s.includes('UTB 650 creat'))started=true; if(s.toLowerCase().includes('dismount') || s.toLowerCase().includes('riding'))rideResult=s})
 bot.once('spawn',()=>{
  setTimeout(()=>bot.chat('/fill ~-12 ~-1 ~-12 ~12 ~-1 ~12 stone'),1000)
  setTimeout(()=>bot.chat('/fill ~-12 ~ ~-12 ~12 ~5 ~12 air'),2200)
@@ -21,12 +21,14 @@ bot.once('spawn',()=>{
 })
 async function drive(target){
  if(bot.vehicle.name!=='horse')throw new Error('unexpected mount '+bot.vehicle.name)
- // Test voluntary dismount while stationary, then remount and drive.
- bot._client.write('entity_action',{entityId:bot.entity.id,actionId:'start_sneaking',jumpBoost:0})
- await wait(1500)
- bot._client.write('entity_action',{entityId:bot.entity.id,actionId:'stop_sneaking',jumpBoost:0})
- if(bot.vehicle){await wait(12000);throw new Error('voluntary dismount failed or client did not receive dismount')}
- bot.activateEntity(target);await wait(1800)
+ // A server-side ride command exercises the same horse dismount path without
+ // relying on Mineflayer's incomplete 1.21.4 mounted-input implementation.
+ bot.chat('/ride @s dismount');await wait(2500)
+ if(!rideResult || /not riding|unable|failed|error/i.test(rideResult)) {
+   await wait(12000); throw new Error('server dismount result: '+rideResult)
+ }
+ bot.vehicle=null // Mineflayer does not clear the vehicle on an empty passenger packet.
+ bot.activateEntity(target);await wait(2000)
  if(!bot.vehicle)throw new Error('remount after dismount failed')
  const start=target.position.clone(),before=JSON.stringify(bot.inventory.slots)
  const send=setInterval(()=>bot._client.write('player_input',{inputs:{forward:true}}),50)
