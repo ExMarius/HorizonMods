@@ -73,6 +73,23 @@ class UpdateUTBTest(unittest.TestCase):
                     return e['from'][1]-8-1e-6 <= yy <= e['to'][1]-8+1e-6 and e['from'][2]-8-1e-6 <= zz <= e['to'][2]-8+1e-6
                 self.assertTrue(any(contains(e) for e in cores),f'{name} inner tread gap at {i} degrees')
 
+    def test_tractor_trailer_hitch_and_plate_geometry(self):
+        tractor=json.loads(u.MODEL.read_text());trailer=json.loads((u.ASSETS/'tractor_trailer_body.json').read_text())
+        u.validate(tractor);u.validate(trailer)
+        t={e['name']:e for e in tractor['elements']};r={e['name']:e for e in trailer['elements']}
+        # World z at tractor coupler and drawbar tip relative to each towing root.
+        hitch_z=-37.45/16; receiver_z=2*(t['rear hitch central drawbar']['from'][2]-8)/16
+        self.assertLessEqual(receiver_z,hitch_z)
+        self.assertGreaterEqual(2*(t['rear hitch central drawbar']['to'][2]-8)/16,hitch_z)
+        self.assertGreaterEqual(-1.75+2*(r['coupler']['to'][2]-8)/16,0)
+        self.assertLessEqual(-1.75+2*(r['coupler']['from'][2]-8)/16,0)
+        for part in ('rear plate dark frame','rear plate white face','rear plate blue stripe'):
+            self.assertIn(part,t);self.assertIn(part,r)
+        for side in ('left','right'):
+            for part in ('housing','red','amber'):self.assertIn(side+' rear lamp '+part,r)
+        self.assertEqual('vehicle:item/utb_plate_blue',tractor['textures']['plate_blue'])
+        self.assertEqual('vehicle:item/utb_plate_blue',trailer['textures']['plate_blue'])
+
     def test_narrow_front_axle_and_custom_steering(self):
         m=json.loads(u.MODEL.read_text()); parts={e['name']:e for e in m['elements']}
         axle=parts['front axle']

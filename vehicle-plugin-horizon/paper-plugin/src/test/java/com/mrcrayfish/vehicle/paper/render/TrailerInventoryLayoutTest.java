@@ -65,6 +65,26 @@ class TrailerInventoryLayoutTest {
     }
 
     @Test
+    void farmTrailerShowsEveryOccupiedSlotInsideBoundedBed() {
+        int[] amounts = new int[27]; java.util.Arrays.fill(amounts, 64);
+        var all = TrailerRig.inventoryTransforms(TrailerSpec.TRACTOR_TRAILER, amounts);
+        assertEquals(27, all.size());
+        for (int slot = 0; slot < 27; slot++) {
+            var t = all.get(slot);
+            assertEquals(slot, t.slot());
+            assertTrue(Math.abs(t.center().x) <= 0.48F + EPSILON);
+            assertTrue(Math.abs(t.center().z) <= 0.62F + EPSILON);
+            assertTrue(t.center().y >= 0.78F && t.center().y <= 1.10F + EPSILON);
+            assertEquals(0.28F, t.scale().x, EPSILON);
+        }
+        amounts[0] = 0; amounts[1] = 1;
+        var reduced = TrailerRig.inventoryTransforms(TrailerSpec.TRACTOR_TRAILER, amounts);
+        assertEquals(26, reduced.size());
+        assertEquals(all.get(1), reduced.getFirst());
+        assertTrue(TrailerRig.inventoryTransforms(TrailerSpec.TRACTOR_TRAILER).isEmpty());
+    }
+
+    @Test
     void trailersWithoutSourceCargoRenderingProduceNoTransforms() {
         assertTrue(TrailerRig.inventoryTransforms(TrailerSpec.STORAGE_TRAILER, 64).isEmpty());
     }

@@ -237,7 +237,8 @@ public final class TrailerRig {
     }
 
     private void syncInventoryDisplays(Location root, ItemStack[] contents) {
-        if (spec.kind() != TrailerSpec.Kind.FERTILIZER && spec.kind() != TrailerSpec.Kind.SEEDER) {
+        if (spec.kind() != TrailerSpec.Kind.FERTILIZER && spec.kind() != TrailerSpec.Kind.SEEDER
+                && spec.kind() != TrailerSpec.Kind.TRACTOR_TRAILER) {
             return;
         }
         int fingerprint = inventoryFingerprint(contents);
@@ -323,6 +324,20 @@ public final class TrailerRig {
 
     /** Pure source-matrix path, kept independent of Bukkit registry initialization for regression tests. */
     static List<InventoryTransform> inventoryTransforms(TrailerSpec spec, int... amounts) {
+        if (amounts != null && spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER) {
+            // One representative item per occupied slot, bounded to the 27-slot inventory.
+            // Stable grid positions avoid the displays jumping as amounts change.
+            List<InventoryTransform> farm = new ArrayList<>();
+            for (int slot = 0; slot < Math.min(27, amounts.length); slot++) {
+                if (amounts[slot] <= 0) continue;
+                float x = (slot % 3 - 1) * 0.48F;
+                float z = ((slot / 3) % 3 - 1) * 0.62F;
+                float y = 0.78F + (slot / 9) * 0.16F;
+                farm.add(new InventoryTransform(slot, new Vector3f(x, y, z),
+                        new Vector3f(0.28F), new Quaternionf().rotateX(radians(90.0F))));
+            }
+            return List.copyOf(farm);
+        }
         if (amounts == null || (spec.kind() != TrailerSpec.Kind.FERTILIZER
                 && spec.kind() != TrailerSpec.Kind.SEEDER)) {
             return List.of();
