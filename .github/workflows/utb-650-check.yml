@@ -42,7 +42,7 @@ jobs:
           for test in smoke_utb_650 smoke_horizon_kart smoke_police smoke_off_roader; do
             set -o pipefail
             python3 "vehicle-plugin-horizon/tools/${test}.py" vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar 2>&1 | tee /tmp/utb-smoke.log || {
-              python3 -c "from pathlib import Path; s=Path('/tmp/utb-smoke.log').read_text(); start=s.find('BOT DIAGNOSTIC:'); print('::error::'+(' | '.join(s[start:].splitlines()[:120])).replace('%','%25')[:12000])"
+              python3 -c "from pathlib import Path; s=Path('/tmp/utb-smoke.log').read_text(); start=s.find('BOT DIAGNOSTIC:'); lines=s[start:].splitlines()[:120] if start>=0 else s.splitlines()[-35:]; print('::error::'+(' | '.join(lines)).replace('%','%25')[:12000])"
               exit 1
             }
           done
