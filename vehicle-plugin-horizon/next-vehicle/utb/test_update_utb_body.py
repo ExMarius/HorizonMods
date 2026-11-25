@@ -87,7 +87,9 @@ class UpdateUTBTest(unittest.TestCase):
             self.assertAlmostEqual((centre['from'][axis]+centre['to'][axis])/2,
                                    (pin['from'][axis]+pin['to'][axis])/2)
         self.assertNotIn('rear hitch central drawbar',t)
-        self.assertNotIn('hitch block',t)
+        self.assertIn('hitch block',t)
+        self.assertEqual([4.8, 6.55, -9.75],t['hitch block']['from'])
+        self.assertEqual([11, 6.9, -8.65],t['hitch block']['to'])
         # Physics hitch is centred on that square. With aligned roots the trailer
         # receiver overlaps the pin in X, Y and Z, including each body's origin.
         hitch_z=-34.45/16
