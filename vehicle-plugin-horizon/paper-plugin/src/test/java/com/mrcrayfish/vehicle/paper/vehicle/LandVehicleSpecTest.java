@@ -116,8 +116,8 @@ class LandVehicleSpecTest {
         assertTrue(utb.seats().getFirst().driver());
         assertFalse(utb.seats().get(1).driver());
         assertFalse(utb.seats().get(2).driver());
-        assertEquals(-4.8F / 16.0F, utb.seats().get(1).sourceOffset().x(), EPSILON);
-        assertEquals(4.8F / 16.0F, utb.seats().get(2).sourceOffset().x(), EPSILON);
+        assertEquals(4.8F / 16.0F, utb.seats().get(1).sourceOffset().x(), EPSILON);
+        assertEquals(-4.8F / 16.0F, utb.seats().get(2).sourceOffset().x(), EPSILON);
         assertEquals(-26.5F / 16.0F, utb.seats().get(1).sourceOffset().z(), EPSILON);
         assertEquals(-26.5F / 16.0F, utb.seats().get(2).sourceOffset().z(), EPSILON);
         assertEquals(-15.8F / 16.0F, utb.seats().getFirst().sourceOffset().z(), EPSILON);
