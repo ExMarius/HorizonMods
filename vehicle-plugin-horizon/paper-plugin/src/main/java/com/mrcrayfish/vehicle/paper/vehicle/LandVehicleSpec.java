@@ -234,12 +234,12 @@ public record LandVehicleSpec(
             15_000.0F, 0.25F, 0.8F, 1.6F, "vehicle:entity.tractor.engine",
             true, new Point(4.39F * MODEL_UNIT, 37.2F * MODEL_UNIT, 4.2F * MODEL_UNIT),
             null, // Modeled D-110-like engine; the mechanics still uses LARGE_MOTOR.
-            new Part("go_kart_steering_wheel", new Point(0.0F, 24.0F * MODEL_UNIT, -9.4F * MODEL_UNIT),
-                    0.71F, -55.0F, 0.0F, 0.0F),
+            new Part("utb_steering_wheel", new Point(0.0F, 24.0F * MODEL_UNIT, -9.4F * MODEL_UNIT),
+                    1.0F, -55.0F, 0.0F, 0.0F),
             null, null, List.of(),
             List.of(
-                    new Wheel(-1, true, -14.65F * MODEL_UNIT, 6.9F * MODEL_UNIT, 13.68F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
-                    new Wheel(1, true, 14.65F * MODEL_UNIT, 6.9F * MODEL_UNIT, 13.68F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
+                    new Wheel(-1, true, -11.25F * MODEL_UNIT, 6.9F * MODEL_UNIT, 13.68F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
+                    new Wheel(1, true, 11.25F * MODEL_UNIT, 6.9F * MODEL_UNIT, 13.68F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
                     new Wheel(-1, false, -14.65F * MODEL_UNIT, 12.4F * MODEL_UNIT, -25.2F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
                     new Wheel(1, false, 14.65F * MODEL_UNIT, 12.4F * MODEL_UNIT, -25.2F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F)
             ),

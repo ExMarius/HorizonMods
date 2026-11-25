@@ -108,6 +108,10 @@ class LandVehicleSpecTest {
         assertEquals(2.75F, utb.entityHeight(), EPSILON);
         assertEquals(38.88F / 16.0F, utb.frontAxleOffset() - utb.rearAxleOffset(), EPSILON);
         assertEquals(6.9F / 16.0F, utb.firstFrontWheel().centerY(), EPSILON);
+        assertEquals(-11.25F / 16.0F, utb.wheels().get(0).axleX(), EPSILON);
+        assertEquals(11.25F / 16.0F, utb.wheels().get(1).axleX(), EPSILON);
+        assertEquals("utb_steering_wheel", utb.steering().model());
+        assertEquals(1.0F, utb.steering().scale(), EPSILON);
         assertEquals(12.4F / 16.0F, utb.firstRearWheel().centerY(), EPSILON);
         assertEquals(0.0F, utb.firstFrontWheel().halfWidthOffset(), EPSILON);
         assertEquals(0.0F, utb.firstRearWheel().halfWidthOffset(), EPSILON);

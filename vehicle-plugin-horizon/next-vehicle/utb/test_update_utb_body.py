@@ -33,9 +33,10 @@ class UpdateUTBTest(unittest.TestCase):
             self.assertLessEqual(seam['to'][0],back['to'][0])
             self.assertLess(abs(seam['from'][2]-back['to'][2]),0.03)
         for side in ('left','right'):
-            self.assertEqual(-9.0,parts[side+' rear fender']['from'][2])
-            self.assertEqual(-9.0,parts[side+' fender lip']['from'][2])
-            self.assertEqual(-9.0,parts[side+' fender back']['from'][2])
+            fender=parts[side+' rear fender'];lip=parts[side+' fender lip']
+            self.assertAlmostEqual(-10.0,fender['from'][2])
+            self.assertGreaterEqual(lip['from'][2],fender['from'][2])
+            self.assertLessEqual(lip['to'][2],fender['to'][2])
         self.assertLessEqual(parts['right mirror arm']['from'][1],parts['right mirror']['to'][1])
         self.assertGreaterEqual(parts['right mirror arm']['to'][1],parts['right mirror']['from'][1])
         self.assertLessEqual(parts['right mirror arm']['from'][2],parts['right mirror']['to'][2])
@@ -71,6 +72,25 @@ class UpdateUTBTest(unittest.TestCase):
                     a=math.radians(e.get('rotation',{}).get('angle',0)); yy=y*math.cos(a)+z*math.sin(a);zz=-y*math.sin(a)+z*math.cos(a)
                     return e['from'][1]-8-1e-6 <= yy <= e['to'][1]-8+1e-6 and e['from'][2]-8-1e-6 <= zz <= e['to'][2]-8+1e-6
                 self.assertTrue(any(contains(e) for e in cores),f'{name} inner tread gap at {i} degrees')
+
+    def test_narrow_front_axle_and_custom_steering(self):
+        m=json.loads(u.MODEL.read_text()); parts={e['name']:e for e in m['elements']}
+        axle=parts['front axle']
+        self.assertAlmostEqual(-9.7708,2*(axle['from'][0]-8),places=3)
+        self.assertAlmostEqual(9.7708,2*(axle['to'][0]-8),places=3)
+        for side,center in [('left',-11.25),('right',11.25)]:
+            knuckle=parts['front axle '+side+' steering knuckle']
+            self.assertLessEqual(2*(knuckle['from'][0]-8)-0.1,center)
+            self.assertGreaterEqual(2*(knuckle['to'][0]-8)+0.1,center)
+        column=parts['steering column']
+        self.assertAlmostEqual(24.0,8+2*(column['to'][1]-8),places=3)
+        self.assertAlmostEqual(-9.4,2*(column['from'][2]-8),places=3)
+        wheel=json.loads((u.ASSETS/'utb_steering_wheel.json').read_text());u.validate(wheel)
+        self.assertEqual(8,sum(e['name'].startswith('rim ') for e in wheel['elements']))
+        self.assertEqual(3,sum('spoke' in e['name'] for e in wheel['elements']))
+        self.assertEqual(6.5,max(e['to'][0] for e in wheel['elements'])-min(e['from'][0] for e in wheel['elements']))
+        for e in wheel['elements']:
+            if 'rotation' in e:self.assertEqual([8,8,8],e['rotation']['origin'])
 
     def test_wheel_dimensions_pivots_and_segments(self):
         for model,diameter,width in [('utb_650_wheel_front',13.8,3.5),('utb_650_wheel_rear',24.8,6.7)]:
