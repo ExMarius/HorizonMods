@@ -64,7 +64,7 @@ def main(jar):
                 while time.monotonic()<deadline:
                     time.sleep(2); out.flush(); newlog=log.read_text(errors='replace')[start_at:]
                     if proc.poll() is not None: raise RuntimeError('server exited during restart')
-                    if 'Done (' in newlog and ('Loaded 1 vehicle(s);' in newlog or '1 stored in garages.' in newlog): break
+                    if 'Done (' in newlog and 'Loaded 1 trailer(s).' in newlog and ('vehicle(s);' in newlog or 'stored in garages.' in newlog): break
                 else: raise RuntimeError('persisted vehicle did not load after restart')
                 proc.stdin.write('stop\n'); proc.stdin.flush(); proc.wait(timeout=90)
                 out.flush(); newlog=log.read_text(errors='replace')[start_at:]
