@@ -113,9 +113,10 @@ class LandVehicleSpecTest {
         assertEquals(0.0F, utb.firstRearWheel().halfWidthOffset(), EPSILON);
         assertEquals(4, utb.wheels().size());
         assertEquals(1, utb.seats().size());
-        assertEquals(utb.rearAxleOffset(), utb.seats().getFirst().sourceOffset().z(), EPSILON);
+        assertEquals(-15.8F / 16.0F, utb.seats().getFirst().sourceOffset().z(), EPSILON);
         assertEquals(16.8F / 16.0F, utb.seats().getFirst().sourceOffset().y() + LandVehicleSpec.RIDER_HEIGHT_CORRECTION, EPSILON);
-        assertEquals(8.8F / 16.0F, utb.steering().center().z() - utb.seats().getFirst().sourceOffset().z(), EPSILON);
+        assertEquals(6.4F / 16.0F, utb.steering().center().z() - utb.seats().getFirst().sourceOffset().z(), EPSILON);
+        assertEquals(4.2F / 16.0F, utb.exhaustPosition().z(), EPSILON);
         assertTrue(utb.canTowTrailers());
         assertEquals(com.mrcrayfish.vehicle.paper.mechanic.EngineType.LARGE_MOTOR, utb.defaultEngineType());
     }

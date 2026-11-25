@@ -11,7 +11,7 @@ class UpdateUTBTest(unittest.TestCase):
         self.assertAlmostEqual(44.0,actual(parts['cream roof']['to'][1]),places=3)
         self.assertAlmostEqual(16.8,actual(parts['cab floor']['to'][1]),places=3)
         self.assertAlmostEqual(20.8,actual(parts['seat cushion']['to'][1]),places=3)
-        self.assertAlmostEqual(-25.2,actual((parts['seat cushion']['from'][2]+parts['seat cushion']['to'][2])/2)-8,places=3)
+        self.assertAlmostEqual(-15.8,actual((parts['seat cushion']['from'][2]+parts['seat cushion']['to'][2])/2)-8,places=3)
         self.assertAlmostEqual(28,2*(parts['hood top']['to'][2]-parts['hood top']['from'][2]),places=3)
         self.assertAlmostEqual(12.5,2*(parts['hood top']['to'][0]-parts['hood top']['from'][0]),places=3)
         self.assertGreater(actual(parts['left rear fender']['from'][1]),24.8)
@@ -24,6 +24,26 @@ class UpdateUTBTest(unittest.TestCase):
         self.assertGreaterEqual(parts['left mirror arm']['to'][1],parts['left mirror']['from'][1])
         self.assertAlmostEqual(9.68,decode_z((parts['front axle']['from'][2]+parts['front axle']['to'][2])/2),places=3)
         self.assertAlmostEqual(-25.2,decode_z((parts['rear axle']['from'][2]+parts['rear axle']['to'][2])/2),places=3)
+    def test_remodel_seat_mirror_fenders_and_exhaust_alignment(self):
+        m=json.loads(u.MODEL.read_text()); parts={e['name']:e for e in m['elements']}
+        cushion,back=parts['seat cushion'],parts['seat back']
+        for name in ('seat back seam left','seat back seam right'):
+            seam=parts[name]
+            self.assertGreaterEqual(seam['from'][0],back['from'][0])
+            self.assertLessEqual(seam['to'][0],back['to'][0])
+            self.assertLess(abs(seam['from'][2]-back['to'][2]),0.03)
+        for side in ('left','right'):
+            self.assertEqual(-9.0,parts[side+' rear fender']['from'][2])
+            self.assertEqual(-9.0,parts[side+' fender lip']['from'][2])
+            self.assertEqual(-9.0,parts[side+' fender back']['from'][2])
+        self.assertLessEqual(parts['right mirror arm']['from'][1],parts['right mirror']['to'][1])
+        self.assertGreaterEqual(parts['right mirror arm']['to'][1],parts['right mirror']['from'][1])
+        self.assertLessEqual(parts['right mirror arm']['from'][2],parts['right mirror']['to'][2])
+        self.assertGreaterEqual(parts['right mirror arm']['to'][2],parts['right mirror']['from'][2])
+        rim=parts['exhaust rim']
+        self.assertAlmostEqual(4.39,2*((rim['from'][0]+rim['to'][0])/2-8),places=2)
+        self.assertAlmostEqual(37.2,8+2*(rim['to'][1]-8),places=2)
+        self.assertAlmostEqual(4.2,2*((rim['from'][2]+rim['to'][2])/2-8),delta=0.01)
     def test_wheel_dimensions_pivots_and_segments(self):
         for model,diameter,width in [('utb_650_wheel_front',13.8,3.5),('utb_650_wheel_rear',24.8,6.7)]:
             m=json.loads((u.ASSETS/(model+'.json')).read_text());u.validate(m)

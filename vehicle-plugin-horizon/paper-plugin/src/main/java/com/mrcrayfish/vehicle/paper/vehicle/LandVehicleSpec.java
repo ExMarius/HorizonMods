@@ -232,9 +232,9 @@ public record LandVehicleSpec(
             1.0F, 0.0F, 0.0F,
             8.0F, 35.0F, 9.68F * MODEL_UNIT, -25.2F * MODEL_UNIT, 5.0F,
             15_000.0F, 0.25F, 0.8F, 1.6F, "vehicle:entity.tractor.engine",
-            true, new Point(4.0F * MODEL_UNIT, 37.2F * MODEL_UNIT, 9.2F * MODEL_UNIT),
+            true, new Point(4.39F * MODEL_UNIT, 37.2F * MODEL_UNIT, 4.2F * MODEL_UNIT),
             null, // Modeled D-110-like engine; the mechanics still uses LARGE_MOTOR.
-            new Part("go_kart_steering_wheel", new Point(0.0F, 24.0F * MODEL_UNIT, -16.4F * MODEL_UNIT),
+            new Part("go_kart_steering_wheel", new Point(0.0F, 24.0F * MODEL_UNIT, -9.4F * MODEL_UNIT),
                     0.71F, -55.0F, 0.0F, 0.0F),
             null, null, List.of(),
             List.of(
@@ -244,7 +244,7 @@ public record LandVehicleSpec(
                     new Wheel(1, false, 14.65F * MODEL_UNIT, 12.4F * MODEL_UNIT, -25.2F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F)
             ),
             // Lower rider anchor 4 px relative to the cushion to address visible floating.
-            List.of(seat(true, 0.0F, 12.8F, -25.2F, 1.0F, 0.0F, 0.0F)),
+            List.of(seat(true, 0.0F, 12.8F, -15.8F, 1.0F, 0.0F, 0.0F)),
             true, "tow_bar", new Point(0.0F, 0.0F, -34.8F), new Point(0.0F, 0.0F, 0.0F),
             null, null, List.of(), false
     );
