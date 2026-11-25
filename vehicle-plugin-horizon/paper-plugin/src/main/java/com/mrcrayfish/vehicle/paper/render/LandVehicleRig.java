@@ -902,6 +902,10 @@ public final class LandVehicleRig {
             if (scale != null) {
                 scale.setBaseValue(1.0D);
             }
+            if ("utb_650".equals(spec.id())) {
+                org.bukkit.Bukkit.getLogger().info("[UTB dismount diagnostic] seat=" + seat.getLocation()
+                        + " box=" + seat.getBoundingBox() + " passenger=" + seat.getPassengers().getFirst().getLocation());
+            }
             seat.eject();
             if (!seat.getPassengers().isEmpty()) {
                 /* Failing open is safer than deleting a still-ridden carrier. */
