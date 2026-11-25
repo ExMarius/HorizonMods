@@ -83,12 +83,15 @@ class UpdateUTBTest(unittest.TestCase):
         self.assertGreaterEqual(2*(t['rear hitch central drawbar']['to'][2]-8)/16,hitch_z)
         self.assertGreaterEqual(-1.75+2*(r['coupler']['to'][2]-8)/16,0)
         self.assertLessEqual(-1.75+2*(r['coupler']['from'][2]-8)/16,0)
-        for part in ('rear plate dark frame','rear plate white face','rear plate blue stripe'):
+        self.assertLessEqual(t['rear hitch central drawbar']['to'][0]-t['rear hitch central drawbar']['from'][0], 0.5)
+        self.assertLessEqual(r['coupler']['to'][0]-r['coupler']['from'][0], 0.6)
+        self.assertAlmostEqual((t['rear hitch central drawbar']['from'][1]+t['rear hitch central drawbar']['to'][1])/2, (r['coupler']['from'][1]+r['coupler']['to'][1])/2, delta=0.05)
+        for part in ('rear plate dark frame','rear plate white face'):
             self.assertIn(part,t);self.assertIn(part,r)
         for side in ('left','right'):
             for part in ('housing','red','amber'):self.assertIn(side+' rear lamp '+part,r)
-        self.assertEqual('vehicle:item/utb_plate_blue',tractor['textures']['plate_blue'])
-        self.assertEqual('vehicle:item/utb_plate_blue',trailer['textures']['plate_blue'])
+        self.assertEqual('vehicle:item/utb_plate_tractor',tractor['textures']['plate_tractor'])
+        self.assertEqual('vehicle:item/utb_plate_trailer',trailer['textures']['plate_trailer'])
 
     def test_narrow_front_axle_and_custom_steering(self):
         m=json.loads(u.MODEL.read_text()); parts={e['name']:e for e in m['elements']}

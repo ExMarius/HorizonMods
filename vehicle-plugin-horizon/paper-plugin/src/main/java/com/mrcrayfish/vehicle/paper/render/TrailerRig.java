@@ -315,29 +315,56 @@ public final class TrailerRig {
             }
         }
         List<InventoryLayout> layouts = new ArrayList<>();
-        for (InventoryTransform transform : inventoryTransforms(spec, amounts)) {
+        boolean[] blocks = new boolean[contents.length];
+        float[] fullness = new float[contents.length];
+        for (int slot = 0; slot < contents.length; slot++) {
+            ItemStack item = contents[slot];
+            if (item != null && !item.getType().isAir()) {
+                blocks[slot] = item.getType().isBlock();
+                fullness[slot] = Math.min(1.0F, (float) item.getAmount() / Math.max(1, item.getMaxStackSize()));
+            }
+        }
+        List<InventoryTransform> transforms = spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER
+                ? farmCargoTransforms(amounts, blocks, fullness) : inventoryTransforms(spec, amounts);
+        for (InventoryTransform transform : transforms) {
             layouts.add(new InventoryLayout(contents[transform.slot()].clone(), transform.center(),
                     transform.scale(), transform.rotation()));
         }
         return List.copyOf(layouts);
     }
 
+    /** A capped, shallow surface, not thousands of hidden entities under the load.
+     * Each occupied slot contributes samples according to its fraction of a stack;
+     * blocks stay at the bottom, loose items rise with the overall fill level. */
+    static List<InventoryTransform> farmCargoTransforms(int[] amounts, boolean[] blocks, float[] fullness) {
+        if (amounts == null || blocks == null || fullness == null) return List.of();
+        int slots = Math.min(27, Math.min(amounts.length, Math.min(blocks.length, fullness.length)));
+        float total = 0.0F;
+        for (int i = 0; i < slots; i++) if (amounts[i] > 0) total += Math.max(0.0F, Math.min(1.0F, fullness[i]));
+        float surface = 0.66F + 0.45F * Math.min(1.0F, total / 27.0F);
+        List<InventoryTransform> result = new ArrayList<>();
+        int looseIndex = 0, blockIndex = 0;
+        for (int slot = 0; slot < slots; slot++) {
+            if (amounts[slot] <= 0) continue;
+            int count = blocks[slot] ? 1 : Math.max(1, (int) Math.ceil(Math.max(0, Math.min(1, fullness[slot])) * 3));
+            for (int n = 0; n < count; n++) {
+                int cell = blocks[slot] ? (blockIndex++ * 11) % 27 : (looseIndex++ * 37) % 81;
+                int width = blocks[slot] ? 3 : 9;
+                float x = ((cell % width) - (width - 1) / 2.0F) * (blocks[slot] ? 0.42F : 0.15F);
+                float z = ((cell / width) - (blocks[slot] ? 4 : 4)) * (blocks[slot] ? 0.19F : 0.20F);
+                float mound = blocks[slot] ? 0 : 0.035F * (1.0F - Math.min(1.0F, Math.abs(x) / 0.65F));
+                float y = blocks[slot] ? 0.68F : surface + mound;
+                float angle = (cell % 4) * (float) Math.PI / 2.0F;
+                result.add(new InventoryTransform(slot, new Vector3f(x, y, z),
+                        new Vector3f(blocks[slot] ? 0.30F : 0.32F),
+                        blocks[slot] ? new Quaternionf() : new Quaternionf().rotateY(angle).rotateX(radians(90.0F))));
+            }
+        }
+        return List.copyOf(result);
+    }
+
     /** Pure source-matrix path, kept independent of Bukkit registry initialization for regression tests. */
     static List<InventoryTransform> inventoryTransforms(TrailerSpec spec, int... amounts) {
-        if (amounts != null && spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER) {
-            // One representative item per occupied slot, bounded to the 27-slot inventory.
-            // Stable grid positions avoid the displays jumping as amounts change.
-            List<InventoryTransform> farm = new ArrayList<>();
-            for (int slot = 0; slot < Math.min(27, amounts.length); slot++) {
-                if (amounts[slot] <= 0) continue;
-                float x = (slot % 3 - 1) * 0.48F;
-                float z = ((slot / 3) % 3 - 1) * 0.62F;
-                float y = 0.78F + (slot / 9) * 0.16F;
-                farm.add(new InventoryTransform(slot, new Vector3f(x, y, z),
-                        new Vector3f(0.28F), new Quaternionf().rotateX(radians(90.0F))));
-            }
-            return List.copyOf(farm);
-        }
         if (amounts == null || (spec.kind() != TrailerSpec.Kind.FERTILIZER
                 && spec.kind() != TrailerSpec.Kind.SEEDER)) {
             return List.of();

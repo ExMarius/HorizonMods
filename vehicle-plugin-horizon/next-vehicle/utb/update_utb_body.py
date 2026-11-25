@@ -7,7 +7,7 @@ BODY='assets/vehicle/models/item/utb_650_body.json'
 ASSETS=Path(__file__).with_name('assets')
 MODEL=ASSETS/'utb_650_body.json'
 WHEELS=('utb_650_wheel_front','utb_650_wheel_rear')
-TEXTURES=('red','cream','roof','black','frame','metal','silver','lamp','tail','seat','logo','amber','gauges','plate_blue')
+TEXTURES=('red','cream','roof','black','frame','metal','silver','lamp','tail','seat','logo','amber','gauges','plate_blue','plate_tractor','plate_trailer')
 
 def validate(m):
     if not 10 <= len(m['elements']) <= 200: raise ValueError('unexpected model size')

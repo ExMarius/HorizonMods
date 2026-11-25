@@ -65,23 +65,27 @@ class TrailerInventoryLayoutTest {
     }
 
     @Test
-    void farmTrailerShowsEveryOccupiedSlotInsideBoundedBed() {
-        int[] amounts = new int[27]; java.util.Arrays.fill(amounts, 64);
-        var all = TrailerRig.inventoryTransforms(TrailerSpec.TRACTOR_TRAILER, amounts);
-        assertEquals(27, all.size());
-        for (int slot = 0; slot < 27; slot++) {
-            var t = all.get(slot);
-            assertEquals(slot, t.slot());
-            assertTrue(Math.abs(t.center().x) <= 0.48F + EPSILON);
-            assertTrue(Math.abs(t.center().z) <= 0.62F + EPSILON);
-            assertTrue(t.center().y >= 0.78F && t.center().y <= 1.10F + EPSILON);
-            assertEquals(0.28F, t.scale().x, EPSILON);
+    void farmCargoRisesAndSpreadsWithFillButBlocksStayLow() {
+        int[] amounts = new int[27]; boolean[] blocks = new boolean[27]; float[] fill = new float[27];
+        amounts[0] = 1; fill[0] = 1.0F / 64;
+        var one = TrailerRig.farmCargoTransforms(amounts, blocks, fill);
+        assertEquals(1, one.size());
+        java.util.Arrays.fill(amounts, 64); java.util.Arrays.fill(fill, 1.0F);
+        var full = TrailerRig.farmCargoTransforms(amounts, blocks, fill);
+        assertEquals(81, full.size());
+        assertTrue(full.getFirst().center().y > one.getFirst().center().y);
+        for (var item : full) {
+            assertTrue(Math.abs(item.center().x) <= 0.61F);
+            assertTrue(Math.abs(item.center().z) <= 0.81F);
+            assertTrue(item.center().y < 1.2F);
         }
-        amounts[0] = 0; amounts[1] = 1;
-        var reduced = TrailerRig.inventoryTransforms(TrailerSpec.TRACTOR_TRAILER, amounts);
-        assertEquals(26, reduced.size());
-        assertEquals(all.get(1), reduced.getFirst());
-        assertTrue(TrailerRig.inventoryTransforms(TrailerSpec.TRACTOR_TRAILER).isEmpty());
+        blocks[0] = true;
+        var mixed = TrailerRig.farmCargoTransforms(amounts, blocks, fill);
+        assertEquals(79, mixed.size());
+        assertEquals(0.68F, mixed.getFirst().center().y, EPSILON);
+        assertTrue(mixed.get(1).center().y > mixed.getFirst().center().y);
+        java.util.Arrays.fill(amounts, 0);
+        assertTrue(TrailerRig.farmCargoTransforms(amounts, blocks, fill).isEmpty());
     }
 
     @Test
