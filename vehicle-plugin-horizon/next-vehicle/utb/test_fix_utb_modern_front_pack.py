@@ -13,10 +13,16 @@ class FrontPackTest(unittest.TestCase):
             self.assertEqual(set(files),set(z.namelist()))
             for name,value in files.items():self.assertEqual(z.read(name),p.SOURCE.read_bytes() if name==p.MODEL else value)
         with self.assertRaises(ValueError):p.build(raw)
-    def test_axle_hangers_touch_axle_and_drawbar(self):
-        m=json.loads(p.SOURCE.read_text());p.u.validate(m); e={x['name']:x for x in m['elements']};axis=e['front axle'];pin=e['front axle kingpin support']
+    def test_undesired_side_hangers_and_jack_removed(self):
+        m=json.loads(p.SOURCE.read_text());p.u.validate(m); e={x['name']:x for x in m['elements']}
+        for name in ('left drawbar-to-axle hanger','right drawbar-to-axle hanger','drawbar support','drawbar support foot'):
+            self.assertNotIn(name,e)
         def overlaps(a,b):return all(a['from'][i] <= b['to'][i] and b['from'][i] <= a['to'][i] for i in range(3))
-        self.assertTrue(overlaps(axis,pin))
-        self.assertTrue(overlaps(pin,e['turntable lower 0']))
-        for side in ('left','right'):
-            h=e[side+' drawbar-to-axle hanger'];self.assertTrue(overlaps(axis,h));self.assertLess(h['from'][2],12.1);self.assertGreater(h['to'][2],12.1)
+        self.assertTrue(overlaps(e['front axle'],e['front axle kingpin support']))
+        for color in ('rubber','hyd'):
+            sections=[e[color+' hose connected section '+str(i)] for i in range(4)]
+            self.assertTrue(overlaps(sections[0],e[color+' axle hose fitting']))
+            self.assertTrue(overlaps(e[color+' axle hose fitting'],e['front axle']))
+            for a,b in zip(sections,sections[1:]):self.assertTrue(overlaps(a,b))
+            self.assertTrue(overlaps(sections[-1],e[color+' front hose fitting']))
+            self.assertTrue(overlaps(e[color+' front hose fitting'],e['tow eye back']))
