@@ -5,7 +5,7 @@ from pathlib import Path
 spec=importlib.util.spec_from_file_location('installer',Path(__file__).with_name('falix_install_horizon.py'))
 installer=importlib.util.module_from_spec(spec);spec.loader.exec_module(installer)
 installer.NAMES=installer.NAMES | {'garages.yml'}
-installer.OLD_JAR='b7c9b136dbd468be9312c66714236ea183ddcee895dd24f17d9c18567571711b'
-installer.OLD_PACK='a4e394a13c687d99ac096c0969bc3198865ba5fe'
-installer.OLD_CONFIG_SUFFIX='https://github.com/ExMarius/HorizonMods/releases/download/horizon-offroader-45592585127/HorizonOffRoader-1.21.4.zip'
+installer.OLD_JAR='35547db755c592da99fd4de16cba302318faa57c055c6e03ac1bf4c6932a4509'
+installer.OLD_PACK='51258b834bdd24fe2ab2cce4cb289780974d6bcd'
+installer.OLD_CONFIG_SUFFIX='https://github.com/ExMarius/HorizonMods/releases/download/horizon-offroader-45596788102/HorizonOffRoader-1.21.4.zip'
 installer.main()
