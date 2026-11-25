@@ -286,12 +286,16 @@ public final class TrailerRig {
     public void updateHarrow(Location root, float pitchDegrees, float wheelDegrees,
                              float discDegrees, double workPosition, boolean coupled) {
         if (spec.kind() != TrailerSpec.Kind.DISC_GD32 || !valid()) return;
+        // The authored GD32 model faces the opposite way from Minecraft's
+        // ItemDisplay entity basis. Flip the whole assembly, not individual parts.
+        Location visualRoot=root.clone();
+        visualRoot.setYaw(harrowVisualYaw(root.getYaw()));
         float lift=(float)(4.5 * (1.0-workPosition)/16.0);
         Quaternionf pitch=new Quaternionf().rotateX(-radians(pitchDegrees));
         Vector3f pivot=new Vector3f(0,5.5F/16F,1F/16F);
         Vector3f bodyCenter=new Vector3f(0,lift,0).sub(pivot);
         pitch.transform(bodyCenter); bodyCenter.add(pivot);
-        place(body,root,bodyCenter,pitch,new Vector3f(2),new Quaternionf());
+        place(body,visualRoot,bodyCenter,pitch,new Vector3f(2),new Quaternionf());
         for(int front=0;front<2;front++) for(int sideIndex=0;sideIndex<2;sideIndex++) {
             int side=sideIndex==0?-1:1, index=(front*2+sideIndex)*2;
             float sign=front==0 ? (side<0?1:-1) : (side<0?-1:1);
@@ -300,20 +304,24 @@ public final class TrailerRig {
             Vector3f gangCenter=new Vector3f(frameCenter).add(0,4.2F/16F,0);
             for(Vector3f v : new Vector3f[]{frameCenter,gangCenter}) {v.sub(pivot);pitch.transform(v);v.add(pivot);}
             Quaternionf base=new Quaternionf(pitch).rotateY(radians(gangYaw));
-            place(extras.get(index).entity,root,frameCenter,base,new Vector3f(2),new Quaternionf());
-            place(extras.get(index+1).entity,root,gangCenter,new Quaternionf(base).rotateX(radians(discDegrees)),new Vector3f(2),new Quaternionf());
+            place(extras.get(index).entity,visualRoot,frameCenter,base,new Vector3f(2),new Quaternionf());
+            place(extras.get(index+1).entity,visualRoot,gangCenter,new Quaternionf(base).rotateX(radians(discDegrees)),new Vector3f(2),new Quaternionf());
         }
         for(int sideIndex=0;sideIndex<2;sideIndex++) {
             int side=sideIndex==0?-1:1;
             Vector3f center=new Vector3f(side*12F/16F,5.5F/16F,1F/16F);
-            place(extras.get(8+sideIndex).entity,root,center,
+            place(extras.get(8+sideIndex).entity,visualRoot,center,
                     new Quaternionf(pitch).rotateX(radians(wheelDegrees)),new Vector3f(2),new Quaternionf());
         }
-        place(extras.get(10).entity,root,pivot,pitch,new Vector3f(2),new Quaternionf());
+        place(extras.get(10).entity,visualRoot,pivot,pitch,new Vector3f(2),new Quaternionf());
         ItemDisplay jack=extras.get(11).entity;
         jack.setVisibleByDefault(!coupled);
         Vector3f jackCenter=new Vector3f(0,0,26F/16F);
-        place(jack,root,jackCenter,pitch,new Vector3f(2),new Quaternionf());
+        place(jack,visualRoot,jackCenter,pitch,new Vector3f(2),new Quaternionf());
+    }
+
+    static float harrowVisualYaw(float rootYaw) {
+        return rootYaw + 180.0F;
     }
 
     private void syncInventoryDisplays(Location root, ItemStack[] contents) {

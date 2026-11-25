@@ -1,0 +1,66 @@
+name: Fix disc harrow orientation
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['.github/workflows/disc-gd32-orientation-deploy.yml', 'paper-vehicles/deploy/falix_fix_disc_orientation.py']
+permissions:
+  contents: write
+  id-token: write
+concurrency:
+  group: falix-vehicle-deploy
+  cancel-in-progress: false
+jobs:
+  deliver:
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods' && startsWith(github.event.head_commit.message, 'Deploy disc orientation')
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate harrow assets
+        run: cd vehicle-plugin-horizon/next-vehicle/utb/disc_gd32 && python3 -m unittest test_geometry test_models test_pack
+      - name: Build and test plugin
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build
+      - name: Test harrow and existing attachments on disposable servers
+        run: |
+          npm install --prefix /tmp/horizon-test mineflayer@4.39.0
+          export NODE_PATH=/tmp/horizon-test/node_modules
+          set -o pipefail
+          for test in smoke_disc_gd32 smoke_utb_plough smoke_tractor_trailer; do
+            python3 "vehicle-plugin-horizon/tools/${test}.py" vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar 2>&1 | tee /tmp/smoke.log || {
+              python3 -c "from pathlib import Path; print('::error::'+' | '.join(Path('/tmp/smoke.log').read_text().splitlines()[-25:]).replace('%','%25')[:8000])"
+              exit 1
+            }
+          done
+      - name: Reuse verified installed pack without changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download horizon-offroader-45723536290 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
+          echo '136f003f9c56ee849881d41fb6697876353b5681  /tmp/base/HorizonOffRoader-1.21.4.zip' | sha1sum -c -
+          cp /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/HorizonOffRoader-1.21.4.zip
+          cp vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/HorizonVehicles-1.21.4.jar
+      - name: Publish matching pack and JAR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="horizon-offroader-${GITHUB_RUN_ID}"
+          gh release create "$tag" /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Horizon vehicles and GD-3.2 disc harrow' --notes 'Turns the whole GD-3.2 display assembly toward the hitch. In-game rendering and protection compatibility require verification.'
+          echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
+      - name: Verify public pack
+        run: |
+          curl -fsSL --retry 3 "$PACK_URL" -o /tmp/public-pack.zip
+          cmp /tmp/public-pack.zip /tmp/HorizonOffRoader-1.21.4.zip
+      - name: Back up and install matching pair
+        run: |
+          set -o pipefail
+          python3 paper-vehicles/deploy/falix_fix_disc_orientation.py /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip "$PACK_URL" 2>&1 | tee /tmp/install.log || {
+            python3 -c "from pathlib import Path; print('::error::'+Path('/tmp/install.log').read_text().splitlines()[-1].replace('%','%25')[:500])"
+            exit 1
+          }
