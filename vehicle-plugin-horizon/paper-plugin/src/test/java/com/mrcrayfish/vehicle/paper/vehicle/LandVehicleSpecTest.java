@@ -104,15 +104,18 @@ class LandVehicleSpecTest {
         assertEquals(LandVehicleSpec.UTB_650, utb);
         assertEquals(LandVehicleSpec.TRACTOR, LandVehicleSpec.byId("tractor"));
         assertEquals("utb_650_body", utb.bodyModel());
-        assertEquals(2.05F, utb.entityWidth(), EPSILON);
-        assertEquals(2.55F, utb.entityHeight(), EPSILON);
+        assertEquals(2.25F, utb.entityWidth(), EPSILON);
+        assertEquals(2.75F, utb.entityHeight(), EPSILON);
         assertEquals(38.88F / 16.0F, utb.frontAxleOffset() - utb.rearAxleOffset(), EPSILON);
-        assertEquals(6.56F / 16.0F, utb.firstFrontWheel().centerY(), EPSILON);
-        assertEquals(11.6F / 16.0F, utb.firstRearWheel().centerY(), EPSILON);
+        assertEquals(6.9F / 16.0F, utb.firstFrontWheel().centerY(), EPSILON);
+        assertEquals(12.4F / 16.0F, utb.firstRearWheel().centerY(), EPSILON);
         assertEquals(0.0F, utb.firstFrontWheel().halfWidthOffset(), EPSILON);
         assertEquals(0.0F, utb.firstRearWheel().halfWidthOffset(), EPSILON);
         assertEquals(4, utb.wheels().size());
         assertEquals(1, utb.seats().size());
+        assertEquals(utb.rearAxleOffset(), utb.seats().getFirst().sourceOffset().z(), EPSILON);
+        assertEquals(20.8F / 16.0F, utb.seats().getFirst().sourceOffset().y() + LandVehicleSpec.RIDER_HEIGHT_CORRECTION, EPSILON);
+        assertEquals(8.8F / 16.0F, utb.steering().center().z() - utb.seats().getFirst().sourceOffset().z(), EPSILON);
         assertTrue(utb.canTowTrailers());
         assertEquals(com.mrcrayfish.vehicle.paper.mechanic.EngineType.LARGE_MOTOR, utb.defaultEngineType());
     }

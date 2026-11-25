@@ -1146,7 +1146,7 @@ public final class LandVehicle {
         }
 
         if (!charging) {
-            double frontCircumference = "utb_650".equals(spec.id()) ? 3.0D * 13.12D
+            double frontCircumference = "utb_650".equals(spec.id()) ? 3.0D * 13.8D
                     : 24.0D * spec.firstFrontWheel().scaleY();
             frontWheelRotation -= (float) ((frontWheelRotationSpeed * 16.0D / frontCircumference) * 20.0D);
         }
@@ -1157,7 +1157,7 @@ public final class LandVehicle {
         if (charging) {
             rearWheelRotationSpeed = spec.enginePower() * chargingAmount;
         }
-        double rearCircumference = "utb_650".equals(spec.id()) ? 3.0D * 23.2D
+        double rearCircumference = "utb_650".equals(spec.id()) ? 3.0D * 24.8D
                 : 24.0D * spec.firstRearWheel().scaleY();
         rearWheelRotation -= (float) ((rearWheelRotationSpeed * 16.0D / rearCircumference) * 20.0D);
     }

@@ -19,7 +19,7 @@ class AtlasTest(unittest.TestCase):
                 if n not in f.MODELS:self.assertEqual(z.read(n),v,n)
             for path in f.MODELS:
                 before=json.loads(files[path]);after=json.loads(z.read(path))
-                for n in u.TEXTURES:
+                for n in after['textures']:
                     self.assertEqual(after['textures'][n],f'vehicle:item/utb_{n}')
                     self.assertEqual(z.read(f'assets/vehicle/textures/item/utb_{n}.png'),files[f'assets/vehicle/textures/utb/{n}.png'])
                 after['textures']=before['textures'];self.assertEqual(after,before)

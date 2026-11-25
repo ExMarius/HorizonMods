@@ -225,27 +225,27 @@ public record LandVehicleSpec(
             null, null, List.of(), false
     );
 
-    /** UTB 650M proportions: the supplied 1:1 dimensions, in Minecraft metres. */
+    /** UTB-inspired dimensions requested for the second version, in Minecraft metres. */
     public static final LandVehicleSpec UTB_650 = new LandVehicleSpec(
             "utb_650", "UTB 650", "utb_650_body",
-            2.05F, 2.55F, 1.0F,
+            2.25F, 2.75F, 1.0F,
             1.0F, 0.0F, 0.0F,
-            8.0F, 35.0F, 20.88F * MODEL_UNIT, -18.0F * MODEL_UNIT, 5.0F,
+            8.0F, 35.0F, 13.68F * MODEL_UNIT, -25.2F * MODEL_UNIT, 5.0F,
             15_000.0F, 0.25F, 0.8F, 1.6F, "vehicle:entity.tractor.engine",
-            true, new Point(4.0F * MODEL_UNIT, 37.2F * MODEL_UNIT, 14.1F * MODEL_UNIT),
-            null, // Engine is modeled into the chassis; mechanics still uses LARGE_MOTOR.
-            new Part("go_kart_steering_wheel", new Point(0.0F, 21.0F * MODEL_UNIT, -6.7F * MODEL_UNIT),
-                    0.9F, -67.5F, 0.0F, 0.0F),
+            true, new Point(4.0F * MODEL_UNIT, 37.2F * MODEL_UNIT, 13.2F * MODEL_UNIT),
+            null, // Modeled D-110-like engine; the mechanics still uses LARGE_MOTOR.
+            new Part("go_kart_steering_wheel", new Point(0.0F, 24.0F * MODEL_UNIT, -16.4F * MODEL_UNIT),
+                    0.71F, -55.0F, 0.0F, 0.0F),
             null, null, List.of(),
             List.of(
-                    new Wheel(-1, true, -13.36F * MODEL_UNIT, 6.56F * MODEL_UNIT, 20.88F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
-                    new Wheel(1, true, 13.36F * MODEL_UNIT, 6.56F * MODEL_UNIT, 20.88F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
-                    new Wheel(-1, false, -13.36F * MODEL_UNIT, 11.6F * MODEL_UNIT, -18.0F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
-                    new Wheel(1, false, 13.36F * MODEL_UNIT, 11.6F * MODEL_UNIT, -18.0F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F)
+                    new Wheel(-1, true, -14.65F * MODEL_UNIT, 6.9F * MODEL_UNIT, 13.68F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
+                    new Wheel(1, true, 14.65F * MODEL_UNIT, 6.9F * MODEL_UNIT, 13.68F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
+                    new Wheel(-1, false, -14.65F * MODEL_UNIT, 12.4F * MODEL_UNIT, -25.2F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
+                    new Wheel(1, false, 14.65F * MODEL_UNIT, 12.4F * MODEL_UNIT, -25.2F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F)
             ),
-            // RIDER_HEIGHT_CORRECTION adds 4 px; the cushion is at y=17.2.
-            List.of(seat(true, 0.0F, 13.2F, -18.0F, 1.0F, 0.0F, 0.0F)),
-            true, "tow_bar", new Point(0.0F, 0.0F, -32.1F), new Point(0.0F, 0.0F, 0.0F),
+            // Rider correction adds 4 px; cushion y=20.8 and rear axle z=-25.2.
+            List.of(seat(true, 0.0F, 16.8F, -25.2F, 1.0F, 0.0F, 0.0F)),
+            true, "tow_bar", new Point(0.0F, 0.0F, -34.8F), new Point(0.0F, 0.0F, 0.0F),
             null, null, List.of(), false
     );
 

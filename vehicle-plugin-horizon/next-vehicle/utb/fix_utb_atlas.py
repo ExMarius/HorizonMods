@@ -14,8 +14,8 @@ def build(data,expected=BASE_SHA1):
     if json.loads(files['pack.mcmeta'])['pack']['pack_format']!=46:raise ValueError('wrong pack format')
     for path in MODELS:
         model=json.loads(files[path]);u.validate(model)
-        for name in u.TEXTURES:
-            if model['textures'].get(name)!=f'vehicle:utb/{name}':raise ValueError('unexpected original texture '+name)
+        for name,ref in model['textures'].items():
+            if name not in u.TEXTURES or ref!=f'vehicle:utb/{name}':raise ValueError('unexpected original texture '+name)
             model['textures'][name]=f'vehicle:item/utb_{name}'
         files[path]=json.dumps(model,separators=(',',':')).encode()
     for name in u.TEXTURES:
