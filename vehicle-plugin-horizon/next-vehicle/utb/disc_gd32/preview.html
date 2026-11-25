@@ -1,0 +1,76 @@
+<!doctype html><html lang="ro"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Grapă cu discuri GD-3.2 — previzualizare</title><style>*{box-sizing:border-box}body{margin:0;background:#111b1d;color:#f0f5ef;font:15px system-ui}header{padding:15px 22px;border-bottom:1px solid #354643;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}h1{margin:0 0 3px;font-size:20px}p{margin:3px 0;color:#b4c5bd}button{background:#31483d;color:#fff;border:1px solid #62796a;border-radius:7px;padding:9px 13px;cursor:pointer}.wrap{display:grid;grid-template-columns:1fr 255px;height:calc(100vh - 91px);min-height:470px}#view{position:relative;min-width:0}canvas{display:block;width:100%;height:100%}aside{border-left:1px solid #354643;padding:22px;line-height:1.6}aside b{color:#d1e9b2}small{display:block;color:#a4b8af;line-height:1.5;margin-top:18px}.badge{display:inline-block;border:1px solid #607b67;border-radius:20px;padding:3px 10px;color:#cce7b4;font-size:12px}@media(max-width:700px){.wrap{display:flex;flex-direction:column;height:auto}#view{height:64vh;min-height:380px}aside{border:0;border-top:1px solid #354643}}</style><script type="importmap">{"imports":{"three":"/three/build/three.module.js","three/addons/":"/three/examples/jsm/"}}</script></head><body><header><div><h1>Grapă cu discuri — concept GD-3.2</h1><p>Previzualizare 3D · nu este instalată în plugin</p></div><div><button id="mode">Ridică pentru transport</button> <button id="anim">Oprește mișcarea</button> <button id="reset">Centrează</button></div></header><div class="wrap"><div id="view"></div><aside><span class="badge">MODEL DE PREVIZUALIZARE</span><p><b>Lățime țintă:</b> 3,25 blocuri<br><b>Lungime schițată:</b> aproximativ 3,5 blocuri<br><b>Înălțime:</b> maximum 1,35 blocuri</p><p><b>4 baterii în X</b><br>32 talere · 2 roți · proțap și hidraulică<br><b id="mode-label">Poziție: lucru pe câmp</b></p><small>Trage cu mouse-ul pentru a roti, folosește rotița pentru zoom. Comută între lucru și transport. Mișcarea și mecanismul sunt demonstrative, nu sunt încă în joc.</small></aside></div><script type="module">
+import * as T from 'three';import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const v=document.querySelector('#view'),scene=new T.Scene();scene.background=new T.Color('#b7c5b7');const cam=new T.PerspectiveCamera(38,1,.01,100),renderer=new T.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.outputColorSpace=T.SRGBColorSpace;v.append(renderer.domElement);const controls=new OrbitControls(cam,renderer.domElement);controls.enableDamping=true;
+scene.add(new T.HemisphereLight(0xffffff,0x67745d,2));const sun=new T.DirectionalLight(0xffffff,2.4);sun.position.set(4,8,5);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-5;sun.shadow.camera.right=5;sun.shadow.camera.top=5;sun.shadow.camera.bottom=-5;scene.add(sun);
+const M=(c,metal=0,rough=.72)=>new T.MeshStandardMaterial({color:c,metalness:metal,roughness:rough});const red=M('#1666b8',.30),redDark=M('#104a87',.25),dark=M('#262626',.3),steel=M('#c4ccd4',.72,.33),rubber=M('#1e1e1e'),rim=M('#e6dcc5',.2),hyd=M('#566068',.65),weight=M('#656967',.25),groundmat=M('#8b9b79');
+// All values below are Blockbench units; the implement group scales them to blocks.
+const implement=new T.Group();implement.scale.setScalar(1/16);scene.add(implement);
+function box(p,m,x,y,z,w,h,d){const o=new T.Mesh(new T.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;p.add(o);return o}
+function beam(p,m,a,b,width,depth){const d=new T.Vector3().subVectors(b,a),o=box(p,m,(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2,width,d.length(),depth);o.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());return o}
+function cylinder(p,m,x,y,z,r,len,axis='x',segments=12){const o=new T.Mesh(new T.CylinderGeometry(r,r,len,segments),m);o.position.set(x,y,z);if(axis==='x')o.rotation.z=Math.PI/2;else if(axis==='z')o.rotation.x=Math.PI/2;o.castShadow=true;p.add(o);return o}const V=(x,y,z)=>new T.Vector3(x,y,z);
+// Two longitudinal beams and three crossmembers as specified in the drawing.
+for(const x of [-5,5])box(implement,red,x,11.25,-4,2.5,2.5,32);
+for(const z of [-20,-3,12])box(implement,red,0,11.25,z,20,2.5,2.5);
+// Drawbar ends reach the transverse beam; ring is horizontal with a real hole.
+for(const side of [-1,1])beam(implement,red,V(side*7,11,-20),V(0,10.5,-35),1.7,1.7);
+box(implement,redDark,0,10.5,-35,3.4,1.4,2.5);let eye=new T.Mesh(new T.TorusGeometry(1.0,.25,8,16),dark);eye.rotation.x=Math.PI/2;eye.position.set(0,10.5,-36);implement.add(eye);
+// Folded parking leg, horizontal under the drawbar as in the latest sketch.
+box(implement,dark,0,9.1,-26,1.0,1.0,5);cylinder(implement,steel,0,9.8,-23.5,.55,1.4);
+// Ballast trays overlap the front beam and blocks rest directly on their trays.
+for(const side of [-1,1]){box(implement,redDark,side*12,13.5,-18,8,2,6);for(let n=-1;n<=1;n++)box(implement,weight,side*12+n*2.35,15.4,-18,2.1,1.8,5)}
+let gangs=[],spinningAxles=[];const discRadius=4.2;
+function discGeo(teeth){let shape=new T.Shape(),count=teeth?48:24;for(let i=0;i<=count;i++){let a=i*Math.PI*2/count,r=(discRadius-.10)*(teeth&&i%4===0?.91:1),x=Math.cos(a)*r,y=Math.sin(a)*r;if(i===0)shape.moveTo(x,y);else shape.lineTo(x,y)}let hole=new T.Path();hole.absarc(0,0,.52,0,Math.PI*2,true);shape.holes.push(hole);let geom=new T.ExtrudeGeometry(shape,{depth:.24,bevelEnabled:true,bevelThickness:.08,bevelSize:.10,bevelSegments:1});geom.translate(0,0,-.12);geom.rotateY(Math.PI/2);return geom}const smooth=discGeo(false),notched=discGeo(true);
+// Centers are the midpoints of the given end-point pairs. 18° and a 23-unit
+// beam cannot both exactly reach endpoints separated by (23,7), so the beam
+// uses the requested 23 and 18°; its midpoint matches the drawing.
+for(const front of [true,false])for(const side of [-1,1]){
+ const cx=side*13.5,cz=front?-12.5:10.5;
+ const sign=front?(side<0?1:-1):(side<0?-1:1),angle=sign*T.MathUtils.degToRad(18);
+ const gang=new T.Group();gang.position.set(cx,4.2,cz);gang.rotation.y=-angle;implement.add(gang);gangs.push(gang);
+ const shaft=new T.Group();gang.add(shaft);spinningAxles.push(shaft);box(shaft,dark,0,0,0,23,1,1);
+ box(gang,red,0,5.3,0,23,2,2);
+ // Bearings sit between discs, so the stationary housings do not enter blades.
+ for(const x of [-8.4,0,8.4]){box(gang,dark,x,2.15,0,.85,4.3,1.1);cylinder(gang,hyd,x,0,0,.8,.85)}
+ for(let i=0;i<8;i++){const x=(i-3.5)*2.8;const d=new T.Mesh(front?notched:smooth,steel);d.position.x=x;d.castShadow=true;shaft.add(d);cylinder(shaft,dark,x,0,0,.75,.42);
+  // Scraper is mounted at the side face of the disc with an intentional gap.
+  box(gang,dark,x+.36,2.8,.0,.20,5.0,.55);box(gang,steel,x+.36,-1.0,.25,.20,3.0,1.2);
+ }
+ // Explicit structural arm from center rail to carrier (outer gangs not floating).
+ beam(implement,redDark,V(side*5,11.25,cz),V(cx,9.5,cz),1.1,1.1);
+}
+// Central transport axle: a continuous shaft reaches the center of both wheels.
+// Its two sliding bearing blocks remain captured between rails on the chassis.
+let axle=new T.Group();axle.position.set(0,5.5,-1);implement.add(axle);cylinder(axle,dark,0,0,0,.55,24.8);let wheels=[];
+for(const side of [-1,1]){let wheel=new T.Group();wheel.position.set(side*12,0,0);axle.add(wheel);wheels.push(wheel);cylinder(wheel,rubber,0,0,0,5.5,3.5,'x',12);cylinder(wheel,rim,side*1.76,0,0,3.25,.12,'x',12);cylinder(wheel,dark,side*1.84,0,0,.9,.25,'x',12);for(let i=0;i<6;i++){let a=i*Math.PI/3;cylinder(wheel,steel,side*1.98,Math.cos(a)*2.1,Math.sin(a)*2.1,.22,.18,'x',8)}}
+// Short captive sleeves are anchored beneath the transverse frame; only
+// the narrower inner rods extend to the axle. No rails protrude below it.
+const guideRods=[];
+for(const x of [-5,5]){
+ box(implement,red,x,11.25,-1.8,2.0,2.5,3.4); // joins the existing crossmember
+ box(implement,redDark,x,10.1,-1,2.0,1.8,2.2);
+ cylinder(implement,dark,x,8.0,-1,.62,3.0,'y');
+ const rod=cylinder(implement,steel,x,5.65,-1,.26,1.7,'y');guideRods.push({x,rod});
+ box(axle,hyd,x,0,0,1.8,1.5,1.8);cylinder(axle,steel,x,0,0,.85,1.9);
+}
+// Support crossmember at Z=-6 ties the triangular tower to both longitudinal rails.
+box(implement,red,0,11.25,-6,10,2.5,2.0);
+beam(implement,redDark,V(-2,12,-6),V(0,17,-6),1,1);beam(implement,redDark,V(2,12,-6),V(0,17,-6),1,1);cylinder(implement,steel,0,16,-6,.7,2);
+// Clevis at axle and its pin: the hydraulic link is anchored at both ends.
+box(axle,redDark,0,.25,0,2,1.5,1.2);cylinder(axle,steel,0,0,0,.7,2.2);
+const top=V(0,16,-6),lower=V(0,5.5,-1),initialDir=lower.clone().sub(top).normalize();
+const ramLength=6,ramEnd=top.clone().addScaledVector(initialDir,ramLength);
+let ram=beam(implement,dark,top,ramEnd,1.4,1.4),rod=beam(implement,steel,ramEnd,lower,.55,.55);
+const rodLength=ramEnd.distanceTo(lower);
+function moveRod(mesh,a,b,length){const d=new T.Vector3().subVectors(b,a);mesh.position.copy(a).add(b).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.clone().normalize());mesh.scale.y=d.length()/length}
+function setTransport(t){
+ implement.position.y=4.5/16*t;axle.position.y=5.5-4.5*t;
+ // Slide each rod from its short fixed sleeve to the moving axle housing.
+ for(const guide of guideRods){const end=7.1,low=axle.position.y;guide.rod.position.y=(end+low)/2;guide.rod.scale.y=(end-low)/1.7;}
+ const bottom=V(0,axle.position.y,-1),direction=bottom.clone().sub(top).normalize(),tip=top.clone().addScaledVector(direction,ramLength);
+ moveRod(ram,top,tip,ramLength);moveRod(rod,tip,bottom,rodLength);
+}
+function hose(pts){const curve=new T.CatmullRomCurve3(pts.map(p=>V(...p)));implement.add(new T.Mesh(new T.TubeGeometry(curve,50,.20,7,false),dark))}
+hose([[.4,16,-6],[2,14,-10],[2.2,12,-18],[1.2,12,-25],[.5,11,-34]]);hose([[-.4,16,-6],[-2,14,-10],[-2.2,12,-18],[-1.2,12,-25],[-.5,11,-34]]);
+const floor=new T.Mesh(new T.PlaneGeometry(30,30),groundmat);floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);let grid=new T.GridHelper(20,20,0x6b806c,0x9aa997);grid.position.y=.002;scene.add(grid);
+function reset(){controls.target.set(0,.50,.15);cam.position.set(5,3.1,5.4);controls.update()}reset();document.querySelector('#reset').onclick=reset;let run=true,transport=false,progress=0;document.querySelector('#mode').onclick=e=>{transport=!transport;e.target.textContent=transport?'Coboară pentru lucru':'Ridică pentru transport';document.querySelector('#mode-label').textContent=transport?'Poziție: transport':'Poziție: lucru pe câmp'};document.querySelector('#anim').onclick=e=>{run=!run;e.target.textContent=run?'Oprește mișcarea':'Pornește mișcarea'};new ResizeObserver(()=>{cam.aspect=v.clientWidth/v.clientHeight;cam.updateProjectionMatrix();renderer.setSize(v.clientWidth,v.clientHeight)}).observe(v);function tick(){requestAnimationFrame(tick);progress+=(Number(transport)-progress)*.06;setTransport(progress);if(run){for(const w of wheels)w.rotation.x-=.015;if(!transport)for(const a of spinningAxles)a.rotation.x-=.015;}controls.update();renderer.render(scene,cam)}tick();
+</script></body></html>
