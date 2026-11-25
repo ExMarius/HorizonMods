@@ -19,9 +19,10 @@ async function run(){
  bot.chat('/tp @s ~ ~ ~3');await wait(800);bot.activateEntity(tractor);await wait(2000);test(bot.vehicle,'not mounted')
  bot.chat('/vehicle disc');await wait(1500);test(messages.some(s=>s.includes('Grapa coboară')),'not lowered')
  test(updates===0,'worked while stationary')
- const start=tractor.position.clone();const send=setInterval(()=>bot._client.write('player_input',{inputs:{forward:true}}),50)
+ const start=tractor.position.clone(), harrowStart=harrow.position.clone();const send=setInterval(()=>bot._client.write('player_input',{inputs:{forward:true}}),50)
  await wait(5000);clearInterval(send);bot._client.write('player_input',{inputs:{}});await wait(1200)
- test(tractor.position.distanceTo(start)>.3,'tractor did not move');test(updates>0,'no farmland created while moving forward')
+ test(tractor.position.distanceTo(start)>.3,'tractor did not move');
+ test(harrow.position.distanceTo(harrowStart)>.15,'harrow did not follow tractor');test(updates>0,'no farmland created while moving forward')
  bot.chat('/vehicle disc');await wait(1500);test(messages.some(s=>s.includes('Grapa se ridică')),'not raised')
  const afterRaise=updates;const drive=setInterval(()=>bot._client.write('player_input',{inputs:{forward:true}}),50)
  await wait(2500);clearInterval(drive);bot._client.write('player_input',{inputs:{}});await wait(1000)

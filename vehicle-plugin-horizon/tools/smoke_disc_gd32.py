@@ -52,7 +52,9 @@ def main(jar):
                             break
                     print('Relevant server lines:',*[line for line in lines if any(x in line.lower() for x in ('utb','vehicle','horizonbot','garaj','watchdog'))][:30],sep='\n',flush=True)
                     raise RuntimeError('vehicle missing from both active and garage persisted data')
-                print('Persisted in '+('active vehicles' if 'utb_650' in data else 'garage'),flush=True)
+                if 'disc_gd32' not in data:
+                    raise RuntimeError('harrow not persisted in vehicle data')
+                print('Harrow and tractor saved; restarting disposable server.',flush=True)
                 if 'Could not pass event' in text or 'Exception in server tick loop' in text: raise RuntimeError('server reported event or tick failure')
                 print('Vehicle save verified; restarting disposable server.',flush=True)
                 proc=subprocess.Popen(['java','-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=out,stderr=subprocess.STDOUT,text=True)
