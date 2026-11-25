@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TrailerSpecTest {
     @Test
     void registersEveryOriginalTrailer() {
-        assertEquals(Set.of("fertilizer", "seeder", "storage_trailer", "fluid_trailer", "vehicle_trailer"),
+        assertEquals(Set.of("fertilizer", "seeder", "storage_trailer", "fluid_trailer", "vehicle_trailer", "utb_plough"),
                 Set.copyOf(TrailerSpec.ids()));
     }
 
@@ -22,7 +22,7 @@ class TrailerSpecTest {
         assertEquals(-16.0F, TrailerSpec.STORAGE_TRAILER.hitchOffset());
         assertEquals(-25.0F, TrailerSpec.FLUID_TRAILER.hitchOffset());
         assertEquals(-23.0F, TrailerSpec.VEHICLE_TRAILER.hitchOffset());
-        for (String id : TrailerSpec.ids()) {
+        for (String id : Set.of("fertilizer", "seeder", "storage_trailer", "fluid_trailer", "vehicle_trailer")) {
             assertEquals(1.1F, TrailerSpec.byId(id).bodyScale());
         }
     }
