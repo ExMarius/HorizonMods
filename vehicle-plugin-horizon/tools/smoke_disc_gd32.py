@@ -52,8 +52,9 @@ def main(jar):
                             break
                     print('Relevant server lines:',*[line for line in lines if any(x in line.lower() for x in ('utb','vehicle','horizonbot','garaj','watchdog'))][:30],sep='\n',flush=True)
                     raise RuntimeError('vehicle missing from both active and garage persisted data')
-                if 'disc_gd32' not in data:
-                    raise RuntimeError('harrow not persisted in vehicle data')
+                trailer_data=(root/'plugins/MrCrayfishVehiclePlugin/trailers.yml').read_text()
+                if 'disc_gd32' not in trailer_data:
+                    raise RuntimeError('harrow not persisted in trailer data')
                 print('Harrow and tractor saved; restarting disposable server.',flush=True)
                 if 'Could not pass event' in text or 'Exception in server tick loop' in text: raise RuntimeError('server reported event or tick failure')
                 print('Vehicle save verified; restarting disposable server.',flush=True)
@@ -63,7 +64,8 @@ def main(jar):
                 while time.monotonic()<deadline:
                     time.sleep(2); out.flush(); newlog=log.read_text(errors='replace')[start_at:]
                     if proc.poll() is not None: raise RuntimeError('server exited during restart')
-                    if 'Done (' in newlog and ('Loaded 1 vehicle(s);' in newlog or '1 stored in garages.' in newlog): break
+                    if ('Done (' in newlog and 'Loaded 1 trailer(s).' in newlog
+                            and ('Loaded 1 vehicle(s);' in newlog or '1 stored in garages.' in newlog)): break
                 else: raise RuntimeError('persisted vehicle did not load after restart')
                 proc.stdin.write('stop\n'); proc.stdin.flush(); proc.wait(timeout=90)
                 out.flush(); newlog=log.read_text(errors='replace')[start_at:]
