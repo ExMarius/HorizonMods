@@ -230,21 +230,21 @@ public record LandVehicleSpec(
             "utb_650", "UTB 650", "utb_650_body",
             2.25F, 2.75F, 1.0F,
             1.0F, 0.0F, 0.0F,
-            8.0F, 35.0F, 13.68F * MODEL_UNIT, -25.2F * MODEL_UNIT, 5.0F,
+            8.0F, 35.0F, 9.68F * MODEL_UNIT, -25.2F * MODEL_UNIT, 5.0F,
             15_000.0F, 0.25F, 0.8F, 1.6F, "vehicle:entity.tractor.engine",
-            true, new Point(4.0F * MODEL_UNIT, 37.2F * MODEL_UNIT, 13.2F * MODEL_UNIT),
+            true, new Point(4.0F * MODEL_UNIT, 37.2F * MODEL_UNIT, 9.2F * MODEL_UNIT),
             null, // Modeled D-110-like engine; the mechanics still uses LARGE_MOTOR.
             new Part("go_kart_steering_wheel", new Point(0.0F, 24.0F * MODEL_UNIT, -16.4F * MODEL_UNIT),
                     0.71F, -55.0F, 0.0F, 0.0F),
             null, null, List.of(),
             List.of(
-                    new Wheel(-1, true, -14.65F * MODEL_UNIT, 6.9F * MODEL_UNIT, 13.68F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
-                    new Wheel(1, true, 14.65F * MODEL_UNIT, 6.9F * MODEL_UNIT, 13.68F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
+                    new Wheel(-1, true, -14.65F * MODEL_UNIT, 6.9F * MODEL_UNIT, 9.68F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
+                    new Wheel(1, true, 14.65F * MODEL_UNIT, 6.9F * MODEL_UNIT, 9.68F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
                     new Wheel(-1, false, -14.65F * MODEL_UNIT, 12.4F * MODEL_UNIT, -25.2F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F),
                     new Wheel(1, false, 14.65F * MODEL_UNIT, 12.4F * MODEL_UNIT, -25.2F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F)
             ),
-            // Rider correction adds 4 px; cushion y=20.8 and rear axle z=-25.2.
-            List.of(seat(true, 0.0F, 16.8F, -25.2F, 1.0F, 0.0F, 0.0F)),
+            // Lower rider anchor 4 px relative to the cushion to address visible floating.
+            List.of(seat(true, 0.0F, 12.8F, -25.2F, 1.0F, 0.0F, 0.0F)),
             true, "tow_bar", new Point(0.0F, 0.0F, -34.8F), new Point(0.0F, 0.0F, 0.0F),
             null, null, List.of(), false
     );

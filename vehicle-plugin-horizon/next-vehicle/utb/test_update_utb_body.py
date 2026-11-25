@@ -18,6 +18,17 @@ class UpdateUTBTest(unittest.TestCase):
         self.assertGreater(actual(parts['left rear fender']['from'][1]),24.8)
         self.assertFalse(any('glass' in name for name in parts))
         self.assertEqual(10,sum('vent rib' in n for n in parts))
+        self.assertIn('UTB analogue gauges',parts)
+        self.assertIn('hydraulic lever',parts)
+        self.assertIn('red bonnet cowl',parts)
+        decode_z=lambda v:2*(v-8)
+        hood_back=decode_z(parts['hood top']['from'][2]);cowl_front=decode_z(parts['red bonnet cowl']['to'][2])
+        self.assertLess(abs(hood_back-cowl_front),0.1)
+        self.assertLess(decode_z(parts['red bonnet cowl']['from'][2])-decode_z(parts['left front post']['to'][2]),0.2)
+        self.assertLessEqual(parts['left mirror arm']['from'][1],parts['left mirror']['to'][1])
+        self.assertGreaterEqual(parts['left mirror arm']['to'][1],parts['left mirror']['from'][1])
+        self.assertAlmostEqual(9.68,decode_z((parts['front axle']['from'][2]+parts['front axle']['to'][2])/2),places=3)
+        self.assertAlmostEqual(-25.2,decode_z((parts['rear axle']['from'][2]+parts['rear axle']['to'][2])/2),places=3)
     def test_wheel_dimensions_pivots_and_segments(self):
         for model,diameter,width in [('utb_650_wheel_front',13.8,3.5),('utb_650_wheel_rear',24.8,6.7)]:
             m=json.loads((u.ASSETS/(model+'.json')).read_text());u.validate(m)
