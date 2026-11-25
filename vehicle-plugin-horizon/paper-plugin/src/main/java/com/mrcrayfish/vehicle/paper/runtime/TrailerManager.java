@@ -551,6 +551,36 @@ public final class TrailerManager {
         save();
     }
 
+    public void coupleHarrow(Player player) {
+        if (!player.hasPermission("vehicle.plough")) { player.sendMessage("Nu ai permisiunea vehicle.plough."); return; }
+        Location here=player.getLocation();
+        LandVehicle tractor=vehicles.vehicles().stream()
+                .filter(v -> "utb_650".equals(v.spec().id()) && !v.showcase() && v.canDrive(player) && v.spec().canTowTrailers())
+                .filter(v -> v.location().getWorld().equals(here.getWorld()) && v.location().distanceSquared(here)<=25)
+                .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(here))).orElse(null);
+        PaperTrailer implement=trailers.values().stream()
+                .filter(t -> t.spec().kind()==TrailerSpec.Kind.DISC_GD32 && t.pullerType()==PaperTrailer.PullerType.NONE)
+                .filter(t -> t.location().getWorld().equals(here.getWorld()) && t.location().distanceSquared(here)<=25)
+                .min(java.util.Comparator.comparingDouble(t -> t.location().distanceSquared(here))).orElse(null);
+        if (tractor==null || implement==null || hasVehicleChild(tractor.id())
+                || tractor.tractorTrailerTowBarLocation().distanceSquared(implement.location())>25) {
+            player.sendMessage("Ai nevoie de un UTB autorizat și o grapă liberă, apropiate."); return;
+        }
+        implement.attach(PaperTrailer.PullerType.VEHICLE,tractor.id());
+        playHitch(tractor.location()); save();
+        player.sendMessage("Grapă cuplată în poziție de transport. /vehicle disc pentru coborâre.");
+    }
+
+    public void toggleHarrow(Player player) {
+        if (!player.hasPermission("vehicle.plough")) { player.sendMessage("Nu ai permisiunea vehicle.plough."); return; }
+        for (PaperTrailer t : trailers.values()) {
+            if (t.spec().kind()==TrailerSpec.Kind.DISC_GD32 && player.equals(ploughDriver(t))) {
+                player.sendMessage(t.toggleHarrow() ? "Grapa coboară. Solul nu este încă modificat." : "Grapa se ridică."); return;
+            }
+        }
+        player.sendMessage("Urcă la volanul unui UTB cu grapa cuplată.");
+    }
+
     public boolean togglePlough(Player player) {
         if (!player.hasPermission("vehicle.plough")) {
             player.sendRichMessage("<red>Nu ai permisiunea vehicle.plough.</red>");
@@ -592,9 +622,9 @@ public final class TrailerManager {
             case VEHICLE -> vehicles.byId(pullerId)
                     .filter(vehicle -> vehicle.spec().canTowTrailers() && trailer.spec().permitsVehicle(vehicle.spec().id()))
                     .map(vehicle -> {
-                        Location hitch = trailer.spec().isFarmTrailer()
+                        Location hitch = trailer.spec().isFarmTrailer() || trailer.spec().kind() == TrailerSpec.Kind.DISC_GD32
                                 ? vehicle.tractorTrailerTowBarLocation() : vehicle.towBarLocation();
-                        if (trailer.spec().kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN) {
+                        if (trailer.spec().kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN || trailer.spec().kind() == TrailerSpec.Kind.DISC_GD32) {
                             // UTB's authored centre pin is at .434375 above its root;
                             // its physics tow point is at .3125. Other tractors use
                             // the common accessory renderer's +0.5 visual offset.

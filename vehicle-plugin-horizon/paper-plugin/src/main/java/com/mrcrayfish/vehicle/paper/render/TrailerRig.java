@@ -74,7 +74,7 @@ public final class TrailerRig {
         all.add(body);
 
         List<WheelDisplay> wheels = new ArrayList<>();
-        for (int side : spec.kind() == TrailerSpec.Kind.UTB_PLOUGH ? new int[0] : new int[]{-1, 1}) {
+        for (int side : (spec.kind() == TrailerSpec.Kind.UTB_PLOUGH || spec.kind() == TrailerSpec.Kind.DISC_GD32) ? new int[0] : new int[]{-1, 1}) {
             float[] axles = spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN ? new float[]{-1.45F, 1.5F} : new float[]{0.0F};
             for (float axle : axles) {
                 ItemDisplay wheel = display(world, location, model(spec.isFarmTrailer() ? "utb_650_wheel_front" : "standard_wheel"));
@@ -126,6 +126,19 @@ public final class TrailerRig {
             all.add(drawbar);
             extras.add(new ExtraDisplay(drawbar, new Vector3f(0.0F, 0.6F, 1.5F),
                     new Vector3f(2.0F), false, 0.0F, 0.0F, true, true));
+        }
+        if (spec.kind() == TrailerSpec.Kind.DISC_GD32) {
+            // The arrays are ordered in pairs: carrier then rotating gang, front then rear.
+            for (int front = 0; front < 2; front++) for (int side : new int[]{-1, 1}) {
+                extra(world, location, trailerId, all, extras, "gd32_gang_frame",
+                        new Vector3f(), new Vector3f(2), false, 0, 0);
+                extra(world, location, trailerId, all, extras, front == 0 ? "gd32_gang_front" : "gd32_gang_rear",
+                        new Vector3f(), new Vector3f(2), false, 0, 0);
+            }
+            for (int i=0; i<2; i++) extra(world, location, trailerId, all, extras, "gd32_wheel",
+                    new Vector3f(), new Vector3f(2), false, 0, 0);
+            extra(world, location, trailerId, all, extras, "gd32_axle", new Vector3f(), new Vector3f(2), false, 0, 0);
+            extra(world, location, trailerId, all, extras, "gd32_jack", new Vector3f(), new Vector3f(2), false, 0, 0);
         }
         if (spec.canTowTrailers()) {
             LandVehicleSpec.Point tow = spec.towBarOffset();
@@ -261,6 +274,40 @@ public final class TrailerRig {
         if (tickCount % 5 == 0) {
             updateBrightness(root);
         }
+    }
+
+    /** Render the harrow as a rigid pitching frame around its wheel axle. */
+    public void updateHarrow(Location root, float pitchDegrees, float wheelDegrees,
+                             float discDegrees, double workPosition, boolean coupled) {
+        if (spec.kind() != TrailerSpec.Kind.DISC_GD32 || !valid()) return;
+        float lift=(float)(4.5 * (1.0-workPosition)/16.0);
+        Quaternionf pitch=new Quaternionf().rotateX(-radians(pitchDegrees));
+        Vector3f pivot=new Vector3f(0,5.5F/16F,1F/16F);
+        Vector3f bodyCenter=new Vector3f(0,lift,0).sub(pivot);
+        pitch.transform(bodyCenter); bodyCenter.add(pivot);
+        place(body,root,bodyCenter,pitch,new Vector3f(2),new Quaternionf());
+        for(int front=0;front<2;front++) for(int sideIndex=0;sideIndex<2;sideIndex++) {
+            int side=sideIndex==0?-1:1, index=(front*2+sideIndex)*2;
+            float sign=front==0 ? (side<0?1:-1) : (side<0?-1:1);
+            float gangYaw=sign*18;
+            Vector3f frameCenter=new Vector3f(-side*13.5F/16F, lift, (front==0?12.5F:-10.5F)/16F);
+            Vector3f gangCenter=new Vector3f(frameCenter).add(0,4.2F/16F,0);
+            for(Vector3f v : new Vector3f[]{frameCenter,gangCenter}) {v.sub(pivot);pitch.transform(v);v.add(pivot);}
+            Quaternionf base=new Quaternionf(pitch).rotateY(radians(gangYaw));
+            place(extras.get(index).entity,root,frameCenter,base,new Vector3f(2),new Quaternionf());
+            place(extras.get(index+1).entity,root,gangCenter,new Quaternionf(base).rotateX(radians(discDegrees)),new Vector3f(2),new Quaternionf());
+        }
+        for(int sideIndex=0;sideIndex<2;sideIndex++) {
+            int side=sideIndex==0?-1:1;
+            Vector3f center=new Vector3f(side*12F/16F,5.5F/16F,1F/16F);
+            place(extras.get(8+sideIndex).entity,root,center,
+                    new Quaternionf(pitch).rotateX(radians(wheelDegrees)),new Vector3f(2),new Quaternionf());
+        }
+        place(extras.get(10).entity,root,pivot,pitch,new Vector3f(2),new Quaternionf());
+        ItemDisplay jack=extras.get(11).entity;
+        jack.setVisibleByDefault(!coupled);
+        Vector3f jackCenter=new Vector3f(0,0,26F/16F);
+        place(jack,root,jackCenter,pitch,new Vector3f(2),new Quaternionf());
     }
 
     private void syncInventoryDisplays(Location root, ItemStack[] contents) {

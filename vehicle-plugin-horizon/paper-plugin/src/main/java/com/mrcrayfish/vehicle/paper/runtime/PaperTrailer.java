@@ -46,6 +46,8 @@ public final class PaperTrailer {
     private int tickCount;
     // Volatile safety state: raised after restart, detachment or driver leaving.
     private boolean ploughLowered;
+    private final DiscHarrowState harrowState = new DiscHarrowState();
+    private float harrowDiscs;
     private PullerType pullerType;
     private UUID pullerId;
     private UUID loadedVehicleId;
@@ -61,6 +63,8 @@ public final class PaperTrailer {
         this.location = location.clone();
         this.pullerType = pullerType == null ? PullerType.NONE : pullerType;
         this.pullerId = pullerId;
+        if (spec.kind() == TrailerSpec.Kind.DISC_GD32 && this.pullerType == PullerType.VEHICLE)
+            harrowState.couple();
         this.loadedVehicleId = loadedVehicleId;
         this.fluidMaterial = fluidMaterial;
         this.fluidAmount = Math.max(0, Math.min(FLUID_CAPACITY, fluidAmount));
@@ -92,7 +96,20 @@ public final class PaperTrailer {
         }
 
         if (target != null) {
-            if (spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN) {
+            if (spec.kind() == TrailerSpec.Kind.DISC_GD32) {
+                var geometry = DiscHarrowKinematics.solve(location.getX(), location.getZ(), location.getYaw(),
+                        location.getY(), target.hitch().getX(), target.hitch().getY(), target.hitch().getZ(), harrowState.position());
+                if (!geometry.reachable()) {
+                    detach(true);
+                    target = null;
+                } else {
+                    move(new Vector(geometry.x()-location.getX(), verticalVelocity-0.08D, geometry.z()-location.getZ()));
+                    location.setYaw(geometry.yaw());
+                    var after = DiscHarrowKinematics.solve(location.getX(), location.getZ(), location.getYaw(),
+                            location.getY(), target.hitch().getX(), target.hitch().getY(), target.hitch().getZ(), harrowState.position());
+                    drawbarPitch = after.reachable() ? after.pitch() : 0;
+                }
+            } else if (spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN) {
                 var pitch = pullerType == PullerType.VEHICLE
                         ? DrawbarPitch.solve(location.getY(), target.hitch().getY())
                         : DrawbarPitch.solve(location.getY(), location.getY() + DrawbarPitch.EYE_Y);
@@ -141,6 +158,16 @@ public final class PaperTrailer {
         TrailerRig.FluidVisual visual = fluidAmount > 0 && fluidMaterial != null
                 ? new TrailerRig.FluidVisual(fluidMaterial, fluidAmount / (float) FLUID_CAPACITY) : null;
         rig.update(location, wheelRotation, visual, inventoryContents(), tickCount, frontSteering, drawbarPitch);
+        if (spec.kind() == TrailerSpec.Kind.DISC_GD32) {
+            Player driver=manager.ploughDriver(this);
+            boolean validDriver=target != null && driver != null && driver.isOnline() && driver.getWorld()==location.getWorld()
+                    && driver.getGameMode()!=org.bukkit.GameMode.ADVENTURE && driver.getGameMode()!=org.bukkit.GameMode.SPECTATOR;
+            harrowState.tick(validDriver);
+            double angle=Math.toRadians(location.getYaw());
+            double forward=-Math.sin(angle)*dx+Math.cos(angle)*dz;
+            if (harrowState.canWork(validDriver,onGround,forward)) harrowDiscs -= (float)(distance*360/(Math.PI*8.4/16));
+            rig.updateHarrow(location,drawbarPitch,wheelRotation,harrowDiscs,harrowState.position(),target!=null);
+        }
         if (loadedVehicleId != null) {
             manager.positionLoadedVehicle(this, loadedVehicleId);
         }
@@ -171,6 +198,11 @@ public final class PaperTrailer {
         if (spec.kind() != TrailerSpec.Kind.UTB_PLOUGH) return false;
         ploughLowered = !ploughLowered;
         return ploughLowered;
+    }
+
+    public boolean toggleHarrow() {
+        boolean next = !harrowState.workRequested();
+        return harrowState.setWorking(next, manager.ploughDriver(this) != null) && next;
     }
 
     static boolean tillable(Material soil, Material above) {
@@ -420,6 +452,7 @@ public final class PaperTrailer {
         this.pullerType = type;
         this.pullerId = pullerId;
         this.verticalVelocity = 0.0D;
+        if (spec.kind() == TrailerSpec.Kind.DISC_GD32 && type == PullerType.VEHICLE) harrowState.couple();
         if (type == PullerType.VEHICLE) {
             manager.onHitchChanged(pullerId);
         }
@@ -434,6 +467,7 @@ public final class PaperTrailer {
         this.pullerType = PullerType.NONE;
         this.pullerId = null;
         this.ploughLowered = false;
+        harrowState.detach();
         if (previousType == PullerType.VEHICLE && previousPuller != null) {
             manager.onHitchChanged(previousPuller);
         }

@@ -51,6 +51,8 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
             case "sirena" -> siren(sender);
             case "cupleaza_remorca" -> { if (sender instanceof Player player) vehicles.trailers().coupleFarmTrailer(player); else sender.sendMessage("Doar din joc."); }
             case "cupleaza" -> { if (sender instanceof Player player) vehicles.trailers().couplePlough(player); else sender.sendMessage("Doar din joc."); }
+            case "cupleaza_disc" -> { if (sender instanceof Player player) vehicles.trailers().coupleHarrow(player); else sender.sendMessage("Doar din joc."); }
+            case "disc" -> { if (sender instanceof Player player) vehicles.trailers().toggleHarrow(player); else sender.sendMessage("Doar din joc."); }
             case "plug" -> { if (sender instanceof Player player) vehicles.trailers().togglePlough(player); else sender.sendMessage("Doar din joc."); }
             case "remove" -> remove(sender);
             case "refuel" -> refuel(sender);
@@ -798,7 +800,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
                                                  @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return filter(List.of("spawn", "cupleaza_remorca", "cupleaza", "plug", "sirena", "remove", "refuel", "gaspump", "jerrycan", "trust", "untrust", "trusted", "magazin", "podium", "list", "save", "pack", "creative", "paint", "vopsea", "vopseste", "garaj", "perf", "consum", "stats", "give", "propsdebug", "seattest"), args[0]);
+            return filter(List.of("spawn", "cupleaza_remorca", "cupleaza_disc", "disc", "cupleaza", "plug", "sirena", "remove", "refuel", "gaspump", "jerrycan", "trust", "untrust", "trusted", "magazin", "podium", "list", "save", "pack", "creative", "paint", "vopsea", "vopseste", "garaj", "perf", "consum", "stats", "give", "propsdebug", "seattest"), args[0]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("trust") || args[0].equalsIgnoreCase("untrust"))) {
             return filter(onTabPlayers(), args[1]);

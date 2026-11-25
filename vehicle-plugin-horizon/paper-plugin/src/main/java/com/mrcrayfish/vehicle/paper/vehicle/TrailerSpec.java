@@ -42,6 +42,11 @@ public record TrailerSpec(
             "utb_plough", "Plug UTB", "utb_plough", Kind.UTB_PLOUGH,
             1.7F, 1.0F, 1.0F, 0.0F, 0.0F,
             0.0F, 0.0F, -12.0F, false, new LandVehicleSpec.Point(0.0F, 0.0F, 0.0F));
+    /** Towed disc harrow; not made available until its pack and test path are ready. */
+    public static final TrailerSpec DISC_GD32 = new TrailerSpec(
+            "disc_gd32", "Grapă cu discuri GD-3.2", "gd32_body", Kind.DISC_GD32,
+            3.25F, 1.35F, 2.0F, 0.0F, 0.0F, 0.0F, 0.0F, -18.0F, false,
+            new LandVehicleSpec.Point(0.0F, 0.0F, 0.0F));
     public static final TrailerSpec FERTILIZER = trailer(
             "fertilizer", "Fertilizer", "fertilizer_body", Kind.FERTILIZER,
             1.5F, 1.0F, 9.5F, 0.0F, -17.0F, false);
@@ -64,6 +69,7 @@ public record TrailerSpec(
             TRACTOR_TRAILER.id, TRACTOR_TRAILER,
             TRACTOR_TRAILER_MODERN.id, TRACTOR_TRAILER_MODERN,
             UTB_PLOUGH.id, UTB_PLOUGH,
+            DISC_GD32.id, DISC_GD32,
             FERTILIZER.id, FERTILIZER,
             SEEDER.id, SEEDER,
             STORAGE_TRAILER.id, STORAGE_TRAILER,
@@ -136,20 +142,21 @@ public record TrailerSpec(
     /** Restrict specialized equipment without altering the legacy trailer rules. */
     public boolean permitsVehicle(String vehicleId) {
         return switch (kind) {
-            case UTB_PLOUGH -> "utb_650".equals(vehicleId);
+            case UTB_PLOUGH, DISC_GD32 -> "utb_650".equals(vehicleId);
             case TRACTOR_TRAILER, TRACTOR_TRAILER_MODERN -> "utb_650".equals(vehicleId) || "tractor".equals(vehicleId);
             default -> true;
         };
     }
 
     public boolean permitsTrailerPuller() {
-        return kind != Kind.UTB_PLOUGH && !isFarmTrailer();
+        return kind != Kind.UTB_PLOUGH && kind != Kind.DISC_GD32 && !isFarmTrailer();
     }
 
     public enum Kind {
         TRACTOR_TRAILER,
         TRACTOR_TRAILER_MODERN,
         UTB_PLOUGH,
+        DISC_GD32,
         FERTILIZER,
         SEEDER,
         STORAGE,
