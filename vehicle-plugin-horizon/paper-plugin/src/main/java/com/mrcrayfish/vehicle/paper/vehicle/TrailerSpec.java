@@ -25,6 +25,11 @@ public record TrailerSpec(
         boolean canTowTrailers,
         LandVehicleSpec.Point towBarOffset
 ) {
+    /** Three-point mounted prototype: no wheels, exclusive to the UTB. */
+    public static final TrailerSpec UTB_PLOUGH = new TrailerSpec(
+            "utb_plough", "Plug UTB", "utb_plough", Kind.UTB_PLOUGH,
+            1.7F, 1.0F, 1.0F, 0.0F, 0.0F,
+            0.0F, 0.0F, -12.0F, false, new LandVehicleSpec.Point(0.0F, 0.0F, 0.0F));
     public static final TrailerSpec FERTILIZER = trailer(
             "fertilizer", "Fertilizer", "fertilizer_body", Kind.FERTILIZER,
             1.5F, 1.0F, 9.5F, 0.0F, -17.0F, false);
@@ -44,6 +49,7 @@ public record TrailerSpec(
             1.5F, 0.75F, 12.5F, -2.5F, -23.0F, false);
 
     private static final Map<String, TrailerSpec> BY_ID = Map.of(
+            UTB_PLOUGH.id, UTB_PLOUGH,
             FERTILIZER.id, FERTILIZER,
             SEEDER.id, SEEDER,
             STORAGE_TRAILER.id, STORAGE_TRAILER,
@@ -109,6 +115,7 @@ public record TrailerSpec(
     }
 
     public enum Kind {
+        UTB_PLOUGH,
         FERTILIZER,
         SEEDER,
         STORAGE,

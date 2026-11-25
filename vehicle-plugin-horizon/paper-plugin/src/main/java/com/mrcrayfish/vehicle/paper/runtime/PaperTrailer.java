@@ -42,6 +42,8 @@ public final class PaperTrailer {
     private boolean onGround;
     private float wheelRotation;
     private int tickCount;
+    // Volatile safety state: raised after restart, detachment or driver leaving.
+    private boolean ploughLowered;
     private PullerType pullerType;
     private UUID pullerId;
     private UUID loadedVehicleId;
@@ -117,6 +119,7 @@ public final class PaperTrailer {
          * source work points every vehicle tick, even when the trailer did not
          * move. Fertilizer's last-position guard prevents duplicate work. */
         runEquipment(previous);
+        if (spec.kind() == TrailerSpec.Kind.UTB_PLOUGH) plough(dx, dz);
 
         TrailerRig.FluidVisual visual = fluidAmount > 0 && fluidMaterial != null
                 ? new TrailerRig.FluidVisual(fluidMaterial, fluidAmount / (float) FLUID_CAPACITY) : null;
@@ -143,6 +146,68 @@ public final class PaperTrailer {
             case FERTILIZER -> fertilize(previous);
             case SEEDER -> seed(previous);
             default -> {
+            }
+        }
+    }
+
+    public boolean togglePlough() {
+        if (spec.kind() != TrailerSpec.Kind.UTB_PLOUGH) return false;
+        ploughLowered = !ploughLowered;
+        return ploughLowered;
+    }
+
+    static boolean tillable(Material soil, Material above) {
+        return above == Material.AIR && (soil == Material.DIRT || soil == Material.GRASS_BLOCK
+                || soil == Material.DIRT_PATH);
+    }
+
+    private void plough(double dx, double dz) {
+        if (!ploughLowered) return;
+        Player driver = manager.ploughDriver(this);
+        if (driver == null || !driver.isOnline() || driver.getWorld() != location.getWorld()
+                || driver.getGameMode() == org.bukkit.GameMode.ADVENTURE
+                || driver.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
+            ploughLowered = false;
+            return;
+        }
+        // Never work while stationary, airborne, or reversing.
+        double yaw = Math.toRadians(location.getYaw());
+        double forwardX = -Math.sin(yaw), forwardZ = Math.cos(yaw);
+        if (!onGround || forwardX * dx + forwardZ * dz < 0.025D) return;
+        World world = location.getWorld();
+        double rightX = Math.cos(yaw), rightZ = Math.sin(yaw);
+        for (int lane = -1; lane <= 1; lane++) {
+            int x = (int) Math.floor(location.getX() + rightX * lane * 0.7D);
+            int z = (int) Math.floor(location.getZ() + rightZ * lane * 0.7D);
+            if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
+            int y = (int) Math.floor(location.getY() - 0.05D);
+            Block soil = world.getBlockAt(x, y, z);
+            if (!tillable(soil.getType(), soil.getRelative(BlockFace.UP).getType())) continue;
+            // Do not bypass vanilla spawn protection for non-operators.
+            Location spawn = world.getSpawnLocation();
+            int radius = Bukkit.getSpawnRadius();
+            if (!driver.isOp() && radius > 0 && Math.max(Math.abs(x - spawn.getBlockX()),
+                    Math.abs(z - spawn.getBlockZ())) <= radius) continue;
+            ItemStack tool = new ItemStack(Material.IRON_HOE);
+            org.bukkit.event.player.PlayerInteractEvent interact = new org.bukkit.event.player.PlayerInteractEvent(
+                    driver, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, tool, soil, BlockFace.UP,
+                    org.bukkit.inventory.EquipmentSlot.HAND);
+            Bukkit.getPluginManager().callEvent(interact);
+            if (interact.useInteractedBlock() == org.bukkit.event.Event.Result.DENY
+                    || interact.useItemInHand() == org.bukkit.event.Event.Result.DENY) continue;
+            // Match Bukkit block-place event semantics: new state is visible during the event,
+            // and restore the original immediately if a protection plugin rejects it.
+            org.bukkit.block.BlockState before = soil.getState();
+            soil.setType(Material.FARMLAND, false);
+            try {
+                org.bukkit.event.block.BlockPlaceEvent event = new org.bukkit.event.block.BlockPlaceEvent(
+                        soil, before, soil.getRelative(BlockFace.DOWN), tool, driver, true,
+                        org.bukkit.inventory.EquipmentSlot.HAND);
+                Bukkit.getPluginManager().callEvent(event);
+                if (event.isCancelled() || !event.canBuild()) before.update(true, false);
+            } catch (RuntimeException failure) {
+                before.update(true, false);
+                throw failure;
             }
         }
     }
@@ -350,6 +415,7 @@ public final class PaperTrailer {
         }
         this.pullerType = PullerType.NONE;
         this.pullerId = null;
+        this.ploughLowered = false;
         if (previousType == PullerType.VEHICLE && previousPuller != null) {
             manager.onHitchChanged(previousPuller);
         }

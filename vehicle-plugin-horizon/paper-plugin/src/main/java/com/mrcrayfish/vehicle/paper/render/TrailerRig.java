@@ -74,7 +74,7 @@ public final class TrailerRig {
         all.add(body);
 
         List<WheelDisplay> wheels = new ArrayList<>();
-        for (int side : new int[]{-1, 1}) {
+        for (int side : spec.kind() == TrailerSpec.Kind.UTB_PLOUGH ? new int[0] : new int[]{-1, 1}) {
             ItemDisplay wheel = display(world, location, model("standard_wheel"));
             mark(wheel, trailerId);
             all.add(wheel);

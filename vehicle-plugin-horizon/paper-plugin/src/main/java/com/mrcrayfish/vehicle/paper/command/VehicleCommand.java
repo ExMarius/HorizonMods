@@ -49,6 +49,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "spawn" -> spawn(sender, args);
             case "sirena" -> siren(sender);
+            case "plug" -> { if (sender instanceof Player player) vehicles.trailers().togglePlough(player); else sender.sendMessage("Doar din joc."); }
             case "remove" -> remove(sender);
             case "refuel" -> refuel(sender);
             case "gaspump" -> gaspump(sender);
@@ -169,7 +170,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
         LandVehicleSpec vehicleSpec = LandVehicleSpec.byId(id);
         TrailerSpec trailerSpec = TrailerSpec.byId(id);
         if (vehicleSpec == null && trailerSpec == null) {
-            sender.sendRichMessage("<yellow>Utilizare: /vehicle spawn <go_kart|horizon_go_kart|lawn_mower|quad_bike|dune_buggy|tractor|utb_650|dirt_bike|moped|off_roader|horizon_off_roader|dacia_logan_police|sports_car|mini_bus|golf_cart|jet_ski|sports_plane|compact_helicopter|sofacopter|atv|mini_bike|smart_car|speed_boat|aluminum_boat|couch|bumper_car|shopping_cart|fertilizer|seeder|storage_trailer|fluid_trailer|vehicle_trailer></yellow>");
+            sender.sendRichMessage("<yellow>Utilizare: /vehicle spawn <go_kart|horizon_go_kart|lawn_mower|quad_bike|dune_buggy|tractor|utb_650|dirt_bike|moped|off_roader|horizon_off_roader|dacia_logan_police|sports_car|mini_bus|golf_cart|jet_ski|sports_plane|compact_helicopter|sofacopter|atv|mini_bike|smart_car|speed_boat|aluminum_boat|couch|bumper_car|shopping_cart|utb_plough|fertilizer|seeder|storage_trailer|fluid_trailer|vehicle_trailer></yellow>");
             return;
         }
         if (vehicleSpec != null) {
@@ -577,6 +578,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
     private void help(CommandSender sender, String label) {
         sender.sendRichMessage("<gold>Vehicle Plugin</gold> <gray>vehicule pentru clienți vanilla</gray>");
         sender.sendRichMessage("<yellow>/" + label + " spawn <tip></yellow> <gray>- creează un vehicul sau una dintre cele 5 remorci</gray>");
+        sender.sendRichMessage("<yellow>/" + label + " plug</yellow> <gray>- pornește/oprește aratul cu plugul UTB (prototip)</gray>");
         sender.sendRichMessage("<yellow>/" + label + " sirena</yellow> <gray>- pornește/oprește sirena la volanul Daciei de poliție (sau F)</gray>");
         sender.sendRichMessage("<yellow>/" + label + " remove</yellow> <gray>- elimină vehiculul apropiat</gray>");
         sender.sendRichMessage("<yellow>/" + label + " refuel</yellow> <gray>- umple rezervorul vehiculului apropiat</gray>");
@@ -792,7 +794,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
                                                  @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return filter(List.of("spawn", "sirena", "remove", "refuel", "gaspump", "jerrycan", "trust", "untrust", "trusted", "magazin", "podium", "list", "save", "pack", "creative", "paint", "vopsea", "vopseste", "garaj", "perf", "consum", "stats", "give", "propsdebug", "seattest"), args[0]);
+            return filter(List.of("spawn", "plug", "sirena", "remove", "refuel", "gaspump", "jerrycan", "trust", "untrust", "trusted", "magazin", "podium", "list", "save", "pack", "creative", "paint", "vopsea", "vopseste", "garaj", "perf", "consum", "stats", "give", "propsdebug", "seattest"), args[0]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("trust") || args[0].equalsIgnoreCase("untrust"))) {
             return filter(onTabPlayers(), args[1]);

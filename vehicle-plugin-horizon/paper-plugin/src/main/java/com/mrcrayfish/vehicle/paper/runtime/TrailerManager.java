@@ -240,6 +240,10 @@ public final class TrailerManager {
         if (held == null || held == clicked || !clicked.spec().canTowTrailers()) {
             return false;
         }
+        if (held.spec().kind() == TrailerSpec.Kind.UTB_PLOUGH) {
+            player.sendRichMessage("<red>Plugul se cuplează numai la UTB 650.</red>");
+            return true;
+        }
         if (hasChild(clicked.id())) {
             player.sendRichMessage("<red>Acest Storage Trailer tractează deja altă remorcă.</red>");
             return true;
@@ -477,6 +481,10 @@ public final class TrailerManager {
         if (trailer == null) {
             return false;
         }
+        if (trailer.spec().kind() == TrailerSpec.Kind.UTB_PLOUGH && !"utb_650".equals(vehicle.spec().id())) {
+            player.sendRichMessage("<red>Plugul cu prindere în trei puncte se cuplează numai la UTB 650.</red>");
+            return true;
+        }
         if (!vehicle.spec().canTowTrailers()) {
             player.sendRichMessage("<red>Acest vehicul nu poate tracta remorci.</red>");
             return true;
@@ -490,6 +498,29 @@ public final class TrailerManager {
         player.sendRichMessage("<green>Remorcă cuplată la " + vehicle.spec().displayName() + ".</green>");
         playHitch(vehicle.location());
         return true;
+    }
+
+    Player ploughDriver(PaperTrailer trailer) {
+        if (trailer.pullerType() != PaperTrailer.PullerType.VEHICLE || trailer.pullerId() == null) return null;
+        return vehicles.byId(trailer.pullerId()).filter(v -> "utb_650".equals(v.spec().id()))
+                .flatMap(LandVehicle::driver).filter(p -> p.hasPermission("vehicle.plough")).orElse(null);
+    }
+
+    public boolean togglePlough(Player player) {
+        if (!player.hasPermission("vehicle.plough")) {
+            player.sendRichMessage("<red>Nu ai permisiunea vehicle.plough.</red>");
+            return false;
+        }
+        for (PaperTrailer trailer : trailers.values()) {
+            if (trailer.spec().kind() == TrailerSpec.Kind.UTB_PLOUGH && player.equals(ploughDriver(trailer))) {
+                boolean enabled = trailer.togglePlough();
+                player.sendRichMessage(enabled ? "<green>Plug activat: ară doar pământul liber în timpul mersului.</green>"
+                        : "<yellow>Plug dezactivat: aratul este oprit.</yellow>");
+                return true;
+            }
+        }
+        player.sendRichMessage("<red>Urcă la volanul unui UTB 650 cu plugul cuplat.</red>");
+        return false;
     }
 
     boolean pullerTemporarilyUnavailable(PaperTrailer trailer) {

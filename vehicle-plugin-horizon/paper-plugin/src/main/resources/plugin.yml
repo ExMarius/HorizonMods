@@ -21,6 +21,9 @@ permissions:
   vehicle.use:
     description: Allows players to use vehicles.
     default: true
+  vehicle.plough:
+    description: Allows operating the experimental UTB plough.
+    default: op
   vehicle.admin:
     description: Allows spawning and removing vehicles.
     default: op
