@@ -462,7 +462,19 @@ class LandVehicleSpecTest {
         assertEquals(180.0F, spec.seats().get(3).yawOffset(), EPSILON);
         assertFalse(spec.canTowTrailers());
         assertEquals(spec, LandVehicleSpec.byId("golf_cart"));
-        assertEquals(27, LandVehicleSpec.ids().size());
+        assertEquals(28, LandVehicleSpec.ids().size());
+    }
+
+    @Test
+    void bmwHasFourIndependentlyPlacedWheelsAndFourSeats() {
+        var spec = LandVehicleSpec.byId("bmw_m6");
+        assertEquals(LandVehicleSpec.BMW_M6, spec);
+        assertEquals(4, spec.wheels().size());
+        assertEquals(4, spec.seats().size());
+        assertEquals(2, spec.wheels().stream().filter(LandVehicleSpec.Wheel::front).count());
+        assertFalse(spec.canTowTrailers());
+        assertEquals(1.7F, spec.bodyScale(), EPSILON);
+        assertEquals(0.0F, spec.bodyOrigin().y(), EPSILON);
     }
 
     @Test
