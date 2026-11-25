@@ -112,7 +112,7 @@ public final class PaperTrailer {
             double forwardX = -Math.sin(yawRadians);
             double forwardZ = Math.cos(yawRadians);
             double direction = Math.signum(forwardX * dx + forwardZ * dz);
-            double circumference = 24.0D * spec.bodyScale() * 1.25D;
+            double circumference = spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER ? Math.PI * 13.8D : 24.0D * spec.bodyScale() * 1.25D;
             wheelRotation -= (float) ((distance * 20.0D * direction * 16.0D / circumference) * 20.0D);
         }
         /* FertilizerTrailerEntity and SeederTrailerEntity evaluate their three
@@ -392,6 +392,7 @@ public final class PaperTrailer {
             return true;
         }
         return switch (spec.kind()) {
+            case TRACTOR_TRAILER -> true;
             case FERTILIZER, STORAGE -> stack.getType() == Material.BONE_MEAL;
             case SEEDER -> isSeederSupply(stack.getType());
             default -> false;
@@ -459,7 +460,8 @@ public final class PaperTrailer {
     }
 
     private boolean hasInventory() {
-        return spec.kind() == TrailerSpec.Kind.FERTILIZER
+        return spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER
+                || spec.kind() == TrailerSpec.Kind.FERTILIZER
                 || spec.kind() == TrailerSpec.Kind.SEEDER
                 || spec.kind() == TrailerSpec.Kind.STORAGE;
     }

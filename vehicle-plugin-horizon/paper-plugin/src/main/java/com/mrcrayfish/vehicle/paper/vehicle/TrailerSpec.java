@@ -25,6 +25,12 @@ public record TrailerSpec(
         boolean canTowTrailers,
         LandVehicleSpec.Point towBarOffset
 ) {
+    /** One-axle farm trailer; separate from the original generic trailers. */
+    public static final TrailerSpec TRACTOR_TRAILER = new TrailerSpec(
+            "tractor_trailer", "Remorcă agricolă", "tractor_trailer_body", Kind.TRACTOR_TRAILER,
+            1.85F, 1.45F, 2.0F, 0.0F, 0.0F, 0.0F, 0.0F, -14.0F, false,
+            new LandVehicleSpec.Point(0.0F, 0.0F, 0.0F));
+
     /** Three-point mounted prototype: no wheels, exclusive to the UTB. */
     public static final TrailerSpec UTB_PLOUGH = new TrailerSpec(
             "utb_plough", "Plug UTB", "utb_plough", Kind.UTB_PLOUGH,
@@ -49,6 +55,7 @@ public record TrailerSpec(
             1.5F, 0.75F, 12.5F, -2.5F, -23.0F, false);
 
     private static final Map<String, TrailerSpec> BY_ID = Map.of(
+            TRACTOR_TRAILER.id, TRACTOR_TRAILER,
             UTB_PLOUGH.id, UTB_PLOUGH,
             FERTILIZER.id, FERTILIZER,
             SEEDER.id, SEEDER,
@@ -74,6 +81,7 @@ public record TrailerSpec(
     }
 
     public float bodyOriginY() {
+        if (kind == Kind.TRACTOR_TRAILER) return 0.5F;
         return (0.5F + (axleOffset + wheelOffset) * LandVehicleSpec.MODEL_UNIT) * bodyScale;
     }
 
@@ -114,7 +122,21 @@ public record TrailerSpec(
         return hitchOffset * bodyScale * LandVehicleSpec.MODEL_UNIT;
     }
 
+    /** Restrict specialized equipment without altering the legacy trailer rules. */
+    public boolean permitsVehicle(String vehicleId) {
+        return switch (kind) {
+            case UTB_PLOUGH -> "utb_650".equals(vehicleId);
+            case TRACTOR_TRAILER -> "utb_650".equals(vehicleId) || "tractor".equals(vehicleId);
+            default -> true;
+        };
+    }
+
+    public boolean permitsTrailerPuller() {
+        return kind != Kind.UTB_PLOUGH && kind != Kind.TRACTOR_TRAILER;
+    }
+
     public enum Kind {
+        TRACTOR_TRAILER,
         UTB_PLOUGH,
         FERTILIZER,
         SEEDER,

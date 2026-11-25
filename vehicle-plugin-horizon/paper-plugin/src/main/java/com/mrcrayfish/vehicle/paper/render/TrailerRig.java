@@ -75,7 +75,7 @@ public final class TrailerRig {
 
         List<WheelDisplay> wheels = new ArrayList<>();
         for (int side : spec.kind() == TrailerSpec.Kind.UTB_PLOUGH ? new int[0] : new int[]{-1, 1}) {
-            ItemDisplay wheel = display(world, location, model("standard_wheel"));
+            ItemDisplay wheel = display(world, location, model(spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER ? "utb_650_wheel_front" : "standard_wheel"));
             mark(wheel, trailerId);
             all.add(wheel);
             wheels.add(new WheelDisplay(wheel, side));
@@ -202,11 +202,13 @@ public final class TrailerRig {
         float wheelZ = spec.wheelZ() * LandVehicleSpec.MODEL_UNIT * spec.bodyScale();
         for (WheelDisplay wheel : wheels) {
             float halfWidth = wheel.side * 4.0F * 0.5F * LandVehicleSpec.MODEL_UNIT * spec.bodyScale();
-            Vector3f center = new Vector3f(wheel.side * wheelX + halfWidth, spec.wheelCenterY(), wheelZ);
+            boolean farm = spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER;
+            Vector3f center = farm ? new Vector3f(wheel.side * 1.0F, 6.9F / 16.0F, 0.0F)
+                    : new Vector3f(wheel.side * wheelX + halfWidth, spec.wheelCenterY(), wheelZ);
             Quaternionf spin = new Quaternionf().rotateX(radians(-wheelRotation));
             Quaternionf side = wheel.side > 0 ? new Quaternionf().rotateY((float) Math.PI) : new Quaternionf();
-            place(wheel.entity, root, center, spin,
-                    new Vector3f(spec.bodyScale(), spec.bodyScale() * 1.25F, spec.bodyScale() * 1.25F), side);
+            place(wheel.entity, root, center, spin, farm ? new Vector3f(1.0F)
+                    : new Vector3f(spec.bodyScale(), spec.bodyScale() * 1.25F, spec.bodyScale() * 1.25F), side);
         }
 
         for (ExtraDisplay extra : extras) {

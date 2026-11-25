@@ -240,8 +240,8 @@ public final class TrailerManager {
         if (held == null || held == clicked || !clicked.spec().canTowTrailers()) {
             return false;
         }
-        if (held.spec().kind() == TrailerSpec.Kind.UTB_PLOUGH) {
-            player.sendRichMessage("<red>Plugul se cuplează numai la UTB 650.</red>");
+        if (!held.spec().permitsTrailerPuller()) {
+            player.sendRichMessage("<red>Acest utilaj se cuplează numai direct la un tractor compatibil.</red>");
             return true;
         }
         if (hasChild(clicked.id())) {
@@ -481,8 +481,8 @@ public final class TrailerManager {
         if (trailer == null) {
             return false;
         }
-        if (trailer.spec().kind() == TrailerSpec.Kind.UTB_PLOUGH && !"utb_650".equals(vehicle.spec().id())) {
-            player.sendRichMessage("<red>Plugul cu prindere în trei puncte se cuplează numai la UTB 650.</red>");
+        if (!trailer.spec().permitsVehicle(vehicle.spec().id())) {
+            player.sendRichMessage("<red>Acest utilaj se cuplează numai la un tractor compatibil.</red>");
             return true;
         }
         if (!vehicle.spec().canTowTrailers()) {
@@ -529,6 +529,28 @@ public final class TrailerManager {
         player.sendRichMessage("<green>Plug UTB cuplat. La volan folosește /vehicle plug pentru arat.</green>");
     }
 
+    public void coupleFarmTrailer(Player player) {
+        if (!player.hasPermission("vehicle.use")) return;
+        Location here = player.getLocation();
+        LandVehicle tractor = vehicles.vehicles().stream()
+                .filter(v -> TrailerSpec.TRACTOR_TRAILER.permitsVehicle(v.spec().id())
+                        && !v.showcase() && v.canDrive(player) && v.spec().canTowTrailers())
+                .filter(v -> v.location().getWorld().equals(here.getWorld()) && v.location().distanceSquared(here) <= 25.0D)
+                .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(here))).orElse(null);
+        PaperTrailer trailer = trailers.values().stream()
+                .filter(t -> t.spec().kind() == TrailerSpec.Kind.TRACTOR_TRAILER && t.pullerType() == PaperTrailer.PullerType.NONE)
+                .filter(t -> t.location().getWorld().equals(here.getWorld()) && t.location().distanceSquared(here) <= 25.0D)
+                .min(java.util.Comparator.comparingDouble(t -> t.location().distanceSquared(here))).orElse(null);
+        if (tractor == null || trailer == null || hasVehicleChild(tractor.id())
+                || tractor.towBarLocation().distanceSquared(trailer.location()) > 25.0D) {
+            player.sendRichMessage("<red>Ai nevoie de un tractor autorizat și o remorcă agricolă liberă, apropiate.</red>"); return;
+        }
+        trailer.attach(PaperTrailer.PullerType.VEHICLE, tractor.id());
+        playHitch(tractor.location());
+        player.sendRichMessage("<green>Remorcă agricolă cuplată la " + tractor.spec().displayName() + ".</green>");
+        save();
+    }
+
     public boolean togglePlough(Player player) {
         if (!player.hasPermission("vehicle.plough")) {
             player.sendRichMessage("<red>Nu ai permisiunea vehicle.plough.</red>");
@@ -568,10 +590,10 @@ public final class TrailerManager {
                         : new PaperTrailer.PullTarget(player.getLocation(), player.getLocation());
             }
             case VEHICLE -> vehicles.byId(pullerId)
-                    .filter(vehicle -> vehicle.spec().canTowTrailers())
+                    .filter(vehicle -> vehicle.spec().canTowTrailers() && trailer.spec().permitsVehicle(vehicle.spec().id()))
                     .map(vehicle -> new PaperTrailer.PullTarget(vehicle.towBarLocation(), vehicle.location())).orElse(null);
             case TRAILER -> Optional.ofNullable(trailers.get(pullerId))
-                    .filter(parent -> parent.spec().canTowTrailers())
+                    .filter(parent -> parent.spec().canTowTrailers() && trailer.spec().permitsTrailerPuller())
                     .map(parent -> new PaperTrailer.PullTarget(parent.towBarLocation(), parent.location())).orElse(null);
             case NONE -> null;
         };
