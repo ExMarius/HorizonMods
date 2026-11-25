@@ -538,7 +538,7 @@ public final class TrailerManager {
                 .filter(v -> v.location().getWorld().equals(here.getWorld()) && v.location().distanceSquared(here) <= 25.0D)
                 .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(here))).orElse(null);
         PaperTrailer trailer = trailers.values().stream()
-                .filter(t -> t.spec().kind() == TrailerSpec.Kind.TRACTOR_TRAILER && t.pullerType() == PaperTrailer.PullerType.NONE)
+                .filter(t -> t.spec().isFarmTrailer() && t.pullerType() == PaperTrailer.PullerType.NONE)
                 .filter(t -> t.location().getWorld().equals(here.getWorld()) && t.location().distanceSquared(here) <= 25.0D)
                 .min(java.util.Comparator.comparingDouble(t -> t.location().distanceSquared(here))).orElse(null);
         if (tractor == null || trailer == null || hasVehicleChild(tractor.id())
@@ -592,7 +592,7 @@ public final class TrailerManager {
             case VEHICLE -> vehicles.byId(pullerId)
                     .filter(vehicle -> vehicle.spec().canTowTrailers() && trailer.spec().permitsVehicle(vehicle.spec().id()))
                     .map(vehicle -> new PaperTrailer.PullTarget(
-                            trailer.spec().kind() == TrailerSpec.Kind.TRACTOR_TRAILER
+                            trailer.spec().isFarmTrailer()
                                     ? vehicle.tractorTrailerTowBarLocation() : vehicle.towBarLocation(),
                             vehicle.location())).orElse(null);
             case TRAILER -> Optional.ofNullable(trailers.get(pullerId))

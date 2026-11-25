@@ -75,10 +75,13 @@ public final class TrailerRig {
 
         List<WheelDisplay> wheels = new ArrayList<>();
         for (int side : spec.kind() == TrailerSpec.Kind.UTB_PLOUGH ? new int[0] : new int[]{-1, 1}) {
-            ItemDisplay wheel = display(world, location, model(spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER ? "utb_650_wheel_front" : "standard_wheel"));
-            mark(wheel, trailerId);
-            all.add(wheel);
-            wheels.add(new WheelDisplay(wheel, side));
+            float[] axles = spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN ? new float[]{-0.8F, 0.8F} : new float[]{0.0F};
+            for (float axle : axles) {
+                ItemDisplay wheel = display(world, location, model(spec.isFarmTrailer() ? "utb_650_wheel_front" : "standard_wheel"));
+                mark(wheel, trailerId);
+                all.add(wheel);
+                wheels.add(new WheelDisplay(wheel, side, axle));
+            }
         }
 
         List<ExtraDisplay> extras = new ArrayList<>();
@@ -202,8 +205,8 @@ public final class TrailerRig {
         float wheelZ = spec.wheelZ() * LandVehicleSpec.MODEL_UNIT * spec.bodyScale();
         for (WheelDisplay wheel : wheels) {
             float halfWidth = wheel.side * 4.0F * 0.5F * LandVehicleSpec.MODEL_UNIT * spec.bodyScale();
-            boolean farm = spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER;
-            Vector3f center = farm ? new Vector3f(wheel.side * 1.0F, 6.9F / 16.0F, 0.0F)
+            boolean farm = spec.isFarmTrailer();
+            Vector3f center = farm ? new Vector3f(wheel.side * 1.0F, 6.9F / 16.0F, wheel.axleZ)
                     : new Vector3f(wheel.side * wheelX + halfWidth, spec.wheelCenterY(), wheelZ);
             Quaternionf spin = new Quaternionf().rotateX(radians(-wheelRotation));
             Quaternionf side = wheel.side > 0 ? new Quaternionf().rotateY((float) Math.PI) : new Quaternionf();
@@ -238,7 +241,7 @@ public final class TrailerRig {
 
     private void syncInventoryDisplays(Location root, ItemStack[] contents) {
         if (spec.kind() != TrailerSpec.Kind.FERTILIZER && spec.kind() != TrailerSpec.Kind.SEEDER
-                && spec.kind() != TrailerSpec.Kind.TRACTOR_TRAILER) {
+                && !spec.isFarmTrailer()) {
             return;
         }
         int fingerprint = inventoryFingerprint(contents);
@@ -324,10 +327,12 @@ public final class TrailerRig {
                 fullness[slot] = Math.min(1.0F, (float) item.getAmount() / Math.max(1, item.getMaxStackSize()));
             }
         }
-        List<InventoryTransform> transforms = spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER
+        List<InventoryTransform> transforms = spec.isFarmTrailer()
                 ? farmCargoTransforms(amounts, blocks, fullness) : inventoryTransforms(spec, amounts);
         for (InventoryTransform transform : transforms) {
-            layouts.add(new InventoryLayout(contents[transform.slot()].clone(), transform.center(),
+            Vector3f center = new Vector3f(transform.center());
+            if (spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN) center.z *= 1.6F;
+            layouts.add(new InventoryLayout(contents[transform.slot()].clone(), center,
                     transform.scale(), transform.rotation()));
         }
         return List.copyOf(layouts);
@@ -498,7 +503,7 @@ public final class TrailerRig {
         return (float) Math.toRadians(value);
     }
 
-    private record WheelDisplay(ItemDisplay entity, int side) {
+    private record WheelDisplay(ItemDisplay entity, int side, float axleZ) {
     }
 
     private record ExtraDisplay(ItemDisplay entity, Vector3f center, Vector3f scale,

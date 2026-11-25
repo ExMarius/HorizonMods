@@ -54,7 +54,7 @@ def main(jar):
                     raise RuntimeError('vehicle missing from both active and garage persisted data')
                 print('Persisted in '+('active vehicles' if 'utb_650' in data else 'garage'),flush=True)
                 trailers=(root/'plugins/MrCrayfishVehiclePlugin/trailers.yml').read_text()
-                if 'tractor_trailer' not in trailers or 'DIAMOND' not in trailers: raise RuntimeError('trailer or cargo missing from saved data')
+                if os.environ.get('FARM_TRAILER_ID','tractor_trailer') not in trailers or 'DIAMOND' not in trailers: raise RuntimeError('trailer or cargo missing from saved data')
                 print('Trailer cargo persisted.',flush=True)
                 if 'Could not pass event' in text or 'Exception in server tick loop' in text: raise RuntimeError('server reported event or tick failure')
                 print('Vehicle save verified; restarting disposable server.',flush=True)

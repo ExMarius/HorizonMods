@@ -11,13 +11,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TrailerSpecTest {
     @Test
     void registersEveryOriginalTrailer() {
-        assertEquals(Set.of("fertilizer", "seeder", "storage_trailer", "fluid_trailer", "vehicle_trailer", "utb_plough", "tractor_trailer"),
+        assertEquals(Set.of("fertilizer", "seeder", "storage_trailer", "fluid_trailer", "vehicle_trailer", "utb_plough", "tractor_trailer", "tractor_trailer_modern"),
                 Set.copyOf(TrailerSpec.ids()));
     }
 
     @Test
     void specializedAttachmentsOnlyAllowCompatiblePullers() {
         TrailerSpec farm = TrailerSpec.TRACTOR_TRAILER;
+        TrailerSpec modern = TrailerSpec.TRACTOR_TRAILER_MODERN;
+        assertTrue(modern.permitsVehicle("tractor"));
+        assertTrue(modern.permitsVehicle("utb_650"));
+        assertFalse(modern.permitsVehicle("quad_bike"));
+        assertFalse(modern.permitsTrailerPuller());
+        assertEquals(-2.75F, modern.hitchDistance(), 0.000001F);
         assertTrue(farm.permitsVehicle("tractor"));
         assertTrue(farm.permitsVehicle("utb_650"));
         assertFalse(farm.permitsVehicle("quad_bike"));

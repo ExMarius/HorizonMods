@@ -31,6 +31,12 @@ public record TrailerSpec(
             1.85F, 1.45F, 2.0F, 0.0F, 0.0F, 0.0F, 0.0F, -14.0F, false,
             new LandVehicleSpec.Point(0.0F, 0.0F, 0.0F));
 
+    /** Larger two-axle farm trailer, kept separate from the one-axle trailer. */
+    public static final TrailerSpec TRACTOR_TRAILER_MODERN = new TrailerSpec(
+            "tractor_trailer_modern", "Remorcă agricolă modernă", "tractor_trailer_modern_body", Kind.TRACTOR_TRAILER_MODERN,
+            2.0F, 1.7F, 2.0F, 0.0F, 0.0F, 0.0F, 0.0F, -22.0F, false,
+            new LandVehicleSpec.Point(0.0F, 0.0F, 0.0F));
+
     /** Three-point mounted prototype: no wheels, exclusive to the UTB. */
     public static final TrailerSpec UTB_PLOUGH = new TrailerSpec(
             "utb_plough", "Plug UTB", "utb_plough", Kind.UTB_PLOUGH,
@@ -56,6 +62,7 @@ public record TrailerSpec(
 
     private static final Map<String, TrailerSpec> BY_ID = Map.of(
             TRACTOR_TRAILER.id, TRACTOR_TRAILER,
+            TRACTOR_TRAILER_MODERN.id, TRACTOR_TRAILER_MODERN,
             UTB_PLOUGH.id, UTB_PLOUGH,
             FERTILIZER.id, FERTILIZER,
             SEEDER.id, SEEDER,
@@ -81,7 +88,7 @@ public record TrailerSpec(
     }
 
     public float bodyOriginY() {
-        if (kind == Kind.TRACTOR_TRAILER) return 0.5F;
+        if (isFarmTrailer()) return 0.5F;
         return (0.5F + (axleOffset + wheelOffset) * LandVehicleSpec.MODEL_UNIT) * bodyScale;
     }
 
@@ -122,21 +129,26 @@ public record TrailerSpec(
         return hitchOffset * bodyScale * LandVehicleSpec.MODEL_UNIT;
     }
 
+    public boolean isFarmTrailer() {
+        return kind == Kind.TRACTOR_TRAILER || kind == Kind.TRACTOR_TRAILER_MODERN;
+    }
+
     /** Restrict specialized equipment without altering the legacy trailer rules. */
     public boolean permitsVehicle(String vehicleId) {
         return switch (kind) {
             case UTB_PLOUGH -> "utb_650".equals(vehicleId);
-            case TRACTOR_TRAILER -> "utb_650".equals(vehicleId) || "tractor".equals(vehicleId);
+            case TRACTOR_TRAILER, TRACTOR_TRAILER_MODERN -> "utb_650".equals(vehicleId) || "tractor".equals(vehicleId);
             default -> true;
         };
     }
 
     public boolean permitsTrailerPuller() {
-        return kind != Kind.UTB_PLOUGH && kind != Kind.TRACTOR_TRAILER;
+        return kind != Kind.UTB_PLOUGH && !isFarmTrailer();
     }
 
     public enum Kind {
         TRACTOR_TRAILER,
+        TRACTOR_TRAILER_MODERN,
         UTB_PLOUGH,
         FERTILIZER,
         SEEDER,

@@ -36,3 +36,9 @@ jobs:
             python3 -c "from pathlib import Path; s=Path('/tmp/tractor-trailer.log').read_text(); i=s.find('BOT DIAGNOSTIC:'); print('::error::'+(' | '.join(s[i:].splitlines()[:60] if i>=0 else s.splitlines()[-30:])).replace('%','%25')[:10000])"
             exit 1
           }
+
+      - name: Test modern four-wheel trailer on disposable server
+        run: |
+          npm install --prefix /tmp/horizon-test mineflayer@4.39.0
+          export NODE_PATH=/tmp/horizon-test/node_modules
+          FARM_TRAILER_ID=tractor_trailer_modern python3 vehicle-plugin-horizon/tools/smoke_tractor_trailer.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar

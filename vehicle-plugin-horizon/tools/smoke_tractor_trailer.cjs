@@ -1,5 +1,6 @@
 // Protocol integration: inventory, incompatible and compatible coupling, towing and persistence.
 const mineflayer=require('mineflayer')
+const farmId=process.env.FARM_TRAILER_ID || 'tractor_trailer'
 const bot=mineflayer.createBot({host:'127.0.0.1',port:25568,username:'HorizonBot',version:'1.21.4',auth:'offline'})
 const wait=ms=>new Promise(r=>setTimeout(r,ms));let done=false,messages=[]
 const timer=setTimeout(()=>fail('timeout: '+messages.slice(-12).join(' | ')),110000)
@@ -10,10 +11,11 @@ bot.on('error',e=>fail(e.message));bot.on('kicked',r=>fail('kicked '+String(r)))
 function interactions(){return Object.values(bot.entities).filter(e=>e.name==='interaction')}
 async function run(){
  await wait(1800);bot.chat('/fill ~-15 ~-1 ~-15 ~15 ~-1 ~15 stone');await wait(1300);bot.chat('/fill ~-15 ~ ~-15 ~15 ~5 ~15 air');await wait(1100);bot.chat('/tp @s ~ ~ ~ 0 0');await wait(800)
- bot.chat('/vehicle spawn tractor_trailer');await wait(2200)
+ bot.chat('/vehicle spawn '+farmId);await wait(2200)
  const trailer=interactions()[0];check(trailer,'no trailer interaction')
  const displayCount=()=>Object.values(bot.entities).filter(e=>e.name==='item_display').length
  const emptyDisplays=displayCount()
+ if(farmId==='tractor_trailer_modern')check(emptyDisplays>=5,'modern trailer must have body and four wheels')
  bot.chat('/give @s minecraft:diamond 3');await wait(800);bot.chat('/give @s minecraft:wheat_seeds 5');await wait(800)
  const opened=new Promise(r=>bot.once('windowOpen',r));bot.activateEntity(trailer);const window=await opened;await wait(500)
  const slot=window.slots.findIndex((x,i)=>i>=window.inventoryStart && x && x.name==='diamond');check(slot>=0,'missing diamonds in player inventory')
