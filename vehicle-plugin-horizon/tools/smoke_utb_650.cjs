@@ -7,7 +7,11 @@ function fail(s){if(done)return;done=true;clearTimeout(timeout);console.error('F
 function success(){if(done)return;done=true;clearTimeout(timeout);console.log('UTB tractor spawn, mount, movement, inventory and save passed; no visual assertion.');bot.quit()}
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms))
 bot.on('error',e=>fail(e.message));bot.on('kicked',r=>fail('kicked '+String(r).slice(0,200)));bot.on('end',()=>{if(!done)fail('unexpected disconnect')})
-bot._client.on('packet',(data,meta)=>{if(meta.name==='add_resource_pack')packs++})
+bot._client.on('packet',(data,meta)=>{
+ if(meta.name==='add_resource_pack')packs++
+ // Mineflayer 4.39 does not clear bot.vehicle when an empty passenger list arrives.
+ if(meta.name==='set_passengers' && bot.vehicle && data.entityId===bot.vehicle.id && !data.passengers.includes(bot.entity.id)) bot.vehicle=null
+})
 bot.on('messagestr',s=>{if(s.includes('UTB 650 creat'))started=true})
 bot.once('spawn',()=>{
  setTimeout(()=>bot.chat('/fill ~-12 ~-1 ~-12 ~12 ~-1 ~12 stone'),1000)
