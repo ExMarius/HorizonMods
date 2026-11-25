@@ -7,15 +7,14 @@ final class FarmTrailerKinematics {
     static final double EYE = 1.835D;
     private FarmTrailerKinematics() {}
 
-    static Result solve(double x, double z, float previousYaw, double hitchX, double hitchZ) {
+    static Result solve(double x, double z, float previousYaw, double hitchX, double hitchZ, float pullerYaw) {
         double dx = hitchX - x, dz = hitchZ - z;
         double desiredHeading = Math.hypot(dx, dz) < 1.0E-8 ? previousYaw : Math.toDegrees(Math.atan2(-dx, dz));
-        float yaw = (float) (previousYaw + clamp(wrap(desiredHeading - previousYaw), -3.0, 3.0));
+        float yaw = (float) (previousYaw + clamp(wrap(desiredHeading - previousYaw), -5.0, 5.0));
         double body = Math.toRadians(yaw);
-        double px = x - Math.sin(body) * AXLE, pz = z + Math.cos(body) * AXLE;
-        double hx = hitchX - px, hz = hitchZ - pz;
-        double direction = Math.hypot(hx, hz) < 1.0E-8 ? yaw : Math.toDegrees(Math.atan2(-hx, hz));
-        float steering = (float) clamp(wrap(direction - yaw), -70.0, 70.0);
+        // The tongue follows the tractor's heading immediately, including slow
+        // steering. The bed follows smoothly behind; the eye remains on its pin.
+        float steering = (float) clamp(wrap(pullerYaw - yaw), -70.0, 70.0);
         double front = Math.toRadians(yaw + steering);
         // Reconstruct the root so the eye lands exactly on the hitch in X/Z.
         double rootX = hitchX + Math.sin(body) * AXLE + Math.sin(front) * EYE;
