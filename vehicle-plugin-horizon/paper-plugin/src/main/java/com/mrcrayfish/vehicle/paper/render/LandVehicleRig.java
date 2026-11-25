@@ -750,6 +750,13 @@ public final class LandVehicleRig {
             if (seat != null && seat.isValid() && !seat.getPassengers().isEmpty()) {
                 continue;
             }
+            // UTB's compact bench sits close to the driver. If the driver seat is
+            // empty, select it first; otherwise a remount can silently choose the
+            // rear bench and leave the tractor uncontrollable.
+            if ("utb_650".equals(spec.id()) && carrier.properties.driver()) {
+                closest = carrier;
+                break;
+            }
             Location seatLocation = carrier.anchor.getLocation();
             if (!seatLocation.getWorld().equals(playerLocation.getWorld())) {
                 continue;
