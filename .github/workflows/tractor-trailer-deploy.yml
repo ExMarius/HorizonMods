@@ -61,7 +61,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="horizon-offroader-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          tag="horizon-offroader-${GITHUB_RUN_ID}"
           gh release create "$tag" /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Dacia Logan Politie and Horizon vehicles' --notes 'Approved green four-wheel tractor trailer with articulated front axle and cargo. UTB rear bar restored. Visual checks in the vanilla client remain necessary.'
           echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
       - name: Verify public pack
