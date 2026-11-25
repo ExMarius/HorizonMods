@@ -365,7 +365,7 @@ public final class LandVehicleRig {
         Vector3f bodyCenter = chassis(bodyOrigin, wheelieAngle, bodyRoll);
         place(body, renderAnchor, relativeToSeat(bodyCenter, driverSeat), yaw, chassisRotation,
                 new Vector3f(spec.bodyScale() * spec.modelScaleCorrection(spec.bodyModel())),
-                "bmw_m6".equals(spec.id()) ? new Quaternionf().rotateY((float) Math.PI) : new Quaternionf());
+                new Quaternionf());
         if (horizonRig != null) {
             horizonRig.update(renderAnchor, driverSeat, chassisRotation, renderSteeringAngle,
                     frontWheelRotation, rearWheelRotation, wheelieAngle, bodyRoll, point(spec.wheeliePivot()));
@@ -488,7 +488,7 @@ public final class LandVehicleRig {
                 rotation = new Quaternionf(chassisRotation)
                         .rotateY(steerRadians)
                         .rotateX(radians(-spin));
-                sourceRotation = "bmw_m6".equals(spec.id()) || wheel.side() > 0
+                sourceRotation = wheel.side() > 0 && !"bmw_m6".equals(spec.id())
                         ? new Quaternionf().rotateY((float) Math.PI) : new Quaternionf();
             }
             place(wheelDisplay.entity, renderAnchor, relativeToSeat(center, driverSeat), yaw, rotation,
@@ -1040,12 +1040,7 @@ public final class LandVehicleRig {
     }
 
     static String wheelModelFor(LandVehicleSpec spec, LandVehicleSpec.Wheel wheel, String requested) {
-        if ("bmw_m6".equals(spec.id())) {
-            // Source model's nose points to -Z. The complete body and wheels
-            // are turned 180 degrees, so both axle and side must be swapped.
-            return "bmw_m6_" + (wheel.front() ? "rear_" : "front_")
-                    + (wheel.side() < 0 ? "right" : "left");
-        }
+        if ("bmw_m6".equals(spec.id())) return "horizon_coupe_wheel";
         return "utb_650".equals(spec.id()) && "standard_wheel".equals(requested)
                 ? (wheel.front() ? "utb_650_wheel_front" : "utb_650_wheel_rear") : requested;
     }

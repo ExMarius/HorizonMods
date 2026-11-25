@@ -4,6 +4,7 @@ on:
     branches: [arena/fb5f91ff-horizonmods]
     paths:
       - 'vehicle-plugin-horizon/next-vehicle/bmw-m6/**'
+      - 'vehicle-plugin-horizon/next-vehicle/horizon-coupe/**'
       - 'vehicle-plugin-horizon/paper-plugin/**'
       - 'vehicle-plugin-horizon/tools/smoke_bmw_m6.*'
       - '.github/workflows/bmw-m6-check.yml'
@@ -22,7 +23,9 @@ jobs:
         with:
           node-version: '22'
       - name: Verify conversion and pack isolation
-        run: python3 -m unittest discover -s vehicle-plugin-horizon/next-vehicle/bmw-m6 -p 'test_*.py' -v
+        run: |
+          python3 -m unittest discover -s vehicle-plugin-horizon/next-vehicle/bmw-m6 -p 'test_*.py' -v
+          python3 -m unittest discover -s vehicle-plugin-horizon/next-vehicle/horizon-coupe -p 'test_*.py' -v
       - name: Build and test plugin
         run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build
       - name: Spawn, drive and reload BMW on disposable Paper server

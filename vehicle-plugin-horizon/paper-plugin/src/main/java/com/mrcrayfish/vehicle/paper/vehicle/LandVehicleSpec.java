@@ -393,23 +393,23 @@ public record LandVehicleSpec(
             null, null, List.of(), false
     );
 
-    /** Experimental BMW: dimensions are scaled from the source model, not measured in-game. */
+    /** Original coupe; keeps the legacy bmw_m6 ID so saved vehicles survive the replacement. */
     public static final LandVehicleSpec BMW_M6 = new LandVehicleSpec(
-            "bmw_m6", "BMW M6 1988", "bmw_m6_body",
+            "bmw_m6", "Horizon Coupe Sport", "horizon_coupe_body",
             2.25F, 1.65F, 1.0F,
             2.0F, -8.0F, 0.0F,
-            16.0F, 35.0F, 1.375F, -1.25F, 5.0F,
+            16.0F, 35.0F, 1.25F, -1.25F, 5.0F,
             15_000.0F, 0.25F, 0.8F, 1.6F, "vehicle:entity.bumper_car.engine",
             false, new Point(0, 0, 0), null, null, null, null, List.of(),
             List.of(
-                    new Wheel(-1, true, -.78125F, .3125F, 1.375F, 0, .03125F, 2.0F, 2.0F, 2.0F),
-                    new Wheel(1, true, .78125F, .3125F, 1.375F, 0, .03125F, 2.0F, 2.0F, 2.0F),
-                    new Wheel(-1, false, -.78125F, .3125F, -1.25F, 0, .03125F, 2.0F, 2.0F, 2.0F),
-                    new Wheel(1, false, .78125F, .3125F, -1.25F, 0, .03125F, 2.0F, 2.0F, 2.0F)),
-            List.of(new Seat(true, new Point(.42F, .59F, .30F), 0),
-                    new Seat(false, new Point(-.42F, .59F, .30F), 0),
-                    new Seat(false, new Point(.42F, .59F, -.55F), 0),
-                    new Seat(false, new Point(-.42F, .59F, -.55F), 0)),
+                    new Wheel(-1, true, -.875F, .35F, 1.25F, 0, 0.0F, 2.0F, 2.0F, 2.0F),
+                    new Wheel(1, true, .875F, .35F, 1.25F, 0, 0.0F, 2.0F, 2.0F, 2.0F),
+                    new Wheel(-1, false, -.875F, .35F, -1.25F, 0, 0.0F, 2.0F, 2.0F, 2.0F),
+                    new Wheel(1, false, .875F, .35F, -1.25F, 0, 0.0F, 2.0F, 2.0F, 2.0F)),
+            List.of(new Seat(true, new Point(.375F, .55F, -.42F), 0),
+                    new Seat(false, new Point(-.375F, .55F, -.42F), 0),
+                    new Seat(false, new Point(.375F, .55F, -1.03F), 0),
+                    new Seat(false, new Point(-.375F, .55F, -1.03F), 0)),
             false, "tow_bar", new Point(0, 0, 0), new Point(0, 0, 0),
             null, null, List.of(), false
     );
