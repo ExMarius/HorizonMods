@@ -34,7 +34,7 @@ public record TrailerSpec(
     /** Larger two-axle farm trailer, kept separate from the one-axle trailer. */
     public static final TrailerSpec TRACTOR_TRAILER_MODERN = new TrailerSpec(
             "tractor_trailer_modern", "Remorcă agricolă modernă", "tractor_trailer_modern_body", Kind.TRACTOR_TRAILER_MODERN,
-            2.0F, 1.7F, 2.0F, 0.0F, 0.0F, 0.0F, 0.0F, -22.0F, false,
+            2.0F, 1.7F, 2.0F, 0.0F, 0.0F, 0.0F, 0.0F, -26.68F, false,
             new LandVehicleSpec.Point(0.0F, 0.0F, 0.0F));
 
     /** Three-point mounted prototype: no wheels, exclusive to the UTB. */

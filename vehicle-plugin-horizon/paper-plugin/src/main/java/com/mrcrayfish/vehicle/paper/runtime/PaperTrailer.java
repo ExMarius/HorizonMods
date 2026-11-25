@@ -41,6 +41,7 @@ public final class PaperTrailer {
     private final Vector horizontalVelocity = new Vector();
     private boolean onGround;
     private float wheelRotation;
+    private float frontSteering;
     private int tickCount;
     // Volatile safety state: raised after restart, detachment or driver leaving.
     private boolean ploughLowered;
@@ -90,15 +91,24 @@ public final class PaperTrailer {
         }
 
         if (target != null) {
-            float yaw = (float) Math.toDegrees(Math.atan2(
-                    target.hitch().getZ() - location.getZ(),
-                    target.hitch().getX() - location.getX()) - Math.toRadians(90.0D));
-            Location desired = local(target.hitch(), 0.0D, 0.0D, spec.hitchDistance(), yaw);
-            Vector requested = new Vector(desired.getX() - location.getX(), verticalVelocity - 0.08D,
-                    desired.getZ() - location.getZ());
-            move(requested);
-            location.setYaw(yaw);
+            if (spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN) {
+                var geometry = FarmTrailerKinematics.solve(location.getX(), location.getZ(), location.getYaw(),
+                        target.hitch().getX(), target.hitch().getZ());
+                move(new Vector(geometry.x() - location.getX(), verticalVelocity - 0.08D,
+                        geometry.z() - location.getZ()));
+                location.setYaw(geometry.yaw());
+                frontSteering = geometry.steering();
+            } else {
+                float yaw = (float) Math.toDegrees(Math.atan2(
+                        target.hitch().getZ() - location.getZ(),
+                        target.hitch().getX() - location.getX()) - Math.toRadians(90.0D));
+                Location desired = local(target.hitch(), 0.0D, 0.0D, spec.hitchDistance(), yaw);
+                move(new Vector(desired.getX() - location.getX(), verticalVelocity - 0.08D,
+                        desired.getZ() - location.getZ()));
+                location.setYaw(yaw);
+            }
         } else {
+            frontSteering = 0.0F;
             move(new Vector(horizontalVelocity.getX() * 0.75D, verticalVelocity - 0.08D,
                     horizontalVelocity.getZ() * 0.75D));
         }
@@ -123,7 +133,7 @@ public final class PaperTrailer {
 
         TrailerRig.FluidVisual visual = fluidAmount > 0 && fluidMaterial != null
                 ? new TrailerRig.FluidVisual(fluidMaterial, fluidAmount / (float) FLUID_CAPACITY) : null;
-        rig.update(location, wheelRotation, visual, inventoryContents(), tickCount);
+        rig.update(location, wheelRotation, visual, inventoryContents(), tickCount, frontSteering);
         if (loadedVehicleId != null) {
             manager.positionLoadedVehicle(this, loadedVehicleId);
         }

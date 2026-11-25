@@ -75,7 +75,7 @@ public final class TrailerRig {
 
         List<WheelDisplay> wheels = new ArrayList<>();
         for (int side : spec.kind() == TrailerSpec.Kind.UTB_PLOUGH ? new int[0] : new int[]{-1, 1}) {
-            float[] axles = spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN ? new float[]{-0.8F, 0.8F} : new float[]{0.0F};
+            float[] axles = spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN ? new float[]{-1.45F, 1.5F} : new float[]{0.0F};
             for (float axle : axles) {
                 ItemDisplay wheel = display(world, location, model(spec.isFarmTrailer() ? "utb_650_wheel_front" : "standard_wheel"));
                 mark(wheel, trailerId);
@@ -113,7 +113,14 @@ public final class TrailerRig {
                              * -0.5 X/Z translation. A vanilla chest item model is
                              * center-anchored, so compensate by half a block. */
                             spec.storageChestCenterY(), spec.bodyPartZ(0.0F)),
-                    new Vector3f(0.9F * spec.bodyScale()), false, 0.0F, 180.0F));
+                    new Vector3f(0.9F * spec.bodyScale()), false, 0.0F, 180.0F, false));
+        }
+        if (spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN) {
+            ItemDisplay axle = display(world, location, model("tractor_trailer_modern_front"));
+            mark(axle, trailerId);
+            all.add(axle);
+            extras.add(new ExtraDisplay(axle, new Vector3f(0.0F, 0.5F, 1.5F),
+                    new Vector3f(2.0F), false, 0.0F, 0.0F, true));
         }
         if (spec.canTowTrailers()) {
             LandVehicleSpec.Point tow = spec.towBarOffset();
@@ -148,7 +155,7 @@ public final class TrailerRig {
         ItemDisplay display = display(world, location, model(model));
         mark(display, id);
         all.add(display);
-        extras.add(new ExtraDisplay(display, center, scale, spins, preSpinZ, sourceYaw));
+        extras.add(new ExtraDisplay(display, center, scale, spins, preSpinZ, sourceYaw, false));
     }
 
     private static ItemDisplay display(World world, Location location, ItemStack stack) {
@@ -190,6 +197,11 @@ public final class TrailerRig {
 
     public void update(Location root, float wheelRotation, FluidVisual fluidVisual,
                        ItemStack[] inventoryContents, int tickCount) {
+        update(root, wheelRotation, fluidVisual, inventoryContents, tickCount, 0.0F);
+    }
+
+    public void update(Location root, float wheelRotation, FluidVisual fluidVisual,
+                       ItemStack[] inventoryContents, int tickCount, float steering) {
         if (!valid()) {
             return;
         }
@@ -205,19 +217,25 @@ public final class TrailerRig {
         float wheelZ = spec.wheelZ() * LandVehicleSpec.MODEL_UNIT * spec.bodyScale();
         for (WheelDisplay wheel : wheels) {
             float halfWidth = wheel.side * 4.0F * 0.5F * LandVehicleSpec.MODEL_UNIT * spec.bodyScale();
+            boolean modern = spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN;
             boolean farm = spec.isFarmTrailer();
-            Vector3f center = farm ? new Vector3f(wheel.side * 1.0F, 6.9F / 16.0F, wheel.axleZ)
+            float steer = modern && wheel.axleZ > 0 ? radians(steering) : 0.0F;
+            float x = modern ? wheel.side * 0.885F : wheel.side * 1.0F;
+            Vector3f center = farm ? new Vector3f(x * (float) Math.cos(steer), modern ? 0.48F : 6.9F / 16.0F,
+                    wheel.axleZ + x * (float) Math.sin(steer))
                     : new Vector3f(wheel.side * wheelX + halfWidth, spec.wheelCenterY(), wheelZ);
-            Quaternionf spin = new Quaternionf().rotateX(radians(-wheelRotation));
+            Quaternionf rotation = new Quaternionf().rotateY(-steer).rotateX(radians(-wheelRotation));
             Quaternionf side = wheel.side > 0 ? new Quaternionf().rotateY((float) Math.PI) : new Quaternionf();
-            place(wheel.entity, root, center, spin, farm ? new Vector3f(1.0F)
-                    : new Vector3f(spec.bodyScale(), spec.bodyScale() * 1.25F, spec.bodyScale() * 1.25F), side);
+            Vector3f wheelScale = modern ? new Vector3f(1.28F, 1.113F, 1.113F) : farm ? new Vector3f(1.0F)
+                    : new Vector3f(spec.bodyScale(), spec.bodyScale() * 1.25F, spec.bodyScale() * 1.25F);
+            place(wheel.entity, root, center, rotation, wheelScale, side);
         }
 
         for (ExtraDisplay extra : extras) {
             /* Preserve source call order: the fertilizer roller's Z quarter-turn
              * is applied before its wheel-driven local X rotation. */
-            Quaternionf rotation = new Quaternionf().rotateZ(radians(extra.preSpinZ));
+            Quaternionf rotation = extra.steering ? new Quaternionf().rotateY(-radians(steering))
+                    : new Quaternionf().rotateZ(radians(extra.preSpinZ));
             if (extra.spins) {
                 rotation.rotateX(radians(-wheelRotation));
             }
@@ -331,7 +349,11 @@ public final class TrailerRig {
                 ? farmCargoTransforms(amounts, blocks, fullness) : inventoryTransforms(spec, amounts);
         for (InventoryTransform transform : transforms) {
             Vector3f center = new Vector3f(transform.center());
-            if (spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN) center.z *= 1.6F;
+            if (spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN) {
+                center.z *= 1.6F;
+                center.y = contents[transform.slot()].getType().isBlock() ? 1.31F
+                        : 1.22F + (center.y - 0.66F) * 1.4F;
+            }
             layouts.add(new InventoryLayout(contents[transform.slot()].clone(), center,
                     transform.scale(), transform.rotation()));
         }
@@ -507,7 +529,7 @@ public final class TrailerRig {
     }
 
     private record ExtraDisplay(ItemDisplay entity, Vector3f center, Vector3f scale,
-                                boolean spins, float preSpinZ, float sourceYaw) {
+                                boolean spins, float preSpinZ, float sourceYaw, boolean steering) {
     }
 
     private record InventoryDisplay(ItemDisplay entity, InventoryLayout layout) {

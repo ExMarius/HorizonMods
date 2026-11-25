@@ -23,7 +23,7 @@ class TrailerSpecTest {
         assertTrue(modern.permitsVehicle("utb_650"));
         assertFalse(modern.permitsVehicle("quad_bike"));
         assertFalse(modern.permitsTrailerPuller());
-        assertEquals(-2.75F, modern.hitchDistance(), 0.000001F);
+        assertEquals(-3.335F, modern.hitchDistance(), 0.000001F);
         assertTrue(farm.permitsVehicle("tractor"));
         assertTrue(farm.permitsVehicle("utb_650"));
         assertFalse(farm.permitsVehicle("quad_bike"));
