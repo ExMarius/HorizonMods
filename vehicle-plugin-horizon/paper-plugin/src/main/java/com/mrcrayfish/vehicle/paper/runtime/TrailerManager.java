@@ -591,10 +591,17 @@ public final class TrailerManager {
             }
             case VEHICLE -> vehicles.byId(pullerId)
                     .filter(vehicle -> vehicle.spec().canTowTrailers() && trailer.spec().permitsVehicle(vehicle.spec().id()))
-                    .map(vehicle -> new PaperTrailer.PullTarget(
-                            trailer.spec().isFarmTrailer()
-                                    ? vehicle.tractorTrailerTowBarLocation() : vehicle.towBarLocation(),
-                            vehicle.location())).orElse(null);
+                    .map(vehicle -> {
+                        Location hitch = trailer.spec().isFarmTrailer()
+                                ? vehicle.tractorTrailerTowBarLocation() : vehicle.towBarLocation();
+                        if (trailer.spec().kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN) {
+                            // UTB's authored centre pin is at .434375 above its root;
+                            // its physics tow point is at .3125. Other tractors use
+                            // the common accessory renderer's +0.5 visual offset.
+                            hitch.add(0, "utb_650".equals(vehicle.spec().id()) ? 0.121875D : 0.5D, 0);
+                        }
+                        return new PaperTrailer.PullTarget(hitch, vehicle.location());
+                    }).orElse(null);
             case TRAILER -> Optional.ofNullable(trailers.get(pullerId))
                     .filter(parent -> parent.spec().canTowTrailers() && trailer.spec().permitsTrailerPuller())
                     .map(parent -> new PaperTrailer.PullTarget(parent.towBarLocation(), parent.location())).orElse(null);

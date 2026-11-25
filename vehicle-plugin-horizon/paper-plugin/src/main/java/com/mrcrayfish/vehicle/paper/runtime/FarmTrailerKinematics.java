@@ -8,6 +8,10 @@ final class FarmTrailerKinematics {
     private FarmTrailerKinematics() {}
 
     static Result solve(double x, double z, float previousYaw, double hitchX, double hitchZ) {
+        return solve(x, z, previousYaw, hitchX, hitchZ, EYE);
+    }
+
+    static Result solve(double x, double z, float previousYaw, double hitchX, double hitchZ, double eyeHorizontal) {
         double oldBody = Math.toRadians(previousYaw);
         double oldFrontX = x - Math.sin(oldBody) * AXLE;
         double oldFrontZ = z + Math.cos(oldBody) * AXLE;
@@ -20,8 +24,8 @@ final class FarmTrailerKinematics {
         double frontYaw = Math.hypot(hx, hz) < 1.0E-8
                 ? previousYaw : Math.toDegrees(Math.atan2(-hx, hz));
         double front = Math.toRadians(frontYaw);
-        double frontX = hitchX + Math.sin(front) * EYE;
-        double frontZ = hitchZ - Math.cos(front) * EYE;
+        double frontX = hitchX + Math.sin(front) * eyeHorizontal;
+        double frontZ = hitchZ - Math.cos(front) * eyeHorizontal;
 
         // The rear axle follows the front axle without imposing sideways travel.
         double dx = frontX - oldRearX, dz = frontZ - oldRearZ;

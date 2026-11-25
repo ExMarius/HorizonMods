@@ -113,14 +113,19 @@ public final class TrailerRig {
                              * -0.5 X/Z translation. A vanilla chest item model is
                              * center-anchored, so compensate by half a block. */
                             spec.storageChestCenterY(), spec.bodyPartZ(0.0F)),
-                    new Vector3f(0.9F * spec.bodyScale()), false, 0.0F, 180.0F, false));
+                    new Vector3f(0.9F * spec.bodyScale()), false, 0.0F, 180.0F, false, false));
         }
         if (spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN) {
-            ItemDisplay axle = display(world, location, model("tractor_trailer_modern_front"));
+            ItemDisplay axle = display(world, location, model("tractor_trailer_modern_axle"));
             mark(axle, trailerId);
             all.add(axle);
             extras.add(new ExtraDisplay(axle, new Vector3f(0.0F, 0.5F, 1.5F),
-                    new Vector3f(2.0F), false, 0.0F, 0.0F, true));
+                    new Vector3f(2.0F), false, 0.0F, 0.0F, true, false));
+            ItemDisplay drawbar = display(world, location, model("tractor_trailer_modern_drawbar"));
+            mark(drawbar, trailerId);
+            all.add(drawbar);
+            extras.add(new ExtraDisplay(drawbar, new Vector3f(0.0F, 0.6F, 1.5F),
+                    new Vector3f(2.0F), false, 0.0F, 0.0F, true, true));
         }
         if (spec.canTowTrailers()) {
             LandVehicleSpec.Point tow = spec.towBarOffset();
@@ -155,7 +160,7 @@ public final class TrailerRig {
         ItemDisplay display = display(world, location, model(model));
         mark(display, id);
         all.add(display);
-        extras.add(new ExtraDisplay(display, center, scale, spins, preSpinZ, sourceYaw, false));
+        extras.add(new ExtraDisplay(display, center, scale, spins, preSpinZ, sourceYaw, false, false));
     }
 
     private static ItemDisplay display(World world, Location location, ItemStack stack) {
@@ -197,11 +202,11 @@ public final class TrailerRig {
 
     public void update(Location root, float wheelRotation, FluidVisual fluidVisual,
                        ItemStack[] inventoryContents, int tickCount) {
-        update(root, wheelRotation, fluidVisual, inventoryContents, tickCount, 0.0F);
+        update(root, wheelRotation, fluidVisual, inventoryContents, tickCount, 0.0F, 0.0F);
     }
 
     public void update(Location root, float wheelRotation, FluidVisual fluidVisual,
-                       ItemStack[] inventoryContents, int tickCount, float steering) {
+                       ItemStack[] inventoryContents, int tickCount, float steering, float drawbarPitch) {
         if (!valid()) {
             return;
         }
@@ -236,6 +241,7 @@ public final class TrailerRig {
              * is applied before its wheel-driven local X rotation. */
             Quaternionf rotation = extra.steering ? new Quaternionf().rotateY(-radians(steering))
                     : new Quaternionf().rotateZ(radians(extra.preSpinZ));
+            if (extra.pitching) rotation.rotateX(-radians(drawbarPitch));
             if (extra.spins) {
                 rotation.rotateX(radians(-wheelRotation));
             }
@@ -529,7 +535,7 @@ public final class TrailerRig {
     }
 
     private record ExtraDisplay(ItemDisplay entity, Vector3f center, Vector3f scale,
-                                boolean spins, float preSpinZ, float sourceYaw, boolean steering) {
+                                boolean spins, float preSpinZ, float sourceYaw, boolean steering, boolean pitching) {
     }
 
     private record InventoryDisplay(ItemDisplay entity, InventoryLayout layout) {

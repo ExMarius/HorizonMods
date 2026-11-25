@@ -42,6 +42,7 @@ public final class PaperTrailer {
     private boolean onGround;
     private float wheelRotation;
     private float frontSteering;
+    private float drawbarPitch;
     private int tickCount;
     // Volatile safety state: raised after restart, detachment or driver leaving.
     private boolean ploughLowered;
@@ -92,12 +93,17 @@ public final class PaperTrailer {
 
         if (target != null) {
             if (spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN) {
+                var pitch = pullerType == PullerType.VEHICLE
+                        ? DrawbarPitch.solve(location.getY(), target.hitch().getY())
+                        : DrawbarPitch.solve(location.getY(), location.getY() + DrawbarPitch.EYE_Y);
                 var geometry = FarmTrailerKinematics.solve(location.getX(), location.getZ(), location.getYaw(),
-                        target.hitch().getX(), target.hitch().getZ());
+                        target.hitch().getX(), target.hitch().getZ(), pitch.horizontal());
                 move(new Vector(geometry.x() - location.getX(), verticalVelocity - 0.08D,
                         geometry.z() - location.getZ()));
                 location.setYaw(geometry.yaw());
                 frontSteering = geometry.steering();
+                drawbarPitch = pullerType == PullerType.VEHICLE
+                        ? DrawbarPitch.solve(location.getY(), target.hitch().getY()).pitchDegrees() : 0.0F;
             } else {
                 float yaw = (float) Math.toDegrees(Math.atan2(
                         target.hitch().getZ() - location.getZ(),
@@ -109,6 +115,7 @@ public final class PaperTrailer {
             }
         } else {
             frontSteering = 0.0F;
+            drawbarPitch = 0.0F;
             move(new Vector(horizontalVelocity.getX() * 0.75D, verticalVelocity - 0.08D,
                     horizontalVelocity.getZ() * 0.75D));
         }
@@ -133,7 +140,7 @@ public final class PaperTrailer {
 
         TrailerRig.FluidVisual visual = fluidAmount > 0 && fluidMaterial != null
                 ? new TrailerRig.FluidVisual(fluidMaterial, fluidAmount / (float) FLUID_CAPACITY) : null;
-        rig.update(location, wheelRotation, visual, inventoryContents(), tickCount, frontSteering);
+        rig.update(location, wheelRotation, visual, inventoryContents(), tickCount, frontSteering, drawbarPitch);
         if (loadedVehicleId != null) {
             manager.positionLoadedVehicle(this, loadedVehicleId);
         }
