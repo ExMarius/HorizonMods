@@ -21,19 +21,19 @@ bot.once('spawn',()=>{
 })
 async function drive(target){
  if(bot.vehicle.name!=='horse')throw new Error('unexpected mount '+bot.vehicle.name)
+ // Test voluntary dismount while stationary, then remount and drive.
+ bot._client.write('entity_action',{entityId:bot.entity.id,actionId:'start_sneaking',jumpBoost:0})
+ await wait(1500)
+ bot._client.write('entity_action',{entityId:bot.entity.id,actionId:'stop_sneaking',jumpBoost:0})
+ if(bot.vehicle){await wait(12000);throw new Error('voluntary dismount failed or client did not receive dismount')}
+ bot.activateEntity(target);await wait(1800)
+ if(!bot.vehicle)throw new Error('remount after dismount failed')
  const start=target.position.clone(),before=JSON.stringify(bot.inventory.slots)
  const send=setInterval(()=>bot._client.write('player_input',{inputs:{forward:true}}),50)
  await wait(5000);clearInterval(send);bot._client.write('player_input',{inputs:{}})
  if(!bot.vehicle || target.position.distanceTo(start)<.3)throw new Error('tractor did not drive')
  if(JSON.stringify(bot.inventory.slots)!==before)throw new Error('inventory changed while driving')
  if(packs!==originalPacks)throw new Error('pack resent after spawn')
- // Exercise voluntary dismount and a second mount before logout while riding.
- bot._client.write('entity_action',{entityId:bot.entity.id,actionId:'start_sneaking',jumpBoost:0})
- const unmount=setInterval(()=>bot._client.write('player_input',{inputs:{shift:true}}),50)
- await wait(2000);clearInterval(unmount);bot._client.write('player_input',{inputs:{}});bot._client.write('entity_action',{entityId:bot.entity.id,actionId:'stop_sneaking',jumpBoost:0})
- if(bot.vehicle){await wait(12000);throw new Error('voluntary dismount failed or client did not receive dismount')}
- bot.activateEntity(target);await wait(1800)
- if(!bot.vehicle)throw new Error('remount after dismount failed')
  bot.chat('/vehicle save');await wait(1200);success()
 }
 const interval=setInterval(()=>{
