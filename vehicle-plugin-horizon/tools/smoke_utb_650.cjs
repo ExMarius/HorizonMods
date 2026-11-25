@@ -28,6 +28,8 @@ async function drive(target){
    await wait(12000); throw new Error('server dismount result: '+rideResult)
  }
  bot.vehicle=null // Mineflayer does not clear the vehicle on an empty passenger packet.
+ // Paper may place a dismounted rider several blocks away; return within interaction range.
+ const p=target.position; bot.chat(`/tp @s ${p.x} ${p.y} ${p.z}`); await wait(1200)
  bot.activateEntity(target);await wait(2000)
  if(!bot.vehicle)throw new Error('remount after dismount failed')
  const start=target.position.clone(),before=JSON.stringify(bot.inventory.slots), mountId=bot.vehicle.id
