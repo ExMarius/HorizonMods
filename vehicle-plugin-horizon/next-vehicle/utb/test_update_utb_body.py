@@ -44,6 +44,34 @@ class UpdateUTBTest(unittest.TestCase):
         self.assertAlmostEqual(4.39,2*((rim['from'][0]+rim['to'][0])/2-8),places=2)
         self.assertAlmostEqual(37.2,8+2*(rim['to'][1]-8),places=2)
         self.assertAlmostEqual(4.2,2*((rim['from'][2]+rim['to'][2])/2-8),delta=0.01)
+    def test_bumper_is_fixed_and_rear_bench_fits_between_wall_and_driver(self):
+        m=json.loads(u.MODEL.read_text()); p={e['name']:e for e in m['elements']}
+        bumper=p['front bumper']
+        for side in ('left','right'):
+            rail=p['front bumper '+side+' mounting rail']
+            self.assertLessEqual(rail['from'][2],p['front chassis']['to'][2])
+            self.assertGreaterEqual(rail['to'][2],bumper['from'][2])
+        bench=p['rear bench cushion'];back=p['rear bench backrest'];driver=p['seat cushion']
+        self.assertLess(bench['to'][2],driver['from'][2])
+        self.assertLessEqual(back['to'][2],bench['from'][2]+0.3)
+        self.assertGreater(bench['to'][0]-bench['from'][0],9.0)
+        self.assertAlmostEqual(19.2,8+2*(bench['to'][1]-8),places=3)
+        self.assertAlmostEqual(-26.5,2*((bench['from'][2]+bench['to'][2])/2-8),places=3)
+
+    def test_treads_complete_and_rubber_bridges_inner_tread(self):
+        import math
+        for name in u.WHEELS:
+            m=json.loads((u.ASSETS/(name+'.json')).read_text());parts={e['name']:e for e in m['elements']}
+            self.assertEqual(32,sum(n.startswith('lug ') for n in parts))
+            cores=[e for e in m['elements'] if e['name'].startswith('rubber core')]
+            radius=10.75 if 'rear' in name else 5.25
+            for i in range(360):
+                angle=math.radians(i);y,z=radius*math.cos(angle),radius*math.sin(angle)
+                def contains(e):
+                    a=math.radians(e.get('rotation',{}).get('angle',0)); yy=y*math.cos(a)+z*math.sin(a);zz=-y*math.sin(a)+z*math.cos(a)
+                    return e['from'][1]-8-1e-6 <= yy <= e['to'][1]-8+1e-6 and e['from'][2]-8-1e-6 <= zz <= e['to'][2]-8+1e-6
+                self.assertTrue(any(contains(e) for e in cores),f'{name} inner tread gap at {i} degrees')
+
     def test_wheel_dimensions_pivots_and_segments(self):
         for model,diameter,width in [('utb_650_wheel_front',13.8,3.5),('utb_650_wheel_rear',24.8,6.7)]:
             m=json.loads((u.ASSETS/(model+'.json')).read_text());u.validate(m)

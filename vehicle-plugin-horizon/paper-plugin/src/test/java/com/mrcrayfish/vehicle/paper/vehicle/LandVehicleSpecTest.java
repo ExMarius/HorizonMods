@@ -112,7 +112,14 @@ class LandVehicleSpecTest {
         assertEquals(0.0F, utb.firstFrontWheel().halfWidthOffset(), EPSILON);
         assertEquals(0.0F, utb.firstRearWheel().halfWidthOffset(), EPSILON);
         assertEquals(4, utb.wheels().size());
-        assertEquals(1, utb.seats().size());
+        assertEquals(3, utb.seats().size());
+        assertTrue(utb.seats().getFirst().driver());
+        assertFalse(utb.seats().get(1).driver());
+        assertFalse(utb.seats().get(2).driver());
+        assertEquals(-4.8F / 16.0F, utb.seats().get(1).sourceOffset().x(), EPSILON);
+        assertEquals(4.8F / 16.0F, utb.seats().get(2).sourceOffset().x(), EPSILON);
+        assertEquals(-26.5F / 16.0F, utb.seats().get(1).sourceOffset().z(), EPSILON);
+        assertEquals(-26.5F / 16.0F, utb.seats().get(2).sourceOffset().z(), EPSILON);
         assertEquals(-15.8F / 16.0F, utb.seats().getFirst().sourceOffset().z(), EPSILON);
         assertEquals(16.8F / 16.0F, utb.seats().getFirst().sourceOffset().y() + LandVehicleSpec.RIDER_HEIGHT_CORRECTION, EPSILON);
         assertEquals(6.4F / 16.0F, utb.steering().center().z() - utb.seats().getFirst().sourceOffset().z(), EPSILON);

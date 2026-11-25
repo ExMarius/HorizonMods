@@ -244,7 +244,11 @@ public record LandVehicleSpec(
                     new Wheel(1, false, 14.65F * MODEL_UNIT, 12.4F * MODEL_UNIT, -25.2F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F)
             ),
             // Lower rider anchor 4 px relative to the cushion to address visible floating.
-            List.of(seat(true, 0.0F, 12.8F, -15.8F, 1.0F, 0.0F, 0.0F)),
+            List.of(
+                    seat(true, 0.0F, 12.8F, -15.8F, 1.0F, 0.0F, 0.0F),
+                    seat(false, -4.8F, 11.2F, -26.5F, 1.0F, 0.0F, 0.0F),
+                    seat(false, 4.8F, 11.2F, -26.5F, 1.0F, 0.0F, 0.0F)
+            ),
             true, "tow_bar", new Point(0.0F, 5.0F, -37.45F), new Point(0.0F, 0.0F, 0.0F),
             null, null, List.of(), false
     );
