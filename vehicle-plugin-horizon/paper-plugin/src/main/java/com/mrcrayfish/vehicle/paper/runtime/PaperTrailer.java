@@ -146,8 +146,12 @@ public final class PaperTrailer {
             double forwardX = -Math.sin(yawRadians);
             double forwardZ = Math.cos(yawRadians);
             double direction = Math.signum(forwardX * dx + forwardZ * dz);
-            double circumference = spec.isFarmTrailer() ? Math.PI * 13.8D : 24.0D * spec.bodyScale() * 1.25D;
-            wheelRotation -= (float) ((distance * 20.0D * direction * 16.0D / circumference) * 20.0D);
+            if (spec.kind() == TrailerSpec.Kind.DISC_GD32) {
+                wheelRotation -= (float) (distance * direction * 360.0D / (Math.PI * 11.0D / 16.0D));
+            } else {
+                double circumference = spec.isFarmTrailer() ? Math.PI * 13.8D : 24.0D * spec.bodyScale() * 1.25D;
+                wheelRotation -= (float) ((distance * 20.0D * direction * 16.0D / circumference) * 20.0D);
+            }
         }
         /* FertilizerTrailerEntity and SeederTrailerEntity evaluate their three
          * source work points every vehicle tick, even when the trailer did not
@@ -165,7 +169,10 @@ public final class PaperTrailer {
             harrowState.tick(validDriver);
             double angle=Math.toRadians(location.getYaw());
             double forward=-Math.sin(angle)*dx+Math.cos(angle)*dz;
-            if (harrowState.canWork(validDriver,onGround,forward)) harrowDiscs -= (float)(distance*360/(Math.PI*8.4/16));
+            if (harrowState.canWork(validDriver,onGround,forward)) {
+                harrowDiscs -= (float)(distance*360/(Math.PI*8.4/16));
+                discHarrowWork(driver, previous);
+            }
             rig.updateHarrow(location,drawbarPitch,wheelRotation,harrowDiscs,harrowState.position(),target!=null);
         }
         if (loadedVehicleId != null) {
@@ -228,22 +235,39 @@ public final class PaperTrailer {
         for (int lane = -1; lane <= 1; lane++) {
             int x = (int) Math.floor(location.getX() + rightX * lane * 0.7D);
             int z = (int) Math.floor(location.getZ() + rightZ * lane * 0.7D);
-            if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
-            int y = (int) Math.floor(location.getY() - 0.05D);
+            tillCell(world, driver, x, (int) Math.floor(location.getY() - 0.05D), z);
+        }
+    }
+
+    private void discHarrowWork(Player driver, Location previous) {
+        World world=location.getWorld();
+        if (world == null || Math.abs(previous.getY()-location.getY()) > 0.1D) return;
+        int y=(int)Math.floor(location.getY()-0.05D);
+        for (DiscHarrowWorkPath.Cell cell : DiscHarrowWorkPath.sample(
+                previous.getX(), previous.getZ(), location.getX(), location.getZ(), location.getYaw())) {
+            tillCell(world, driver, cell.x(), y, cell.z());
+        }
+    }
+
+    /** Uses the same events as the existing plough; protection compatibility must
+     * be verified for the particular installed protection plugins before deploy. */
+    private void tillCell(World world, Player driver, int x, int y, int z) {
+            if (!world.isChunkLoaded(x >> 4, z >> 4) || y < world.getMinHeight()
+                    || y + 1 >= world.getMaxHeight()) return;
             Block soil = world.getBlockAt(x, y, z);
-            if (!tillable(soil.getType(), soil.getRelative(BlockFace.UP).getType())) continue;
+            if (!tillable(soil.getType(), soil.getRelative(BlockFace.UP).getType())) return;
             // Do not bypass vanilla spawn protection for non-operators.
             Location spawn = world.getSpawnLocation();
             int radius = Bukkit.getSpawnRadius();
             if (!driver.isOp() && radius > 0 && Math.max(Math.abs(x - spawn.getBlockX()),
-                    Math.abs(z - spawn.getBlockZ())) <= radius) continue;
+                    Math.abs(z - spawn.getBlockZ())) <= radius) return;
             ItemStack tool = new ItemStack(Material.IRON_HOE);
             org.bukkit.event.player.PlayerInteractEvent interact = new org.bukkit.event.player.PlayerInteractEvent(
                     driver, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, tool, soil, BlockFace.UP,
                     org.bukkit.inventory.EquipmentSlot.HAND);
             Bukkit.getPluginManager().callEvent(interact);
             if (interact.useInteractedBlock() == org.bukkit.event.Event.Result.DENY
-                    || interact.useItemInHand() == org.bukkit.event.Event.Result.DENY) continue;
+                    || interact.useItemInHand() == org.bukkit.event.Event.Result.DENY) return;
             // Match Bukkit block-place event semantics: new state is visible during the event,
             // and restore the original immediately if a protection plugin rejects it.
             org.bukkit.block.BlockState before = soil.getState();
@@ -258,7 +282,6 @@ public final class PaperTrailer {
                 before.update(true, false);
                 throw failure;
             }
-        }
     }
 
     private void fertilize(Location previous) {

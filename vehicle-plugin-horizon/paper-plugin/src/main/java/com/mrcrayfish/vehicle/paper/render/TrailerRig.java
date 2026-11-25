@@ -164,6 +164,7 @@ public final class TrailerRig {
         TrailerRig rig = new TrailerRig(trailerId, spec, interaction, body,
                 Collections.unmodifiableList(wheels), Collections.unmodifiableList(extras), fluid, all);
         rig.update(location, 0.0F, null, inventoryContents, 0);
+        if (spec.kind() == TrailerSpec.Kind.DISC_GD32) rig.updateHarrow(location, 0, 0, 0, 0, false);
         return rig;
     }
 
@@ -227,6 +228,11 @@ public final class TrailerRig {
         float yaw = root.getYaw();
         interaction.teleport(root);
         interaction.setRotation(yaw, 0.0F);
+
+        if (spec.kind() == TrailerSpec.Kind.DISC_GD32) {
+            if (tickCount % 5 == 0) updateBrightness(root);
+            return;
+        }
 
         place(body, root, new Vector3f(0.0F, spec.bodyOriginY(), 0.0F), new Quaternionf(),
                 new Vector3f(spec.bodyScale()), new Quaternionf());

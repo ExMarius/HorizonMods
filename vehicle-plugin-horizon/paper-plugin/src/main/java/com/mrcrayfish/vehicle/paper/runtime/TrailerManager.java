@@ -575,7 +575,7 @@ public final class TrailerManager {
         if (!player.hasPermission("vehicle.plough")) { player.sendMessage("Nu ai permisiunea vehicle.plough."); return; }
         for (PaperTrailer t : trailers.values()) {
             if (t.spec().kind()==TrailerSpec.Kind.DISC_GD32 && player.equals(ploughDriver(t))) {
-                player.sendMessage(t.toggleHarrow() ? "Grapa coboară. Solul nu este încă modificat." : "Grapa se ridică."); return;
+                player.sendMessage(t.toggleHarrow() ? "Grapa coboară pentru lucru." : "Grapa se ridică."); return;
             }
         }
         player.sendMessage("Urcă la volanul unui UTB cu grapa cuplată.");
