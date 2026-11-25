@@ -34,8 +34,23 @@ class DiscHarrowKinematicsTest {
             if(height<10.5/16.0) assertTrue(r.pitch()<0);
         }
     }
+    @Test void transportAndWorkEyeStayOnPinThroughLift() {
+        for (double work : new double[]{0, .25, .5, .75, 1}) {
+            double hitchY=10.5/16.0;
+            var r=DiscHarrowKinematics.solve(0,0,0,0,0,hitchY,2.2,work);
+            assertTrue(r.reachable());
+            double pitch=Math.toRadians(r.pitch());
+            double eyeHeight=DiscHarrowKinematics.EYE_DELTA_Y+4.5/16.0*(1-work);
+            assertEquals(hitchY,DiscHarrowKinematics.AXLE_Y
+                    +DiscHarrowKinematics.HORIZONTAL_LENGTH*Math.sin(pitch)
+                    +eyeHeight*Math.cos(pitch),1e-6);
+            double horizontal=DiscHarrowKinematics.HORIZONTAL_LENGTH*Math.cos(pitch)-eyeHeight*Math.sin(pitch);
+            assertEquals(2.2,r.z()+DiscHarrowKinematics.AXLE_FORWARD+horizontal,1e-6);
+        }
+    }
     @Test void impossibleClimbIsLimitedAndFinite() {
         var r=DiscHarrowKinematics.solve(0,0,0,0,1,100,2);
         assertTrue(Double.isFinite(r.x())&&Double.isFinite(r.z()));assertTrue(Float.isFinite(r.pitch()));
+        assertFalse(r.reachable());
     }
 }
