@@ -44,11 +44,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download horizon-offroader-45625403233 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
-          python3 vehicle-plugin-horizon/next-vehicle/utb/align_tractor_hitch_pack.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/HorizonOffRoader-1.21.4.zip
+          gh release download horizon-offroader-45643761103 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
+          python3 vehicle-plugin-horizon/next-vehicle/utb/restore_tractor_bar_pack.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/HorizonOffRoader-1.21.4.zip
           python3 - <<'PYCODE'
           import zipfile
-          changed = {'assets/vehicle/models/item/utb_650_body.json', 'assets/vehicle/models/item/tractor_trailer_body.json'}
+          changed = {'assets/vehicle/models/item/utb_650_body.json'}
           added = set()
           with zipfile.ZipFile('/tmp/base/HorizonOffRoader-1.21.4.zip') as old, zipfile.ZipFile('/tmp/HorizonOffRoader-1.21.4.zip') as new:
               assert new.testzip() is None and set(new.namelist()) == set(old.namelist()) | added
