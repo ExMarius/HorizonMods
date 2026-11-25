@@ -17,16 +17,18 @@ async function run(){
  driver.chat('/tp @s ~ ~ ~ 0 0');await wait(700)
  driver.chat('/tp UtbGuest1 @s');await wait(400);driver.chat('/tp UtbGuest2 @s');await wait(700)
  driver.chat('/vehicle spawn utb_650');await wait(2200)
+ const tractor=Object.values(driver.entities).find(e=>e.name==='interaction');check(tractor,'missing tractor interaction')
  for(const b of bots){
   const target=Object.values(b.entities).find(e=>e.name==='interaction');check(target,b.username+' missing interaction')
   b.activateEntity(target);await wait(1500);check(b.vehicle,b.username+' did not mount')
  }
  check(new Set(bots.map(b=>b.vehicle.id)).size===3,'riders not in three distinct seats')
- const start=driver.vehicle.position.clone()
+ const start=tractor.position.clone()
  const inputs=setInterval(()=>driver._client.write('player_input',{inputs:{forward:true}}),50)
  await wait(5000);clearInterval(inputs);driver._client.write('player_input',{inputs:{}});await wait(1000)
- check(driver.vehicle.position.distanceTo(start)>.3,'tractor did not move')
+ check(tractor.position.distanceTo(start)>.3,'tractor did not move')
  for(const b of bots)check(b.vehicle,'rider left their seat while moving')
+ driver.chat('/op UtbGuest1');await wait(500);driver.chat('/op UtbGuest2');await wait(500)
  // Operator-only /ride exercises the server-side dismount path; Mineflayer shift is unreliable here.
  for(const b of bots){b.chat('/ride @s dismount');await wait(1500)}
  driver.chat('/vehicle save');await wait(1000);pass()
