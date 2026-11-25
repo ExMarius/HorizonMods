@@ -76,3 +76,5 @@ jobs:
 # The disposable smoke servers run peaceful so hostile mobs cannot invalidate the test.
 
 # Garage data is included in the verified backup and is not modified.
+
+# Retry after the server was started in the panel.
