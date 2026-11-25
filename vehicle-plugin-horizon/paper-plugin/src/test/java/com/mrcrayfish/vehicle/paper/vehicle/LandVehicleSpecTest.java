@@ -106,7 +106,7 @@ class LandVehicleSpecTest {
         assertEquals("utb_650_body", utb.bodyModel());
         assertEquals(2.25F, utb.entityWidth(), EPSILON);
         assertEquals(2.75F, utb.entityHeight(), EPSILON);
-        assertEquals(34.88F / 16.0F, utb.frontAxleOffset() - utb.rearAxleOffset(), EPSILON);
+        assertEquals(38.88F / 16.0F, utb.frontAxleOffset() - utb.rearAxleOffset(), EPSILON);
         assertEquals(6.9F / 16.0F, utb.firstFrontWheel().centerY(), EPSILON);
         assertEquals(12.4F / 16.0F, utb.firstRearWheel().centerY(), EPSILON);
         assertEquals(0.0F, utb.firstFrontWheel().halfWidthOffset(), EPSILON);

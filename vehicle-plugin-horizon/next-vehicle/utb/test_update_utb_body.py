@@ -22,7 +22,7 @@ class UpdateUTBTest(unittest.TestCase):
         decode_z=lambda v:2*(v-8)
         self.assertLessEqual(parts['left mirror arm']['from'][1],parts['left mirror']['to'][1])
         self.assertGreaterEqual(parts['left mirror arm']['to'][1],parts['left mirror']['from'][1])
-        self.assertAlmostEqual(9.68,decode_z((parts['front axle']['from'][2]+parts['front axle']['to'][2])/2),places=3)
+        self.assertAlmostEqual(13.68,decode_z((parts['front axle']['from'][2]+parts['front axle']['to'][2])/2),places=3)
         self.assertAlmostEqual(-25.2,decode_z((parts['rear axle']['from'][2]+parts['rear axle']['to'][2])/2),places=3)
     def test_remodel_seat_mirror_fenders_and_exhaust_alignment(self):
         m=json.loads(u.MODEL.read_text()); parts={e['name']:e for e in m['elements']}

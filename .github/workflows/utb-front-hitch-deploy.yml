@@ -1,0 +1,82 @@
+name: Install UTB front axle and hitch
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['.github/workflows/utb-front-hitch-deploy.yml', 'paper-vehicles/deploy/falix_install_utb_front_hitch.py']
+permissions:
+  contents: write
+  id-token: write
+concurrency:
+  group: falix-vehicle-deploy
+  cancel-in-progress: false
+jobs:
+  deliver:
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods' && startsWith(github.event.head_commit.message, 'Deploy UTB front hitch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify resource and deployment tests
+        run: |
+          python3 -m unittest discover -s vehicle-plugin-horizon/next-vehicle/utb -p 'test_*utb*.py' -v
+          python3 -m unittest discover -s paper-vehicles/tests -p test_falix_install_horizon.py -v
+      - name: Build and test
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build
+      - name: Test both vehicles on disposable servers
+        run: |
+          npm install --prefix /tmp/horizon-test mineflayer@4.39.0
+          export NODE_PATH=/tmp/horizon-test/node_modules
+          set -o pipefail
+          for test in smoke_utb_650 smoke_horizon_kart smoke_police smoke_off_roader; do
+            python3 "vehicle-plugin-horizon/tools/${test}.py" vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar 2>&1 | tee /tmp/smoke.log || {
+              python3 -c "from pathlib import Path; print('::error::'+' | '.join(Path('/tmp/smoke.log').read_text().splitlines()[-25:]).replace('%','%25')[:8000])"
+              exit 1
+            }
+          done
+      - name: Prepare pack without modifying existing entries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download horizon-offroader-45562368474 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
+          python3 vehicle-plugin-horizon/next-vehicle/utb/apply_front_hitch.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/HorizonOffRoader-1.21.4.zip
+          python3 - <<'PYCODE'
+          import zipfile
+          with zipfile.ZipFile('/tmp/base/HorizonOffRoader-1.21.4.zip') as old, zipfile.ZipFile('/tmp/HorizonOffRoader-1.21.4.zip') as new:
+              assert new.testzip() is None and set(new.namelist()) == set(old.namelist())
+              for name in old.namelist():
+                  if name not in {'assets/vehicle/models/item/utb_650_body.json', 'assets/vehicle/models/item/utb_650_wheel_front.json', 'assets/vehicle/models/item/utb_650_wheel_rear.json'}: assert old.read(name)==new.read(name),name
+          PYCODE
+          cp vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/HorizonVehicles-1.21.4.jar
+      - name: Publish matching pair
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="horizon-offroader-${GITHUB_RUN_ID}"
+          gh release create "$tag" /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Dacia Logan Politie and Horizon vehicles' --notes 'UTB front axle, wheels, cab supports and three-point hitch. Old tractor and all unrelated pack entries retained. Visual checks in the vanilla client remain necessary.'
+          echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
+      - name: Verify public pack
+        run: |
+          curl -fsSL --retry 3 "$PACK_URL" -o /tmp/public-pack.zip
+          cmp /tmp/public-pack.zip /tmp/HorizonOffRoader-1.21.4.zip
+      - name: Back up and install matching pair
+        run: |
+          set -o pipefail
+          python3 paper-vehicles/deploy/falix_install_utb_front_hitch.py /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip "$PACK_URL" 2>&1 | tee /tmp/install.log || {
+            python3 -c "from pathlib import Path; print('::error::'+Path('/tmp/install.log').read_text().splitlines()[-1].replace('%','%25')[:500])"
+            exit 1
+          }
+
+# The disposable smoke servers run peaceful so hostile mobs cannot invalidate the test.
+
+# Garage data is included in the verified backup and is not modified.
+
+# Retry after the server was started in the panel.
+
+# Retry after the server was started in the panel.

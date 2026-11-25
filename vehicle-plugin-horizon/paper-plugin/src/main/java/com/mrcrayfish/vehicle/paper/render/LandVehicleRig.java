@@ -152,7 +152,7 @@ public final class LandVehicleRig {
 
         ItemDisplay engine = partDisplay(world, location, spec.engine(), vehicleId, all);
         ItemDisplay steering = partDisplay(world, location, spec.steering(), vehicleId, all);
-        ItemDisplay towBar = spec.canTowTrailers()
+        ItemDisplay towBar = spec.canTowTrailers() && !"utb_650".equals(spec.id())
                 ? partDisplay(world, location, new LandVehicleSpec.Part(spec.towBarModel(),
                 spec.towBarVisualCenter(), 1.0F, 0.0F, 180.0F, 0.0F), vehicleId, all)
                 : null;
