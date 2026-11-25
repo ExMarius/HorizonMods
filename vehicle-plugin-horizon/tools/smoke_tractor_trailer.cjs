@@ -15,7 +15,7 @@ async function run(){
  const trailer=interactions()[0];check(trailer,'no trailer interaction')
  const displayCount=()=>Object.values(bot.entities).filter(e=>e.name==='item_display').length
  const emptyDisplays=displayCount()
- if(farmId==='tractor_trailer_modern')check(emptyDisplays>=5,'modern trailer must have body and four wheels')
+ if(farmId==='tractor_trailer_modern')check(emptyDisplays>=6,'modern trailer must have body, front assembly and four wheels')
  bot.chat('/give @s minecraft:diamond 3');await wait(800);bot.chat('/give @s minecraft:wheat_seeds 5');await wait(800)
  const opened=new Promise(r=>bot.once('windowOpen',r));bot.activateEntity(trailer);const window=await opened;await wait(500)
  const slot=window.slots.findIndex((x,i)=>i>=window.inventoryStart && x && x.name==='diamond');check(slot>=0,'missing diamonds in player inventory')
@@ -31,6 +31,10 @@ async function run(){
  bot.activateEntity(tractor);await wait(1500);check(bot.vehicle,'tractor mount failed')
  const start=trailer.position.clone();const drive=setInterval(()=>bot._client.write('player_input',{inputs:{forward:true}}),50);await wait(6000);clearInterval(drive);bot._client.write('player_input',{inputs:{}});await wait(1000)
  check(trailer.position.distanceTo(start)>.5,'trailer did not follow tractor')
+ if(farmId==='tractor_trailer_modern'){
+  const curve=setInterval(()=>bot._client.write('player_input',{inputs:{forward:true,left:true}}),50);await wait(3000);clearInterval(curve);bot._client.write('player_input',{inputs:{}});await wait(700)
+  check(trailer.position.distanceTo(tractor.position)<7.5,'trailer separated from tractor while turning')
+ }
  bot.chat('/vehicle save');await wait(1000);pass()
 }
 bot.once('spawn',()=>run().catch(e=>fail(e.stack||e.message)))
