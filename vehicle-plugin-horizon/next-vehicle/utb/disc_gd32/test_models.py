@@ -5,7 +5,7 @@ class ModelTests(unittest.TestCase):
  def test_all_parts_use_valid_vanilla_bounds_and_rotations(self):
   with tempfile.TemporaryDirectory() as tmp:
    subprocess.run([sys.executable,str(BASE/'build_models.py'),tmp],check=True,stdout=subprocess.DEVNULL)
-   for name in ('body','gang_frame','gang_front','gang_rear','wheel','jack'):
+   for name in ('body','gang_frame','gang_front','gang_rear','wheel','axle','jack'):
     model=json.loads((Path(tmp)/f'gd32_{name}.json').read_text());self.assertTrue(model['elements'])
     for e in model['elements']:
      self.assertTrue(all(-16<=a<b<=32 for a,b in zip(e['from'],e['to'])),e['name'])

@@ -21,10 +21,16 @@ vehicle's active mode only if safe on load; always reset on detach.
 
 ## Experimental Minecraft model generation
 
-`build_models.py OUTPUT_DIRECTORY` generates six candidate vanilla cuboid
+`build_models.py OUTPUT_DIRECTORY` generates seven candidate vanilla cuboid
 models (body, carrier, front gang, rear gang, wheel, jack) and textures.
 They are a geometric approximation, not yet a faithful reproduction of the
-confirmed 3D preview; front and rear discs currently share the same outline.
+confirmed 3D preview; front disc scallops are a rough approximation requiring review.
 They have NOT been integrated or visually validated. In particular, separate
-axle and cylinder parts, exact disc outlines, independently rotating gangs,
+cylinder parts, exact disc outlines, independently rotating gangs,
 hitch articulation and all Minecraft display transforms still need work.
+
+`minecraft_preview.html` is the experimental viewer for the generated JSON.
+It expects the generated models at `/candidate/`; it uses the actual cuboids
+from those files, but is not the Minecraft renderer. It shows transport and
+detach mockups only; hydraulic ram, sleeves and visible articulated drawbar
+are not implemented there yet.
