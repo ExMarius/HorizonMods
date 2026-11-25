@@ -24,7 +24,8 @@ async function drive(target){
  if(JSON.stringify(bot.inventory.slots)!==before)throw new Error('inventory changed while driving')
  if(packs!==originalPacks)throw new Error('pack resent after spawn')
  // Exercise voluntary dismount and a second mount before logout while riding.
- bot.dismount();await wait(1500)
+ const unmount=setInterval(()=>bot._client.write('player_input',{inputs:{sneak:true}}),50)
+ await wait(2000);clearInterval(unmount);bot._client.write('player_input',{inputs:{}})
  if(bot.vehicle)throw new Error('voluntary dismount failed')
  bot.activateEntity(target);await wait(1800)
  if(!bot.vehicle)throw new Error('remount after dismount failed')
