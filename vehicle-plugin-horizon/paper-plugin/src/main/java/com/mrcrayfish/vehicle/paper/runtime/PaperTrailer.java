@@ -93,7 +93,7 @@ public final class PaperTrailer {
         if (target != null) {
             if (spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN) {
                 var geometry = FarmTrailerKinematics.solve(location.getX(), location.getZ(), location.getYaw(),
-                        target.hitch().getX(), target.hitch().getZ(), target.root().getYaw());
+                        target.hitch().getX(), target.hitch().getZ());
                 move(new Vector(geometry.x() - location.getX(), verticalVelocity - 0.08D,
                         geometry.z() - location.getZ()));
                 location.setYaw(geometry.yaw());
