@@ -21,7 +21,12 @@ jobs:
       - name: Test model and pack safety
         run: python3 -m unittest discover -s vehicle-plugin-horizon/next-vehicle/utb -p 'test_*utb*.py' -v
       - name: Build and test plugin
-        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build
+        run: |
+          set -o pipefail
+          ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build 2>&1 | tee /tmp/plough-build.log || {
+            python3 -c "from pathlib import Path; s=Path('/tmp/plough-build.log').read_text(); print('::error::'+(' | '.join(s.splitlines()[-55:])).replace('%','%25')[:12000])"
+            exit 1
+          }
       - name: Test plough on a disposable server
         run: |
           npm install --prefix /tmp/horizon-test mineflayer@4.39.0
