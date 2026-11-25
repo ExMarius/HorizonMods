@@ -406,10 +406,10 @@ public record LandVehicleSpec(
                     new Wheel(1, true, .78125F, .3125F, 1.375F, 0, .03125F, 2.0F, 2.0F, 2.0F),
                     new Wheel(-1, false, -.78125F, .3125F, -1.25F, 0, .03125F, 2.0F, 2.0F, 2.0F),
                     new Wheel(1, false, .78125F, .3125F, -1.25F, 0, .03125F, 2.0F, 2.0F, 2.0F)),
-            List.of(new Seat(true, new Point(.42F, .59F, -.06F), 0),
-                    new Seat(false, new Point(-.42F, .59F, -.06F), 0),
-                    new Seat(false, new Point(.42F, .59F, .76F), 0),
-                    new Seat(false, new Point(-.42F, .59F, .76F), 0)),
+            List.of(new Seat(true, new Point(.42F, .59F, .30F), 0),
+                    new Seat(false, new Point(-.42F, .59F, .30F), 0),
+                    new Seat(false, new Point(.42F, .59F, -.55F), 0),
+                    new Seat(false, new Point(-.42F, .59F, -.55F), 0)),
             false, "tow_bar", new Point(0, 0, 0), new Point(0, 0, 0),
             null, null, List.of(), false
     );
