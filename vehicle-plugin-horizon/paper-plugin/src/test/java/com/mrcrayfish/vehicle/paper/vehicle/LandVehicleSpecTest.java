@@ -473,8 +473,10 @@ class LandVehicleSpecTest {
         assertEquals(4, spec.seats().size());
         assertEquals(2, spec.wheels().stream().filter(LandVehicleSpec.Wheel::front).count());
         assertFalse(spec.canTowTrailers());
-        assertEquals(1.7F, spec.bodyScale(), EPSILON);
+        assertEquals(2.0F, spec.bodyScale(), EPSILON);
         assertEquals(0.0F, spec.bodyOrigin().y(), EPSILON);
+        assertTrue(spec.firstFrontWheel().axleZ() > 0);
+        assertTrue(spec.firstRearWheel().axleZ() < 0);
     }
 
     @Test
