@@ -77,15 +77,33 @@ class UpdateUTBTest(unittest.TestCase):
         tractor=json.loads(u.MODEL.read_text());trailer=json.loads((u.ASSETS/'tractor_trailer_body.json').read_text())
         u.validate(tractor);u.validate(trailer)
         t={e['name']:e for e in tractor['elements']};r={e['name']:e for e in trailer['elements']}
-        # World z at tractor coupler and drawbar tip relative to each towing root.
-        hitch_z=-37.45/16; receiver_z=2*(t['rear hitch central drawbar']['from'][2]-8)/16
-        self.assertLessEqual(receiver_z,hitch_z)
-        self.assertGreaterEqual(2*(t['rear hitch central drawbar']['to'][2]-8)/16,hitch_z)
-        self.assertGreaterEqual(-1.75+2*(r['coupler']['to'][2]-8)/16,0)
-        self.assertLessEqual(-1.75+2*(r['coupler']['from'][2]-8)/16,0)
-        self.assertLessEqual(t['rear hitch central drawbar']['to'][0]-t['rear hitch central drawbar']['from'][0], 0.5)
-        self.assertLessEqual(r['coupler']['to'][0]-r['coupler']['from'][0], 0.6)
-        self.assertAlmostEqual((t['rear hitch central drawbar']['from'][1]+t['rear hitch central drawbar']['to'][1])/2, (r['coupler']['from'][1]+r['coupler']['to'][1])/2, delta=0.05)
+        # Preserve all five authored squares; the pin sits above the centre one.
+        squares=[e for e in tractor['elements'] if e.get('name')=='PTO cap' and e['from'][1]==6.525]
+        self.assertEqual(5,len(squares))
+        centre=next(e for e in squares if e['from'][0] < 8 < e['to'][0])
+        pin=t['rear hitch coupler pin'];coupler=r['coupler']
+        self.assertAlmostEqual(centre['to'][1],pin['from'][1])
+        for axis in (0,2):
+            self.assertAlmostEqual((centre['from'][axis]+centre['to'][axis])/2,
+                                   (pin['from'][axis]+pin['to'][axis])/2)
+        self.assertNotIn('rear hitch central drawbar',t)
+        self.assertNotIn('hitch block',t)
+        # Physics hitch is centred on that square. With aligned roots the trailer
+        # receiver overlaps the pin in X, Y and Z, including each body's origin.
+        hitch_z=-34.45/16
+        self.assertAlmostEqual(hitch_z,2*((centre['from'][2]+centre['to'][2])/2-8)/16)
+        for axis in (0,):
+            self.assertLessEqual(coupler['from'][axis],8)
+            self.assertGreaterEqual(coupler['to'][axis],8)
+        self.assertLessEqual(-1.75+2*(coupler['from'][2]-8)/16,0)
+        self.assertGreaterEqual(-1.75+2*(coupler['to'][2]-8)/16,0)
+        pin_bottom=0.5625+2*(pin['from'][1]-8)/16
+        pin_top=0.5625+2*(pin['to'][1]-8)/16
+        coupler_bottom=0.5+2*(coupler['from'][1]-8)/16
+        coupler_top=0.5+2*(coupler['to'][1]-8)/16
+        self.assertLessEqual(pin_bottom,coupler_top)
+        self.assertGreaterEqual(pin_top,coupler_bottom)
+        self.assertLessEqual(coupler['to'][0]-coupler['from'][0],0.6)
         for part in ('rear plate dark frame','rear plate white face'):
             self.assertIn(part,t);self.assertIn(part,r)
         for side in ('left','right'):

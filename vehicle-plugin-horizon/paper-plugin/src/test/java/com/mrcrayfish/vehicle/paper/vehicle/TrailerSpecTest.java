@@ -32,6 +32,13 @@ class TrailerSpecTest {
     }
 
     @Test
+    void agriculturalTrailerUsesUtbCentreSquareWithoutChangingOtherTowPoints() {
+        assertEquals(-34.45F / 16.0F, LandVehicleSpec.UTB_650.tractorTrailerTowBarPhysicsOffset().z(), 0.000001F);
+        assertEquals(-37.45F / 16.0F, LandVehicleSpec.UTB_650.towBarPhysicsOffset().z(), 0.000001F);
+        assertEquals(LandVehicleSpec.TRACTOR.towBarPhysicsOffset(), LandVehicleSpec.TRACTOR.tractorTrailerTowBarPhysicsOffset());
+    }
+
+    @Test
     void preservesSourceHitchOffsetsAndScale() {
         assertEquals(-17.0F, TrailerSpec.FERTILIZER.hitchOffset());
         assertEquals(-16.0F, TrailerSpec.SEEDER.hitchOffset());

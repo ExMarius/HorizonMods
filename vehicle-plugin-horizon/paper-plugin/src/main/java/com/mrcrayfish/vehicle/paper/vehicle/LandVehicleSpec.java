@@ -1239,6 +1239,13 @@ public record LandVehicleSpec(
         );
     }
 
+    /** The agricultural trailer uses the centre of the UTB's five-block rear bar.
+     * Other implements keep their existing tow point and behavior. */
+    public Point tractorTrailerTowBarPhysicsOffset() {
+        if ("utb_650".equals(id)) return new Point(0.0F, 5.0F * MODEL_UNIT, -34.45F * MODEL_UNIT);
+        return towBarPhysicsOffset();
+    }
+
     /** Source trailer physics uses the same X/Z offset without visual +0.5 Y. */
     public Point towBarPhysicsOffset() {
         return new Point(

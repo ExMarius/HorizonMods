@@ -591,7 +591,10 @@ public final class TrailerManager {
             }
             case VEHICLE -> vehicles.byId(pullerId)
                     .filter(vehicle -> vehicle.spec().canTowTrailers() && trailer.spec().permitsVehicle(vehicle.spec().id()))
-                    .map(vehicle -> new PaperTrailer.PullTarget(vehicle.towBarLocation(), vehicle.location())).orElse(null);
+                    .map(vehicle -> new PaperTrailer.PullTarget(
+                            trailer.spec().kind() == TrailerSpec.Kind.TRACTOR_TRAILER
+                                    ? vehicle.tractorTrailerTowBarLocation() : vehicle.towBarLocation(),
+                            vehicle.location())).orElse(null);
             case TRAILER -> Optional.ofNullable(trailers.get(pullerId))
                     .filter(parent -> parent.spec().canTowTrailers() && trailer.spec().permitsTrailerPuller())
                     .map(parent -> new PaperTrailer.PullTarget(parent.towBarLocation(), parent.location())).orElse(null);

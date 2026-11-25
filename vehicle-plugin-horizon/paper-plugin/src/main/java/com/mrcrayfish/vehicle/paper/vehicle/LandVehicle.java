@@ -1696,6 +1696,11 @@ public final class LandVehicle {
         return local(location, tow.x(), tow.y(), tow.z());
     }
 
+    public Location tractorTrailerTowBarLocation() {
+        LandVehicleSpec.Point tow = spec.tractorTrailerTowBarPhysicsOffset();
+        return local(location, tow.x(), tow.y(), tow.z());
+    }
+
     public void placeOnTrailer(Location trailerLocation) {
         LandVehicleSpec.Point offset = spec.trailerOffset();
         Location carried = local(trailerLocation, offset.x(), 0.5D + offset.y(), offset.z());
