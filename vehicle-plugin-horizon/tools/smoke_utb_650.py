@@ -27,7 +27,13 @@ def main(jar):
                 else: raise RuntimeError('startup timeout')
                 proc.stdin.write('op HorizonBot\n'); proc.stdin.flush(); time.sleep(2)
                 bot=subprocess.run(['node',str(Path(__file__).with_suffix('.cjs'))],capture_output=True,text=True,timeout=110)
-                if bot.returncode: raise RuntimeError('bot failed: '+(bot.stdout+bot.stderr)[-2500:])
+                if bot.returncode:
+                    out.flush();lines=log.read_text(errors='replace').splitlines()
+                    print('BOT DIAGNOSTIC:',bot.stdout,bot.stderr,flush=True)
+                    for i,line in enumerate(lines):
+                        if 'Current Thread: Server thread' in line:
+                            print('SERVER THREAD:',*lines[i:i+25],sep='\n',flush=True);break
+                    raise RuntimeError('bot failed: '+(bot.stdout+bot.stderr)[-2500:])
                 print(bot.stdout,flush=True)
                 proc.stdin.write('stop\n'); proc.stdin.flush(); proc.wait(timeout=90)
                 out.flush(); text=log.read_text(errors='replace')

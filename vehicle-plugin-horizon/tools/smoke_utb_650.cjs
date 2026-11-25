@@ -26,7 +26,7 @@ async function drive(target){
  // Exercise voluntary dismount and a second mount before logout while riding.
  const unmount=setInterval(()=>bot._client.write('player_input',{inputs:{shift:true}}),50)
  await wait(2000);clearInterval(unmount);bot._client.write('player_input',{inputs:{}})
- if(bot.vehicle)throw new Error('voluntary dismount failed')
+ if(bot.vehicle){await wait(12000);throw new Error('voluntary dismount failed or client did not receive dismount')}
  bot.activateEntity(target);await wait(1800)
  if(!bot.vehicle)throw new Error('remount after dismount failed')
  bot.chat('/vehicle save');await wait(1200);success()
