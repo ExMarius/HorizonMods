@@ -51,7 +51,10 @@ public final class LandVehicleRig {
      * excluse din selectoarele /kill si sunt ejectate inainte de remove(), deci
      * bucla din cautarea vanilla a locului de demontare nu apare. */
     private static final double SEAT_CARRIER_SCALE = 0.0625D;
-    private static final float SEAT_PASSENGER_OFFSET = 0.7F * (float) SEAT_CARRIER_SCALE;
+    // A 1.21.4 horse-dismount search can loop forever for tiny bounding boxes at
+    // certain fractional Y coordinates. UTB has a different seat height, so keep
+    // its invisible carrier at least 0.4 blocks high (0.25 * 1.6).
+    private static final double UTB_SEAT_CARRIER_SCALE = 0.25D;
     private static final double SEAT_GAUGE_MAX_HEALTH = FuelGauge.MAX_HALF_HEARTS;
 
     private final UUID vehicleId;
@@ -247,7 +250,7 @@ public final class LandVehicleRig {
         });
     }
 
-    private static Horse seatCarrier(World world, Location location, UUID vehicleId) {
+    private static Horse seatCarrier(World world, Location location, UUID vehicleId, double carrierScale) {
         /* Ciclul BL (feedback user): scaun = cal FARA saua. Calul are clampa
          * vanilla de riding: yaw-ul calareului este legat de yaw-ul vehiculului,
          * deci corpul ramane blocat pe scaun si doar capul se roteste liber
@@ -273,7 +276,7 @@ public final class LandVehicleRig {
             carrier.setRemoveWhenFarAway(false);
             AttributeInstance scale = carrier.getAttribute(Attribute.SCALE);
             if (scale != null) {
-                scale.setBaseValue(SEAT_CARRIER_SCALE);
+                scale.setBaseValue(carrierScale);
             }
             AttributeInstance speed = carrier.getAttribute(Attribute.MOVEMENT_SPEED);
             if (speed != null) {
@@ -294,7 +297,7 @@ public final class LandVehicleRig {
             return null;
         }
         Location location = carrier.anchor.getLocation();
-        Horse seat = seatCarrier(location.getWorld(), location, vehicleId);
+        Horse seat = seatCarrier(location.getWorld(), location, vehicleId, seatCarrierScale());
         if (!carrier.anchor.addPassenger(seat)) {
             seat.remove();
             return null;
@@ -664,8 +667,12 @@ public final class LandVehicleRig {
         return point(seat.sourceOffset()).add(0.0F, LandVehicleSpec.RIDER_HEIGHT_CORRECTION, 0.0F);
     }
 
-    private static Vector3f pigAnchor(Vector3f seatPoint) {
-        return new Vector3f(seatPoint).sub(0.0F, SEAT_PASSENGER_OFFSET, 0.0F);
+    private double seatCarrierScale() {
+        return "utb_650".equals(spec.id()) ? UTB_SEAT_CARRIER_SCALE : SEAT_CARRIER_SCALE;
+    }
+
+    private Vector3f pigAnchor(Vector3f seatPoint) {
+        return new Vector3f(seatPoint).sub(0.0F, 0.7F * (float) seatCarrierScale(), 0.0F);
     }
 
     private Vector3f chassis(Vector3f sourcePoint, float wheelieAngle, float bodyRoll) {
@@ -901,10 +908,6 @@ public final class LandVehicleRig {
             AttributeInstance scale = seat.getAttribute(Attribute.SCALE);
             if (scale != null) {
                 scale.setBaseValue(1.0D);
-            }
-            if ("utb_650".equals(spec.id())) {
-                org.bukkit.Bukkit.getLogger().info("[UTB dismount diagnostic] seat=" + seat.getLocation()
-                        + " box=" + seat.getBoundingBox() + " passenger=" + seat.getPassengers().getFirst().getLocation());
             }
             seat.eject();
             if (!seat.getPassengers().isEmpty()) {

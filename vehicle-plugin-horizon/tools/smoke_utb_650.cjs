@@ -23,7 +23,12 @@ async function drive(target){
  if(!bot.vehicle || target.position.distanceTo(start)<.3)throw new Error('tractor did not drive')
  if(JSON.stringify(bot.inventory.slots)!==before)throw new Error('inventory changed while driving')
  if(packs!==originalPacks)throw new Error('pack resent after spawn')
- bot.chat('/vehicle save');await wait(1200);console.log('POSITION tractor='+JSON.stringify(target.position)+' horse='+JSON.stringify(bot.vehicle?.position)+' yaw='+bot.entity.yaw);success()
+ // Exercise voluntary dismount and a second mount before logout while riding.
+ bot.dismount();await wait(1500)
+ if(bot.vehicle)throw new Error('voluntary dismount failed')
+ bot.activateEntity(target);await wait(1800)
+ if(!bot.vehicle)throw new Error('remount after dismount failed')
+ bot.chat('/vehicle save');await wait(1200);success()
 }
 const interval=setInterval(()=>{
  if(done){clearInterval(interval);return}
