@@ -18,3 +18,13 @@ towing over elevation changes and bends, implement a stateful safe work/road
 mode, ensure ownership, permissions, protection-plugin compatibility, unloaded
 chunk and restart safety, and test on a disposable Paper server. Save the
 vehicle's active mode only if safe on load; always reset on detach.
+
+## Experimental Minecraft model generation
+
+`build_models.py OUTPUT_DIRECTORY` generates six candidate vanilla cuboid
+models (body, carrier, front gang, rear gang, wheel, jack) and textures.
+They are a geometric approximation, not yet a faithful reproduction of the
+confirmed 3D preview; front and rear discs currently share the same outline.
+They have NOT been integrated or visually validated. In particular, separate
+axle and cylinder parts, exact disc outlines, independently rotating gangs,
+hitch articulation and all Minecraft display transforms still need work.
