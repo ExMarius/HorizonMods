@@ -34,3 +34,10 @@ It expects the generated models at `/candidate/`; it uses the actual cuboids
 from those files, but is not the Minecraft renderer. It shows transport and
 detach mockups only; hydraulic ram, sleeves and visible articulated drawbar
 are not implemented there yet.
+
+The source-preview "Simulează urcare +1 bloc" rotates the complete rig
+about the axle, rather than bending only the drawbar; the eye's horizontal
+position is kept fixed. It is a visual and geometric demonstration only,
+not terrain collision, suspension, in-game installation or proof that discs
+will clear the ground. The prototype kinematics must be wired into a real
+collision-aware towing and rendering path before deploy.

@@ -19,6 +19,21 @@ class DiscHarrowKinematicsTest {
             assertEquals(2.2,r.z()+Math.cos(a)*(horizontal+DiscHarrowKinematics.AXLE_FORWARD),1e-6);
         }
     }
+    @Test void wholeRigidFramePitchesAroundAxleAndEyeReachesHitch() {
+        for (double height : new double[]{10.5/16.0 - 1,10.5/16.0,10.5/16.0 + 1}) {
+            var r=DiscHarrowKinematics.solve(0,0,0,0,0,height,2.2);
+            double pitch=Math.toRadians(r.pitch());
+            double vertical=DiscHarrowKinematics.AXLE_Y
+                    +DiscHarrowKinematics.HORIZONTAL_LENGTH*Math.sin(pitch)
+                    +DiscHarrowKinematics.EYE_DELTA_Y*Math.cos(pitch);
+            double horizontal=DiscHarrowKinematics.HORIZONTAL_LENGTH*Math.cos(pitch)
+                    -DiscHarrowKinematics.EYE_DELTA_Y*Math.sin(pitch);
+            assertEquals(height,vertical,1e-6);
+            assertEquals(2.2,r.z()+DiscHarrowKinematics.AXLE_FORWARD+horizontal,1e-6);
+            if(height>10.5/16.0) assertTrue(r.pitch()>0);
+            if(height<10.5/16.0) assertTrue(r.pitch()<0);
+        }
+    }
     @Test void impossibleClimbIsLimitedAndFinite() {
         var r=DiscHarrowKinematics.solve(0,0,0,0,1,100,2);
         assertTrue(Double.isFinite(r.x())&&Double.isFinite(r.z()));assertTrue(Float.isFinite(r.pitch()));
