@@ -89,11 +89,11 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     target.setOwner(null);
                     var run=PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety);
                     if(run==null)throw new IllegalStateException("recovery lock failed");
-                    var loc=target.location();var blocker=loc.clone().add(0,0,2.5).getBlock();var before=blocker.getBlockData();
+                    var loc=target.location();var blocker=loc.clone().add(0,0,2.5).getBlock();var originalBlock=blocker.getBlockData();
                     blocker.setType(org.bukkit.Material.STONE,false);
                     try {
                         if(run.step(new org.bukkit.util.Vector(0,0,.05),safety))throw new IllegalStateException("moved through block");
-                    } finally {blocker.setBlockData(before,false);}
+                    } finally {blocker.setBlockData(originalBlock,false);}
                     if(run.step(new org.bukkit.util.Vector(0,0,.05),safety))throw new IllegalStateException("resumed automatically after blockage");
                     if(!run.releaseOnGround())throw new IllegalStateException("blocked run did not unlock");
                     run=PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety);
