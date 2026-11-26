@@ -30,7 +30,10 @@ def main(jar,probe):
                 marker='RECOVERY_MIDTRANSPORT_READY' if os.getenv('RECOVERY_MID_RESTART')=='1' else 'RECOVERY_PAIR_QUIT_OK'
                 if marker not in text or 'RECOVERY_PROBE_FAIL' in text:raise RuntimeError('pair test failed')
                 if 'Could not pass event' in text or 'Exception in server tick loop' in text:raise RuntimeError('server reported event/tick error')
-                proc.stdin.write('stop\n');proc.stdin.flush();proc.wait(timeout=90)
+                if os.getenv('RECOVERY_CRASH_RESTART')=='1':
+                    proc.kill();proc.wait(timeout=90)
+                else:
+                    proc.stdin.write('stop\n');proc.stdin.flush();proc.wait(timeout=90)
                 restartlog=root/'server-restart.log'
                 with restartlog.open('w+') as restarted:
                     proc=subprocess.Popen(['java','-Dhorizon.recovery.pairtest=true','-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1' or os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Dhorizon.recovery.restarttest='+str(os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=restarted,stderr=subprocess.STDOUT,text=True)
