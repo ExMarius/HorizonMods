@@ -114,6 +114,8 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
             try {
                 VehiclePlugin main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
                 if(main==null||!main.isEnabled())throw new IllegalStateException("main plugin missing");
+                var waitingOwner=getServer().getPlayerExact("RecoveryOwnerBot");
+                if(waitingOwner!=null)waitingOwner.teleport(event.getPlayer().getLocation().clone().add(25,0,25));
                 v=main.vehicles().spawn(RecoveryTruckPrototype.create(),event.getPlayer().getLocation());
                 v.forceVisualSync();
                 if(!v.rig().valid())throw new IllegalStateException("invalid rig");
