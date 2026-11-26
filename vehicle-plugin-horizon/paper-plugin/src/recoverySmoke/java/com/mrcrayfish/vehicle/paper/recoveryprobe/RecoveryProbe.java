@@ -55,7 +55,7 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
     }
     @Override public void onEnable(){getServer().getPluginManager().registerEvents(this,this);}
     @EventHandler public void join(PlayerJoinEvent event){
-        if(exercised)return; exercised=true;
+        if(exercised || !event.getPlayer().getName().equals("RecoveryProbeBot"))return; exercised=true;
         getServer().getScheduler().runTaskLater(this,()->{
             LandVehicle v=null;
             try {
@@ -220,14 +220,16 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
         // The authored +Z rear is mapped to Paper item-space -Z by the rig.
         var carStart=base.clone().add(9.8*sin,0,-9.8*cos);
         var car=main.vehicles().spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,carStart);
-        var offlineOwner=java.util.UUID.randomUUID();
+        var owner=getServer().getPlayerExact("RecoveryOwnerBot");
+        if(owner==null || !owner.isOnline())throw new IllegalStateException("owner bot missing");
+        owner.teleport(base.clone().add(25,0,25));
+        var offlineOwner=owner.getUniqueId();
         car.setOwner(offlineOwner);car.trust(player.getUniqueId());
         int initialGarage=main.vehicles().garageSize();
         var safety=new RecoveryInterlock.Safety(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
         var route=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.begin(main.vehicles(),truck,car,player,(a,w,b)->true,safety);
         if(route==null)throw new IllegalStateException("timed round trip lock failed");
-        if(main.vehicles().parkAllOwnedBy(offlineOwner)!=0 || main.vehicles().byId(car.id()).isEmpty())
-            throw new IllegalStateException("locked car disappeared into garage on owner quit");
+        player.sendMessage("RECOVERY_OWNER_CAN_QUIT");
         var ignored=new java.util.HashSet<java.util.UUID>();
         truck.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
         car.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
@@ -258,6 +260,9 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
             @Override public void run() {
                 try {
                     ticks++;
+                    if(ticks==40 && (owner.isOnline() || main.vehicles().byId(car.id()).isEmpty()
+                            || main.vehicles().garageSize()!=initialGarage))
+                        throw new IllegalStateException("owner quit did not leave locked car in world");
                     if(ticks>180 && ticks<=260) {
                         if(!route.tickTestDrive())throw new IllegalStateException("transport link lost");
                         var truckLoc=truck.location();double r=Math.toRadians(truckLoc.getYaw());
