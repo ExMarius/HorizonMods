@@ -103,3 +103,10 @@ existentă a stocării remorcilor: salvarea obișnuită poate omite înregistră
 amânate, iar după restart nu se mai poate deduce că au existat. Nu activa
 recuperarea în producție până când stocarea și reconcilierea nu păstrează și
 verifică toate înregistrările, inclusiv cele neîncărcate.
+
+`TrailerSnapshotMerge` este un experiment separat de `TrailerStore`: combină
+înregistrările administrate explicit cu cele amânate, respinge fișierele
+modificate sau corupte și folosește înlocuire atomică. Nu este încă utilizat în
+runtime. Pentru integrare trebuie inventariate toate căile de creare/ștergere,
+serializate scrierile și testate restartul, lumile indisponibile și eșecurile
+I/O; verificarea versiunii fișierului nu este un lock pentru scriitori externi.
