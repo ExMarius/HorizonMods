@@ -48,6 +48,26 @@ class DiscHarrowKinematicsTest {
             assertEquals(2.2,r.z()+DiscHarrowKinematics.AXLE_FORWARD+horizontal,1e-6);
         }
     }
+    @Test void hitchIsReachedAfterCollisionOffsetAndLiftAtManyHeadings() {
+        for (float yaw : new float[]{0, 45, 90, -90, 180}) {
+            for (double work : new double[]{0, .5, 1}) for (double deltaY : new double[]{-1, 0, 1}) {
+                double a=Math.toRadians(yaw);
+                double hx=4-Math.sin(a)*2.1, hz=-7+Math.cos(a)*2.1;
+                double hy=10.5/16.0+deltaY;
+                var r=DiscHarrowKinematics.solve(4.1,-7.08,yaw,0,hx,hy,hz,work);
+                assertTrue(r.reachable());
+                double pitch=Math.toRadians(r.pitch());
+                double eyeHeight=DiscHarrowKinematics.EYE_DELTA_Y+4.5/16.0*(1-work);
+                double horizontal=DiscHarrowKinematics.AXLE_FORWARD
+                        +DiscHarrowKinematics.HORIZONTAL_LENGTH*Math.cos(pitch)-eyeHeight*Math.sin(pitch);
+                double heading=Math.toRadians(r.yaw());
+                assertEquals(hx,r.x()-Math.sin(heading)*horizontal,1e-6);
+                assertEquals(hz,r.z()+Math.cos(heading)*horizontal,1e-6);
+                assertEquals(hy,DiscHarrowKinematics.AXLE_Y
+                        +DiscHarrowKinematics.HORIZONTAL_LENGTH*Math.sin(pitch)+eyeHeight*Math.cos(pitch),1e-6);
+            }
+        }
+    }
     @Test void impossibleClimbIsLimitedAndFinite() {
         var r=DiscHarrowKinematics.solve(0,0,0,0,1,100,2);
         assertTrue(Double.isFinite(r.x())&&Double.isFinite(r.z()));assertTrue(Float.isFinite(r.pitch()));

@@ -167,13 +167,30 @@ public final class PaperTrailer {
             boolean validDriver=target != null && driver != null && driver.isOnline() && driver.getWorld()==location.getWorld()
                     && driver.getGameMode()!=org.bukkit.GameMode.ADVENTURE && driver.getGameMode()!=org.bukkit.GameMode.SPECTATOR;
             harrowState.tick(validDriver);
+            // Resolve again after collision movement and after the lift animation.
+            // A visual pose derived before either operation would leave the eye
+            // drifting from the tractor pin whenever the ground height changes.
+            Location visualLocation = location;
+            boolean hitchAligned = false;
+            if (target != null) {
+                var aligned = DiscHarrowKinematics.solve(location.getX(), location.getZ(), location.getYaw(),
+                        location.getY(), target.hitch().getX(), target.hitch().getY(), target.hitch().getZ(), harrowState.position());
+                double correction = Math.hypot(aligned.x() - location.getX(), aligned.z() - location.getZ());
+                hitchAligned = aligned.reachable() && correction <= 0.5D;
+                if (hitchAligned) {
+                    visualLocation = location.clone();
+                    visualLocation.setX(aligned.x()); visualLocation.setZ(aligned.z());
+                    visualLocation.setYaw(aligned.yaw());
+                    drawbarPitch = aligned.pitch();
+                }
+            }
             double angle=Math.toRadians(location.getYaw());
             double forward=-Math.sin(angle)*dx+Math.cos(angle)*dz;
-            if (harrowState.canWork(validDriver,onGround,forward)) {
+            if (hitchAligned && harrowState.canWork(validDriver,onGround,forward)) {
                 harrowDiscs -= (float)(distance*360/(Math.PI*8.4/16));
                 discHarrowWork(driver, previous);
             }
-            rig.updateHarrow(location,drawbarPitch,wheelRotation,harrowDiscs,harrowState.position(),target!=null);
+            rig.updateHarrow(visualLocation,drawbarPitch,wheelRotation,harrowDiscs,harrowState.position(),target!=null);
         }
         if (loadedVehicleId != null) {
             manager.positionLoadedVehicle(this, loadedVehicleId);
