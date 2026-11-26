@@ -265,6 +265,8 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                         if(car.location().distanceSquared(expected)>1e-8)throw new IllegalStateException("car drifted from carrier");
                         if(ticks==260) {
                             if(truckLoc.distance(driveStart)<.2)throw new IllegalStateException("carrier did not drive");
+                            if(Math.abs(Math.IEEEremainder(truckLoc.getYaw()-driveStart.getYaw(),360D))<.2)
+                                throw new IllegalStateException("carrier did not turn");
                             player.leaveVehicle();
                             if(!route.endTestDrive())throw new IllegalStateException("could not stop transport test");
                             player.teleport(truckLoc.clone().add(10*Math.cos(r),0,10*Math.sin(r)));

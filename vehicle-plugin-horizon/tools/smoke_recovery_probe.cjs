@@ -14,7 +14,9 @@ bot.on('kicked',r=>{clearTimeout(timer);console.error('kicked',r);process.exitCo
 
 bot.on('messagestr', message => {
  if(message.includes('RECOVERY_DRIVE_START')) {
-   const drive=setInterval(()=>bot._client.write('player_input',{inputs:{forward:true}}),50);
+   let turning=false;
+   const drive=setInterval(()=>bot._client.write('player_input',{inputs:{forward:true,left:turning}}),50);
+   setTimeout(()=>{turning=true},1300);
    setTimeout(()=>{clearInterval(drive);bot._client.write('player_input',{inputs:{}})},2500);
  }
 });
