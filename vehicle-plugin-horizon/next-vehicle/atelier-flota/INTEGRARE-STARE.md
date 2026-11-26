@@ -146,3 +146,10 @@ poziția relativă a platformei, apoi a descărcat-o la noua poziție. Este o pr
 izolată, fără validare grafică, chingi persistente, reconectare după restart,
 coliziuni sau protecții complete pentru vehiculul transportat. Nu este expusă
 jucătorilor și nu trebuie instalată pe server.
+
+Proba Paper `45904692219` folosește doi clienți offline: proprietarul Daciei
+se deconectează în timpul urcării, mașina rămâne în lume, operatorul conduce
+platforma, apoi o descarcă. Dacia intră în garajul proprietarului, iar după o
+oprire și repornire controlate ale Paper apare o singură dată în garaj și nu
+în lumea activă. Nu este test de crash/restart în timpul transportului: legătura
+încă nu este persistată și restaurată în acea situație.
