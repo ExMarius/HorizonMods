@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Disposable Paper rig probe; no loading mechanics, real client visuals or deployment."""
-import hashlib,json,shutil,subprocess,sys,tempfile,time,urllib.request
+import hashlib,json,os,shutil,subprocess,sys,tempfile,time,urllib.request
 from pathlib import Path
 API='https://fill.papermc.io/v3/projects/paper/versions/1.21.4/builds'
 HEADERS={'User-Agent':'Horizon-recovery-probe/1.0 (https://github.com/ExMarius/HorizonMods)'}
@@ -31,7 +31,22 @@ def main(jar,probe):
                 if any(marker not in text for marker in ('RECOVERY_ROUND_TRIP_OK','RECOVERY_DEMO_SPAWNED','RECOVERY_DEMO_OPEN','RECOVERY_DEMO_CLOSE','RECOVERY_DEMO_REMOVED')):raise RuntimeError('interactive command test failed')
                 if 'Could not pass event' in text or 'Exception in server tick loop' in text:raise RuntimeError('server reported event/tick error')
                 proc.stdin.write('stop\n');proc.stdin.flush();proc.wait(timeout=90)
-                print('Disposable prototype spawned and removed; item-model ids and seats checked. No visual or loading test.')
+                restartlog=root/'server-restart.log'
+                with restartlog.open('w+') as restarted:
+                    proc=subprocess.Popen(['java','-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=restarted,stderr=subprocess.STDOUT,text=True)
+                    deadline=time.monotonic()+240
+                    while time.monotonic()<deadline:
+                        time.sleep(2);restarted.flush(); restarttext=restartlog.read_text(errors='replace')
+                        if proc.poll() is not None:raise RuntimeError('restart exited: '+restarttext[-4000:])
+                        if 'Done (' in restarttext and '[RecoveryProbe] Enabling' in restarttext:break
+                    else:raise RuntimeError('restart startup timeout')
+                    env={**os.environ,'RECOVERY_RESTART_CHECK':'1'}
+                    bot=subprocess.run(['node',str(Path(__file__).with_suffix('.cjs'))],capture_output=True,text=True,timeout=30,env=env)
+                    restarted.flush();restarttext=restartlog.read_text(errors='replace')
+                    if bot.returncode or 'RECOVERY_RESTART_GARAGE_OK' not in restarttext or 'RECOVERY_PROBE_FAIL' in restarttext:
+                        raise RuntimeError('restart garage verification failed: '+(restarttext+bot.stdout+bot.stderr)[-5000:])
+                    proc.stdin.write('stop\n');proc.stdin.flush();proc.wait(timeout=90)
+                print('Disposable loading, driving, unloading, owner logout and post-unload garage restart verified; no visual or mid-transport restart test.')
             except Exception:
                 out.flush();print('--- server log ---\n'+log.read_text(errors='replace')[-12000:],file=sys.stderr);raise
             finally:

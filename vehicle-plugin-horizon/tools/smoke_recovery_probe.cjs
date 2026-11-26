@@ -7,6 +7,7 @@ const timer=setTimeout(()=>{console.error('join timeout');owner.quit();bot?.quit
 function failed(e){clearTimeout(timer);console.error(e);process.exitCode=1;owner.quit();bot?.quit()}
 owner.on('error',failed);owner.on('kicked',failed);
 owner.once('spawn',()=>{
+ if(process.env.RECOVERY_RESTART_CHECK){setTimeout(()=>{clearTimeout(timer);owner.quit()},4000);return;}
  bot=mineflayer.createBot({...opts,username:'RecoveryProbeBot'});
  bot.on('error',failed);bot.on('kicked',failed);
  bot.once('spawn',()=>{

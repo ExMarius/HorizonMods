@@ -55,6 +55,19 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
     }
     @Override public void onEnable(){getServer().getPluginManager().registerEvents(this,this);}
     @EventHandler public void join(PlayerJoinEvent event){
+        var marker=getDataFolder().toPath().resolve("expected-garage.txt");
+        if(event.getPlayer().getName().equals("RecoveryOwnerBot") && java.nio.file.Files.exists(marker)) {
+            getServer().getScheduler().runTaskLater(this,()-> {
+                try {
+                    var expected=java.util.UUID.fromString(java.nio.file.Files.readString(marker).trim());
+                    var main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
+                    long count=main.vehicles().garagedOf(event.getPlayer()).stream().filter(e->e.id().equals(expected)).count();
+                    if(count!=1 || main.vehicles().hasVehicleId(expected))throw new IllegalStateException("garage restore missing or duplicated");
+                    getLogger().info("RECOVERY_RESTART_GARAGE_OK");
+                } catch(Throwable error){getLogger().severe("RECOVERY_PROBE_FAIL restart: "+error);error.printStackTrace();}
+            },20L);
+            return;
+        }
         if(exercised || !event.getPlayer().getName().equals("RecoveryProbeBot"))return; exercised=true;
         getServer().getScheduler().runTaskLater(this,()->{
             LandVehicle v=null;
@@ -304,6 +317,8 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                         if(!observedTilt)throw new IllegalStateException("vehicle rig did not pitch on ramp");
                         if(main.vehicles().byId(car.id()).isPresent() || main.vehicles().garageSize()!=initialGarage+1)
                             throw new IllegalStateException("offline owner's unloaded car not placed in garage");
+                        if(!getDataFolder().exists() && !getDataFolder().mkdirs())throw new IllegalStateException("probe folder unavailable");
+                        java.nio.file.Files.writeString(getDataFolder().toPath().resolve("expected-garage.txt"),car.id().toString());
                         truck.rig().setRecoveryCable(java.util.List.of());
                         cancel();main.vehicles().remove(car);main.vehicles().remove(truck);
                         verifyStoppedRoute(main,player,base);
