@@ -16,7 +16,7 @@ def main(jar,probe):
         (root/'plugins').mkdir();shutil.copyfile(jar,root/'plugins/MrCrayfishVehiclePlugin.jar');shutil.copyfile(probe,root/'plugins/RecoveryProbe.jar')
         log=root/'server.log'
         with log.open('w+') as out:
-            proc=subprocess.Popen(['java','-Dhorizon.recovery.pairtest=true','-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=out,stderr=subprocess.STDOUT,text=True)
+            proc=subprocess.Popen(['java','-Dhorizon.recovery.pairtest=true','-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1' or os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Dhorizon.recovery.restarttest='+str(os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=out,stderr=subprocess.STDOUT,text=True)
             try:
                 deadline=time.monotonic()+240
                 while time.monotonic()<deadline:
@@ -27,12 +27,13 @@ def main(jar,probe):
                 bot=subprocess.run(['node',str(Path(__file__).with_suffix('.cjs'))],capture_output=True,text=True,timeout=50)
                 if bot.returncode:raise RuntimeError('bot failed: '+(bot.stdout+bot.stderr)[-2000:])
                 out.flush();text=log.read_text(errors='replace')
-                if 'RECOVERY_PAIR_QUIT_OK' not in text or 'RECOVERY_PROBE_FAIL' in text:raise RuntimeError('pair owner-quit test failed')
+                marker='RECOVERY_MIDTRANSPORT_READY' if os.getenv('RECOVERY_MID_RESTART')=='1' else 'RECOVERY_PAIR_QUIT_OK'
+                if marker not in text or 'RECOVERY_PROBE_FAIL' in text:raise RuntimeError('pair test failed')
                 if 'Could not pass event' in text or 'Exception in server tick loop' in text:raise RuntimeError('server reported event/tick error')
                 proc.stdin.write('stop\n');proc.stdin.flush();proc.wait(timeout=90)
                 restartlog=root/'server-restart.log'
                 with restartlog.open('w+') as restarted:
-                    proc=subprocess.Popen(['java','-Dhorizon.recovery.pairtest=true','-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=restarted,stderr=subprocess.STDOUT,text=True)
+                    proc=subprocess.Popen(['java','-Dhorizon.recovery.pairtest=true','-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1' or os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Dhorizon.recovery.restarttest='+str(os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=restarted,stderr=subprocess.STDOUT,text=True)
                     deadline=time.monotonic()+240
                     while time.monotonic()<deadline:
                         time.sleep(2);restarted.flush(); restarttext=restartlog.read_text(errors='replace')
@@ -42,6 +43,7 @@ def main(jar,probe):
                     env={**os.environ,'RECOVERY_PAIR_RESTART':'1'}
                     bot=subprocess.run(['node',str(Path(__file__).with_suffix('.cjs'))],capture_output=True,text=True,timeout=30,env=env)
                     restarted.flush();restarttext=restartlog.read_text(errors='replace')
+                    if os.getenv('RECOVERY_MID_RESTART')=='1' and 'RECOVERY_TEST_BOOT_RECONCILED=1' not in restarttext:raise RuntimeError('journal not reconciled on restart: '+restarttext[-5000:])
                     if bot.returncode or any('RECOVERY_PAIR_RESTART_OK '+n not in restarttext for n in ('RecoveryOwnerBot','RecoveryProbeBot')) or 'RECOVERY_PROBE_FAIL' in restarttext:
                         raise RuntimeError('restart garage verification failed: '+(restarttext+bot.stdout+bot.stderr)[-5000:])
                     proc.stdin.write('stop\n');proc.stdin.flush();proc.wait(timeout=90)

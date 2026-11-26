@@ -150,6 +150,15 @@ public final class VehiclePlugin extends JavaPlugin {
         dataWipedThisBoot = wipeDataIfRequested();
         saveDefaultConfig();
 
+        // Disposable CI fixture only. This property is never set for deployment.
+        if (Boolean.getBoolean("horizon.recovery.restarttest")) {
+            try {
+                int count=com.mrcrayfish.vehicle.paper.persistence.RecoveryTestStartup.reconcile(getDataFolder().toPath());
+                getLogger().info("RECOVERY_TEST_BOOT_RECONCILED="+count);
+            } catch (java.io.IOException e) {
+                throw new IllegalStateException("Test recovery reconciliation failed; no vehicles loaded",e);
+            }
+        }
         vehicleManager = new VehicleManager(this);
         gasPumpManager = new GasPumpManager(this, vehicleManager);
         garageStationManager = new com.mrcrayfish.vehicle.paper.garage.GarageStationManager(this, vehicleManager);

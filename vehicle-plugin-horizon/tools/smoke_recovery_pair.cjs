@@ -16,6 +16,7 @@ owner.once('spawn',()=>{
      const drive=setInterval(()=>driver._client.write('player_input',{inputs:{forward:true}}),50);
      setTimeout(()=>{clearInterval(drive);driver._client.write('player_input',{inputs:{}})},2500);
    }
+   if(!process.env.RECOVERY_PAIR_RESTART && message.includes('RECOVERY_RESTART_NOW')) { clearTimeout(timer);owner.quit();driver.quit(); }
    if(!process.env.RECOVERY_PAIR_RESTART && message.includes('RECOVERY_OWNER_CAN_QUIT')) {
      owner.quit();setTimeout(()=>{clearTimeout(timer);driver.quit()},3500);
    }

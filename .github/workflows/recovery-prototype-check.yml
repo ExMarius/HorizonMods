@@ -51,3 +51,13 @@ jobs:
             exit 1
           }
           done
+      - name: Test controlled restart with car on platform
+        env:
+          NODE_PATH: /tmp/recovery-test/node_modules
+          RECOVERY_MID_RESTART: '1'
+        run: |
+          set -o pipefail
+          python3 vehicle-plugin-horizon/tools/smoke_recovery_pair.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-smoke/RecoveryProbe.jar 2>&1 | tee /tmp/recovery-restart.log || {
+            python3 -c "from pathlib import Path; lines=Path('/tmp/recovery-restart.log').read_text().splitlines(); important=[s for s in lines if 'RECOVERY_PROBE_FAIL' in s or 'Exception' in s or 'Error' in s]; print('::error::'+' | '.join(important[-30:]).replace('%','%25')[:12000])"
+            exit 1
+          }

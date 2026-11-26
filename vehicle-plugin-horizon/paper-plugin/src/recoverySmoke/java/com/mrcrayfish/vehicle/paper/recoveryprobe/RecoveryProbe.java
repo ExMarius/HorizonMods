@@ -50,7 +50,7 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
     }
     @EventHandler public void quit(org.bukkit.event.player.PlayerQuitEvent event){
         cleanupDemo(event.getPlayer().getUniqueId());
-        if(pairRoute!=null && event.getPlayer().getName().equals("RecoveryOwnerBot")) {
+        if(pairRoute!=null && !Boolean.getBoolean("horizon.recovery.restarttest") && event.getPlayer().getName().equals("RecoveryOwnerBot")) {
             try {
                 var main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
                 var operator=getServer().getPlayerExact("RecoveryProbeBot");
@@ -281,6 +281,12 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
             pairTruck.rig().setRecoveryRampProgress(1);
             pairCar=main.vehicles().spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,base.clone().add(9.8*Math.sin(yaw),0,-9.8*Math.cos(yaw)));
             pairCar.setOwner(owner.getUniqueId());pairCar.trust(player.getUniqueId());
+            if(Boolean.getBoolean("horizon.recovery.restarttest")) {
+                main.vehicles().saveNow();
+                var journal=new com.mrcrayfish.vehicle.paper.recovery.RecoveryJournal(main.getDataFolder().toPath().resolve("recovery-test.journal"));
+                journal.write(java.util.List.of(new com.mrcrayfish.vehicle.paper.recovery.RecoveryJournal.Entry(
+                        pairTruck.id(),pairCar.id(),player.getUniqueId(),RecoveryInterlock.Mode.WINCH,RecoveryInterlock.Phase.MOVING)));
+            }
             var safety=new RecoveryInterlock.Safety(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
             pairRoute=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.begin(main.vehicles(),pairTruck,pairCar,player,(a,w,b)->true,safety);
             if(pairRoute==null || pairRoute.parkBothOnOwnerQuitForTest(java.util.UUID.randomUUID()))
@@ -294,7 +300,7 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                         if(ticks<=180) {
                             if(pairRoute.tick(safety)==com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.State.STOPPED)
                                 throw new IllegalStateException("pair test load stopped");
-                            if(!Boolean.getBoolean("horizon.recovery.drivetest") && ticks==50){cancel();player.sendMessage("RECOVERY_OWNER_CAN_QUIT");return;}
+                            if(!Boolean.getBoolean("horizon.recovery.drivetest") && !Boolean.getBoolean("horizon.recovery.restarttest") && ticks==50){cancel();player.sendMessage("RECOVERY_OWNER_CAN_QUIT");return;}
                             if(ticks==180) {
                                 if(!pairRoute.beginTestDrive())throw new IllegalStateException("pair drive unavailable");
                                 driveStart=pairTruck.location();pairTruck.setEngineInstalled(true);pairTruck.setWheelsInstalled(true);
@@ -306,7 +312,13 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                             if(!pairRoute.tickTestDrive())throw new IllegalStateException("pair drive link failed");
                             if(ticks==240) {
                                 if(pairTruck.location().distance(driveStart)<.2)throw new IllegalStateException("pair truck did not move");
-                                cancel();player.sendMessage("RECOVERY_OWNER_CAN_QUIT");
+                                cancel();
+                                if(Boolean.getBoolean("horizon.recovery.restarttest")) {
+                                    if(!getDataFolder().exists() && !getDataFolder().mkdirs())throw new IllegalStateException("probe folder unavailable");
+                                    java.nio.file.Files.writeString(getDataFolder().toPath().resolve("expected-pair.txt"),pairTruck.id()+"\n"+pairCar.id()+"\n");
+                                    getLogger().info("RECOVERY_MIDTRANSPORT_READY");
+                                    player.sendMessage("RECOVERY_RESTART_NOW");
+                                } else player.sendMessage("RECOVERY_OWNER_CAN_QUIT");
                             }
                         }
                     }catch(Throwable error){cancel();getLogger().severe("RECOVERY_PROBE_FAIL pair loading: "+error);error.printStackTrace();}
