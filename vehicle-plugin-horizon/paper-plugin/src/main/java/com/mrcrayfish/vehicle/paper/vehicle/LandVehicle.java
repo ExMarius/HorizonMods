@@ -1773,7 +1773,10 @@ public final class LandVehicle {
 
     /** Checks every rig entity, including technical carriers, not just driver seats. */
     boolean recoveryHasPassengers() {
-        return rig.entities().stream().anyMatch(entity -> !entity.getPassengers().isEmpty());
+        java.util.Set<UUID> technical = rig.entities().stream().map(Entity::getUniqueId)
+                .collect(java.util.stream.Collectors.toSet());
+        return rig.entities().stream().flatMap(entity -> entity.getPassengers().stream())
+                .anyMatch(passenger -> !technical.contains(passenger.getUniqueId()));
     }
 
     public UUID id() {
