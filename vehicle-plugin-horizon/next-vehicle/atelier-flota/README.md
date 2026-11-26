@@ -42,3 +42,12 @@ coliziuni, ancorare sau transport în Minecraft; acestea necesită implementare
 
 Verificări locale: `node test-design.mjs`, `node test-loading.mjs` și
 `cd minecraft && python3 -m unittest -v test_minecraft`.
+
+### Siguranța la încărcare
+
+În demonstrație, bifa „Simulează vehicul cu remorcă / utilaj cuplat” blochează
+ambele variante de încărcare și cere decuplarea. Aceasta este o stare de test
+din browser, nu citește remorcile din joc. Când încărcarea va fi implementată
+în plugin, trebuie verificată starea reală de cuplare pentru orice vehicul
+candidat atât la pornire, cât și pe parcurs, în ambele moduri; cuplarea trebuie
+refuzată în timpul manevrei. Regulile nu sunt încă implementate pe server.

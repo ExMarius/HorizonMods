@@ -2,7 +2,7 @@ import * as T from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {palette,cab,platforma,atelier,ramp,wheels,platformWheels} from './design.js';
 import {loadDacia} from './loading-demo.js';
-import {sequence,rampRotation,LOADING} from './loading-kinematics.js';
+import {sequence,rampRotation,LOADING,loadingEligibility} from './loading-kinematics.js';
 import {buildMinecraftPreview} from './minecraft-preview.js';
 
 const data={
@@ -40,14 +40,16 @@ function makeVehicle(kind){
 function center(){camera.position.set(9,5.4,-11);controls.target.set(0,1.0,currentKind==='platforma'?1.3:.18);controls.update()}
 function demoView(){camera.position.set(11,8,16);controls.target.set(0,.8,4.0);controls.update()}
 function clearDemo(){demo=null;pending=false;loaded=false;if(carData){scene.remove(carData.car);carData.car.traverse(x=>{if(x.geometry)x.geometry.dispose()});carData=null}if(cable){scene.remove(cable);cable.geometry.dispose();cable.material.dispose();cable=null}}
-function updateButtons(){const running=!!demo||pending;document.querySelector('#drive-load').disabled=running||loaded;document.querySelector('#winch-load').disabled=running||loaded;document.querySelector('#unload').disabled=running||!loaded}
+function updateButtons(){const running=!!demo||pending;document.querySelector('#drive-load').disabled=running||loaded;document.querySelector('#winch-load').disabled=running||loaded;document.querySelector('#unload').disabled=running||!loaded;document.querySelector('#trailer-attached').disabled=running||loaded}
 function putCable(a,b){
  if(!cable){cable=new T.Mesh(new T.CylinderGeometry(.018,.018,1,8),new T.MeshStandardMaterial({color:0x30383a,metalness:.65,roughness:.5}));scene.add(cable)}
  const delta=new T.Vector3().subVectors(b,a);cable.position.copy(a).add(b).multiplyScalar(.5);cable.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),delta.clone().normalize());cable.scale.y=delta.length();
 }
 async function startDemo(mode,unload=false){
  if(demo||pending||currentKind!=='platforma'||(unload&&!loaded)||(!unload&&loaded))return;
- if(minecraftMode){minecraftMode=false;document.querySelector('#switch-model').textContent='ARATĂ JSON MINECRAFT';await choose('platforma')}
+ const eligibility=loadingEligibility(document.querySelector('#trailer-attached').checked);
+ if(!unload&&!eligibility.allowed){document.querySelector('#demo-status').textContent=eligibility.reason+' · regulă simulată, nu verificare în joc.';return}
+ if(minecraftMode){minecraftMode=false;document.querySelector('#switch-model').textContent='ARATĂ JSON MINECRAFT';await choose('platforma');if(currentKind!=='platforma'||!loadingEligibility(document.querySelector('#trailer-attached').checked).allowed)return}
  const token=request;pending=true;updateButtons();document.querySelector('#demo-status').textContent='Se încarcă Dacia Poliție din proiect…';
  try{if(!carData){const result=await loadDacia();if(token!==request){result.car.traverse(x=>{if(x.geometry)x.geometry.dispose()});return}carData=result;scene.add(carData.car)}
   pending=false;demo={mode,unload,start:performance.now(),lastZ:null};updateButtons();demoView();
@@ -79,6 +81,7 @@ async function choose(kind){
 }
 document.querySelectorAll('.choice').forEach(button=>button.addEventListener('click',()=>choose(button.dataset.model)));
 document.querySelector('#reset').addEventListener('click',center);
+document.querySelector('#trailer-attached').addEventListener('change',event=>{document.querySelector('#demo-status').textContent=event.target.checked?'Remorcă sau utilaj cuplat în simulare: încărcarea este blocată.':'Fără remorcă în simulare; încărcarea poate începe.'});
 document.querySelector('#drive-load').addEventListener('click',()=>startDemo('drive'));
 document.querySelector('#winch-load').addEventListener('click',()=>startDemo('winch'));
 document.querySelector('#unload').addEventListener('click',()=>startDemo('drive',true));

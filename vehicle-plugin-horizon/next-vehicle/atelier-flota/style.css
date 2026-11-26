@@ -3,3 +3,5 @@
 #loading[hidden]{display:none}
 .demo-controls{position:absolute;z-index:2;left:20px;top:60px;padding:12px 14px;background:#f8fbf1e8;border:1px solid #c7d8ba;max-width:380px;box-shadow:0 3px 15px #40543a12}
 .demo-controls[hidden]{display:none}.demo-heading{font-size:9px;letter-spacing:.1em;font-weight:800;color:#607c5c;margin-bottom:9px}.demo-buttons{display:flex;flex-wrap:wrap;gap:6px}.demo-buttons button{font:600 11px system-ui;background:#263a2c;color:#fff;border:0;padding:8px 10px;cursor:pointer}.demo-buttons button:hover{background:#56724e}.demo-buttons button:disabled{opacity:.42;cursor:not-allowed}#demo-status{font-size:10px;line-height:1.4;color:#677b66;margin:8px 0 0}@media(max-width:800px){.demo-controls{top:50px;left:12px;max-width:calc(100% - 24px);padding:9px}.demo-buttons button{font-size:10px;padding:7px}.scene-bottom{bottom:12px}}
+
+.trailer-test{display:flex;gap:7px;align-items:center;font-size:11px;color:#4d6250;margin:0 0 10px;cursor:pointer}.trailer-test input{accent-color:#527648;margin:0;flex:none}.trailer-test:has(input:disabled){opacity:.5;cursor:not-allowed}

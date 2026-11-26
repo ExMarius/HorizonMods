@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {LOADING,rampAngle,rampRun,rampRotation,groundHeight,carPose,sequence} from './loading-kinematics.js';
+import {LOADING,rampAngle,rampRun,rampRotation,groundHeight,carPose,sequence,loadingEligibility} from './loading-kinematics.js';
 import {platforma,ramp,platformWheels} from './design.js';
 const near=(a,b,e=1e-8)=>assert.ok(Math.abs(a-b)<e,`${a} != ${b}`);
+assert.equal(loadingEligibility(true).allowed,false);
+assert.match(loadingEligibility(true).reason,/Decuplează/);
+assert.equal(loadingEligibility(false).allowed,true);
 near(LOADING.deckTop-LOADING.rampLength*Math.sin(rampRotation(1)),0);
 near(LOADING.rampLength*Math.cos(rampRotation(1)),rampRun);
 near(rampRotation(0),-Math.PI/2);

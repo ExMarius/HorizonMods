@@ -27,3 +27,8 @@ export function sequence(seconds,unload=false){
  return {ramp:open,car:carPose(first+(last-first)*travel),moving:phase>0&&phase<1,
          done:seconds>=total,phase:seconds<rampDuration?'ramps':seconds<rampDuration+driveDuration?'moving':seconds<closeStart?'settling':seconds<total?'closing':'done'};
 }
+
+/** Preview rule only; real gameplay must inspect the server's coupling state. */
+export function loadingEligibility(hasAttachedTrailer){
+ return hasAttachedTrailer ? {allowed:false,reason:'Decuplează remorca sau utilajul înainte de încărcare.'} : {allowed:true,reason:''};
+}
