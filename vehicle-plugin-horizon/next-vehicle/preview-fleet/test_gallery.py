@@ -1,23 +1,24 @@
-import json, struct, unittest
+import json, unittest
 from pathlib import Path
-ROOT=Path(__file__).parent
+ROOT=Path(__file__).resolve().parents[3]
+ASSETS=ROOT/'content/assets/gokart'
 
 class GalleryAssetsTest(unittest.TestCase):
-    def test_real_gltf_models_reference_included_texture(self):
-        for name in ('ambulance','firetruck','garbage-truck'):
+    def test_project_models_and_textures_exist(self):
+        for name in ('ambulance_body','smurd_body','fire_truck_body','wheel_standard'):
             with self.subTest(name=name):
-                data=(ROOT/'assets'/f'{name}.glb').read_bytes()
-                magic,version,length=struct.unpack_from('<4sII',data)
-                self.assertEqual((magic,version,length),(b'glTF',2,len(data)))
-                size,kind=struct.unpack_from('<I4s',data,12)
-                self.assertEqual(kind,b'JSON')
-                scene=json.loads(data[20:20+size])
-                self.assertTrue(scene['meshes'])
-                for image in scene.get('images',[]):
-                    if 'uri' in image: self.assertTrue((ROOT/'assets'/image['uri']).is_file())
-    def test_license_included(self):
-        text=(ROOT/'assets/License.txt').read_text()
-        self.assertIn('Kenney',text)
-        self.assertIn('CC0',text)
+                model=json.loads((ASSETS/'models/block'/f'{name}.json').read_text())
+                self.assertTrue(model['elements'])
+                for element in model['elements']:
+                    for face in element['faces'].values():
+                        self.assertIn(face['texture'][1:],model['textures'])
+                for ref in model['textures'].values():
+                    self.assertTrue(ref.startswith('gokart:block/'))
+                    self.assertTrue((ASSETS/'textures/block'/(ref.split('/')[-1]+'.png')).is_file(),ref)
+    def test_medical_models_include_windows_and_interior_material(self):
+        for name in ('ambulance_body','smurd_body'):
+            model=json.loads((ASSETS/'models/block'/f'{name}.json').read_text())
+            self.assertIn('glass',model['textures'])
+            self.assertIn('medical_mattress',model['textures'])
 
 if __name__=='__main__': unittest.main()

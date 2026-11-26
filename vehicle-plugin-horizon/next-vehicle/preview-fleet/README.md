@@ -1,12 +1,14 @@
-# Vehicle idea gallery
+# Horizon vehicle gallery
 
-Interactive previews of three candidate vehicles, not Minecraft resources and not
-installed or functionally integrated. Geometry and texture are the **unaltered**
-original Kenney Car Kit models, CC0, from
-https://github.com/basedmaxs/kenney-assets/tree/main/car-kit (original author
-https://kenney.nl/assets/car-kit). The license is included in `assets/License.txt`.
-The gallery normalizes scale in Three.js only. It does not claim these models were
-made in-house or that they are Minecraft-ready.
+Interactive browser previews of **existing repository assets**:
+`content/assets/gokart/models/block/{ambulance_body,smurd_body,fire_truck_body}.json`
+and their `gokart:block` textures. They are not newly authored for this gallery,
+not the Minecraft renderer, and not proof of installation or functional integration
+in the active Paper server plugin. Wheel positions are approximate for display.
 
-Run: `npm ci && npm start`; the server listens on `0.0.0.0:4175` (override with
-`PORT`). The vehicle models have an external texture at `assets/Textures/colormap.png`.
+The browser renderer uses the source cuboids, rotations, face UV and texture files,
+not a replacement low-poly mesh. It does not implement every Minecraft model option
+and should not be used as proof of exact in-game appearance.
+
+Run `npm ci && npm start` in this folder. The server listens on `0.0.0.0:4175`
+(override with `PORT`). It needs the repository's `content/` directory alongside it.
