@@ -22,7 +22,12 @@ jobs:
         with:
           node-version: '22'
       - name: Build plugin, unit tests and disposable probe
-        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build recoverySmokeJar
+        run: |
+          set -o pipefail
+          ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build recoverySmokeJar 2>&1 | tee /tmp/recovery-build.log || {
+            python3 -c "from pathlib import Path; lines=Path('/tmp/recovery-build.log').read_text().splitlines(); print('::error::'+' | '.join(lines[-50:]).replace('%','%25')[:12000])"
+            exit 1
+          }
       - name: Install offline test client
         run: npm install --prefix /tmp/recovery-test mineflayer@4.39.0
       - name: Spawn and inspect rig on disposable Paper server
