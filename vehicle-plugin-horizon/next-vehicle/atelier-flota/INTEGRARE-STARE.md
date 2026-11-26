@@ -116,3 +116,14 @@ I/O; verificarea versiunii fișierului nu este un lock pentru scriitori externi.
 între salvări și o repornire simulată. După o eroare de scriere, cere reconciliere
 în loc să continue. Nu este integrat în TrailerManager și nu schimbă comportamentul
 serverului; funcționarea lui presupune un singur responsabil serializat pentru fișier.
+
+Proba izolată `45901024002` rulează încărcarea/descărcarea Daciei pe 360 de
+bifări prin `PrototypeRecoveryRoute`, cu verificare a segmentelor de cablu
+față de formele de coliziune ale blocurilor și față de entități, plus refuz în
+chunk-uri neîncărcate. Un obstacol în cablu oprește traseul fără reluare
+automată; deblocarea la sol necesită sprijin sub centru și patru puncte. Aceste
+verificări folosesc geometrie aproximativă, un teren ideal și un adaptor de
+permisiuni furnizat de proba de test. Nu verifică volumul măturat de cablu între
+bifări, caroseria înclinată, propriile modele sau toate pluginurile de protecție.
+Traseul rămâne nepublic: lipsesc chingile și transportul efectiv, persistența și
+reconcilierea, sursa reală a permisiunilor, precum și validarea în client.
