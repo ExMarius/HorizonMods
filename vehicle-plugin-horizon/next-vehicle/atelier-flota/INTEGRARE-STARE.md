@@ -110,3 +110,9 @@ modificate sau corupte și folosește înlocuire atomică. Nu este încă utiliz
 runtime. Pentru integrare trebuie inventariate toate căile de creare/ștergere,
 serializate scrierile și testate restartul, lumile indisponibile și eșecurile
 I/O; verificarea versiunii fișierului nu este un lock pentru scriitori externi.
+
+`TrailerSnapshotSession` este un al doilea experiment izolat: gestionează explicit
+înregistrările preluate, adăugate și șterse și păstrează înregistrările amânate
+între salvări și o repornire simulată. După o eroare de scriere, cere reconciliere
+în loc să continue. Nu este integrat în TrailerManager și nu schimbă comportamentul
+serverului; funcționarea lui presupune un singur responsabil serializat pentru fișier.
