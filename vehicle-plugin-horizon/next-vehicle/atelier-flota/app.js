@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {palette,cab,platforma,atelier,wheels} from './design.js';
+import {buildMinecraftPreview} from './minecraft-preview.js';
 
 const data={
  platforma:{pieces:platforma,title:'Platformă auto',desc:'Cabină cu interior, platformă joasă, troliu, ghidaje și rampe de încărcare.',idea:'Concept pentru recuperarea și transportul unui vehicul defect.',index:'01'},
@@ -14,7 +15,7 @@ scene.add(new T.HemisphereLight(0xf9fff4,0x7d8f78,2));const lamp=new T.Direction
 const base=new T.Mesh(new T.CylinderGeometry(4,4,.12,100),new T.MeshStandardMaterial({color:0xeaf0e1,roughness:1}));base.position.y=-.08;base.receiveShadow=true;scene.add(base);
 const line=new T.Mesh(new T.RingGeometry(3.6,3.62,100),new T.MeshBasicMaterial({color:0xc0d0b4,side:T.DoubleSide}));line.rotation.x=-Math.PI/2;line.position.y=-.016;scene.add(line);
 const mats=Object.fromEntries(Object.entries(palette).map(([key,color])=>[key,new T.MeshStandardMaterial({color,roughness:key==='glass'?.3:.76,metalness:['steel','silver','rim'].includes(key)?.45:0,transparent:key==='glass',opacity:key==='glass'?.30:1,depthWrite:key!=='glass',side:key==='glass'?T.DoubleSide:T.FrontSide})]));
-let selected=null;
+let selected=null,currentKind='platforma',minecraftMode=false,request=0;
 function box(spec,container){const [kind,x,y,z,w,h,d,rx=0]=spec;const m=new T.Mesh(new T.BoxGeometry(w,h,d),mats[kind]);m.position.set(x,y,z);m.rotation.x=rx;m.castShadow=kind!=='glass';m.receiveShadow=true;container.add(m)}
 function cylinder(container,kind,radius,depth,x,y,z,segments=16){const m=new T.Mesh(new T.CylinderGeometry(radius,radius,depth,segments),mats[kind]);m.rotation.z=Math.PI/2;m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;container.add(m);return m}
 function wheel(container,x,y,z){
@@ -32,10 +33,19 @@ function makeVehicle(kind){
  group.position.y=.005;return group;
 }
 function center(){camera.position.set(7.4,4.7,-8.6);controls.target.set(0,1.05,.18);controls.update()}
-function choose(kind){const d=data[kind];if(!d)return;if(selected){scene.remove(selected);selected.traverse(x=>{if(x.geometry)x.geometry.dispose()})}selected=makeVehicle(kind);scene.add(selected);
+async function choose(kind){
+ const d=data[kind];if(!d)return;currentKind=kind;const ticket=++request;
+ status.hidden=false;status.textContent='Se pregătește modelul…';
  for(const button of document.querySelectorAll('.choice')){const on=button.dataset.model===kind;button.classList.toggle('active',on);button.setAttribute('aria-pressed',String(on))}
  for(const [key,value] of [['#title',d.title],['#description',d.desc],['#idea',d.idea],['#detail-index',d.index],['#asset-index',d.index+' / 02']])document.querySelector(key).textContent=value;
- status.hidden=true;center();}
-document.querySelectorAll('.choice').forEach(button=>button.addEventListener('click',()=>choose(button.dataset.model)));document.querySelector('#reset').addEventListener('click',center);
+ try{
+  const next=minecraftMode?await buildMinecraftPreview(kind,mats):makeVehicle(kind);
+  if(ticket!==request){next.traverse(x=>{if(x.geometry)x.geometry.dispose()});return}
+  if(selected){scene.remove(selected);selected.traverse(x=>{if(x.geometry)x.geometry.dispose()})}selected=next;scene.add(selected);status.hidden=true;center();
+ }catch(error){console.error(error);if(ticket===request)status.textContent='Nu se poate încărca modelul JSON.'}
+}
+document.querySelectorAll('.choice').forEach(button=>button.addEventListener('click',()=>choose(button.dataset.model)));
+document.querySelector('#reset').addEventListener('click',center);
+document.querySelector('#switch-model').addEventListener('click',event=>{minecraftMode=!minecraftMode;event.currentTarget.textContent=minecraftMode?'ARATĂ CONCEPTUL ORIGINAL':'ARATĂ JSON MINECRAFT';choose(currentKind)});
 new ResizeObserver(()=>{const w=holder.clientWidth,h=holder.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}).observe(holder);
 function frame(){requestAnimationFrame(frame);controls.update();renderer.render(scene,camera)}frame();choose('platforma');

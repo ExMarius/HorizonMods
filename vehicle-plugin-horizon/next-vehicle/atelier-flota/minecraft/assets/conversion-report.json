@@ -1,0 +1,77 @@
+{
+  "itemDisplayScale": 4,
+  "models": {
+    "horizon_service_cab": 69,
+    "horizon_service_flatbed": 38,
+    "horizon_service_workshop": 42,
+    "horizon_service_steering": 5,
+    "horizon_service_wheel": 8
+  },
+  "rotationApproximations": [
+    {
+      "part": "horizon_service_cab",
+      "index": 32,
+      "originalDegrees": -6.8755,
+      "vanillaDegrees": 0
+    },
+    {
+      "part": "horizon_service_cab",
+      "index": 33,
+      "originalDegrees": -6.8755,
+      "vanillaDegrees": 0
+    },
+    {
+      "part": "horizon_service_cab",
+      "index": 40,
+      "originalDegrees": -6.8755,
+      "vanillaDegrees": 0
+    },
+    {
+      "part": "horizon_service_cab",
+      "index": 44,
+      "originalDegrees": -6.8755,
+      "vanillaDegrees": 0
+    },
+    {
+      "part": "horizon_service_cab",
+      "index": 45,
+      "originalDegrees": -6.8755,
+      "vanillaDegrees": 0
+    },
+    {
+      "part": "horizon_service_cab",
+      "index": 50,
+      "originalDegrees": -5.7296,
+      "vanillaDegrees": 0
+    },
+    {
+      "part": "horizon_service_cab",
+      "index": 51,
+      "originalDegrees": -5.7296,
+      "vanillaDegrees": 0
+    },
+    {
+      "part": "horizon_service_cab",
+      "index": 55,
+      "originalDegrees": -13.751,
+      "vanillaDegrees": -22.5
+    },
+    {
+      "part": "horizon_service_wheel",
+      "index": 2,
+      "originalDegrees": 45,
+      "vanillaDegrees": 45
+    },
+    {
+      "part": "horizon_service_wheel",
+      "index": 3,
+      "originalDegrees": -45,
+      "vanillaDegrees": -45
+    }
+  ],
+  "notes": [
+    "Vanilla item cuboids replace browser torus/cylinder wheels and steering.",
+    "Glass alpha must be verified in the target Minecraft client.",
+    "Pieces require explicit placement in a future vehicle rig; not installed."
+  ]
+}
