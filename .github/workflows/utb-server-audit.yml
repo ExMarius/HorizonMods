@@ -33,3 +33,5 @@ jobs:
                   print('::notice::'+line[:500].replace('%','%25'),flush=True)
           print('::notice::UTB command mentioned in current log: '+str(any('/vehicle spawn utb_650' in line for line in data)),flush=True)
           PY
+
+# Inspect installed build after disc pin alignment.
