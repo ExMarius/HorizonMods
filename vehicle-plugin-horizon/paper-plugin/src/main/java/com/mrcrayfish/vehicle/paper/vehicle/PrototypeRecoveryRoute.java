@@ -99,11 +99,12 @@ public final class PrototypeRecoveryRoute {
             return state;
         } catch(RuntimeException e) { return stop(); }
     }
-    /** Test-only disconnect response. Occupied carriers refuse rather than ejecting
-     * the driver somewhere unsafe. Not registered with live quit events. */
+    /** Test-only disconnect response; refuses if safe evacuation fails.
+     * Not registered with live quit events and not crash-safe. */
     public boolean parkBothOnOwnerQuitForTest(UUID ownerId) {
         if(!Bukkit.isPrimaryThread() || ownerId==null || state==State.FINISHED || state==State.TEST_PARKED
                 || !target.owner().map(ownerId::equals).orElse(false))return false;
+        if(state==State.TEST_DRIVING && !motion.evacuateTestDrive()) {state=State.STOPPED;return false;}
         if(!manager.parkRecoveryPairForTest(carrier,target))return false;
         state=State.TEST_PARKED;return true;
     }

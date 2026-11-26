@@ -122,6 +122,59 @@ public final class PrototypeRecoveryMotion {
         if(!Bukkit.isPrimaryThread()||!testDriving||carrier.recoveryHasPassengers()||!followTestDrive())return false;
         carrier.stopRecoveryTestDrive(token);testDriving=false;return true;
     }
+    /** Stop the experimental carrier and evacuate players before garage fallback.
+     * No forced ejection when no suitable location exists. Not production-safe. */
+    boolean evacuateTestDrive() {
+        if(!Bukkit.isPrimaryThread()||closed||!testDriving||!followTestDrive())return false;
+        carrier.freezeRecoveryTestDrive(token);testDriving=false;
+        var technical=new HashSet<UUID>();
+        carrier.rig().entities().forEach(e -> technical.add(e.getUniqueId()));
+        target.rig().entities().forEach(e -> technical.add(e.getUniqueId()));
+        var riders=new java.util.ArrayList<Player>();
+        for(Entity entity:carrier.rig().entities()) for(Entity passenger:entity.getPassengers()) {
+            if(technical.contains(passenger.getUniqueId()))continue;
+            if(!(passenger instanceof Player p)||!p.isOnline()||riders.contains(p))return false;
+            riders.add(p);
+        }
+        var destinations=new java.util.ArrayList<Location>();
+        for(Player rider:riders) {
+            Location safe=findTestExit(carrier.location(),technical,riders,destinations);
+            if(safe==null)return false;
+            destinations.add(safe);
+        }
+        for(int i=0;i<riders.size();i++) {
+            Player rider=riders.get(i);
+            if(!rider.leaveVehicle() || !rider.teleport(destinations.get(i)))return false;
+        }
+        return !carrier.recoveryHasPassengers();
+    }
+    private Location findTestExit(Location base,Set<UUID> own,java.util.List<Player> riders,java.util.List<Location> chosen) {
+        World world=base.getWorld();if(world==null)return null;
+        for(int radius=5;radius<=9;radius++)for(int dx=-radius;dx<=radius;dx++)for(int dz=-radius;dz<=radius;dz++) {
+            if(Math.max(Math.abs(dx),Math.abs(dz))!=radius)continue;
+            int x=base.getBlockX()+dx,z=base.getBlockZ()+dz;
+            if(!world.isChunkLoaded(x>>4,z>>4))continue;
+            for(int dy=1;dy>=-2;dy--) {
+                int y=base.getBlockY()+dy;
+                if(y<=world.getMinHeight()||y+1>=world.getMaxHeight())continue;
+                var floor=world.getBlockAt(x,y-1,z);var feet=world.getBlockAt(x,y,z);var head=world.getBlockAt(x,y+1,z);
+                if(!floor.getType().isSolid() || !feet.getType().isAir() || !head.getType().isAir())continue;
+                String type=floor.getType().name();
+                if(type.contains("MAGMA")||type.contains("CAMPFIRE")||type.contains("CACTUS")||type.contains("BERRY")||type.contains("FIRE"))continue;
+                boolean full=floor.getCollisionShape().getBoundingBoxes().stream().anyMatch(b -> b.getMinX()<=0 && b.getMinZ()<=0
+                        && b.getMaxX()>=1 && b.getMaxZ()>=1 && b.getMaxY()>=1);
+                if(!full)continue;
+                Location place=new Location(world,x+.5,y,z+.5,base.getYaw(),0);
+                if(!world.getWorldBorder().isInside(place))continue;
+                if(chosen.stream().anyMatch(p -> p.distanceSquared(place)<4))continue;
+                BoundingBox space=new BoundingBox(x+.2,y,z+.2,x+.8,y+1.9,z+.8);
+                boolean blocked=world.getNearbyEntities(space).stream().anyMatch(e -> e.isValid()&&!own.contains(e.getUniqueId())
+                        && riders.stream().noneMatch(p -> p.getUniqueId().equals(e.getUniqueId())));
+                if(!blocked)return place;
+            }
+        }
+        return null;
+    }
     /** Test cleanup only: release both locks on solid ground. No secured transport. */
     public boolean releaseOnGround(){
         if(!Bukkit.isPrimaryThread()||closed||testDriving||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token))return false;

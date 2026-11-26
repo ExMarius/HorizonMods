@@ -12,6 +12,10 @@ owner.once('spawn',()=>{
    if(process.env.RECOVERY_PAIR_RESTART) setTimeout(()=>{clearTimeout(timer);owner.quit();driver.quit()},5000);
  });
  driver.on('messagestr',message=>{
+   if(!process.env.RECOVERY_PAIR_RESTART && message.includes('RECOVERY_DRIVE_START')) {
+     const drive=setInterval(()=>driver._client.write('player_input',{inputs:{forward:true}}),50);
+     setTimeout(()=>{clearInterval(drive);driver._client.write('player_input',{inputs:{}})},2500);
+   }
    if(!process.env.RECOVERY_PAIR_RESTART && message.includes('RECOVERY_OWNER_CAN_QUIT')) {
      owner.quit();setTimeout(()=>{clearTimeout(timer);driver.quit()},3500);
    }

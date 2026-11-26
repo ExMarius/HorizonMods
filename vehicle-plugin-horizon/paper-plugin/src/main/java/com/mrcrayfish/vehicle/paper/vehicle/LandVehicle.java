@@ -1731,6 +1731,10 @@ public final class LandVehicle {
         if(!recoveryMotionLockedBy(token) || !transported)throw new IllegalStateException("Recovery lock lost");
         transported=false;
     }
+    void freezeRecoveryTestDrive(UUID token) {
+        if(!recoveryMotionLockedBy(token))throw new IllegalStateException("Recovery lock lost");
+        velocity.zero();motion.zero();verticalVelocity=0;waterSpeed=0;transported=true;
+    }
     void stopRecoveryTestDrive(UUID token) {
         if(!recoveryMotionLockedBy(token) || transported || recoveryHasPassengers())throw new IllegalStateException("Carrier not empty");
         velocity.zero();motion.zero();verticalVelocity=0;waterSpeed=0;transported=true;

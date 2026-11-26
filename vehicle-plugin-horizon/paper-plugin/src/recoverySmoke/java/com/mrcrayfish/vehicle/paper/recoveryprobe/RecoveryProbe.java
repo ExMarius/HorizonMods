@@ -53,9 +53,15 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
         if(pairRoute!=null && event.getPlayer().getName().equals("RecoveryOwnerBot")) {
             try {
                 var main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
+                var operator=getServer().getPlayerExact("RecoveryProbeBot");
+                if(Boolean.getBoolean("horizon.recovery.drivetest") && (operator==null || operator.getVehicle()==null))
+                    throw new IllegalStateException("driver not mounted when owner disconnected");
                 if(!pairRoute.parkBothOnOwnerQuitForTest(event.getPlayer().getUniqueId())
                         || main.vehicles().hasVehicleId(pairTruck.id()) || main.vehicles().hasVehicleId(pairCar.id()))
                     throw new IllegalStateException("owner quit did not garage both vehicles");
+                if(Boolean.getBoolean("horizon.recovery.drivetest") && (operator.getVehicle()!=null
+                        || !operator.getLocation().clone().subtract(0,.1,0).getBlock().getType().isSolid()))
+                    throw new IllegalStateException("driver not safely dismounted");
                 if(!getDataFolder().exists() && !getDataFolder().mkdirs())throw new IllegalStateException("probe folder unavailable");
                 java.nio.file.Files.writeString(getDataFolder().toPath().resolve("expected-pair.txt"),pairTruck.id()+"\n"+pairCar.id()+"\n");
                 getLogger().info("RECOVERY_PAIR_QUIT_OK");pairRoute=null;
@@ -281,12 +287,28 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                 throw new IllegalStateException("pair lock failed or unrelated quit accepted");
             player.teleport(base.clone().add(10*Math.cos(yaw),0,10*Math.sin(yaw)));
             new org.bukkit.scheduler.BukkitRunnable(){
-                int ticks;
+                int ticks;org.bukkit.Location driveStart;
                 @Override public void run(){
                     try {
-                        if(pairRoute.tick(safety)!=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.State.LOADING)
-                            throw new IllegalStateException("pair test load stopped");
-                        if(++ticks==50){cancel();player.sendMessage("RECOVERY_OWNER_CAN_QUIT");}
+                        ticks++;
+                        if(ticks<=180) {
+                            if(pairRoute.tick(safety)==com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.State.STOPPED)
+                                throw new IllegalStateException("pair test load stopped");
+                            if(!Boolean.getBoolean("horizon.recovery.drivetest") && ticks==50){cancel();player.sendMessage("RECOVERY_OWNER_CAN_QUIT");return;}
+                            if(ticks==180) {
+                                if(!pairRoute.beginTestDrive())throw new IllegalStateException("pair drive unavailable");
+                                driveStart=pairTruck.location();pairTruck.setEngineInstalled(true);pairTruck.setWheelsInstalled(true);
+                                if(!pairTruck.mount(player))throw new IllegalStateException("driver mount failed");
+                                player.sendMessage("RECOVERY_DRIVE_START");
+                            }
+                        } else {
+                            if(pairRoute.state()==com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.State.TEST_PARKED){cancel();return;}
+                            if(!pairRoute.tickTestDrive())throw new IllegalStateException("pair drive link failed");
+                            if(ticks==240) {
+                                if(pairTruck.location().distance(driveStart)<.2)throw new IllegalStateException("pair truck did not move");
+                                cancel();player.sendMessage("RECOVERY_OWNER_CAN_QUIT");
+                            }
+                        }
                     }catch(Throwable error){cancel();getLogger().severe("RECOVERY_PROBE_FAIL pair loading: "+error);error.printStackTrace();}
                 }
             }.runTaskTimer(this,1L,1L);
