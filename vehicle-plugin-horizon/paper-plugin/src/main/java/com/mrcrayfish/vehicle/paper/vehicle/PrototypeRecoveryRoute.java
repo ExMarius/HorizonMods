@@ -16,7 +16,7 @@ import java.util.UUID;
  * Uses a caller-provided safety snapshot and authority, ideal flat terrain, and
  * approximate dimensions/hook point. Experimental transport has no full collision or crash protection. Do not deploy. */
 public final class PrototypeRecoveryRoute {
-    public enum State { LOADING, AT_DECK, TEST_DRIVING, UNLOADING, ON_GROUND, STOPPED, FINISHED }
+    public enum State { LOADING, AT_DECK, TEST_DRIVING, UNLOADING, ON_GROUND, STOPPED, FINISHED, TEST_PARKED }
     private static final int STEPS=180;
     private static final double START=9.8, DECK=2.64, WHEELBASE=3.3;
     private final PrototypeRecoveryMotion motion;
@@ -98,6 +98,14 @@ public final class PrototypeRecoveryRoute {
             if(++step==STEPS)state=loading?State.AT_DECK:State.ON_GROUND;
             return state;
         } catch(RuntimeException e) { return stop(); }
+    }
+    /** Test-only disconnect response. Occupied carriers refuse rather than ejecting
+     * the driver somewhere unsafe. Not registered with live quit events. */
+    public boolean parkBothOnOwnerQuitForTest(UUID ownerId) {
+        if(!Bukkit.isPrimaryThread() || ownerId==null || state==State.FINISHED || state==State.TEST_PARKED
+                || !target.owner().map(ownerId::equals).orElse(false))return false;
+        if(!manager.parkRecoveryPairForTest(carrier,target))return false;
+        state=State.TEST_PARKED;return true;
     }
     /** Only unlock on checked solid ground; a stopped suspended vehicle stays locked. */
     public boolean finishOnGround() {

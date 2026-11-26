@@ -17,6 +17,8 @@ import java.util.Map;
 /** Disposable test-only plugin; never included in the production plugin jar. */
 public final class RecoveryProbe extends JavaPlugin implements Listener {
     private boolean exercised;
+    private com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute pairRoute;
+    private LandVehicle pairTruck,pairCar;
     private final Map<java.util.UUID,LandVehicle> demoVehicles=new HashMap<>();
     @Override public boolean onCommand(org.bukkit.command.CommandSender sender, org.bukkit.command.Command cmd, String label, String[] args){
         if(!(sender instanceof org.bukkit.entity.Player player) || !player.hasPermission("recoveryprobe.use")) return true;
@@ -46,7 +48,20 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
         }
         return true;
     }
-    @EventHandler public void quit(org.bukkit.event.player.PlayerQuitEvent event){ cleanupDemo(event.getPlayer().getUniqueId()); }
+    @EventHandler public void quit(org.bukkit.event.player.PlayerQuitEvent event){
+        cleanupDemo(event.getPlayer().getUniqueId());
+        if(pairRoute!=null && event.getPlayer().getName().equals("RecoveryOwnerBot")) {
+            try {
+                var main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
+                if(!pairRoute.parkBothOnOwnerQuitForTest(event.getPlayer().getUniqueId())
+                        || main.vehicles().hasVehicleId(pairTruck.id()) || main.vehicles().hasVehicleId(pairCar.id()))
+                    throw new IllegalStateException("owner quit did not garage both vehicles");
+                if(!getDataFolder().exists() && !getDataFolder().mkdirs())throw new IllegalStateException("probe folder unavailable");
+                java.nio.file.Files.writeString(getDataFolder().toPath().resolve("expected-pair.txt"),pairTruck.id()+"\n"+pairCar.id()+"\n");
+                getLogger().info("RECOVERY_PAIR_QUIT_OK");pairRoute=null;
+            } catch(Throwable error){getLogger().severe("RECOVERY_PROBE_FAIL pair quit: "+error);error.printStackTrace();}
+        }
+    }
     @Override public void onDisable(){for(var id:java.util.List.copyOf(demoVehicles.keySet()))cleanupDemo(id);}
     private void cleanupDemo(java.util.UUID id){
         var main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
@@ -55,6 +70,27 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
     }
     @Override public void onEnable(){getServer().getPluginManager().registerEvents(this,this);}
     @EventHandler public void join(PlayerJoinEvent event){
+        var pairMarker=getDataFolder().toPath().resolve("expected-pair.txt");
+        if(Boolean.getBoolean("horizon.recovery.pairtest") && java.nio.file.Files.exists(pairMarker)) {
+            getServer().getScheduler().runTaskLater(this,()->{
+                try {
+                    var lines=java.nio.file.Files.readAllLines(pairMarker);
+                    int index=event.getPlayer().getName().equals("RecoveryProbeBot")?0:
+                            event.getPlayer().getName().equals("RecoveryOwnerBot")?1:-1;
+                    if(index<0)return;
+                    var id=java.util.UUID.fromString(lines.get(index));
+                    var main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
+                    if(main.vehicles().garagedOf(event.getPlayer()).stream().filter(e->e.id().equals(id)).count()!=1
+                            || main.vehicles().hasVehicleId(id))throw new IllegalStateException("pair garage missing or duplicate");
+                    getLogger().info("RECOVERY_PAIR_RESTART_OK "+event.getPlayer().getName());
+                } catch(Throwable error){getLogger().severe("RECOVERY_PROBE_FAIL pair restart: "+error);error.printStackTrace();}
+            },20L);
+            return;
+        }
+        if(Boolean.getBoolean("horizon.recovery.pairtest")) {
+            if(event.getPlayer().getName().equals("RecoveryProbeBot"))getServer().getScheduler().runTaskLater(this,()->startPairTest(event.getPlayer()),40L);
+            return;
+        }
         var marker=getDataFolder().toPath().resolve("expected-garage.txt");
         if(event.getPlayer().getName().equals("RecoveryOwnerBot") && java.nio.file.Files.exists(marker)) {
             getServer().getScheduler().runTaskLater(this,()-> {
@@ -221,6 +257,34 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                 if(v!=null&&main!=null)main.vehicles().remove(v);
             }
         },40L);
+    }
+    private void startPairTest(org.bukkit.entity.Player player) {
+        try {
+            var main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
+            var owner=getServer().getPlayerExact("RecoveryOwnerBot");
+            if(main==null || owner==null)throw new IllegalStateException("test players unavailable");
+            var base=player.getLocation();double yaw=Math.toRadians(base.getYaw());
+            owner.teleport(base.clone().add(25,0,25));
+            pairTruck=main.vehicles().spawn(RecoveryTruckPrototype.create(),base.clone());pairTruck.setOwner(player.getUniqueId());
+            pairTruck.rig().setRecoveryRampProgress(1);
+            pairCar=main.vehicles().spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,base.clone().add(9.8*Math.sin(yaw),0,-9.8*Math.cos(yaw)));
+            pairCar.setOwner(owner.getUniqueId());pairCar.trust(player.getUniqueId());
+            var safety=new RecoveryInterlock.Safety(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
+            pairRoute=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.begin(main.vehicles(),pairTruck,pairCar,player,(a,w,b)->true,safety);
+            if(pairRoute==null || pairRoute.parkBothOnOwnerQuitForTest(java.util.UUID.randomUUID()))
+                throw new IllegalStateException("pair lock failed or unrelated quit accepted");
+            player.teleport(base.clone().add(10*Math.cos(yaw),0,10*Math.sin(yaw)));
+            new org.bukkit.scheduler.BukkitRunnable(){
+                int ticks;
+                @Override public void run(){
+                    try {
+                        if(pairRoute.tick(safety)!=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.State.LOADING)
+                            throw new IllegalStateException("pair test load stopped");
+                        if(++ticks==50){cancel();player.sendMessage("RECOVERY_OWNER_CAN_QUIT");}
+                    }catch(Throwable error){cancel();getLogger().severe("RECOVERY_PROBE_FAIL pair loading: "+error);error.printStackTrace();}
+                }
+            }.runTaskTimer(this,1L,1L);
+        } catch(Throwable error){getLogger().severe("RECOVERY_PROBE_FAIL pair start: "+error);error.printStackTrace();}
     }
     /** Test-only: ideal flat ground, fake claims adapter and no secured transport. */
     private void startTimedRoundTrip(VehiclePlugin main, org.bukkit.entity.Player player) {

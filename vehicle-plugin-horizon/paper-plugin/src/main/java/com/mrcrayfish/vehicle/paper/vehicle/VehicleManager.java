@@ -364,6 +364,23 @@ public final class VehicleManager {
         return true;
     }
 
+    /** Test-only recovery emergency. Both snapshots enter the existing garage
+     * map together; save() remains asynchronous and this is NOT crash-safe. */
+    boolean parkRecoveryPairForTest(LandVehicle carrier, LandVehicle target) {
+        if(!Bukkit.isPrimaryThread()||carrier==null||target==null||carrier==target||!trailers.recoveryLinksKnown())return false;
+        for(LandVehicle v:List.of(carrier,target)) {
+            if(vehicles.get(v.id())!=v || !v.recoveryLocked() || v.owner().isEmpty()
+                    || v.recoveryHasPassengers() || v.showcase() || v.onJack() || corruptLocation(v.location())
+                    || garage.containsKey(v.id()) || pendingWorlds.containsKey(v.id()) || trailers.referencesVehicle(v.id()))return false;
+        }
+        StoredVehicle a=StoredVehicle.from(carrier),b=StoredVehicle.from(target);
+        for(LandVehicle v:List.of(carrier,target)) {
+            unindex(v);releaseChunkTicket(v);vehicles.remove(v.id());
+            parkedInSpotSeconds.remove(v.id());v.remove();
+        }
+        garage.put(a.id(),a);garage.put(b.id(),b);save();return true;
+    }
+
     /** CICLUL AF: limita de stationare in cerc, din config (minute -> secunde).
      *  0 sau negativ = sistemul e oprit complet. Default 5 minute. */
     private int autoStoreLimitSeconds() {
