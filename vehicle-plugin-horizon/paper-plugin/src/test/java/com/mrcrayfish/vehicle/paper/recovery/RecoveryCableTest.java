@@ -11,6 +11,14 @@ class RecoveryCableTest {
         assertEquals(List.of(OUTLET,high),route(OUTLET,ROLLER,high));
         assertEquals(List.of(OUTLET,shortLine),route(OUTLET,ROLLER,shortLine));
     }
+    @Test void validatesTheEntireLineAndRefusesPenetrationOrOverflow(){
+        var good=route(OUTLET,ROLLER,new Point(0,.35,7.37));
+        assertTrue(clearsLevelBed(good,.18,5.35,.86,.018));
+        assertFalse(clearsLevelBed(route(OUTLET,ROLLER,new Point(0,.2,3)),.18,5.35,.86,.018));
+        assertFalse(clearsLevelBed(List.of(OUTLET,new Point(0,1.1,1e100)),.18,5.35,.86,.018));
+        assertFalse(clearsLevelBed(List.of(OUTLET,OUTLET),.18,5.35,.86,.018));
+        assertFalse(clearsLevelBed(null,.18,5.35,.86,.018));
+    }
     @Test void rejectsMissingOrUnalignedGeometry(){
         assertThrows(IllegalArgumentException.class,()->new Point(Double.NaN,0,0));
         assertThrows(IllegalArgumentException.class,()->route(null,ROLLER,OUTLET));

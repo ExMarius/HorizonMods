@@ -543,13 +543,8 @@ public final class LandVehicleRig {
     public void setRecoveryCable(java.util.List<com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point> points) {
         if (!"horizon_recovery_prototype".equals(spec.id())) throw new IllegalStateException("Not a recovery prototype");
         if (points==null || points.isEmpty()) {recoveryCable=List.of();return;}
-        if (points.size()<2 || points.size()>3 || points.stream().anyMatch(java.util.Objects::isNull))
-            throw new IllegalArgumentException("Cable needs two or three finite points");
-        for(int i=1;i<points.size();i++) {
-            var a=points.get(i-1);var b=points.get(i);
-            if (Math.hypot(Math.hypot(a.x()-b.x(),a.y()-b.y()),a.z()-b.z())<1e-5)
-                throw new IllegalArgumentException("Zero length cable segment");
-        }
+        if (!com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.clearsLevelBed(points,.18,5.35,.86,.018))
+            throw new IllegalArgumentException("Cable geometry is unsafe for the prototype bed");
         recoveryCable=List.copyOf(points);
     }
 

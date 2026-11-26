@@ -30,4 +30,24 @@ public final class RecoveryCable {
         }
         return List.of(outlet, hook);
     }
+    /** Exact line-segment clearance over a level bed; not a world collision test. */
+    public static boolean clearsLevelBed(List<Point> path,double bedStart,double bedEnd,double top,double radius) {
+        if(path==null || path.size()<2 || path.size()>3 || !Double.isFinite(bedStart) || !Double.isFinite(bedEnd)
+                || !Double.isFinite(top) || !Double.isFinite(radius) || bedEnd<=bedStart || radius<0) return false;
+        for(int i=0;i<path.size();i++){
+            Point p=path.get(i);
+            // Visual prototype has no safe representation for huge or non-centred points.
+            if(p==null || p.x()!=0 || Math.abs(p.y())>64 || Math.abs(p.z())>64) return false;
+            if(i==0)continue;
+            Point a=path.get(i-1),b=p;
+            if(b.z()<=a.z() || Math.hypot(b.y()-a.y(),b.z()-a.z())<1e-5) return false;
+            double lo=Math.max(a.z(),bedStart),hi=Math.min(b.z(),bedEnd);
+            if(lo>hi)continue;
+            double y0=a.y()+(b.y()-a.y())*(lo-a.z())/(b.z()-a.z());
+            double y1=a.y()+(b.y()-a.y())*(hi-a.z())/(b.z()-a.z());
+            if(Math.min(y0,y1)-radius<top) return false;
+        }
+        return true;
+    }
+
 }
