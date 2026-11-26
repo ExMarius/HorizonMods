@@ -17,6 +17,7 @@ class RecoveryCableTest {
         assertFalse(clearsLevelBed(route(OUTLET,ROLLER,new Point(0,.2,3)),.18,5.35,.86,.018));
         assertFalse(clearsLevelBed(List.of(OUTLET,new Point(0,1.1,1e100)),.18,5.35,.86,.018));
         assertFalse(clearsLevelBed(List.of(OUTLET,OUTLET),.18,5.35,.86,.018));
+        assertFalse(clearsLevelBed(route(OUTLET,ROLLER,new Point(0,-.2,8)),.18,5.35,.86,.018));
         assertFalse(clearsLevelBed(null,.18,5.35,.86,.018));
     }
     @Test void rejectsMissingOrUnalignedGeometry(){

@@ -37,7 +37,7 @@ public final class RecoveryCable {
         for(int i=0;i<path.size();i++){
             Point p=path.get(i);
             // Visual prototype has no safe representation for huge or non-centred points.
-            if(p==null || p.x()!=0 || Math.abs(p.y())>64 || Math.abs(p.z())>64) return false;
+            if(p==null || p.x()!=0 || p.y()<radius || Math.abs(p.y())>64 || Math.abs(p.z())>64) return false;
             if(i==0)continue;
             Point a=path.get(i-1),b=p;
             if(b.z()<=a.z() || Math.hypot(b.y()-a.y(),b.z()-a.z())<1e-5) return false;
