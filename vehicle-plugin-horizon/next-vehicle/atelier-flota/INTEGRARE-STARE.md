@@ -87,3 +87,11 @@ Workflow-ul `45890606178` a testat în Paper temporar inclusiv direcția,
 lungimea și ascunderea celor două segmente de cablu; calculele verifică
 intersecția cu puntea plană și solul. Nu a testat cablul în client, în alte
 configurații de teren sau împotriva obiectelor din lume.
+
+Workflow-ul `45891664762` a compilat experimentul de mișcare și a rulat
+proba Paper izolată, inclusiv blocarea unor operații concurente. Mișcarea nu
+este expusă jucătorilor: protecțiile, traseul real și persistența nu sunt legate.
+`RecoveryLoadingPath` adaugă doar o aproximare matematică pentru înălțime și
+înclinare, reversibilă pentru descărcare; nu reprezintă o cale verificată de
+coliziuni și nu trebuie folosită ca autorizație de deplasare. Lipsesc suprafața
+reală, coordonatele vehiculului în joc și verificarea caroseriei și a cablului.
