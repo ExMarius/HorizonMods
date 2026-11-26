@@ -32,6 +32,11 @@ componente izolate, fără conexiune la runtime, fără efect în joc.
   repetată fail-closed; condițiile sunt furnizate de viitorul adaptor Paper.
   Refuză și starea necunoscută, nu doar o remorcă detectată. Nu salvează date,
   nu impune singur drepturi și nu mișcă vehicule.
+- `RecoveryEnvelope`: calcule conservative pentru spațiul de pe platforma
+  plană și alinierea roților pe rampe; nu validează obstacole sau urcarea reală.
+  Cu rezervele actuale rămân aproximativ 5,04 × 2,60 blocuri pentru vehicul;
+  Dacia demonstrată are aproximativ 4,97 × 2,44 blocuri. Dimensiunile și roțile
+  sunt orientative și nu se extrapolează la vehicule necunoscute.
 - `RecoveryCable`: calcule locale ale liniei și ghidajului, doar pentru vehicule
   aliniate și platformă plană. Nu verifică obstacole, mașini sau teren; ochiul
   Daciei în browser este orientativ. Testele și randarea nu demonstrează protecție
@@ -57,3 +62,6 @@ componente izolate, fără conexiune la runtime, fără efect în joc.
    apoi confirmare expresă înainte de upload/install; restart manual dacă e necesar.
 
 Nu prezenta verificările componentelor izolate ca dovadă de funcționare în joc.
+
+Build-ul și testele pluginului au trecut în CI pentru commitul `132d420`;
+smoke-ul din același workflow testează grapa existentă, nu platforma auto.
