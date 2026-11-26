@@ -153,3 +153,14 @@ platforma, apoi o descarcă. Dacia intră în garajul proprietarului, iar după 
 oprire și repornire controlate ale Paper apare o singură dată în garaj și nu
 în lumea activă. Nu este test de crash/restart în timpul transportului: legătura
 încă nu este persistată și restaurată în acea situație.
+
+Decizie nouă: la deconectarea proprietarului vehiculului încărcat sau la restart,
+ambele vehicule trebuie să ajungă în garajele proprietarilor respectivi. Proba
+Paper `45907191801` conectează deconectarea reală la un handler EXCLUSIV DE TEST:
+după 50 de pași de urcare, ambele vehicule goale sunt trecute în garaj, apoi
+după restart controlat ambii proprietari le pot recupera; pentru platforma
+prototip, rezolvarea tipului din garaj este activată numai prin flag-ul CI.
+Proba nu acoperă un șofer în cabină (refuză operația în acest caz), un crash sau
+un restart în timpul transportului. Salvarea asincronă a garajului nu este încă
+o tranzacție crash-safe; `RecoveryGarageFallback` este separat și nu este legat
+la pornire. Nu există handler sau catalog activ în producție pentru platformă.
