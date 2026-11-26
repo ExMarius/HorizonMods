@@ -346,6 +346,24 @@ public final class VehicleManager {
         return true;
     }
 
+    /** Experimental recovery-only path: return just the unloaded vehicle to its
+     * offline owner's garage, never a vehicle still linked, occupied or locked.
+     * Existing async save is not a crash-safe recovery transaction. */
+    boolean returnOfflineRecoveredVehicle(LandVehicle vehicle) {
+        if (!Bukkit.isPrimaryThread() || vehicle==null || vehicles.get(vehicle.id())!=vehicle
+                || vehicle.recoveryLocked() || vehicle.transported() || vehicle.onJack()
+                || vehicle.recoveryHasPassengers() || vehicle.showcase() || corruptLocation(vehicle.location())
+                || trailers.referencesVehicle(vehicle.id()) || !trailers.recoveryLinksKnown()
+                || garage.containsKey(vehicle.id()) || pendingWorlds.containsKey(vehicle.id())) return false;
+        UUID owner=vehicle.owner().orElse(null);
+        if(owner==null) return false;
+        Player online=Bukkit.getPlayer(owner);
+        if(online!=null && online.isOnline()) return false;
+        if(!storeVehicleNow(vehicle,null))return false;
+        save();
+        return true;
+    }
+
     /** CICLUL AF: limita de stationare in cerc, din config (minute -> secunde).
      *  0 sau negativ = sistemul e oprit complet. Default 5 minute. */
     private int autoStoreLimitSeconds() {

@@ -20,14 +20,15 @@ public final class PrototypeRecoveryRoute {
     private static final int STEPS=180;
     private static final double START=9.8, DECK=2.64, WHEELBASE=3.3;
     private final PrototypeRecoveryMotion motion;
+    private final VehicleManager manager;
     private final LandVehicle carrier,target;
     private final Location origin;
     private final double sin,cos;
     private int step;
     private State state=State.LOADING;
 
-    private PrototypeRecoveryRoute(PrototypeRecoveryMotion motion,LandVehicle carrier,LandVehicle target) {
-        this.motion=motion;this.carrier=carrier;this.target=target;origin=carrier.location().clone();
+    private PrototypeRecoveryRoute(VehicleManager manager,PrototypeRecoveryMotion motion,LandVehicle carrier,LandVehicle target) {
+        this.manager=manager;this.motion=motion;this.carrier=carrier;this.target=target;origin=carrier.location().clone();
         double yaw=Math.toRadians(origin.getYaw());sin=Math.sin(yaw);cos=Math.cos(yaw);
     }
     /** Only the Dacia example geometry on a level approach is modelled. The
@@ -44,7 +45,7 @@ public final class PrototypeRecoveryRoute {
         if(expected.distanceSquared(start)>1e-8 || Math.abs(Math.IEEEremainder(start.getYaw()-base.getYaw(),360D))>.01F) return null;
         PrototypeRecoveryMotion motion=PrototypeRecoveryMotion.begin(manager,carrier,target,player,authority,safety);
         if(motion==null)return null;
-        return new PrototypeRecoveryRoute(motion,carrier,target);
+        return new PrototypeRecoveryRoute(manager,motion,carrier,target);
     }
     public State state(){return state;}
     /** Explicit operator action; the experimental vehicle is not strapped or movable on the carrier. */
@@ -82,7 +83,9 @@ public final class PrototypeRecoveryRoute {
     /** Only unlock on checked solid ground; a stopped suspended vehicle stays locked. */
     public boolean finishOnGround() {
         if(!Bukkit.isPrimaryThread()||(state!=State.ON_GROUND && state!=State.STOPPED)||!motion.releaseOnGround())return false;
-        carrier.rig().setRecoveryCable(List.of());carrier.forceVisualSync();state=State.FINISHED;return true;
+        carrier.rig().setRecoveryCable(List.of());carrier.forceVisualSync();state=State.FINISHED;
+        manager.returnOfflineRecoveredVehicle(target);
+        return true;
     }
     private State stop(){state=State.STOPPED;return state;}
     private boolean sameCarrierPose(){

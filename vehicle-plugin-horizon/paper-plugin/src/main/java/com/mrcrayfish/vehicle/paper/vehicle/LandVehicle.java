@@ -1771,6 +1771,11 @@ public final class LandVehicle {
         return rig.seatCarriers().stream().anyMatch(seat -> !seat.getPassengers().isEmpty());
     }
 
+    /** Checks every rig entity, including technical carriers, not just driver seats. */
+    boolean recoveryHasPassengers() {
+        return rig.entities().stream().anyMatch(entity -> !entity.getPassengers().isEmpty());
+    }
+
     public UUID id() {
         return id;
     }

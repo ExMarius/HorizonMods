@@ -123,6 +123,11 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     if(PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety)!=null)
                         throw new IllegalStateException("moved someone else's car");
                     target.setOwner(null);
+                    if(!target.mount(event.getPlayer()))throw new IllegalStateException("could not mount target for occupancy test");
+                    try {
+                        if(PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety)!=null)
+                            throw new IllegalStateException("occupied target accepted");
+                    } finally {event.getPlayer().leaveVehicle();}
                     // Test actual trailer graph entries, not a UI checkbox or Safety flag.
                     var tm=main.vehicles().trailers();
                     for(var spec:java.util.List.of(
@@ -214,9 +219,14 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
         // The authored +Z rear is mapped to Paper item-space -Z by the rig.
         var carStart=base.clone().add(9.8*sin,0,-9.8*cos);
         var car=main.vehicles().spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,carStart);
+        var offlineOwner=java.util.UUID.randomUUID();
+        car.setOwner(offlineOwner);car.trust(player.getUniqueId());
+        int initialGarage=main.vehicles().garageSize();
         var safety=new RecoveryInterlock.Safety(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
         var route=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.begin(main.vehicles(),truck,car,player,(a,w,b)->true,safety);
         if(route==null)throw new IllegalStateException("timed round trip lock failed");
+        if(main.vehicles().parkAllOwnedBy(offlineOwner)!=0 || main.vehicles().byId(car.id()).isEmpty())
+            throw new IllegalStateException("locked car disappeared into garage on owner quit");
         var ignored=new java.util.HashSet<java.util.UUID>();
         truck.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
         car.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
@@ -264,6 +274,8 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                                 || car.location().distance(carStart)>1e-5 || !route.finishOnGround())
                             throw new IllegalStateException("round trip did not return to ground");
                         if(!observedTilt)throw new IllegalStateException("vehicle rig did not pitch on ramp");
+                        if(main.vehicles().byId(car.id()).isPresent() || main.vehicles().garageSize()!=initialGarage+1)
+                            throw new IllegalStateException("offline owner's unloaded car not placed in garage");
                         truck.rig().setRecoveryCable(java.util.List.of());
                         cancel();main.vehicles().remove(car);main.vehicles().remove(truck);
                         verifyStoppedRoute(main,player,base);

@@ -42,6 +42,7 @@ public final class PrototypeRecoveryMotion {
                 ||!RecoveryTruckPrototype.ID.equals(carrier.spec().id()) || carrier==target
                 ||manager.byId(carrier.id()).orElse(null)!=carrier || manager.byId(target.id()).orElse(null)!=target
                 ||!carrier.rig().valid() || !target.rig().valid()
+                ||target.recoveryHasPassengers() || carrier.recoveryHasPassengers()
                 ||!operator.isOnline() || !carrier.canDrive(operator) || !target.canDrive(operator)
                 ||carrier.rig().recoveryRampProgress()!=1D || carrier.horizontalSpeed()>.01D
                 ||carrier.location().getWorld()==null || !carrier.location().getWorld().equals(target.location().getWorld())
@@ -78,7 +79,7 @@ public final class PrototypeRecoveryMotion {
                 ||manager.byId(carrier.id()).orElse(null)!=carrier||manager.byId(target.id()).orElse(null)!=target
                 ||!manager.trailers().recoveryLinksKnown()
                 ||manager.trailers().referencesVehicle(carrier.id())||manager.trailers().referencesVehicle(target.id())
-                ||carrier.rig().recoveryRampProgress()!=1D||target.occupied()||carrier.occupied()
+                ||carrier.rig().recoveryRampProgress()!=1D||target.recoveryHasPassengers()||carrier.recoveryHasPassengers()
                 ||target.onJack()||target.jackId()!=null||carrier.onJack()||carrier.jackId()!=null
                 ||interlock.checkMovement(safety)!=RecoveryInterlock.Denial.NONE) return false;
         Location start=target.location();World world=start.getWorld();
@@ -105,7 +106,7 @@ public final class PrototypeRecoveryMotion {
     public boolean releaseOnGround(){
         if(!Bukkit.isPrimaryThread()||closed||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token))return false;
         Location where=target.location();
-        if(where.getWorld()==null || target.occupied() || carrier.occupied()
+        if(where.getWorld()==null || target.recoveryHasPassengers() || carrier.recoveryHasPassengers()
                 || Math.abs(target.recoveryPitchDegrees())>.1F || !groundSupportsFootprint(where))return false;
         BoundingBox point=new BoundingBox(where.getX()-.1,where.getY()-.1,where.getZ()-.1,where.getX()+.1,where.getY()+.1,where.getZ()+.1);
         if(!authority.allows(operator,where.getWorld(),point))return false;
