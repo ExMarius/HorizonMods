@@ -48,7 +48,10 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                 }
                 v.rig().setRecoveryRampProgress(0);v.forceVisualSync();
                 if(v.spec().seats().size()!=2)throw new IllegalStateException("seat count");
-                getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms checked; seat definitions=2; visual/gameplay not tested");
+                // Exercise the actual player/horse seat path on disposable Paper.
+                if(!v.mount(event.getPlayer())||!v.occupied()||v.rig().seatCarriers().size()!=1)
+                    throw new IllegalStateException("player failed to mount prototype");
+                getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms checked; seat mount checked; visual/loading gameplay not tested");
             } catch(Throwable e){ getLogger().severe("RECOVERY_PROBE_FAIL "+e); e.printStackTrace(); }
             finally{
                 VehiclePlugin main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
