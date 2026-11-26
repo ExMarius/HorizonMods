@@ -223,7 +223,7 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
             if(com.mrcrayfish.vehicle.paper.recovery.RecoveryCableWorldCheck.clear(base.getWorld(),java.util.List.of(lineStart,lineEnd),.018,ignored))
                 throw new IllegalStateException("cable crossed a solid block");
         } finally { obstruct.setBlockData(old,false); }
-        var witness=base.getWorld().spawn(base.clone().add(13.5,1,12.5),org.bukkit.entity.ArmorStand.class);
+        var witness=base.getWorld().spawn(base.clone().add(13,1,12),org.bukkit.entity.ArmorStand.class);
         try {
             if(com.mrcrayfish.vehicle.paper.recovery.RecoveryCableWorldCheck.clear(base.getWorld(),java.util.List.of(lineStart,lineEnd),.018,ignored))
                 throw new IllegalStateException("cable crossed an entity");
