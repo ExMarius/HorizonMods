@@ -40,8 +40,14 @@ const steering=[
 const wheel=[
  ['rubber',0,0,0,.33,.90,.34],['rubber',0,0,0,.33,.34,.90],
  ['rubber',0,0,0,.33,.90,.34,Math.PI/4],['rubber',0,0,0,.33,.90,.34,-Math.PI/4],
- ['rim',-.18,0,0,.04,.52,.52],['rim',.18,0,0,.04,.52,.52],
- ['steel',-.205,0,0,.05,.18,.18],['steel',.205,0,0,.05,.18,.18]
+ ['dark',-.172,0,0,.02,.61,.25],['dark',.172,0,0,.02,.61,.25],
+ ['dark',-.172,0,0,.02,.25,.61],['dark',.172,0,0,.02,.25,.61],
+ ['rim',-.185,0,0,.025,.51,.22],['rim',.185,0,0,.025,.51,.22],
+ ['rim',-.185,0,0,.025,.22,.51],['rim',.185,0,0,.025,.22,.51],
+ ['rim',-.185,0,0,.025,.48,.20,Math.PI/4],['rim',.185,0,0,.025,.48,.20,Math.PI/4],
+ ['rim',-.185,0,0,.025,.48,.20,-Math.PI/4],['rim',.185,0,0,.025,.48,.20,-Math.PI/4],
+ ['steel',-.205,0,0,.02,.34,.20],['steel',.205,0,0,.02,.34,.20],
+ ['silver',-.22,0,0,.03,.14,.14],['silver',.22,0,0,.03,.14,.14]
 ];
 const models={horizon_service_cab:cab,horizon_service_flatbed:platforma,horizon_service_workshop:atelier,horizon_service_steering:steering,horizon_service_wheel:wheel,horizon_service_ramp:ramp};
 for(const [name,pieces] of Object.entries(models)){

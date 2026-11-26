@@ -320,14 +320,14 @@
     {
       "name": "horizon_service_wheel_4",
       "from": [
-        7.2,
-        6.96,
-        6.96
+        7.272,
+        6.78,
+        7.5
       ],
       "to": [
-        7.36,
-        9.04,
-        9.04
+        7.352,
+        9.22,
+        8.5
       ],
       "faces": {
         "north": {
@@ -337,7 +337,7 @@
             16,
             16
           ],
-          "texture": "#rim"
+          "texture": "#dark"
         },
         "south": {
           "uv": [
@@ -346,7 +346,7 @@
             16,
             16
           ],
-          "texture": "#rim"
+          "texture": "#dark"
         },
         "east": {
           "uv": [
@@ -355,7 +355,7 @@
             16,
             16
           ],
-          "texture": "#rim"
+          "texture": "#dark"
         },
         "west": {
           "uv": [
@@ -364,7 +364,7 @@
             16,
             16
           ],
-          "texture": "#rim"
+          "texture": "#dark"
         },
         "up": {
           "uv": [
@@ -373,7 +373,7 @@
             16,
             16
           ],
-          "texture": "#rim"
+          "texture": "#dark"
         },
         "down": {
           "uv": [
@@ -382,21 +382,21 @@
             16,
             16
           ],
-          "texture": "#rim"
+          "texture": "#dark"
         }
       }
     },
     {
       "name": "horizon_service_wheel_5",
       "from": [
-        8.64,
-        6.96,
-        6.96
+        8.648,
+        6.78,
+        7.5
       ],
       "to": [
-        8.8,
-        9.04,
-        9.04
+        8.728,
+        9.22,
+        8.5
       ],
       "faces": {
         "north": {
@@ -406,7 +406,7 @@
             16,
             16
           ],
-          "texture": "#rim"
+          "texture": "#dark"
         },
         "south": {
           "uv": [
@@ -415,7 +415,7 @@
             16,
             16
           ],
-          "texture": "#rim"
+          "texture": "#dark"
         },
         "east": {
           "uv": [
@@ -424,7 +424,7 @@
             16,
             16
           ],
-          "texture": "#rim"
+          "texture": "#dark"
         },
         "west": {
           "uv": [
@@ -433,7 +433,7 @@
             16,
             16
           ],
-          "texture": "#rim"
+          "texture": "#dark"
         },
         "up": {
           "uv": [
@@ -442,7 +442,7 @@
             16,
             16
           ],
-          "texture": "#rim"
+          "texture": "#dark"
         },
         "down": {
           "uv": [
@@ -451,21 +451,747 @@
             16,
             16
           ],
-          "texture": "#rim"
+          "texture": "#dark"
         }
       }
     },
     {
       "name": "horizon_service_wheel_6",
       "from": [
-        7.08,
-        7.64,
-        7.64
+        7.272,
+        7.5,
+        6.78
       ],
       "to": [
-        7.28,
-        8.36,
-        8.36
+        7.352,
+        8.5,
+        9.22
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_wheel_7",
+      "from": [
+        8.648,
+        7.5,
+        6.78
+      ],
+      "to": [
+        8.728,
+        8.5,
+        9.22
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_wheel_8",
+      "from": [
+        7.21,
+        6.98,
+        7.56
+      ],
+      "to": [
+        7.31,
+        9.02,
+        8.44
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_wheel_9",
+      "from": [
+        8.69,
+        6.98,
+        7.56
+      ],
+      "to": [
+        8.79,
+        9.02,
+        8.44
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_wheel_10",
+      "from": [
+        7.21,
+        7.56,
+        6.98
+      ],
+      "to": [
+        7.31,
+        8.44,
+        9.02
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_wheel_11",
+      "from": [
+        8.69,
+        7.56,
+        6.98
+      ],
+      "to": [
+        8.79,
+        8.44,
+        9.02
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_wheel_12",
+      "from": [
+        7.21,
+        7.04,
+        7.6
+      ],
+      "to": [
+        7.31,
+        8.96,
+        8.4
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        }
+      },
+      "rotation": {
+        "origin": [
+          7.26,
+          8,
+          8
+        ],
+        "axis": "x",
+        "angle": 45
+      }
+    },
+    {
+      "name": "horizon_service_wheel_13",
+      "from": [
+        8.69,
+        7.04,
+        7.6
+      ],
+      "to": [
+        8.79,
+        8.96,
+        8.4
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8.74,
+          8,
+          8
+        ],
+        "axis": "x",
+        "angle": 45
+      }
+    },
+    {
+      "name": "horizon_service_wheel_14",
+      "from": [
+        7.21,
+        7.04,
+        7.6
+      ],
+      "to": [
+        7.31,
+        8.96,
+        8.4
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        }
+      },
+      "rotation": {
+        "origin": [
+          7.26,
+          8,
+          8
+        ],
+        "axis": "x",
+        "angle": -45
+      }
+    },
+    {
+      "name": "horizon_service_wheel_15",
+      "from": [
+        8.69,
+        7.04,
+        7.6
+      ],
+      "to": [
+        8.79,
+        8.96,
+        8.4
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#rim"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8.74,
+          8,
+          8
+        ],
+        "axis": "x",
+        "angle": -45
+      }
+    },
+    {
+      "name": "horizon_service_wheel_16",
+      "from": [
+        7.14,
+        7.32,
+        7.6
+      ],
+      "to": [
+        7.22,
+        8.68,
+        8.4
       ],
       "faces": {
         "north": {
@@ -525,16 +1251,16 @@
       }
     },
     {
-      "name": "horizon_service_wheel_7",
+      "name": "horizon_service_wheel_17",
       "from": [
-        8.72,
-        7.64,
-        7.64
+        8.78,
+        7.32,
+        7.6
       ],
       "to": [
-        8.92,
-        8.36,
-        8.36
+        8.86,
+        8.68,
+        8.4
       ],
       "faces": {
         "north": {
@@ -590,6 +1316,144 @@
             16
           ],
           "texture": "#steel"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_wheel_18",
+      "from": [
+        7.06,
+        7.72,
+        7.72
+      ],
+      "to": [
+        7.18,
+        8.28,
+        8.28
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_wheel_19",
+      "from": [
+        8.82,
+        7.72,
+        7.72
+      ],
+      "to": [
+        8.94,
+        8.28,
+        8.28
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
         }
       }
     }

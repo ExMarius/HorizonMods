@@ -36,7 +36,8 @@ class ModelExportTest(unittest.TestCase):
                     self.assertTrue((out/'textures'/f'{texture.split(":")[1]}.png').is_file(),texture)
             glass=(out/'textures/item/horizon_service_glass.png').read_bytes()
             self.assertEqual(glass[:8],bytes.fromhex('89504e470d0a1a0a'))
-            self.assertTrue(any(r['vanillaDegrees']!=r['originalDegrees'] for r in report['rotationApproximations']))
+            for rotation in report['rotationApproximations']:
+                self.assertIn(rotation['vanillaDegrees'],(-45,-22.5,0,22.5,45))
     def test_checked_in_assets_match_authored_source(self):
         with tempfile.TemporaryDirectory() as tmp:
             fresh=Path(tmp)

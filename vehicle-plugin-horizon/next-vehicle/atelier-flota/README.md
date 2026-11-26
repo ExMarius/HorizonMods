@@ -2,8 +2,7 @@
 
 Galerie 3D cu platformă auto și atelier mobil, desenate de la zero în
 `design.js` ca ansambluri de piese cu poziții explicite. Ambele folosesc
-aceeași cabină și șasiu, iar suprastructurile sunt diferite. Cabina are
-geamuri semitransparente, locuri, bord și volan; platforma are troliu și
+aceeași cabină și șasiu, iar suprastructurile sunt diferite. Cabina este complet închisă, fără geamuri sau deschideri; platforma are troliu și
 rampe, puncte de fixare, marcaje laterale și cutie de scule; atelierul are
 obloane, închideri, treaptă spate și suport pentru echipamente.
 
@@ -19,8 +18,9 @@ Pornește cu `npm ci && npm start` (portul 4176, sau `PORT` pentru alt port).
 în șase modele de item: cabină/șasiu, platformă, atelier, volan, roată și rampă.
 Modelul este normalizat pentru un `ItemDisplay` la scala 4. Fișierele sunt în
 `minecraft/assets/`; `conversion-report.json` consemnează înclinările rotunjite
-la unghiurile permise de format. Roțile și volanul din browser sunt aproximate
-cu cuboizi în export, iar alfa geamurilor trebuie verificată pe clientul jocului.
+la unghiurile permise de format. Roțile din browser sunt aproximate cu cuboizi în export; modelul separat
+de volan este păstrat ca piesă candidată, dar nu este afișat în cabina închisă.
+Scara roților spate este diferită pentru a rămâne sub podea.
 Comutatorul „Arată JSON Minecraft” afișează geometria JSON aproximativ, nu
 simulează fidel rendererul Minecraft.
 

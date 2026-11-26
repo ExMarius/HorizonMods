@@ -6,8 +6,8 @@ import {sequence,rampRotation,LOADING,loadingEligibility} from './loading-kinema
 import {buildMinecraftPreview} from './minecraft-preview.js';
 
 const data={
- platforma:{pieces:platforma,title:'Platformă auto',desc:'Cabină vitrată, platformă dimensionată pentru Dacia, troliu și două rampe articulate.',idea:'Concept pentru recuperarea și transportul unui vehicul defect.',index:'01'},
- atelier:{pieces:atelier,title:'Atelier mobil',desc:'Cabină vitrată și caroserie de service cu obloane, compartimente și suport pe acoperiș.',idea:'Concept pentru intervenții mecanice și echipamente de service.',index:'02'}
+ platforma:{pieces:platforma,title:'Platformă auto',desc:'Cabină închisă fără geamuri, platformă dimensionată pentru Dacia, troliu și rampe articulate.',idea:'Concept pentru recuperarea și transportul unui vehicul defect.',index:'01'},
+ atelier:{pieces:atelier,title:'Atelier mobil',desc:'Cabină închisă fără geamuri și caroserie de service cu obloane și suport pe acoperiș.',idea:'Concept pentru intervenții mecanice și echipamente de service.',index:'02'}
 };
 const holder=document.querySelector('#scene'),status=document.querySelector('#loading');
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(37,1,.04,100),renderer=new T.WebGLRenderer({antialias:true,alpha:true});
@@ -22,19 +22,21 @@ let selected=null,currentKind='platforma',minecraftMode=false,request=0;
 let ramps=[],demo=null,carData=null,loaded=false,cable=null,pending=false;
 function box(spec,container){const [kind,x,y,z,w,h,d,rx=0]=spec;const m=new T.Mesh(new T.BoxGeometry(w,h,d),mats[kind]);m.position.set(x,y,z);m.rotation.x=rx;m.castShadow=kind!=='glass';m.receiveShadow=true;container.add(m)}
 function cylinder(container,kind,radius,depth,x,y,z,segments=16){const m=new T.Mesh(new T.CylinderGeometry(radius,radius,depth,segments),mats[kind]);m.rotation.z=Math.PI/2;m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;container.add(m);return m}
-function wheel(container,x,y,z){
- cylinder(container,'rubber',.45,.33,x,y,z,16);
- const side=Math.sign(x);cylinder(container,'rim',.27,.035,x+side*.18,y,z,16);cylinder(container,'steel',.10,.045,x+side*.205,y,z,12);
- // The small bolts are aligned with the visible outer face of the rim.
- for(const angle of [0,Math.PI/2,Math.PI,3*Math.PI/2])cylinder(container,'silver',.028,.03,x+side*.205,y+Math.cos(angle)*.18,z+Math.sin(angle)*.18,8);
+function wheel(container,x,y,z,scale=1){
+ const g=new T.Group();g.position.set(x,y,z);g.scale.setScalar(scale);container.add(g);
+ cylinder(g,'rubber',.45,.33,0,0,0,20);
+ for(const side of [-1,1]){
+  cylinder(g,'dark',.315,.018,side*.171,0,0,20);
+  cylinder(g,'rim',.265,.025,side*.186,0,0,20);
+  cylinder(g,'steel',.18,.018,side*.205,0,0,20);
+  cylinder(g,'silver',.075,.03,side*.22,0,0,16);
+  for(let i=0;i<6;i++){const a=i*Math.PI/3;cylinder(g,'black',.022,.018,side*.22,Math.cos(a)*.135,Math.sin(a)*.135,8)}
+ }
 }
 function makeVehicle(kind){
  const group=new T.Group();for(const p of cab)box(p,group);for(const p of data[kind].pieces)box(p,group);
  if(kind==='platforma')for(const side of [-1,1]){const hinge=new T.Group();hinge.name='ramp';hinge.position.set(side*1.05,LOADING.deckTop,LOADING.deckEnd);hinge.rotation.x=rampRotation(0);for(const piece of ramp)box(piece,hinge);group.add(hinge)}
- for(const [x,y,z] of (kind==='platforma'?platformWheels:wheels))wheel(group,x,y,z);
- // Open, visible steering wheel in the cabin; not a flat dark windscreen.
- const steering=new T.Mesh(new T.TorusGeometry(.17,.024,6,16),mats.black);steering.position.set(-.43,1.32,-1.49);steering.rotation.x=-.4;group.add(steering);
- const stem=new T.Mesh(new T.CylinderGeometry(.025,.025,.25,8),mats.black);stem.position.set(-.43,1.21,-1.57);stem.rotation.x=.6;group.add(stem);
+ for(const [x,y,z,scale] of (kind==='platforma'?platformWheels:wheels))wheel(group,x,y,z,scale);
  group.position.y=.005;return group;
 }
 function center(){camera.position.set(9,5.4,-11);controls.target.set(0,1.0,currentKind==='platforma'?1.3:.18);controls.update()}

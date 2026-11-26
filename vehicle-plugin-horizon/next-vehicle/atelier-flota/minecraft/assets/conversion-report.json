@@ -1,74 +1,14 @@
 {
   "itemDisplayScale": 4,
   "models": {
-    "horizon_service_cab": 105,
-    "horizon_service_flatbed": 57,
-    "horizon_service_workshop": 62,
+    "horizon_service_cab": 89,
+    "horizon_service_flatbed": 64,
+    "horizon_service_workshop": 69,
     "horizon_service_steering": 5,
-    "horizon_service_wheel": 8,
+    "horizon_service_wheel": 20,
     "horizon_service_ramp": 10
   },
   "rotationApproximations": [
-    {
-      "part": "horizon_service_cab",
-      "index": 36,
-      "originalDegrees": 11.4592,
-      "vanillaDegrees": 22.5
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 37,
-      "originalDegrees": 11.4592,
-      "vanillaDegrees": 22.5
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 44,
-      "originalDegrees": 11.4592,
-      "vanillaDegrees": 22.5
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 48,
-      "originalDegrees": -6.8755,
-      "vanillaDegrees": 0
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 49,
-      "originalDegrees": -6.8755,
-      "vanillaDegrees": 0
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 54,
-      "originalDegrees": -5.7296,
-      "vanillaDegrees": 0
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 55,
-      "originalDegrees": -5.7296,
-      "vanillaDegrees": 0
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 59,
-      "originalDegrees": -13.751,
-      "vanillaDegrees": -22.5
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 90,
-      "originalDegrees": -6.8755,
-      "vanillaDegrees": 0
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 91,
-      "originalDegrees": -6.8755,
-      "vanillaDegrees": 0
-    },
     {
       "part": "horizon_service_wheel",
       "index": 2,
@@ -78,6 +18,30 @@
     {
       "part": "horizon_service_wheel",
       "index": 3,
+      "originalDegrees": -45,
+      "vanillaDegrees": -45
+    },
+    {
+      "part": "horizon_service_wheel",
+      "index": 12,
+      "originalDegrees": 45,
+      "vanillaDegrees": 45
+    },
+    {
+      "part": "horizon_service_wheel",
+      "index": 13,
+      "originalDegrees": 45,
+      "vanillaDegrees": 45
+    },
+    {
+      "part": "horizon_service_wheel",
+      "index": 14,
+      "originalDegrees": -45,
+      "vanillaDegrees": -45
+    },
+    {
+      "part": "horizon_service_wheel",
+      "index": 15,
       "originalDegrees": -45,
       "vanillaDegrees": -45
     }

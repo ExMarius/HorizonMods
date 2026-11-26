@@ -25,9 +25,9 @@ function geometryFromModel(data,materials){
 }
 export async function buildMinecraftPreview(kind,materials){
  const body=kind==='platforma'?'flatbed':'workshop';
- const [cab,back,steering,wheel,ramp]=await Promise.all(['cab',body,'steering','wheel','ramp'].map(fetchModel));
- const vehicle=new T.Group();vehicle.add(geometryFromModel(cab,materials),geometryFromModel(back,materials),geometryFromModel(steering,materials));
- for(const [x,y,z] of (kind==='platforma'?platformWheels:wheels)){const part=geometryFromModel(wheel,materials);part.position.set(x,y,z);vehicle.add(part)}
+ const [cab,back,wheel,ramp]=await Promise.all(['cab',body,'wheel','ramp'].map(fetchModel));
+ const vehicle=new T.Group();vehicle.add(geometryFromModel(cab,materials),geometryFromModel(back,materials));
+ for(const [x,y,z,scale] of (kind==='platforma'?platformWheels:wheels)){const part=geometryFromModel(wheel,materials);part.position.set(x,y,z);part.scale.multiplyScalar(scale);vehicle.add(part)}
  if(kind==='platforma')for(const side of [-1,1]){const hinge=new T.Group();hinge.name='ramp';hinge.position.set(side*1.05,LOADING.deckTop,LOADING.deckEnd);hinge.rotation.x=rampRotation(0);hinge.add(geometryFromModel(ramp,materials));vehicle.add(hinge)}
  vehicle.position.y=.005;return vehicle;
 }
