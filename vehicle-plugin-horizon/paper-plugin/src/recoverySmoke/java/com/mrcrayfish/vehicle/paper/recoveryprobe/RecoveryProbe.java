@@ -211,6 +211,18 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
         var safety=new RecoveryInterlock.Safety(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
         var motion=PrototypeRecoveryMotion.begin(main.vehicles(),truck,car,player,(a,w,b)->true,safety);
         if(motion==null)throw new IllegalStateException("timed round trip lock failed");
+        var ignored=new java.util.HashSet<java.util.UUID>();
+        truck.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
+        car.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
+        var lineStart=new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(base.getX()+12,base.getY()+1.5,base.getZ()+12);
+        var lineEnd=new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(base.getX()+15,base.getY()+1.5,base.getZ()+12);
+        var obstruct=base.clone().add(13,1,12).getBlock();
+        var old=obstruct.getBlockData();
+        obstruct.setType(org.bukkit.Material.STONE,false);
+        try {
+            if(com.mrcrayfish.vehicle.paper.recovery.RecoveryCableWorldCheck.clear(base.getWorld(),java.util.List.of(lineStart,lineEnd),.018,ignored))
+                throw new IllegalStateException("cable crossed a solid block");
+        } finally { obstruct.setBlockData(old,false); }
         var body=car.rig().entities().stream().filter(e -> e instanceof ItemDisplay).map(e -> (ItemDisplay)e).findFirst().orElseThrow();
         var levelRotation=new org.joml.Quaternionf(body.getTransformation().getLeftRotation());
         new org.bukkit.scheduler.BukkitRunnable() {
@@ -235,6 +247,11 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                             new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(0,hookY,hookZ));
                     if(!com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.clearsLevelBed(cable,.18,5.35,.86,.018))
                         throw new IllegalStateException("cable intersects level bed at "+ticks);
+                    // Model +Z rear maps to Paper -Z; transform each point to world.
+                    var worldCable=cable.stream().map(p -> new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(
+                            base.getX()-p.x()*cos+p.z()*sin,base.getY()+p.y(),base.getZ()-p.x()*sin-p.z()*cos)).toList();
+                    if(!com.mrcrayfish.vehicle.paper.recovery.RecoveryCableWorldCheck.clear(base.getWorld(),worldCable,.018,ignored))
+                        throw new IllegalStateException("world obstructs cable at "+ticks);
                     truck.rig().setRecoveryCable(cable);truck.forceVisualSync();
                     var delta=destination.toVector().subtract(car.location().toVector());
                     if(!motion.step(delta,safety,pose.pitch()))throw new IllegalStateException("timed movement blocked at "+ticks);
