@@ -32,6 +32,9 @@ componente izolate, fără conexiune la runtime, fără efect în joc.
   repetată fail-closed; condițiile sunt furnizate de viitorul adaptor Paper.
   Refuză și starea necunoscută, nu doar o remorcă detectată. Nu salvează date,
   nu impune singur drepturi și nu mișcă vehicule.
+- `RecoveryJournal`: jurnal separat, cu checksum și înlocuire atomică, care
+  păstrează identitățile manevrelor. După restart cere reconciliere explicită;
+  nu este conectat la runtime și nu validează singur existența vehiculelor.
 - `RecoveryEnvelope`: calcule conservative pentru spațiul de pe platforma
   plană și alinierea roților pe rampe; nu validează obstacole sau urcarea reală.
   Cu rezervele actuale rămân aproximativ 5,04 × 2,60 blocuri pentru vehicul;
@@ -65,3 +68,7 @@ Nu prezenta verificările componentelor izolate ca dovadă de funcționare în j
 
 Build-ul și testele pluginului au trecut în CI pentru commitul `132d420`;
 smoke-ul din același workflow testează grapa existentă, nu platforma auto.
+
+Sesiunea de integrare: nu s-a instalat pe server. Jurnalul este o componentă
+izolată și trebuie conectat tranzacțional la stările efective din joc înainte
+de a putea revendica persistența în caz de restart.
