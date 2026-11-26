@@ -17,6 +17,42 @@ import java.util.Map;
 /** Disposable test-only plugin; never included in the production plugin jar. */
 public final class RecoveryProbe extends JavaPlugin implements Listener {
     private boolean exercised;
+    private final Map<java.util.UUID,LandVehicle> demoVehicles=new HashMap<>();
+    @Override public boolean onCommand(org.bukkit.command.CommandSender sender, org.bukkit.command.Command cmd, String label, String[] args){
+        if(!(sender instanceof org.bukkit.entity.Player player) || !player.hasPermission("recoveryprobe.use")) return true;
+        var main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
+        if(main==null || args.length!=1) { sender.sendMessage("RECOVERY_DEMO_USAGE spawn|open|close|remove"); return true; }
+        var vehicle=demoVehicles.get(player.getUniqueId());
+        switch(args[0].toLowerCase(java.util.Locale.ROOT)) {
+            case "spawn" -> {
+                if(vehicle!=null){sender.sendMessage("RECOVERY_DEMO_ALREADY_EXISTS");break;}
+                vehicle=main.vehicles().spawn(RecoveryTruckPrototype.create(),player.getLocation().clone().add(0,0,3));
+                demoVehicles.put(player.getUniqueId(),vehicle);
+                sender.sendMessage("RECOVERY_DEMO_SPAWNED");
+                getLogger().info("RECOVERY_DEMO_SPAWNED");
+            }
+            case "open", "close" -> {
+                if(vehicle==null || vehicle.occupied() || vehicle.horizontalSpeed()>.01D){sender.sendMessage("RECOVERY_DEMO_DENIED");break;}
+                boolean open=args[0].equalsIgnoreCase("open");
+                vehicle.rig().setRecoveryRampProgress(open?1D:0D);vehicle.forceVisualSync();
+                sender.sendMessage(open?"RECOVERY_DEMO_OPEN":"RECOVERY_DEMO_CLOSE");
+                getLogger().info(open?"RECOVERY_DEMO_OPEN":"RECOVERY_DEMO_CLOSE");
+            }
+            case "remove" -> {
+                if(vehicle==null || !main.vehicles().remove(vehicle)){sender.sendMessage("RECOVERY_DEMO_DENIED");break;}
+                demoVehicles.remove(player.getUniqueId());sender.sendMessage("RECOVERY_DEMO_REMOVED");getLogger().info("RECOVERY_DEMO_REMOVED");
+            }
+            default -> sender.sendMessage("RECOVERY_DEMO_USAGE spawn|open|close|remove");
+        }
+        return true;
+    }
+    @EventHandler public void quit(org.bukkit.event.player.PlayerQuitEvent event){ cleanupDemo(event.getPlayer().getUniqueId()); }
+    @Override public void onDisable(){for(var id:java.util.List.copyOf(demoVehicles.keySet()))cleanupDemo(id);}
+    private void cleanupDemo(java.util.UUID id){
+        var main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
+        LandVehicle vehicle=demoVehicles.remove(id);
+        if(main!=null && vehicle!=null) main.vehicles().remove(vehicle);
+    }
     @Override public void onEnable(){getServer().getPluginManager().registerEvents(this,this);}
     @EventHandler public void join(PlayerJoinEvent event){
         if(exercised)return; exercised=true;
@@ -150,6 +186,8 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     main.vehicles().remove(tractor);
                     event.getPlayer().removeAttachment(permission);
                 }
+                // Offline bot only; the disposable plugin is never packaged into production.
+                if(event.getPlayer().getName().equals("RecoveryProbeBot")) event.getPlayer().addAttachment(this,"recoveryprobe.use",true);
                 getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms and cable display checked; seat, actual trailer graph, normal harrow coupling and guarded single vehicle movement checked; no full gameplay or visual test");
             } catch(Throwable e){ getLogger().severe("RECOVERY_PROBE_FAIL "+e); e.printStackTrace(); }
             finally{
