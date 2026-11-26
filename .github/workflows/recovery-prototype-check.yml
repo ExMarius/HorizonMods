@@ -51,7 +51,7 @@ jobs:
             exit 1
           }
           done
-      - name: Test controlled restart with car on platform
+      - name: Test controlled stop and SIGKILL with prepared recovery journal
         env:
           NODE_PATH: /tmp/recovery-test/node_modules
           RECOVERY_MID_RESTART: '1'
