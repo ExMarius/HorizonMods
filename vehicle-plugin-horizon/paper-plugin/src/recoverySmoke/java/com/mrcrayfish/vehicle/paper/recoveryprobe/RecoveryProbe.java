@@ -89,6 +89,9 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     target.setOwner(null);
                     var run=PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety);
                     if(run==null)throw new IllegalStateException("recovery lock failed");
+                    if(main.vehicles().pickUp(target)!=null || main.vehicles().remove(target)
+                            || main.vehicles().park(target,event.getPlayer())!=com.mrcrayfish.vehicle.paper.vehicle.VehicleManager.ParkResult.OCCUPIED)
+                        throw new IllegalStateException("locked vehicle can be picked up, removed or garaged");
                     var loc=target.location();var blocker=loc.clone().add(0,0,2.5).getBlock();var originalBlock=blocker.getBlockData();
                     blocker.setType(org.bukkit.Material.STONE,false);
                     try {

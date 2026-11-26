@@ -481,6 +481,10 @@ public final class TrailerManager {
         if (trailer == null) {
             return false;
         }
+        if (vehicle.recoveryLocked()) {
+            player.sendRichMessage("<red>Vehiculul este blocat într-o manevră de recuperare.</red>");
+            return true;
+        }
         if (!trailer.spec().permitsVehicle(vehicle.spec().id())) {
             player.sendRichMessage("<red>Acest utilaj se cuplează numai la un tractor compatibil.</red>");
             return true;
@@ -520,7 +524,7 @@ public final class TrailerManager {
                 .filter(t -> t.spec().kind() == TrailerSpec.Kind.UTB_PLOUGH && t.pullerType() == PaperTrailer.PullerType.NONE)
                 .filter(t -> t.location().getWorld().equals(here.getWorld()) && t.location().distanceSquared(here) <= 25.0D)
                 .min(java.util.Comparator.comparingDouble(t -> t.location().distanceSquared(here))).orElse(null);
-        if (tractor == null || plough == null || hasVehicleChild(tractor.id())
+        if (tractor == null || plough == null || tractor.recoveryLocked() || hasVehicleChild(tractor.id())
                 || tractor.towBarLocation().distanceSquared(plough.location()) > 16.0D) {
             player.sendRichMessage("<red>Ai nevoie de un UTB autorizat și un plug liber, apropiate, fără altă remorcă.</red>"); return;
         }
@@ -541,7 +545,7 @@ public final class TrailerManager {
                 .filter(t -> t.spec().isFarmTrailer() && t.pullerType() == PaperTrailer.PullerType.NONE)
                 .filter(t -> t.location().getWorld().equals(here.getWorld()) && t.location().distanceSquared(here) <= 25.0D)
                 .min(java.util.Comparator.comparingDouble(t -> t.location().distanceSquared(here))).orElse(null);
-        if (tractor == null || trailer == null || hasVehicleChild(tractor.id())
+        if (tractor == null || trailer == null || tractor.recoveryLocked() || hasVehicleChild(tractor.id())
                 || tractor.towBarLocation().distanceSquared(trailer.location()) > 25.0D) {
             player.sendRichMessage("<red>Ai nevoie de un tractor autorizat și o remorcă agricolă liberă, apropiate.</red>"); return;
         }
@@ -562,7 +566,7 @@ public final class TrailerManager {
                 .filter(t -> t.spec().kind()==TrailerSpec.Kind.DISC_GD32 && t.pullerType()==PaperTrailer.PullerType.NONE)
                 .filter(t -> t.location().getWorld().equals(here.getWorld()) && t.location().distanceSquared(here)<=25)
                 .min(java.util.Comparator.comparingDouble(t -> t.location().distanceSquared(here))).orElse(null);
-        if (tractor==null || implement==null || hasVehicleChild(tractor.id())
+        if (tractor==null || implement==null || tractor.recoveryLocked() || hasVehicleChild(tractor.id())
                 || tractor.tractorTrailerTowBarLocation().distanceSquared(implement.location())>25) {
             player.sendMessage("Ai nevoie de un UTB autorizat și o grapă liberă, apropiate."); return;
         }

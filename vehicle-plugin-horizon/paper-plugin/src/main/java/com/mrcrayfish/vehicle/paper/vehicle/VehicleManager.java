@@ -185,7 +185,7 @@ public final class VehicleManager {
     public enum ParkResult { PARKED, CLAIMED_AND_PARKED, OCCUPIED, NOT_OWNER }
 
     public ParkResult park(LandVehicle vehicle, Player player) {
-        if (vehicle.occupied()) {
+        if (vehicle.recoveryLocked() || vehicle.occupied()) {
             return ParkResult.OCCUPIED;
         }
         java.util.Optional<UUID> owner = vehicle.owner();
@@ -264,7 +264,7 @@ public final class VehicleManager {
             if (!vehicle.owner().map(playerId::equals).orElse(false)) {
                 continue;
             }
-            if (vehicle.showcase() || vehicle.onJack()) {
+            if (vehicle.showcase() || vehicle.onJack() || vehicle.recoveryLocked()) {
                 // showcase = al podiumului; PE CRIC = in service: ramane in lume
                 // peste restart (garajul nu ia masini ridicate la mecanic).
                 continue;
@@ -297,7 +297,7 @@ public final class VehicleManager {
     public int parkDrivenByNonOwner(java.util.UUID quitterId) {
         int storedCount = 0;
         for (LandVehicle vehicle : new java.util.ArrayList<>(vehicles.values())) {
-            if (vehicle.showcase() || vehicle.onJack()) {
+            if (vehicle.showcase() || vehicle.onJack() || vehicle.recoveryLocked()) {
                 continue;
             }
             if (vehicle.owner().map(quitterId::equals).orElse(false)) {
@@ -356,6 +356,7 @@ public final class VehicleManager {
      *  serializare ca parkAllOwnedBy / parkDrivenByNonOwner) si anunta proprietarul
      *  online cu un mesaj de motiv. Returneaza true daca s-a mutat. */
     private boolean storeVehicleNow(LandVehicle vehicle, String ownerMessageRich) {
+        if (vehicle.recoveryLocked()) return false;
         StoredVehicle stored = StoredVehicle.from(vehicle);
         String displayName = vehicle.spec().displayName();
         UUID ownerId = vehicle.owner().orElse(null);
@@ -389,7 +390,7 @@ public final class VehicleManager {
         parkedInSpotSeconds.keySet().retainAll(vehicles.keySet());
         int storedNow = 0;
         for (LandVehicle vehicle : new ArrayList<>(vehicles.values())) {
-            boolean eligible = !vehicle.showcase() && !vehicle.onJack()
+            boolean eligible = !vehicle.showcase() && !vehicle.onJack() && !vehicle.recoveryLocked()
                     && nobodyAboard(vehicle)
                     && vehicle.owner().isPresent()
                     && plugin.garageStations().insideAnySpot(vehicle.location());
@@ -778,7 +779,7 @@ public final class VehicleManager {
     }
 
     public CarriedVehicle pickUp(LandVehicle vehicle) {
-        if (vehicle.occupied() || vehicles.remove(vehicle.id()) == null) {
+        if (vehicle.recoveryLocked() || vehicle.occupied() || vehicles.remove(vehicle.id()) == null) {
             return null;
         }
         CarriedVehicle carried = new CarriedVehicle(vehicle.spec(), vehicle.fuel(), vehicle.velocity(),
@@ -803,7 +804,7 @@ public final class VehicleManager {
     }
 
     public boolean remove(LandVehicle vehicle) {
-        if (vehicles.remove(vehicle.id()) == null) {
+        if (vehicle.recoveryLocked() || vehicles.remove(vehicle.id()) == null) {
             return false;
         }
         unindex(vehicle);
@@ -1548,7 +1549,7 @@ public final class VehicleManager {
         // MASINILE DE PODIUM nu se hiberneaza NICIODATA: sunt display-only, trebuie
         // sa ramana vizibile mereu, iar StoredVehicle NU are camp showcase - daca ar
         // ajunge in pendingWorlds/arhiva, ar reveni ca masina NORMALA (furabila).
-        if (vehicle.showcase()) {
+        if (vehicle.showcase() || vehicle.recoveryLocked()) {
             return;
         }
         if (vehicles.remove(vehicle.id()) == null) {

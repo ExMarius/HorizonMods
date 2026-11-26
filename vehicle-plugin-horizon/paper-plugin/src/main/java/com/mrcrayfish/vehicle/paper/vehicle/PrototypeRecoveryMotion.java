@@ -40,6 +40,7 @@ public final class PrototypeRecoveryMotion {
                                                  Player operator,Authority authority,RecoveryInterlock.Safety safety){
         if(!Bukkit.isPrimaryThread()||manager==null||carrier==null||target==null||operator==null||authority==null||safety==null
                 ||!RecoveryTruckPrototype.ID.equals(carrier.spec().id()) || carrier==target
+                ||manager.byId(carrier.id()).orElse(null)!=carrier || manager.byId(target.id()).orElse(null)!=target
                 ||!operator.isOnline() || !carrier.canDrive(operator) || !target.canDrive(operator)
                 ||carrier.rig().recoveryRampProgress()!=1D || carrier.horizontalSpeed()>.01D
                 ||carrier.location().getWorld()==null || !carrier.location().getWorld().equals(target.location().getWorld())
@@ -55,7 +56,9 @@ public final class PrototypeRecoveryMotion {
     /** One step, zero on any denial. The caller must re-supply all live safety checks. */
     public boolean step(Vector delta,RecoveryInterlock.Safety safety){
         if(halted || closed)return false;
-        boolean accepted=checkedStep(delta,safety);
+        boolean accepted;
+        try { accepted=checkedStep(delta,safety); }
+        catch (RuntimeException ex) { halted=true; return false; }
         if(!accepted)halted=true; // explicit intervention required, never auto-resume
         return accepted;
     }
@@ -66,7 +69,8 @@ public final class PrototypeRecoveryMotion {
                 ||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token)
                 ||manager.byId(carrier.id()).orElse(null)!=carrier||manager.byId(target.id()).orElse(null)!=target
                 ||manager.trailers().referencesVehicle(carrier.id())||manager.trailers().referencesVehicle(target.id())
-                ||carrier.rig().recoveryRampProgress()!=1D||target.occupied()
+                ||carrier.rig().recoveryRampProgress()!=1D||target.occupied()||carrier.occupied()
+                ||target.onJack()||target.jackId()!=null||carrier.onJack()||carrier.jackId()!=null
                 ||interlock.checkMovement(safety)!=RecoveryInterlock.Denial.NONE) return false;
         Location start=target.location();World world=start.getWorld();
         if(world==null||!world.equals(carrier.location().getWorld()))return false;

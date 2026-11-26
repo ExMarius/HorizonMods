@@ -1711,6 +1711,7 @@ public final class LandVehicle {
         velocity.zero();motion.zero();verticalVelocity=0;waterSpeed=0;
         return true;
     }
+    public boolean recoveryLocked() { return recoveryMotionToken!=null; }
     boolean recoveryMotionLockedBy(UUID token) { return token!=null && token.equals(recoveryMotionToken); }
     void applyRecoveryMotion(UUID token, Vector displacement) {
         if (!recoveryMotionLockedBy(token)) throw new IllegalStateException("Recovery lock lost");
