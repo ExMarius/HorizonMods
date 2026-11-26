@@ -24,7 +24,7 @@ def main(jar,probe):
                     if proc.poll() is not None:raise RuntimeError('server exited')
                     if 'Done (' in text and '[RecoveryProbe] Enabling' in text:break
                 else:raise RuntimeError('startup timeout')
-                bot=subprocess.run(['node',str(Path(__file__).with_suffix('.cjs'))],capture_output=True,text=True,timeout=35)
+                bot=subprocess.run(['node',str(Path(__file__).with_suffix('.cjs'))],capture_output=True,text=True,timeout=60)
                 if bot.returncode:raise RuntimeError('bot failed: '+(bot.stdout+bot.stderr)[-2000:])
                 out.flush();text=log.read_text(errors='replace')
                 if 'RECOVERY_PROBE_OK' not in text or 'RECOVERY_PROBE_FAIL' in text:raise RuntimeError('prototype rig probe failed')

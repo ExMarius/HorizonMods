@@ -186,33 +186,7 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     main.vehicles().remove(tractor);
                     event.getPlayer().removeAttachment(permission);
                 }
-                // Round trip on ideal level ground. Safety/permissions are deliberately supplied
-                // by the fixture, not a production claims adapter; this is NOT secured transport.
-                var home=event.getPlayer().getLocation();
-                var base=v.location();
-                double yaw=Math.toRadians(base.getYaw()), sin=Math.sin(yaw), cos=Math.cos(yaw);
-                event.getPlayer().teleport(base.clone().add(10*cos,0,10*sin));
-                var carStart=base.clone().add(-9.8*sin,0,9.8*cos);
-                var car=main.vehicles().spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,carStart);
-                try {
-                    var safety=new RecoveryInterlock.Safety(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
-                    var motion=PrototypeRecoveryMotion.begin(main.vehicles(),v,car,event.getPlayer(),(a,w,b)->true,safety);
-                    if(motion==null)throw new IllegalStateException("round trip lock failed");
-                    for(int direction=0;direction<2;direction++) {
-                        double from=direction==0?9.8:2.64, to=direction==0?2.64:9.8;
-                        for(int i=1;i<=180;i++) {
-                            var pose=com.mrcrayfish.vehicle.paper.recovery.RecoveryLoadingPath.sample(from,to,3.3,i/180D);
-                            var destination=base.clone().add(-pose.centerZ()*sin,pose.height(),pose.centerZ()*cos);
-                            var delta=destination.toVector().subtract(car.location().toVector());
-                            if(!motion.step(delta,safety))throw new IllegalStateException("round trip movement blocked at "+direction+":"+i);
-                        }
-                        if(direction==0 && Math.abs(car.location().getY()-base.getY()-.86)>1e-5)
-                            throw new IllegalStateException("car did not reach deck height");
-                    }
-                    if(car.location().distance(carStart)>1e-5 || !motion.releaseOnGround())
-                        throw new IllegalStateException("round trip did not return to ground");
-                    getLogger().info("RECOVERY_ROUND_TRIP_OK");
-                } finally {main.vehicles().remove(car);event.getPlayer().teleport(home);}
+                startTimedRoundTrip(main,event.getPlayer());
                 // Offline bot only; the disposable plugin is never packaged into production.
                 if(event.getPlayer().getName().equals("RecoveryProbeBot")) event.getPlayer().addAttachment(this,"recoveryprobe.use",true);
                 getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms and cable display checked; seat, actual trailer graph, normal harrow coupling and guarded single vehicle movement checked; no full gameplay or visual test");
@@ -222,6 +196,47 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                 if(v!=null&&main!=null)main.vehicles().remove(v);
             }
         },40L);
+    }
+    /** Test-only: ideal flat ground, fake claims adapter and no secured transport. */
+    private void startTimedRoundTrip(VehiclePlugin main, org.bukkit.entity.Player player) {
+        var home=player.getLocation();
+        var truck=main.vehicles().spawn(RecoveryTruckPrototype.create(),home);
+        truck.rig().setRecoveryRampProgress(1);
+        var base=truck.location();
+        double yaw=Math.toRadians(base.getYaw()),sin=Math.sin(yaw),cos=Math.cos(yaw);
+        player.teleport(base.clone().add(10*cos,0,10*sin));
+        var carStart=base.clone().add(-9.8*sin,0,9.8*cos);
+        var car=main.vehicles().spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,carStart);
+        var safety=new RecoveryInterlock.Safety(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
+        var motion=PrototypeRecoveryMotion.begin(main.vehicles(),truck,car,player,(a,w,b)->true,safety);
+        if(motion==null)throw new IllegalStateException("timed round trip lock failed");
+        new org.bukkit.scheduler.BukkitRunnable() {
+            int ticks;
+            @Override public void run() {
+                try {
+                    ticks++;
+                    int direction=ticks<=180?0:1;
+                    int step=direction==0?ticks:ticks-180;
+                    double from=direction==0?9.8:2.64,to=direction==0?2.64:9.8;
+                    var pose=com.mrcrayfish.vehicle.paper.recovery.RecoveryLoadingPath.sample(from,to,3.3,step/180D);
+                    var destination=base.clone().add(-pose.centerZ()*sin,pose.height(),pose.centerZ()*cos);
+                    var delta=destination.toVector().subtract(car.location().toVector());
+                    if(!motion.step(delta,safety))throw new IllegalStateException("timed movement blocked at "+ticks);
+                    if(ticks==180 && Math.abs(car.location().getY()-base.getY()-.86)>1e-5)
+                        throw new IllegalStateException("car did not reach deck height");
+                    if(ticks==360) {
+                        if(car.location().distance(carStart)>1e-5 || !motion.releaseOnGround())
+                            throw new IllegalStateException("round trip did not return to ground");
+                        cancel();main.vehicles().remove(car);main.vehicles().remove(truck);player.teleport(home);
+                        getLogger().info("RECOVERY_ROUND_TRIP_OK ticks="+ticks);
+                    }
+                } catch(Throwable error) {
+                    cancel();getLogger().severe("RECOVERY_PROBE_FAIL timed round trip: "+error);error.printStackTrace();
+                    // Never forcibly release an unsafe mid-air lock, even in the fixture.
+                    player.teleport(home);
+                }
+            }
+        }.runTaskTimer(this,1L,1L);
     }
     private static void expect(Map<String,Integer> counts,String name,int count){
         if(counts.getOrDefault(name,0)!=count)throw new IllegalStateException(name+" count="+counts.getOrDefault(name,0));
