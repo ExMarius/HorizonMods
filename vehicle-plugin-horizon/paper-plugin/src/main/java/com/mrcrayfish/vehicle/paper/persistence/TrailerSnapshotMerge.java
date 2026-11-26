@@ -38,8 +38,8 @@ public final class TrailerSnapshotMerge {
      */
     public static void write(Path file, byte[] expected, Set<UUID> managed,
                              Map<UUID, Map<String, Object>> active) throws IOException {
-        if (file == null || managed == null || active == null || managed.contains(null)
-                || active.containsKey(null) || !managed.containsAll(active.keySet()))
+        if (file == null || managed == null || active == null || managed.stream().anyMatch(java.util.Objects::isNull)
+                || active.keySet().stream().anyMatch(java.util.Objects::isNull) || !managed.containsAll(active.keySet()))
             throw new IOException("Invalid managed trailer set");
         Path target = file.toAbsolutePath();
         assertUnchanged(target, expected);
