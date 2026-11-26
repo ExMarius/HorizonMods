@@ -98,6 +98,8 @@ public final class LandVehicleRig {
     private float seatGauge = 1.0F;
     // Prototype-only visual value; no player commands or loading logic use it yet.
     private double recoveryRampProgress;
+    private final List<ItemDisplay> recoveryCableDisplays = new ArrayList<>();
+    private List<com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point> recoveryCable = List.of();
     private float propellerRotation;
     private float flapAngle;
     private float elevatorAngle;
@@ -217,6 +219,13 @@ public final class LandVehicleRig {
                 towBar, Collections.unmodifiableList(chassisParts),
                 Collections.unmodifiableList(forkParts), storageChest, storageInteraction,
                 Collections.unmodifiableList(wheels), Collections.unmodifiableList(seats), all);
+        if ("horizon_recovery_prototype".equals(spec.id())) {
+            for (int i=0;i<2;i++) {
+                ItemDisplay cableDisplay=display(world,location,model("horizon_service_cable"));
+                cableDisplay.setVisibleByDefault(false);mark(cableDisplay,vehicleId);
+                all.add(cableDisplay);rig.recoveryCableDisplays.add(cableDisplay);
+            }
+        }
         if (horizon) rig.horizonRig = new HorizonOffRoaderRig(location, vehicleId, all);
         if (horizonKart) rig.kartRig = new HorizonGoKartRig(location, vehicleId, all);
         if ("dacia_logan_police".equals(spec.id())) {
@@ -426,6 +435,7 @@ public final class LandVehicleRig {
                     new Vector3f(part.scale()), new Quaternionf());
         }
 
+        updateRecoveryCable(renderAnchor,driverSeat,yaw,wheelieAngle,bodyRoll);
         for (PartDisplay partDisplay : chassisParts) {
             placePropertyPart(partDisplay, renderAnchor, driverSeat,
                     yaw, wheelieAngle, bodyRoll, chassisRotation);
@@ -507,6 +517,40 @@ public final class LandVehicleRig {
             }
             maintainSeat(carrier, yaw);
         }
+    }
+
+    /** Update visual cable only; the loading runtime must validate world obstacles. */
+    private void updateRecoveryCable(Location anchor, Vector3f seat, float yaw, float wheelie, float roll) {
+        for (int i=0;i<recoveryCableDisplays.size();i++) {
+            ItemDisplay display=recoveryCableDisplays.get(i);
+            boolean visible=i+1<recoveryCable.size();
+            if (display.isVisibleByDefault()!=visible) display.setVisibleByDefault(visible);
+            if (!visible) continue;
+            var a=recoveryCable.get(i);var b=recoveryCable.get(i+1);
+            // Preview -Z front -> Paper item-space +Z front.
+            Vector3f from=chassis(new Vector3f((float)-a.x(),(float)a.y(),(float)-a.z()),wheelie,roll);
+            Vector3f to=chassis(new Vector3f((float)-b.x(),(float)b.y(),(float)-b.z()),wheelie,roll);
+            Vector3f delta=new Vector3f(to).sub(from);float length=delta.length();
+            if (length<1.0e-5F) {display.setVisibleByDefault(false);continue;}
+            Vector3f center=new Vector3f(from).add(to).mul(.5F);
+            Quaternionf rotation=new Quaternionf().rotationTo(new Vector3f(0,1,0),delta.div(length));
+            place(display,anchor,relativeToSeat(center,seat),yaw,rotation,new Vector3f(4F,4F*length,4F),new Quaternionf());
+        }
+    }
+
+    /** Test/internal hook: coordinates are in the authored truck frame, not world.
+     * Calling this does not attach or move another vehicle, nor check obstacles. */
+    public void setRecoveryCable(java.util.List<com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point> points) {
+        if (!"horizon_recovery_prototype".equals(spec.id())) throw new IllegalStateException("Not a recovery prototype");
+        if (points==null || points.isEmpty()) {recoveryCable=List.of();return;}
+        if (points.size()<2 || points.size()>3 || points.stream().anyMatch(java.util.Objects::isNull))
+            throw new IllegalArgumentException("Cable needs two or three finite points");
+        for(int i=1;i<points.size();i++) {
+            var a=points.get(i-1);var b=points.get(i);
+            if (Math.hypot(Math.hypot(a.x()-b.x(),a.y()-b.y()),a.z()-b.z())<1e-5)
+                throw new IllegalArgumentException("Zero length cable segment");
+        }
+        recoveryCable=List.copyOf(points);
     }
 
     private void placePropertyPart(PartDisplay partDisplay,

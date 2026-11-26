@@ -6,7 +6,8 @@
     "horizon_service_workshop": 67,
     "horizon_service_steering": 5,
     "horizon_service_wheel": 20,
-    "horizon_service_ramp": 10
+    "horizon_service_ramp": 10,
+    "horizon_service_cable": 1
   },
   "rotationApproximations": [
     {

@@ -1,0 +1,96 @@
+{
+  "textures": {
+    "white": "vehicle:item/horizon_service_white",
+    "whitedark": "vehicle:item/horizon_service_whitedark",
+    "red": "vehicle:item/horizon_service_red",
+    "reddark": "vehicle:item/horizon_service_reddark",
+    "yellow": "vehicle:item/horizon_service_yellow",
+    "chassis": "vehicle:item/horizon_service_chassis",
+    "dark": "vehicle:item/horizon_service_dark",
+    "steel": "vehicle:item/horizon_service_steel",
+    "silver": "vehicle:item/horizon_service_silver",
+    "black": "vehicle:item/horizon_service_black",
+    "rubber": "vehicle:item/horizon_service_rubber",
+    "rim": "vehicle:item/horizon_service_rim",
+    "glass": "vehicle:item/horizon_service_glass",
+    "glassedge": "vehicle:item/horizon_service_glassedge",
+    "seat": "vehicle:item/horizon_service_seat",
+    "dashboard": "vehicle:item/horizon_service_dashboard",
+    "light": "vehicle:item/horizon_service_light",
+    "tail": "vehicle:item/horizon_service_tail",
+    "amber": "vehicle:item/horizon_service_amber",
+    "wood": "vehicle:item/horizon_service_wood",
+    "blue": "vehicle:item/horizon_service_blue"
+  },
+  "elements": [
+    {
+      "name": "horizon_service_cable_0",
+      "from": [
+        7.928,
+        6,
+        7.928
+      ],
+      "to": [
+        8.072,
+        10,
+        8.072
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        }
+      }
+    }
+  ]
+}

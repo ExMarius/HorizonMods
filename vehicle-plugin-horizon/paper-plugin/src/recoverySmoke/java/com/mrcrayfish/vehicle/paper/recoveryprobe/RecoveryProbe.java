@@ -35,6 +35,24 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                 expect(counts,"vehicle:horizon_service_steering",1);
                 expect(counts,"vehicle:horizon_service_wheel",4);
                 expect(counts,"vehicle:horizon_service_ramp",2);
+                expect(counts,"vehicle:horizon_service_cable",2);
+                var cable=v.rig().entities().stream().filter(e->e instanceof ItemDisplay)
+                    .map(e->(ItemDisplay)e).filter(d->d.getItemStack().getItemMeta()!=null
+                        && new org.bukkit.NamespacedKey("vehicle","horizon_service_cable").equals(d.getItemStack().getItemMeta().getItemModel())).toList();
+                if(cable.stream().anyMatch(ItemDisplay::isVisibleByDefault))throw new IllegalStateException("cable visible before attaching");
+                var outlet=new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(0,1.06,.18);
+                var roller=new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(0,.99,5.40);
+                var hook=new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(0,.35,7.37);
+                v.rig().setRecoveryCable(com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.route(outlet,roller,hook));
+                v.forceVisualSync();
+                if(cable.stream().anyMatch(d->!d.isVisibleByDefault()))throw new IllegalStateException("cable segments not visible");
+                var t=cable.get(0).getTransformation();
+                var actual=t.getLeftRotation().transform(new org.joml.Vector3f(0,1,0));
+                var expected=new org.joml.Vector3f(0,-.07F,-5.22F).normalize();
+                if(actual.dot(expected)<.999F || Math.abs(t.getScale().y-4F*(float)Math.hypot(.07,5.22))>.01F)
+                    throw new IllegalStateException("cable alignment or length wrong");
+                v.rig().setRecoveryCable(java.util.List.of());v.forceVisualSync();
+                if(cable.stream().anyMatch(ItemDisplay::isVisibleByDefault))throw new IllegalStateException("cable not detached");
                 // Exercise both real ItemDisplay transforms, then refold before cleanup.
                 var ramps=v.rig().entities().stream().filter(e->e instanceof ItemDisplay)
                     .map(e->(ItemDisplay)e)
@@ -51,7 +69,7 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                 // Exercise the actual player/horse seat path on disposable Paper.
                 if(!v.mount(event.getPlayer())||!v.occupied()||v.rig().seatCarriers().size()!=1)
                     throw new IllegalStateException("player failed to mount prototype");
-                getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms checked; seat mount checked; visual/loading gameplay not tested");
+                getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms and cable display checked; seat mount checked; visual/loading gameplay not tested");
             } catch(Throwable e){ getLogger().severe("RECOVERY_PROBE_FAIL "+e); e.printStackTrace(); }
             finally{
                 VehiclePlugin main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");

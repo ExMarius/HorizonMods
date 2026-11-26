@@ -49,7 +49,9 @@ const wheel=[
  ['steel',-.205,0,0,.02,.34,.20],['steel',.205,0,0,.02,.34,.20],
  ['silver',-.22,0,0,.03,.14,.14],['silver',.22,0,0,.03,.14,.14]
 ];
-const models={horizon_service_cab:cab,horizon_service_flatbed:platforma,horizon_service_workshop:atelier,horizon_service_steering:steering,horizon_service_wheel:wheel,horizon_service_ramp:ramp};
+// Unit-length cable at the item origin; the Paper rig stretches it along local Y.
+const cable=[['silver',0,0,0,.036,1,.036]];
+const models={horizon_service_cab:cab,horizon_service_flatbed:platforma,horizon_service_workshop:atelier,horizon_service_steering:steering,horizon_service_wheel:wheel,horizon_service_ramp:ramp,horizon_service_cable:cable};
 for(const [name,pieces] of Object.entries(models)){
  const body={textures,elements:pieces.map((p,i)=>cuboid(p,i,name))};
  writeFileSync(join(modelDir,name+'.json'),JSON.stringify(body,null,2)+'\n');

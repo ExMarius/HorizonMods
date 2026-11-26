@@ -15,7 +15,7 @@ Pornește cu `npm ci && npm start` (portul 4176, sau `PORT` pentru alt port).
 ## Export pentru modelul Minecraft
 
 `node minecraft/export.mjs` convertește piesele amplasate manual din `design.js`
-în șase modele de item: cabină/șasiu, platformă, atelier, volan, roată și rampă.
+în șapte modele de item: cabină/șasiu, platformă, atelier, volan, roată, rampă și cablu.
 Modelul este normalizat pentru un `ItemDisplay` la scala 4. Fișierele sunt în
 `minecraft/assets/`; `conversion-report.json` consemnează înclinările rotunjite
 la unghiurile permise de format. Roțile și volanul din browser sunt aproximări cu cuboizi în export.

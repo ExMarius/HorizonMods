@@ -2,7 +2,7 @@ import hashlib, io, json, struct, subprocess, tempfile, unittest, zipfile, zlib
 from pathlib import Path
 import build_pack
 HERE=Path(__file__).resolve().parent
-MODELS=('cab','flatbed','workshop','wheel','steering','ramp')
+MODELS=('cab','flatbed','workshop','wheel','steering','ramp','cable')
 
 def base(extra=None):
     out=io.BytesIO()
