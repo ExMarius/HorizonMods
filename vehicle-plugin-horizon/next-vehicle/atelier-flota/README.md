@@ -34,7 +34,8 @@ implementate în plugin; doar piesele vizuale sunt pregătite.
 
 Butoanele „Urcă pe roți” și „Trage cu troliul” arată două variante ale
 aceleiași animații, cu modelul Dacia Poliție editat în proiect. „Descarcă”
-arată coborârea. Roțile Daciei sunt aproximative, iar cablul este vizual.
+arată coborârea. Roțile Daciei sunt aproximative; cablul vizual trece peste
+un ghidaj spate când linia directă ar intersecta platforma.
 Platforma măsoară 5,50 × 2,90 blocuri, iar rampele sunt piese articulate
 separate. Simularea nu implementează controlul de către un jucător, troliul,
 coliziuni, ancorare sau transport în Minecraft; acestea necesită implementare
@@ -57,3 +58,6 @@ piesele neînclinate, admițând doar axa, poziția mașinii față de rampele p
 și contactul rampelor cu solul pe parcursul animației. Sunt verificări ale
 conceptului 3D, nu o simulare completă de coliziune și nici test în joc;
 îmbinările intenționate și piesele înclinate necesită în continuare control vizual.
+
+Planul prioritar pentru roleplay și condițiile de integrare sunt în
+`ROLEPLAY-PLATFORMA.md`; atelierul mobil rămâne deoparte momentan.

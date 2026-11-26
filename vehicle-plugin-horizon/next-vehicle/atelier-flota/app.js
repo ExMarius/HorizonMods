@@ -2,7 +2,7 @@ import * as T from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {palette,cab,platforma,atelier,ramp,wheels,platformWheels} from './design.js';
 import {loadDacia} from './loading-demo.js';
-import {sequence,rampRotation,LOADING,loadingEligibility} from './loading-kinematics.js';
+import {sequence,rampRotation,LOADING,loadingEligibility,winchCablePath} from './loading-kinematics.js';
 import {buildMinecraftPreview} from './minecraft-preview.js';
 
 const data={
@@ -44,11 +44,16 @@ function makeVehicle(kind){
 }
 function center(){camera.position.set(9,5.4,-11);controls.target.set(0,1.0,currentKind==='platforma'?1.3:.18);controls.update()}
 function demoView(){camera.position.set(11,8,16);controls.target.set(0,.8,4.0);controls.update()}
-function clearDemo(){demo=null;pending=false;loaded=false;if(carData){scene.remove(carData.car);carData.car.traverse(x=>{if(x.geometry)x.geometry.dispose()});carData=null}if(cable){scene.remove(cable);cable.geometry.dispose();cable.material.dispose();cable=null}}
+function clearDemo(){demo=null;pending=false;loaded=false;if(carData){scene.remove(carData.car);carData.car.traverse(x=>{if(x.geometry)x.geometry.dispose()});carData=null}if(cable){scene.remove(cable);cable.traverse(x=>{if(x.geometry)x.geometry.dispose();if(x.material)x.material.dispose()});cable=null}}
 function updateButtons(){const running=!!demo||pending;document.querySelector('#drive-load').disabled=running||loaded;document.querySelector('#winch-load').disabled=running||loaded;document.querySelector('#unload').disabled=running||!loaded;document.querySelector('#trailer-attached').disabled=running||loaded}
-function putCable(a,b){
- if(!cable){cable=new T.Mesh(new T.CylinderGeometry(.018,.018,1,8),new T.MeshStandardMaterial({color:0x30383a,metalness:.65,roughness:.5}));scene.add(cable)}
- const delta=new T.Vector3().subVectors(b,a);cable.position.copy(a).add(b).multiplyScalar(.5);cable.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),delta.clone().normalize());cable.scale.y=delta.length();
+function removeCable(){if(!cable)return;scene.remove(cable);cable.traverse(x=>{if(x.geometry)x.geometry.dispose();if(x.material)x.material.dispose()});cable=null}
+function putCable(points){
+ if(!cable){cable=new T.Group();for(let i=0;i<2;i++){const segment=new T.Mesh(new T.CylinderGeometry(.018,.018,1,10),new T.MeshStandardMaterial({color:0x57605d,metalness:.75,roughness:.38}));cable.add(segment)}scene.add(cable)}
+ for(let i=0;i<2;i++){
+  const segment=cable.children[i],visible=i<points.length-1;segment.visible=visible;if(!visible)continue;
+  const a=new T.Vector3(points[i].x,points[i].y,points[i].z),b=new T.Vector3(points[i+1].x,points[i+1].y,points[i+1].z),delta=b.clone().sub(a);
+  segment.position.copy(a).add(b).multiplyScalar(.5);segment.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),delta.clone().normalize());segment.scale.y=delta.length();
+ }
 }
 async function startDemo(mode,unload=false){
  if(demo||pending||currentKind!=='platforma'||(unload&&!loaded)||(!unload&&loaded))return;
@@ -67,9 +72,9 @@ function tickDemo(now){
  if(demo.lastZ!==null)for(const w of carData.tires)w.rotation.x+=(state.car.z-demo.lastZ)/.40;
  demo.lastZ=state.car.z;carData.car.updateMatrixWorld(true);
  if(demo.mode==='winch' && state.phase!=='closing' && state.phase!=='done'){
-  putCable(new T.Vector3(0,1.06,.18),carData.attach.getWorldPosition(new T.Vector3()));
- }else if(cable){scene.remove(cable);cable.geometry.dispose();cable.material.dispose();cable=null}
- const phaseText={ramps:'Rampele se deschid',moving:demo.unload?'Dacia coboară de pe platformă':demo.mode==='winch'?'Troliul trage Dacia pe platformă':'Dacia urcă pe roți',settling:'Vehiculul se oprește',closing:'Rampele se pliază',done:demo.unload?'Vehicul descărcat':'Vehicul încărcat'};
+  putCable(winchCablePath(carData.attach.getWorldPosition(new T.Vector3())));
+ }else if(cable){scene.remove(cable);cable.traverse(x=>{if(x.geometry)x.geometry.dispose();if(x.material)x.material.dispose()});cable=null}
+ const phaseText={ramps:'Rampele se deschid',moving:demo.unload?'Dacia coboară de pe platformă':demo.mode==='winch'?'Troliul trage Dacia pe platformă':'Dacia urcă pe roți',settling:demo.mode==='winch'?'Vehiculul se oprește; cablul se decuplează':'Vehiculul se oprește',closing:'Rampele se pliază',done:demo.unload?'Vehicul descărcat':'Vehicul încărcat'};
  document.querySelector('#demo-status').textContent=phaseText[state.phase]+' · simulare 3D, nu comandă în joc.';
  if(state.done){loaded=!demo.unload;demo=null;updateButtons()}
 }

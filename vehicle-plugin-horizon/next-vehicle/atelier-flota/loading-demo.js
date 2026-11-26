@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {DACIA_TOW_EYE} from './loading-kinematics.js';
 
 /** Real user-edited Dacia body, loaded from the repo; wheel positions are preview approximations. */
 export async function loadDacia(){
@@ -29,7 +30,10 @@ export async function loadDacia(){
   const tire=new T.Mesh(new T.CylinderGeometry(.40,.40,.32,16),rubber);tire.rotation.z=Math.PI/2;tire.castShadow=true;pivot.add(tire);
   const hub=new T.Mesh(new T.CylinderGeometry(.23,.23,.035,16),rim);hub.rotation.z=Math.PI/2;hub.position.x=Math.sign(x)*.18;pivot.add(hub);
  }
- // Approximate cable attachment in front of the vehicle; no claim of a physical tow eye.
- const attach=new T.Object3D();attach.position.set(0,.35,-2.43);car.add(attach);
+ // A clearly visible illustrative tow eye; its location is an approximation,
+ // not a verified mounting point on the in-game Dacia.
+ const attach=new T.Group();attach.position.set(DACIA_TOW_EYE.x,DACIA_TOW_EYE.y,DACIA_TOW_EYE.z);car.add(attach);
+ const eye=new T.Mesh(new T.TorusGeometry(.065,.014,8,16),new T.MeshStandardMaterial({color:0x777e7b,metalness:.7,roughness:.4}));
+ attach.add(eye);
  return {car,tires,attach};
 }

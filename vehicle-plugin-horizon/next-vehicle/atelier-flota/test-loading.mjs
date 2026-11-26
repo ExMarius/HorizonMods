@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {LOADING,rampAngle,rampRun,rampRotation,groundHeight,carPose,sequence,loadingEligibility} from './loading-kinematics.js';
+import {LOADING,rampAngle,rampRun,rampRotation,groundHeight,carPose,sequence,loadingEligibility,winchCablePath,daciaTowPoint,WINCH} from './loading-kinematics.js';
 import {platforma,ramp,platformWheels} from './design.js';
 const near=(a,b,e=1e-8)=>assert.ok(Math.abs(a-b)<e,`${a} != ${b}`);
 assert.equal(loadingEligibility(true).allowed,false);
@@ -26,6 +26,23 @@ for(let i=0;i<=1000;i++){
 for(const unloading of [false,true])for(let t=0;t<20;t+=.025){
  const state=sequence(t,unloading);
  if(state.moving)near(state.ramp,1);
+}
+// A taut cable takes the straight route when clear; otherwise the supported
+// roller routes it above the bed. Sample the whole winching motion, including
+// the rope radius, not just the endpoints.
+assert.equal(winchCablePath({x:0,y:.35,z:7.37}).length,3);
+assert.equal(winchCablePath({x:0,y:1.4,z:6}).length,2);
+const roller=platforma.find(p=>p[0]==='silver'&&p[1]===0&&p[2]===.93&&p[3]===WINCH.roller.z);
+assert.ok(roller,'rear roller must exist at the route guide');
+assert.ok(WINCH.roller.y-WINCH.radius>=roller[2]+roller[5]/2,'cable must clear roller top');
+for(let t=0;t<=LOADING.rampDuration+LOADING.driveDuration;t+=.01){
+ const eye=daciaTowPoint(sequence(t).car),points=winchCablePath(eye);
+ assert.deepEqual(points[0],WINCH.outlet);assert.deepEqual(points.at(-1),eye);
+ for(let i=0;i<points.length-1;i++)for(let j=0;j<=100;j++){
+  const a=points[i],b=points[i+1],f=j/100,z=a.z+(b.z-a.z)*f,y=a.y+(b.y-a.y)*f;
+  if(z>=WINCH.outlet.z&&z<=LOADING.deckEnd)assert.ok(y-WINCH.radius>=LOADING.deckTop,`cable intersects deck at t=${t}, z=${z}, y=${y}`);
+  assert.ok(y-WINCH.radius>=0,'cable intersects ground');
+ }
 }
 const dacia=JSON.parse(fs.readFileSync(new URL('../assets/user-edits/body_flash_1.json',import.meta.url),'utf8'));
 const extent=i=>Math.max(...dacia.elements.map(e=>e.to[i]))-Math.min(...dacia.elements.map(e=>e.from[i]));

@@ -1132,12 +1132,12 @@
       "from": [
         6.48,
         11.44,
-        7.5
+        7.46
       ],
       "to": [
         9.52,
         12.4,
-        8.9
+        8.38
       ],
       "faces": {
         "north": {
@@ -3062,6 +3062,213 @@
     {
       "name": "horizon_service_flatbed_44",
       "from": [
+        6.92,
+        11.2,
+        29.2
+      ],
+      "to": [
+        7.24,
+        11.76,
+        29.92
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_flatbed_45",
+      "from": [
+        8.76,
+        11.2,
+        29.2
+      ],
+      "to": [
+        9.08,
+        11.76,
+        29.92
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_flatbed_46",
+      "from": [
+        7.08,
+        11.56,
+        29.4
+      ],
+      "to": [
+        8.92,
+        11.88,
+        29.8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_flatbed_47",
+      "from": [
         6.52,
         11.6,
         7.28
@@ -3129,7 +3336,7 @@
       }
     },
     {
-      "name": "horizon_service_flatbed_45",
+      "name": "horizon_service_flatbed_48",
       "from": [
         9.08,
         11.6,
@@ -3198,7 +3405,7 @@
       }
     },
     {
-      "name": "horizon_service_flatbed_46",
+      "name": "horizon_service_flatbed_49",
       "from": [
         7.2,
         12.4,
@@ -3267,7 +3474,7 @@
       }
     },
     {
-      "name": "horizon_service_flatbed_47",
+      "name": "horizon_service_flatbed_50",
       "from": [
         7.2,
         11.92,
@@ -3336,7 +3543,7 @@
       }
     },
     {
-      "name": "horizon_service_flatbed_48",
+      "name": "horizon_service_flatbed_51",
       "from": [
         7.08,
         12,
@@ -3405,7 +3612,7 @@
       }
     },
     {
-      "name": "horizon_service_flatbed_49",
+      "name": "horizon_service_flatbed_52",
       "from": [
         8.76,
         12,
@@ -3474,7 +3681,7 @@
       }
     },
     {
-      "name": "horizon_service_flatbed_50",
+      "name": "horizon_service_flatbed_53",
       "from": [
         3.2,
         9.16,
@@ -3543,223 +3750,16 @@
       }
     },
     {
-      "name": "horizon_service_flatbed_51",
-      "from": [
-        2.18,
-        10.8,
-        21.64
-      ],
-      "to": [
-        2.7,
-        10.96,
-        25.72
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        }
-      }
-    },
-    {
-      "name": "horizon_service_flatbed_52",
-      "from": [
-        13.3,
-        10.8,
-        21.64
-      ],
-      "to": [
-        13.82,
-        10.96,
-        25.72
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        }
-      }
-    },
-    {
-      "name": "horizon_service_flatbed_53",
-      "from": [
-        2.18,
-        9.12,
-        21.56
-      ],
-      "to": [
-        2.7,
-        10.8,
-        21.88
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        }
-      }
-    },
-    {
       "name": "horizon_service_flatbed_54",
       "from": [
-        13.3,
-        9.12,
-        21.56
+        2.18,
+        10.8,
+        21.64
       ],
       "to": [
-        13.82,
-        10.8,
-        21.88
+        2.7,
+        10.96,
+        25.72
       ],
       "faces": {
         "north": {
@@ -3821,6 +3821,213 @@
     {
       "name": "horizon_service_flatbed_55",
       "from": [
+        13.3,
+        10.8,
+        21.64
+      ],
+      "to": [
+        13.82,
+        10.96,
+        25.72
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_flatbed_56",
+      "from": [
+        2.18,
+        9.12,
+        21.56
+      ],
+      "to": [
+        2.7,
+        10.8,
+        21.88
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_flatbed_57",
+      "from": [
+        13.3,
+        9.12,
+        21.56
+      ],
+      "to": [
+        13.82,
+        10.8,
+        21.88
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_flatbed_58",
+      "from": [
         2.18,
         9.12,
         25.48
@@ -3888,7 +4095,7 @@
       }
     },
     {
-      "name": "horizon_service_flatbed_56",
+      "name": "horizon_service_flatbed_59",
       "from": [
         13.3,
         9.12,
@@ -3957,7 +4164,7 @@
       }
     },
     {
-      "name": "horizon_service_flatbed_57",
+      "name": "horizon_service_flatbed_60",
       "from": [
         2.5,
         8.4,
@@ -4026,7 +4233,7 @@
       }
     },
     {
-      "name": "horizon_service_flatbed_58",
+      "name": "horizon_service_flatbed_61",
       "from": [
         12.1,
         8.4,
@@ -4095,7 +4302,7 @@
       }
     },
     {
-      "name": "horizon_service_flatbed_59",
+      "name": "horizon_service_flatbed_62",
       "from": [
         3.08,
         8.96,
@@ -4164,7 +4371,7 @@
       }
     },
     {
-      "name": "horizon_service_flatbed_60",
+      "name": "horizon_service_flatbed_63",
       "from": [
         2.97,
         9.34,
@@ -4233,7 +4440,7 @@
       }
     },
     {
-      "name": "horizon_service_flatbed_61",
+      "name": "horizon_service_flatbed_64",
       "from": [
         2.912,
         9.75,

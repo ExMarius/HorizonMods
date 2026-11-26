@@ -35,3 +35,27 @@ export function sequence(seconds,unload=false){
 export function loadingEligibility(hasAttachedTrailer){
  return hasAttachedTrailer ? {allowed:false,reason:'Decuplează remorca sau utilajul înainte de încărcare.'} : {allowed:true,reason:''};
 }
+
+/** Preview-only fairlead path. A roller at the bed's rear supports the cable
+ * from below only when the direct tension line would cut through the bed.
+ * Coordinates are world-space, front is -Z. */
+export const WINCH={outlet:{x:0,y:1.06,z:.18},roller:{x:0,y:.99,z:5.40},radius:.018};
+export function winchCablePath(attachment){
+ const {outlet,roller}=WINCH;
+ if(![attachment.x,attachment.y,attachment.z].every(Number.isFinite))throw Error('Invalid winch attachment');
+ const points=[outlet];
+ if(attachment.z>roller.z){
+  const f=(roller.z-outlet.z)/(attachment.z-outlet.z);
+  const directY=outlet.y+(attachment.y-outlet.y)*f;
+  if(directY<roller.y)points.push(roller);
+ }
+ points.push(attachment);
+ return points;
+}
+/** Shared preview tow-eye location, not an in-game attachment. */
+export const DACIA_TOW_EYE={x:0,y:.35,z:-2.43};
+/** Same rigid-body transform as the 3D Dacia's tow-eye object. */
+export function daciaTowPoint(pose){
+ const {y,z}=DACIA_TOW_EYE,c=Math.cos(pose.pitch),s=Math.sin(pose.pitch);
+ return {x:0,y:pose.y+.005+y*c-z*s,z:pose.z+y*s+z*c};
+}

@@ -91,7 +91,7 @@ export const platforma=[
  ['whiteDark',-1.05,.875,2.60,.05,.035,5.40],['whiteDark',1.05,.875,2.60,.05,.035,5.40],
  ['whiteDark',-.51,.875,2.60,.035,.035,5.40],['whiteDark',.51,.875,2.60,.035,.035,5.40],
  ['steel',0,1.10,-.11,2.84,.58,.12],['silver',0,1.37,-.11,2.90,.07,.12],
- ['dark',0,.98,.05,.76,.24,.35],['steel',0,1.12,.04,.54,.12,.14],['silver',0,1.18,-.02,.07,.10,.22],
+ ['dark',0,.98,-.02,.76,.24,.23],['steel',0,1.12,.04,.54,.12,.14],['silver',0,1.18,-.02,.07,.10,.22],
  ['dark',0,.58,5.39,2.95,.24,.14],['tail',-1.15,.61,5.47,.29,.12,.035],['tail',1.15,.61,5.47,.29,.12,.035],['white',0,.62,5.48,.42,.13,.03],
  ['amber',-.66,2.33,-1.30,.26,.08,.25],['amber',.66,2.33,-1.30,.26,.08,.25],
  // Outer deck rub rails and small amber side markers, outside the loading lanes.
@@ -107,6 +107,10 @@ export const platforma=[
  ['silver',-1.05,.87,5.34,.56,.10,.12],['silver',1.05,.87,5.34,.56,.10,.12],
  ['yellow',-.68,.62,5.477,.32,.08,.02],['yellow',.68,.62,5.477,.32,.08,.02],
  ['dark',0,.60,5.503,.30,.025,.012],
+ // Central rear cable guide. The rollers are between the two loading ramps,
+ // supported by the rear lip and outside the parked car's envelope.
+ ['steel',-.23,.87,5.39,.08,.14,.18],['steel',.23,.87,5.39,.08,.14,.18],
+ ['silver',0,.93,5.40,.46,.08,.10],
  // Winch housing cheeks and fairlead rollers at the front bulkhead.
  ['steel',-.32,1.05,-.02,.10,.30,.32],['steel',.32,1.05,-.02,.10,.30,.32],
  ['silver',0,1.12,.155,.40,.04,.04],['silver',0,1.00,.155,.40,.04,.04],
