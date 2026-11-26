@@ -1,0 +1,1 @@
+{"name":"horizon-atelier-flota","private":true,"version":"1.0.0","description":"Interactive previews of CC0 vehicle candidates","scripts":{"start":"node server.cjs"},"dependencies":{"three":"0.187.0"}}
