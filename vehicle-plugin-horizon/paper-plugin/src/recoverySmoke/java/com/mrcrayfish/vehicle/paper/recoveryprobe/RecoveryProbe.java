@@ -205,13 +205,14 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
         var base=truck.location();
         double yaw=Math.toRadians(base.getYaw()),sin=Math.sin(yaw),cos=Math.cos(yaw);
         player.teleport(base.clone().add(10*cos,0,10*sin));
-        var carStart=base.clone().add(-9.8*sin,0,9.8*cos);
+        // The authored +Z rear is mapped to Paper item-space -Z by the rig.
+        var carStart=base.clone().add(9.8*sin,0,-9.8*cos);
         var car=main.vehicles().spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,carStart);
         var safety=new RecoveryInterlock.Safety(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
         var motion=PrototypeRecoveryMotion.begin(main.vehicles(),truck,car,player,(a,w,b)->true,safety);
         if(motion==null)throw new IllegalStateException("timed round trip lock failed");
         new org.bukkit.scheduler.BukkitRunnable() {
-            int ticks;
+            int ticks,unsafeCableSamples;
             @Override public void run() {
                 try {
                     ticks++;
@@ -219,7 +220,18 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     int step=direction==0?ticks:ticks-180;
                     double from=direction==0?9.8:2.64,to=direction==0?2.64:9.8;
                     var pose=com.mrcrayfish.vehicle.paper.recovery.RecoveryLoadingPath.sample(from,to,3.3,step/180D);
-                    var destination=base.clone().add(-pose.centerZ()*sin,pose.height(),pose.centerZ()*cos);
+                    var destination=base.clone().add(pose.centerZ()*sin,pose.height(),-pose.centerZ()*cos);
+                    // Approximate hook from the browser Dacia, with zero pitch because the
+                    // Paper movement prototype currently renders the car level. Do not
+                    // draw a cable that the bed-clearance guard rejects.
+                    var cable=com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.route(
+                            new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(0,1.06,.18),
+                            new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(0,.99,5.40),
+                            new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(0,pose.height()+.35,pose.centerZ()-2.43));
+                    if(com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.clearsLevelBed(cable,.18,5.35,.86,.018))
+                        truck.rig().setRecoveryCable(cable);
+                    else { unsafeCableSamples++;truck.rig().setRecoveryCable(java.util.List.of()); }
+                    truck.forceVisualSync();
                     var delta=destination.toVector().subtract(car.location().toVector());
                     if(!motion.step(delta,safety))throw new IllegalStateException("timed movement blocked at "+ticks);
                     if(ticks==180 && Math.abs(car.location().getY()-base.getY()-.86)>1e-5)
@@ -227,8 +239,10 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     if(ticks==360) {
                         if(car.location().distance(carStart)>1e-5 || !motion.releaseOnGround())
                             throw new IllegalStateException("round trip did not return to ground");
+                        if(unsafeCableSamples==0)throw new IllegalStateException("expected cable/bed clearance issue not detected");
+                        truck.rig().setRecoveryCable(java.util.List.of());
                         cancel();main.vehicles().remove(car);main.vehicles().remove(truck);player.teleport(home);
-                        getLogger().info("RECOVERY_ROUND_TRIP_OK ticks="+ticks);
+                        getLogger().info("RECOVERY_ROUND_TRIP_OK ticks="+ticks+" unsafeCableSamples="+unsafeCableSamples);
                     }
                 } catch(Throwable error) {
                     cancel();getLogger().severe("RECOVERY_PROBE_FAIL timed round trip: "+error);error.printStackTrace();
