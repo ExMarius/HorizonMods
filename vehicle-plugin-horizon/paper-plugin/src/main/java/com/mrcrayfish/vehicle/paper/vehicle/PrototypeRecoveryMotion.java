@@ -104,9 +104,30 @@ public final class PrototypeRecoveryMotion {
         if(!Bukkit.isPrimaryThread()||closed||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token))return false;
         Location where=target.location();
         if(where.getWorld()==null || target.occupied() || carrier.occupied()
-                || !where.clone().subtract(0,.05,0).getBlock().getType().isSolid())return false;
+                || Math.abs(target.recoveryPitchDegrees())>.1F || !groundSupportsFootprint(where))return false;
         BoundingBox point=new BoundingBox(where.getX()-.1,where.getY()-.1,where.getZ()-.1,where.getX()+.1,where.getY()+.1,where.getZ()+.1);
         if(!authority.allows(operator,where.getWorld(),point))return false;
         target.endRecoveryMotion(token);carrier.endRecoveryMotion(token);closed=true;return true;
+    }
+    /** Conservative support under centre and four corners, with no chunk loads.
+     * This is still only an experimental release check, not terrain physics. */
+    private boolean groundSupportsFootprint(Location location) {
+        World world=location.getWorld();
+        if(world==null)return false;
+        double half=Math.max(5D,target.spec().entityWidth())/2-.1;
+        for(double[] offset:new double[][]{{0,0},{-half,-half},{-half,half},{half,-half},{half,half}}) {
+            double x=location.getX()+offset[0],z=location.getZ()+offset[1],y=location.getY();
+            int bx=(int)Math.floor(x),bz=(int)Math.floor(z),by=(int)Math.floor(y-.001);
+            if(by<world.getMinHeight()||by>=world.getMaxHeight()||!world.isChunkLoaded(bx>>4,bz>>4))return false;
+            var block=world.getBlockAt(bx,by,bz);
+            boolean supported=false;
+            for(var shape:block.getCollisionShape().getBoundingBoxes()) {
+                var box=shape.clone().shift(bx,by,bz);
+                if(x>=box.getMinX()&&x<=box.getMaxX()&&z>=box.getMinZ()&&z<=box.getMaxZ()
+                        && box.getMaxY()>=y-.05 && box.getMaxY()<=y+.001) {supported=true;break;}
+            }
+            if(!supported)return false;
+        }
+        return true;
     }
 }

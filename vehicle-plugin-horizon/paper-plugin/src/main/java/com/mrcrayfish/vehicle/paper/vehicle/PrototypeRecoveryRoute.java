@@ -79,7 +79,7 @@ public final class PrototypeRecoveryRoute {
     }
     /** Only unlock on checked solid ground; a stopped suspended vehicle stays locked. */
     public boolean finishOnGround() {
-        if(!Bukkit.isPrimaryThread()||state!=State.ON_GROUND||!motion.releaseOnGround())return false;
+        if(!Bukkit.isPrimaryThread()||(state!=State.ON_GROUND && state!=State.STOPPED)||!motion.releaseOnGround())return false;
         carrier.rig().setRecoveryCable(List.of());carrier.forceVisualSync();state=State.FINISHED;return true;
     }
     private State stop(){state=State.STOPPED;return state;}
