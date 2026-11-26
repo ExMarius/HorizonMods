@@ -64,4 +64,13 @@ class TrailerSnapshotSessionTest {
         Files.writeString(file, "trailers: [\n");
         assertThrows(IOException.class, () -> new TrailerSnapshotSession(file));
     }
+    @Test void refusesInvalidEncodingAndOversizedFileWithoutOverwriting() throws Exception {
+        Path file = dir.resolve("trailers.yml");
+        byte[] invalid = {(byte)0xc3, (byte)0x28}; Files.write(file, invalid);
+        assertThrows(IOException.class, () -> new TrailerSnapshotSession(file));
+        assertArrayEquals(invalid, Files.readAllBytes(file));
+        byte[] huge = new byte[8_000_001]; Files.write(file, huge);
+        assertThrows(IOException.class, () -> new TrailerSnapshotSession(file));
+        assertEquals(huge.length, Files.size(file));
+    }
 }

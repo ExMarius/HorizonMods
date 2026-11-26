@@ -223,6 +223,15 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
             if(com.mrcrayfish.vehicle.paper.recovery.RecoveryCableWorldCheck.clear(base.getWorld(),java.util.List.of(lineStart,lineEnd),.018,ignored))
                 throw new IllegalStateException("cable crossed a solid block");
         } finally { obstruct.setBlockData(old,false); }
+        var witness=base.getWorld().spawn(base.clone().add(13.5,1,12.5),org.bukkit.entity.ArmorStand.class);
+        try {
+            if(com.mrcrayfish.vehicle.paper.recovery.RecoveryCableWorldCheck.clear(base.getWorld(),java.util.List.of(lineStart,lineEnd),.018,ignored))
+                throw new IllegalStateException("cable crossed an entity");
+        } finally {witness.remove();}
+        var unloadedA=new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(base.getX()+10000,base.getY()+2,base.getZ()+10000);
+        var unloadedB=new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(base.getX()+10001,base.getY()+2,base.getZ()+10000);
+        if(com.mrcrayfish.vehicle.paper.recovery.RecoveryCableWorldCheck.clear(base.getWorld(),java.util.List.of(unloadedA,unloadedB),.018,ignored))
+            throw new IllegalStateException("cable accepted unloaded chunk");
         var body=car.rig().entities().stream().filter(e -> e instanceof ItemDisplay).map(e -> (ItemDisplay)e).findFirst().orElseThrow();
         var levelRotation=new org.joml.Quaternionf(body.getTransformation().getLeftRotation());
         new org.bukkit.scheduler.BukkitRunnable() {

@@ -27,7 +27,21 @@ public final class TrailerSnapshotMerge {
     /** An absent file is represented by null; an empty existing file is distinct. */
     public static byte[] read(Path path) throws IOException {
         if (Files.notExists(path)) return null;
-        return Files.readAllBytes(path);
+        if (Files.size(path) > 8_000_000) throw new IOException("Trailer snapshot too large");
+        byte[] bytes = Files.readAllBytes(path);
+        if (bytes.length > 8_000_000) throw new IOException("Trailer snapshot too large");
+        return bytes;
+    }
+
+    static String decode(byte[] bytes) throws IOException {
+        try {
+            return StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(bytes)).toString();
+        } catch (java.nio.charset.CharacterCodingException e) {
+            throw new IOException("Trailer snapshot is not valid UTF-8", e);
+        }
     }
 
     /**
@@ -45,7 +59,7 @@ public final class TrailerSnapshotMerge {
         assertUnchanged(target, expected);
         YamlConfiguration yaml = new YamlConfiguration();
         try {
-            if (expected != null) yaml.loadFromString(new String(expected, StandardCharsets.UTF_8));
+            if (expected != null) yaml.loadFromString(decode(expected));
         } catch (InvalidConfigurationException | IllegalArgumentException e) {
             throw new IOException("Malformed trailer snapshot", e);
         }

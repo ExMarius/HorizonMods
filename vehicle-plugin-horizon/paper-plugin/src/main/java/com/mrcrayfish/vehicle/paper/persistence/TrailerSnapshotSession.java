@@ -5,7 +5,6 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Map;
@@ -30,7 +29,7 @@ public final class TrailerSnapshotSession {
         snapshot = TrailerSnapshotMerge.read(this.path);
         YamlConfiguration yaml = new YamlConfiguration();
         try {
-            if (snapshot != null) yaml.loadFromString(new String(snapshot, StandardCharsets.UTF_8));
+            if (snapshot != null) yaml.loadFromString(TrailerSnapshotMerge.decode(snapshot));
             if (yaml.contains("trailers") && !yaml.isConfigurationSection("trailers"))
                 throw new IOException("Invalid trailers section");
             ConfigurationSection section = yaml.getConfigurationSection("trailers");
