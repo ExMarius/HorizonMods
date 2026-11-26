@@ -128,7 +128,29 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     if(Math.abs(target.location().getZ()-start.getZ()-.05)>1e-6)throw new IllegalStateException("wrong movement");
                     if(!run.releaseOnGround())throw new IllegalStateException("clear run did not unlock");
                 } finally {main.vehicles().remove(target);}
-                getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms and cable display checked; seat, actual trailer graph and guarded single vehicle movement checked; no full gameplay or visual test");
+                // Exercise the same manager entry point used by the /vehicle disc coupling command.
+                var permission=event.getPlayer().addAttachment(this,"vehicle.plough",true);
+                var tractor=main.vehicles().spawn(LandVehicleSpec.UTB_650,event.getPlayer().getLocation().clone().add(2,0,0));
+                var harrow=main.vehicles().trailers().spawn(com.mrcrayfish.vehicle.paper.vehicle.TrailerSpec.DISC_GD32,tractor.location());
+                try {
+                    var safety=new RecoveryInterlock.Safety(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
+                    var lock=PrototypeRecoveryMotion.begin(main.vehicles(),v,tractor,event.getPlayer(),(a,w,b)->true,safety);
+                    if(lock==null)throw new IllegalStateException("tractor recovery lock failed");
+                    main.vehicles().trailers().coupleHarrow(event.getPlayer());
+                    if(harrow.pullerType()!=com.mrcrayfish.vehicle.paper.runtime.PaperTrailer.PullerType.NONE)
+                        throw new IllegalStateException("harrow coupled during recovery lock");
+                    if(!lock.releaseOnGround())throw new IllegalStateException("tractor lock cleanup failed");
+                    main.vehicles().trailers().coupleHarrow(event.getPlayer());
+                    if(harrow.pullerType()!=com.mrcrayfish.vehicle.paper.runtime.PaperTrailer.PullerType.VEHICLE || !tractor.id().equals(harrow.pullerId()))
+                        throw new IllegalStateException("normal harrow coupling did not succeed");
+                    if(PrototypeRecoveryMotion.begin(main.vehicles(),v,tractor,event.getPlayer(),(a,w,b)->true,safety)!=null)
+                        throw new IllegalStateException("coupled tractor accepted for recovery");
+                } finally {
+                    main.vehicles().trailers().remove(harrow);
+                    main.vehicles().remove(tractor);
+                    event.getPlayer().removeAttachment(permission);
+                }
+                getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms and cable display checked; seat, actual trailer graph, normal harrow coupling and guarded single vehicle movement checked; no full gameplay or visual test");
             } catch(Throwable e){ getLogger().severe("RECOVERY_PROBE_FAIL "+e); e.printStackTrace(); }
             finally{
                 VehiclePlugin main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
