@@ -30,7 +30,8 @@ componente izolate, fără conexiune la runtime, fără efect în joc.
   verifică hash-ul bazei și coliziunile. `RecoveryTruckPrototype` leagă cabina,
   platforma, volanul, roțile și rampele în poziție pliată de structurile rig-ului
   Paper. **Nu este în catalog** și nu se poate spawna; poziția, scaunele și
-  orientarea trebuie validate vizual, iar rampele încă nu sunt animate în joc.
+  orientarea trebuie validate vizual. Există control vizual pentru ambele rampe,
+  dar nu există încă o comandă sau verificări de coliziune pentru jucători.
 - `RecoveryInterlock`: controlor izolat pentru stările încărcării și validarea
   repetată fail-closed; condițiile sunt furnizate de viitorul adaptor Paper.
   Refuză și starea necunoscută, nu doar o remorcă detectată. Nu salvează date,
@@ -75,3 +76,8 @@ smoke-ul din același workflow testează grapa existentă, nu platforma auto.
 Sesiunea de integrare: nu s-a instalat pe server. Jurnalul este o componentă
 izolată și trebuie conectat tranzacțional la stările efective din joc înainte
 de a putea revendica persistența în caz de restart.
+
+Pe serverul Paper temporar, workflow-ul `45889715106` a creat rig-ul, a
+verificat ID-urile pieselor, transformarea ambelor rampe și urcarea unui
+jucător pe scaun; prototipul a fost apoi eliminat. Nu a testat condusul,
+încărcarea, troliul, persistența platformei sau randarea într-un client real.
