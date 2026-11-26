@@ -82,6 +82,10 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     var main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
                     if(main.vehicles().garagedOf(event.getPlayer()).stream().filter(e->e.id().equals(id)).count()!=1
                             || main.vehicles().hasVehicleId(id))throw new IllegalStateException("pair garage missing or duplicate");
+                    event.getPlayer().teleport(event.getPlayer().getLocation().clone().add(index==0?12:-12,0,0));
+                    if(!main.vehicles().retrieve(event.getPlayer(),id) || main.vehicles().byId(id).isEmpty()
+                            || main.vehicles().garagedOf(event.getPlayer()).stream().anyMatch(e->e.id().equals(id)))
+                        throw new IllegalStateException("owner could not retrieve garaged vehicle");
                     getLogger().info("RECOVERY_PAIR_RESTART_OK "+event.getPlayer().getName());
                 } catch(Throwable error){getLogger().severe("RECOVERY_PROBE_FAIL pair restart: "+error);error.printStackTrace();}
             },20L);
