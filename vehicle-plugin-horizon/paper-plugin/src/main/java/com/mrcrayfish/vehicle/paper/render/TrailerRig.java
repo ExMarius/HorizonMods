@@ -291,8 +291,10 @@ public final class TrailerRig {
         Location visualRoot=root.clone();
         visualRoot.setYaw(harrowVisualYaw(root.getYaw()));
         float lift=(float)(4.5 * (1.0-workPosition)/16.0);
-        Quaternionf pitch=new Quaternionf().rotateX(-radians(pitchDegrees));
-        Vector3f pivot=new Vector3f(0,5.5F/16F,1F/16F);
+        // The authored eye is at negative Z. The assembly yaw flip does
+        // not change that local pivot, and its pitch axis must match it.
+        Quaternionf pitch=new Quaternionf().rotateX(radians(pitchDegrees));
+        Vector3f pivot=new Vector3f(0,5.5F/16F,-1F/16F);
         Vector3f bodyCenter=new Vector3f(0,lift,0).sub(pivot);
         pitch.transform(bodyCenter); bodyCenter.add(pivot);
         place(body,visualRoot,bodyCenter,pitch,new Vector3f(2),new Quaternionf());
@@ -300,23 +302,23 @@ public final class TrailerRig {
             int side=sideIndex==0?-1:1, index=(front*2+sideIndex)*2;
             float sign=front==0 ? (side<0?1:-1) : (side<0?-1:1);
             float gangYaw=sign*18;
-            Vector3f frameCenter=new Vector3f(-side*13.5F/16F, lift, (front==0?12.5F:-10.5F)/16F);
+            Vector3f frameCenter=new Vector3f(side*13.5F/16F, lift, (front==0?-12.5F:10.5F)/16F);
             Vector3f gangCenter=new Vector3f(frameCenter).add(0,4.2F/16F,0);
             for(Vector3f v : new Vector3f[]{frameCenter,gangCenter}) {v.sub(pivot);pitch.transform(v);v.add(pivot);}
-            Quaternionf base=new Quaternionf(pitch).rotateY(radians(gangYaw));
+            Quaternionf base=new Quaternionf(pitch).rotateY(-radians(gangYaw));
             place(extras.get(index).entity,visualRoot,frameCenter,base,new Vector3f(2),new Quaternionf());
             place(extras.get(index+1).entity,visualRoot,gangCenter,new Quaternionf(base).rotateX(radians(discDegrees)),new Vector3f(2),new Quaternionf());
         }
         for(int sideIndex=0;sideIndex<2;sideIndex++) {
             int side=sideIndex==0?-1:1;
-            Vector3f center=new Vector3f(side*12F/16F,5.5F/16F,1F/16F);
+            Vector3f center=new Vector3f(side*12F/16F,5.5F/16F,-1F/16F);
             place(extras.get(8+sideIndex).entity,visualRoot,center,
                     new Quaternionf(pitch).rotateX(radians(wheelDegrees)),new Vector3f(2),new Quaternionf());
         }
         place(extras.get(10).entity,visualRoot,pivot,pitch,new Vector3f(2),new Quaternionf());
         ItemDisplay jack=extras.get(11).entity;
         jack.setVisibleByDefault(!coupled);
-        Vector3f jackCenter=new Vector3f(0,0,26F/16F);
+        Vector3f jackCenter=new Vector3f(0,0,-26F/16F);
         place(jack,visualRoot,jackCenter,pitch,new Vector3f(2),new Quaternionf());
     }
 
