@@ -127,3 +127,14 @@ permisiuni furnizat de proba de test. Nu verifică volumul măturat de cablu în
 bifări, caroseria înclinată, propriile modele sau toate pluginurile de protecție.
 Traseul rămâne nepublic: lipsesc chingile și transportul efectiv, persistența și
 reconcilierea, sursa reală a permisiunilor, precum și validarea în client.
+
+Domeniu simplificat la cererea utilizatorului: doar troliu, fără ocupanți;
+mașina nu trebuie mutată în garaj cât este blocată în recuperare. După
+descărcare în siguranță, dacă proprietarul e offline, prototipul încearcă să
+trimită doar acea mașină în garajul lui. În proba Paper `45902777546` s-au
+verificat refuzul cu jucător pe scaun, apelul de garare la deconectare simulat
+în timpul blocării și întoarcerea în garaj după descărcare pentru un proprietar
+offline. Nu s-a testat deconectarea reală a doi jucători sau crash/restart în
+mijlocul manevrei; salvarea obișnuită a garajului este asincronă și nu asigură
+încă o tranzacție de recuperare. Transportul pe platformă în mers și comenzile
+reale pentru jucători nu sunt implementate. Nu instala prototipul în producție.
