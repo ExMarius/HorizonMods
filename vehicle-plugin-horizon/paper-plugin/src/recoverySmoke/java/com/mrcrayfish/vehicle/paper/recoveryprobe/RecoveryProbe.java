@@ -87,6 +87,28 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     if(PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety)!=null)
                         throw new IllegalStateException("moved someone else's car");
                     target.setOwner(null);
+                    // Test actual trailer graph entries, not a UI checkbox or Safety flag.
+                    var tm=main.vehicles().trailers();
+                    for(var spec:java.util.List.of(
+                            com.mrcrayfish.vehicle.paper.vehicle.TrailerSpec.TRACTOR_TRAILER,
+                            com.mrcrayfish.vehicle.paper.vehicle.TrailerSpec.UTB_PLOUGH,
+                            com.mrcrayfish.vehicle.paper.vehicle.TrailerSpec.DISC_GD32)) {
+                        var trailer=tm.spawn(spec, target.location().clone().add(12,0,0));
+                        try {
+                            trailer.attach(com.mrcrayfish.vehicle.paper.runtime.PaperTrailer.PullerType.VEHICLE,target.id());
+                            if(!tm.referencesVehicle(target.id()) || PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety)!=null)
+                                throw new IllegalStateException("accepted attached "+spec.id());
+                            trailer.detach(false);
+                            if(tm.referencesVehicle(target.id()))throw new IllegalStateException("stale detached "+spec.id());
+                        } finally {tm.remove(trailer);}
+                    }
+                    var vehicleTrailer=tm.spawn(com.mrcrayfish.vehicle.paper.vehicle.TrailerSpec.VEHICLE_TRAILER, target.location().clone().add(12,0,0));
+                    try {
+                        vehicleTrailer.setLoadedVehicleId(target.id());
+                        if(!tm.referencesVehicle(target.id()) || PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety)!=null)
+                            throw new IllegalStateException("accepted vehicle already on a trailer");
+                        vehicleTrailer.setLoadedVehicleId(null);
+                    } finally {tm.remove(vehicleTrailer);}
                     var run=PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety);
                     if(run==null)throw new IllegalStateException("recovery lock failed");
                     if(main.vehicles().pickUp(target)!=null || main.vehicles().remove(target)
@@ -106,7 +128,7 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     if(Math.abs(target.location().getZ()-start.getZ()-.05)>1e-6)throw new IllegalStateException("wrong movement");
                     if(!run.releaseOnGround())throw new IllegalStateException("clear run did not unlock");
                 } finally {main.vehicles().remove(target);}
-                getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms and cable display checked; seat and guarded single vehicle movement checked; no full gameplay or visual test");
+                getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms and cable display checked; seat, actual trailer graph and guarded single vehicle movement checked; no full gameplay or visual test");
             } catch(Throwable e){ getLogger().severe("RECOVERY_PROBE_FAIL "+e); e.printStackTrace(); }
             finally{
                 VehiclePlugin main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
