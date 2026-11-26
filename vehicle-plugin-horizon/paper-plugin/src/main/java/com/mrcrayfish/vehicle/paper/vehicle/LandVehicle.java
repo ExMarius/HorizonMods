@@ -102,6 +102,8 @@ public final class LandVehicle {
     private int wheelieCount;
     private int age;
     private boolean transported;
+    // Isolated recovery prototype only. Not persisted or connected to commands.
+    private UUID recoveryMotionToken;
     /** Showroom podium car: display-only - never saved, never parkable, never driven.
      *  Clicking it runs the purchase flow instead of mounting. */
     private boolean showcase;
@@ -1699,6 +1701,25 @@ public final class LandVehicle {
     public Location tractorTrailerTowBarLocation() {
         LandVehicleSpec.Point tow = spec.tractorTrailerTowBarPhysicsOffset();
         return local(location, tow.x(), tow.y(), tow.z());
+    }
+
+    /** Internal prototype lock; never exposed by a player command. */
+    boolean beginRecoveryMotion(UUID token) {
+        if (token==null || recoveryMotionToken!=null || transported || occupied() || showcase()
+                || onJack() || jackId!=null || pusher!=null || horizontalSpeed()>.01D) return false;
+        recoveryMotionToken=token;transported=true;
+        velocity.zero();motion.zero();verticalVelocity=0;waterSpeed=0;
+        return true;
+    }
+    boolean recoveryMotionLockedBy(UUID token) { return token!=null && token.equals(recoveryMotionToken); }
+    void applyRecoveryMotion(UUID token, Vector displacement) {
+        if (!recoveryMotionLockedBy(token)) throw new IllegalStateException("Recovery lock lost");
+        location.add(displacement);velocity.zero();motion.zero();verticalVelocity=0;
+        rig.update(location,0F,frontWheelRotation,rearWheelRotation,0F,0F,false,age);
+    }
+    void endRecoveryMotion(UUID token) {
+        if (!recoveryMotionLockedBy(token)) throw new IllegalStateException("Recovery lock lost");
+        recoveryMotionToken=null;transported=false;onGround=false;
     }
 
     public void placeOnTrailer(Location trailerLocation) {

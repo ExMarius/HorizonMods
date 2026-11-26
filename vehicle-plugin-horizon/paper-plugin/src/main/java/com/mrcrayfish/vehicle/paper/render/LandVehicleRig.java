@@ -863,6 +863,9 @@ public final class LandVehicleRig {
         return changed;
     }
 
+    /** Current prototype visual progress; not proof of an unobstructed path. */
+    public double recoveryRampProgress() { return recoveryRampProgress; }
+
     /** Prototype-only display control. No collision or permission checks are implied. */
     public void setRecoveryRampProgress(double progress) {
         if (!"horizon_recovery_prototype".equals(spec.id())) throw new IllegalStateException("Not a recovery prototype");

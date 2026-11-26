@@ -3,6 +3,9 @@ package com.mrcrayfish.vehicle.paper.recoveryprobe;
 import com.mrcrayfish.vehicle.paper.VehiclePlugin;
 import com.mrcrayfish.vehicle.paper.recovery.RecoveryTruckPrototype;
 import com.mrcrayfish.vehicle.paper.vehicle.LandVehicle;
+import com.mrcrayfish.vehicle.paper.vehicle.LandVehicleSpec;
+import com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryMotion;
+import com.mrcrayfish.vehicle.paper.recovery.RecoveryInterlock;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -69,7 +72,38 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                 // Exercise the actual player/horse seat path on disposable Paper.
                 if(!v.mount(event.getPlayer())||!v.occupied()||v.rig().seatCarriers().size()!=1)
                     throw new IllegalStateException("player failed to mount prototype");
-                getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms and cable display checked; seat mount checked; visual/loading gameplay not tested");
+                // First dismount before testing a real, unoccupied target vehicle.
+                var mount=event.getPlayer().getVehicle();
+                if(mount instanceof org.bukkit.entity.Horse horse){
+                    var scale=horse.getAttribute(org.bukkit.attribute.Attribute.SCALE);
+                    if(scale!=null)scale.setBaseValue(1D);
+                }
+                event.getPlayer().leaveVehicle();
+                LandVehicle target=main.vehicles().spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,event.getPlayer().getLocation().clone().add(0,0,10));
+                try {
+                    v.rig().setRecoveryRampProgress(1);
+                    var safety=new RecoveryInterlock.Safety(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
+                    target.setOwner(java.util.UUID.randomUUID());
+                    if(PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety)!=null)
+                        throw new IllegalStateException("moved someone else's car");
+                    target.setOwner(null);
+                    var run=PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety);
+                    if(run==null)throw new IllegalStateException("recovery lock failed");
+                    var loc=target.location();var blocker=loc.clone().add(0,0,2.5).getBlock();var before=blocker.getBlockData();
+                    blocker.setType(org.bukkit.Material.STONE,false);
+                    try {
+                        if(run.step(new org.bukkit.util.Vector(0,0,.05),safety))throw new IllegalStateException("moved through block");
+                    } finally {blocker.setBlockData(before,false);}
+                    if(run.step(new org.bukkit.util.Vector(0,0,.05),safety))throw new IllegalStateException("resumed automatically after blockage");
+                    if(!run.releaseOnGround())throw new IllegalStateException("blocked run did not unlock");
+                    run=PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety);
+                    if(run==null)throw new IllegalStateException("second recovery lock failed");
+                    var start=target.location();
+                    if(!run.step(new org.bukkit.util.Vector(0,0,.05),safety))throw new IllegalStateException("clear movement refused");
+                    if(Math.abs(target.location().getZ()-start.getZ()-.05)>1e-6)throw new IllegalStateException("wrong movement");
+                    if(!run.releaseOnGround())throw new IllegalStateException("clear run did not unlock");
+                } finally {main.vehicles().remove(target);}
+                getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms and cable display checked; seat and guarded single vehicle movement checked; no full gameplay or visual test");
             } catch(Throwable e){ getLogger().severe("RECOVERY_PROBE_FAIL "+e); e.printStackTrace(); }
             finally{
                 VehiclePlugin main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
