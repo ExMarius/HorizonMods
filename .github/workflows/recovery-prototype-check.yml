@@ -33,4 +33,9 @@ jobs:
       - name: Spawn and inspect rig on disposable Paper server
         env:
           NODE_PATH: /tmp/recovery-test/node_modules
-        run: python3 vehicle-plugin-horizon/tools/smoke_recovery_probe.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-smoke/RecoveryProbe.jar
+        run: |
+          set -o pipefail
+          python3 vehicle-plugin-horizon/tools/smoke_recovery_probe.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-smoke/RecoveryProbe.jar 2>&1 | tee /tmp/recovery-smoke.log || {
+            python3 -c "from pathlib import Path; lines=Path('/tmp/recovery-smoke.log').read_text().splitlines(); important=[s for s in lines if 'RECOVERY_PROBE_FAIL' in s or 'Exception' in s or 'Error' in s or ' at com.mrcrayfish' in s]; print('::error::'+' | '.join(important[-30:]).replace('%','%25')[:12000])"
+            exit 1
+          }
