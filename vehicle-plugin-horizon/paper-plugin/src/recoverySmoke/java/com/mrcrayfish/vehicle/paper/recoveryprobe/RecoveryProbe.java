@@ -123,11 +123,12 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     if(PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety)!=null)
                         throw new IllegalStateException("moved someone else's car");
                     target.setOwner(null);
+                    var beforeOccupancyTest=event.getPlayer().getLocation();
                     if(!target.mount(event.getPlayer()))throw new IllegalStateException("could not mount target for occupancy test");
                     try {
                         if(PrototypeRecoveryMotion.begin(main.vehicles(),v,target,event.getPlayer(),(a,w,b)->true,safety)!=null)
                             throw new IllegalStateException("occupied target accepted");
-                    } finally {event.getPlayer().leaveVehicle();}
+                    } finally {event.getPlayer().leaveVehicle();event.getPlayer().teleport(beforeOccupancyTest);}
                     // Test actual trailer graph entries, not a UI checkbox or Safety flag.
                     var tm=main.vehicles().trailers();
                     for(var spec:java.util.List.of(
