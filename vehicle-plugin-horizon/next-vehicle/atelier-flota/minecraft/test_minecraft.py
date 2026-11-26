@@ -30,6 +30,7 @@ class ModelExportTest(unittest.TestCase):
                         self.assertTrue(all(-16<=n<=32 for n in e['rotation']['origin']))
                     self.assertEqual(set(e['faces']),{'north','south','east','west','up','down'})
                     for face in e['faces'].values(): self.assertIn(face['texture'][1:],obj['textures'])
+                for key in obj['textures']: self.assertRegex(key,r'^[a-z0-9_]+$')
                 for texture in obj['textures'].values():
                     self.assertRegex(texture,r'^vehicle:item/[a-z0-9_]+$')
                     self.assertTrue((out/'textures'/f'{texture.split(":")[1]}.png').is_file(),texture)

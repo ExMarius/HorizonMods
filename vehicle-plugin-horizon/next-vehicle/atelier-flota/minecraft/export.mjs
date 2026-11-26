@@ -11,14 +11,14 @@ const out=resolve(process.argv[2]||join(here,'assets'));
 const scale=4, unit=16/scale;
 const modelDir=join(out,'models/item'),itemDir=join(out,'items'),textureDir=join(out,'textures/item');
 for(const d of [modelDir,itemDir,textureDir])mkdirSync(d,{recursive:true});
-const names=Object.keys(palette),textures=Object.fromEntries(names.map(n=>[n,`vehicle:item/horizon_service_${n.toLowerCase()}`]));
+const names=Object.keys(palette),textures=Object.fromEntries(names.map(n=>[n.toLowerCase(),`vehicle:item/horizon_service_${n.toLowerCase()}`]));
 const report=[];
 function vec(x,y,z){return [8+x*unit,8+y*unit,8+z*unit].map(n=>+n.toFixed(5))}
 function cuboid(p,index,part){
  const [mat,x,y,z,w,h,d,rx=0]=p;
- if(!textures[mat]||![x,y,z,w,h,d,rx].every(Number.isFinite)||w<=0||h<=0||d<=0)throw Error('Invalid authored part '+part+' '+index);
+ if(!textures[mat.toLowerCase()]||![x,y,z,w,h,d,rx].every(Number.isFinite)||w<=0||h<=0||d<=0)throw Error('Invalid authored part '+part+' '+index);
  const e={name:`${part}_${index}`,from:vec(x-w/2,y-h/2,z-d/2),to:vec(x+w/2,y+h/2,z+d/2),
- faces:Object.fromEntries(['north','south','east','west','up','down'].map(face=>[face,{uv:[0,0,16,16],texture:'#'+mat}]))};
+ faces:Object.fromEntries(['north','south','east','west','up','down'].map(face=>[face,{uv:[0,0,16,16],texture:'#'+mat.toLowerCase()}]))};
  for(let i=0;i<3;i++)if(e.from[i]<-16||e.to[i]>32||e.from[i]>=e.to[i])throw Error('vanilla item bounds exceeded: '+e.name);
  if(rx){
   const degrees=rx*180/Math.PI;

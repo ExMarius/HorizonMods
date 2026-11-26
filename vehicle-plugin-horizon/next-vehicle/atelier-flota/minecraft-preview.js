@@ -13,7 +13,9 @@ function geometryFromModel(data,materials){
  const wrapper=new T.Group();wrapper.scale.setScalar(4/16);
  for(const e of data.elements){
   const size=e.to.map((v,i)=>v-e.from[i]),center=e.to.map((v,i)=>(v+e.from[i])/2-8);
-  const name=e.faces.up.texture.slice(1), mesh=new T.Mesh(new T.BoxGeometry(...size),materials[name]);
+  const name=e.faces.up.texture.slice(1), key=Object.keys(materials).find(n=>n.toLowerCase()===name);
+  if(!key)throw new Error('Unknown material '+name);
+  const mesh=new T.Mesh(new T.BoxGeometry(...size),materials[key]);
   mesh.castShadow=name!=='glass';mesh.receiveShadow=true;
   if(e.rotation){const pivot=new T.Group(),p=e.rotation.origin.map(n=>n-8);pivot.position.set(...p);mesh.position.set(...center.map((n,i)=>n-p[i]));pivot.rotation[e.rotation.axis]=T.MathUtils.degToRad(e.rotation.angle);pivot.add(mesh);wrapper.add(pivot)}
   else{mesh.position.set(...center);wrapper.add(mesh)}
