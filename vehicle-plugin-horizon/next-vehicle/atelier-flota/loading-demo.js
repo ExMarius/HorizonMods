@@ -30,6 +30,6 @@ export async function loadDacia(){
   const hub=new T.Mesh(new T.CylinderGeometry(.23,.23,.035,16),rim);hub.rotation.z=Math.PI/2;hub.position.x=Math.sign(x)*.18;pivot.add(hub);
  }
  // Approximate cable attachment in front of the vehicle; no claim of a physical tow eye.
- const attach=new T.Object3D();attach.position.set(0,.55,-2.30);car.add(attach);
+ const attach=new T.Object3D();attach.position.set(0,.35,-2.43);car.add(attach);
  return {car,tires,attach};
 }

@@ -1,6 +1,6 @@
 /** Geometry and timing for the browser demonstration only (not gameplay). */
 export const LOADING={deckTop:.86,deckEnd:5.35,rampLength:2.48,wheelbase:3.30,
- carStart:9.8,carLoaded:2.60,rampDuration:2.8,driveDuration:7,holdDuration:1};
+ carStart:9.8,carLoaded:2.72,rampDuration:2.8,driveDuration:7,holdDuration:1};
 export const rampAngle=Math.asin(LOADING.deckTop/LOADING.rampLength);
 export const rampRun=Math.sqrt(LOADING.rampLength**2-LOADING.deckTop**2);
 export function groundHeight(z){

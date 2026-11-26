@@ -4,7 +4,8 @@ Galerie 3D cu platformă auto și atelier mobil, desenate de la zero în
 `design.js` ca ansambluri de piese cu poziții explicite. Ambele folosesc
 aceeași cabină și șasiu, iar suprastructurile sunt diferite. Cabina are
 geamuri semitransparente, locuri, bord și volan; platforma are troliu și
-rampe, iar atelierul are obloane și suport pentru echipamente.
+rampe, puncte de fixare, marcaje laterale și cutie de scule; atelierul are
+obloane, închideri, treaptă spate și suport pentru echipamente.
 
 Este o previzualizare Three.js, nu un model Blockbench sau un model de resource
 pack. Există un export candidat Minecraft, dar nu există încă mecanici în joc sau instalare pe server.
