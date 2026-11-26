@@ -1,0 +1,29 @@
+name: Inspect protection plugins for recovery
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['.github/workflows/recovery-protection-audit.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: List protection-related installed plugin filenames (read-only)
+        run: |
+          python3 - <<'PY'
+          import importlib.util, re
+          spec=importlib.util.spec_from_file_location('f','paper-vehicles/deploy/falix_auto_update.py')
+          f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
+          api=f.Falix(f.login())
+          entries=api.api('/files?directory=%2Fplugins&limit=100')
+          names=sorted(x.get('name','') for x in entries if isinstance(x,dict))
+          matches=[n for n in names if re.search(r'worldguard|griefprevention|lands|towny|residence|protect|claims|griefdefender|plotsquared|factions|region', n, re.I)]
+          # No file contents, credentials, or signed URLs are printed.
+          print('::notice::Protection-related filenames: '+(', '.join(matches) if matches else 'none matched; not proof of no protection'), flush=True)
+          print('::notice::Plugin entries inspected: '+str(len(names)), flush=True)
+          PY
