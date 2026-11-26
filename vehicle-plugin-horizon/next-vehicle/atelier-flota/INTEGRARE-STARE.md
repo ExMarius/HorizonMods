@@ -138,3 +138,11 @@ offline. Nu s-a testat deconectarea reală a doi jucători sau crash/restart în
 mijlocul manevrei; salvarea obișnuită a garajului este asincronă și nu asigură
 încă o tranzacție de recuperare. Transportul pe platformă în mers și comenzile
 reale pentru jucători nu sunt implementate. Nu instala prototipul în producție.
+
+Proba Paper `45903847091` a legat Dacia de platformă după urcare, folosind o
+poziție relativă actualizată după vehiculul purtător, precum `vehicle_trailer`.
+Un client automat a condus și a virat; proba a verificat că Dacia rămâne la
+poziția relativă a platformei, apoi a descărcat-o la noua poziție. Este o probă
+izolată, fără validare grafică, chingi persistente, reconectare după restart,
+coliziuni sau protecții complete pentru vehiculul transportat. Nu este expusă
+jucătorilor și nu trebuie instalată pe server.
