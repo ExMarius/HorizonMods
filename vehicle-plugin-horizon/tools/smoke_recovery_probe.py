@@ -28,7 +28,7 @@ def main(jar,probe):
                 if bot.returncode:raise RuntimeError('bot failed: '+(bot.stdout+bot.stderr)[-2000:])
                 out.flush();text=log.read_text(errors='replace')
                 if 'RECOVERY_PROBE_OK' not in text or 'RECOVERY_PROBE_FAIL' in text:raise RuntimeError('prototype rig probe failed')
-                if any(marker not in text for marker in ('RECOVERY_DEMO_SPAWNED','RECOVERY_DEMO_OPEN','RECOVERY_DEMO_CLOSE','RECOVERY_DEMO_REMOVED')):raise RuntimeError('interactive command test failed')
+                if any(marker not in text for marker in ('RECOVERY_ROUND_TRIP_OK','RECOVERY_DEMO_SPAWNED','RECOVERY_DEMO_OPEN','RECOVERY_DEMO_CLOSE','RECOVERY_DEMO_REMOVED')):raise RuntimeError('interactive command test failed')
                 if 'Could not pass event' in text or 'Exception in server tick loop' in text:raise RuntimeError('server reported event/tick error')
                 proc.stdin.write('stop\n');proc.stdin.flush();proc.wait(timeout=90)
                 print('Disposable prototype spawned and removed; item-model ids and seats checked. No visual or loading test.')

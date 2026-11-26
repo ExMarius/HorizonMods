@@ -186,6 +186,33 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     main.vehicles().remove(tractor);
                     event.getPlayer().removeAttachment(permission);
                 }
+                // Round trip on ideal level ground. Safety/permissions are deliberately supplied
+                // by the fixture, not a production claims adapter; this is NOT secured transport.
+                var home=event.getPlayer().getLocation();
+                var base=v.location();
+                double yaw=Math.toRadians(base.getYaw()), sin=Math.sin(yaw), cos=Math.cos(yaw);
+                event.getPlayer().teleport(base.clone().add(10*cos,0,10*sin));
+                var carStart=base.clone().add(-9.8*sin,0,9.8*cos);
+                var car=main.vehicles().spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,carStart);
+                try {
+                    var safety=new RecoveryInterlock.Safety(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
+                    var motion=PrototypeRecoveryMotion.begin(main.vehicles(),v,car,event.getPlayer(),(a,w,b)->true,safety);
+                    if(motion==null)throw new IllegalStateException("round trip lock failed");
+                    for(int direction=0;direction<2;direction++) {
+                        double from=direction==0?9.8:2.64, to=direction==0?2.64:9.8;
+                        for(int i=1;i<=180;i++) {
+                            var pose=com.mrcrayfish.vehicle.paper.recovery.RecoveryLoadingPath.sample(from,to,3.3,i/180D);
+                            var destination=base.clone().add(-pose.centerZ()*sin,pose.height(),pose.centerZ()*cos);
+                            var delta=destination.toVector().subtract(car.location().toVector());
+                            if(!motion.step(delta,safety))throw new IllegalStateException("round trip movement blocked at "+direction+":"+i);
+                        }
+                        if(direction==0 && Math.abs(car.location().getY()-base.getY()-.86)>1e-5)
+                            throw new IllegalStateException("car did not reach deck height");
+                    }
+                    if(car.location().distance(carStart)>1e-5 || !motion.releaseOnGround())
+                        throw new IllegalStateException("round trip did not return to ground");
+                    getLogger().info("RECOVERY_ROUND_TRIP_OK");
+                } finally {main.vehicles().remove(car);event.getPlayer().teleport(home);}
                 // Offline bot only; the disposable plugin is never packaged into production.
                 if(event.getPlayer().getName().equals("RecoveryProbeBot")) event.getPlayer().addAttachment(this,"recoveryprobe.use",true);
                 getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms and cable display checked; seat, actual trailer graph, normal harrow coupling and guarded single vehicle movement checked; no full gameplay or visual test");
