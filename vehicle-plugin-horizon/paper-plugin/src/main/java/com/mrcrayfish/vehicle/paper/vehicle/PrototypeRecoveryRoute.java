@@ -14,16 +14,16 @@ import java.util.UUID;
 
 /** Disposable-server recovery experiment; NOT connected to commands or persistence.
  * Uses a caller-provided safety snapshot and authority, ideal flat terrain, and
- * approximate dimensions/hook point. No secured transport. Do not deploy. */
+ * approximate dimensions/hook point. Experimental transport has no full collision or crash protection. Do not deploy. */
 public final class PrototypeRecoveryRoute {
-    public enum State { LOADING, AT_DECK, UNLOADING, ON_GROUND, STOPPED, FINISHED }
+    public enum State { LOADING, AT_DECK, TEST_DRIVING, UNLOADING, ON_GROUND, STOPPED, FINISHED }
     private static final int STEPS=180;
     private static final double START=9.8, DECK=2.64, WHEELBASE=3.3;
     private final PrototypeRecoveryMotion motion;
     private final VehicleManager manager;
     private final LandVehicle carrier,target;
-    private final Location origin;
-    private final double sin,cos;
+    private Location origin;
+    private double sin,cos;
     private int step;
     private State state=State.LOADING;
 
@@ -48,7 +48,26 @@ public final class PrototypeRecoveryRoute {
         return new PrototypeRecoveryRoute(manager,motion,carrier,target);
     }
     public State state(){return state;}
-    /** Explicit operator action; the experimental vehicle is not strapped or movable on the carrier. */
+    /** Tests only: vehicle_trailer-like fixed transform, no durable restraints. */
+    public boolean beginTestDrive() {
+        if(!Bukkit.isPrimaryThread() || state!=State.AT_DECK)return false;
+        carrier.rig().setRecoveryCable(List.of());carrier.rig().setRecoveryRampProgress(0);carrier.forceVisualSync();
+        if(!motion.startTestDrive()) {carrier.rig().setRecoveryRampProgress(1);return false;}
+        state=State.TEST_DRIVING;return true;
+    }
+    public boolean tickTestDrive() {
+        if(!Bukkit.isPrimaryThread()||state!=State.TEST_DRIVING)return false;
+        if(!motion.followTestDrive()){state=State.STOPPED;return false;}
+        return true;
+    }
+    public boolean endTestDrive() {
+        if(!Bukkit.isPrimaryThread()||state!=State.TEST_DRIVING||!motion.endTestDrive())return false;
+        origin=carrier.location().clone();
+        double yaw=Math.toRadians(origin.getYaw());sin=Math.sin(yaw);cos=Math.cos(yaw);
+        carrier.rig().setRecoveryRampProgress(1);carrier.forceVisualSync();
+        state=State.AT_DECK;return true;
+    }
+    /** Explicit operator action after the carrier is stationary. */
     public boolean beginUnload() {
         if(!Bukkit.isPrimaryThread()||state!=State.AT_DECK)return false;
         step=0;state=State.UNLOADING;return true;

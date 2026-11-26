@@ -254,11 +254,26 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
         new org.bukkit.scheduler.BukkitRunnable() {
             int ticks;
             boolean observedTilt;
+            org.bukkit.Location driveStart;
             @Override public void run() {
                 try {
                     ticks++;
+                    if(ticks>180 && ticks<=260) {
+                        if(!route.tickTestDrive())throw new IllegalStateException("transport link lost");
+                        var truckLoc=truck.location();double r=Math.toRadians(truckLoc.getYaw());
+                        var expected=truckLoc.clone().add(2.64*Math.sin(r),.86,-2.64*Math.cos(r));
+                        if(car.location().distanceSquared(expected)>1e-8)throw new IllegalStateException("car drifted from carrier");
+                        if(ticks==260) {
+                            if(truckLoc.distance(driveStart)<.2)throw new IllegalStateException("carrier did not drive");
+                            player.leaveVehicle();
+                            if(!route.endTestDrive())throw new IllegalStateException("could not stop transport test");
+                            player.teleport(truckLoc.clone().add(10*Math.cos(r),0,10*Math.sin(r)));
+                            if(!route.beginUnload())throw new IllegalStateException("could not unload after drive");
+                        }
+                        return;
+                    }
                     int direction=ticks<=180?0:1;
-                    int step=direction==0?ticks:ticks-180;
+                    int step=direction==0?ticks:ticks-260;
                     double from=direction==0?9.8:2.64,to=direction==0?2.64:9.8;
                     var pose=com.mrcrayfish.vehicle.paper.recovery.RecoveryLoadingPath.sample(from,to,3.3,step/180D);
                     var status=route.tick(safety);
@@ -267,12 +282,17 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     if(pose.pitch()>.05 && Math.abs(levelRotation.dot(body.getTransformation().getLeftRotation()))<.9999F) observedTilt=true;
                     if(ticks==180) {
                         if(status!=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.State.AT_DECK
-                                || Math.abs(car.location().getY()-base.getY()-.86)>1e-5 || !route.beginUnload())
-                            throw new IllegalStateException("car did not reach deck height");
+                                || Math.abs(car.location().getY()-base.getY()-.86)>1e-5 || !route.beginTestDrive())
+                            throw new IllegalStateException("car did not reach deck or transport could not start");
+                        driveStart=truck.location();truck.setEngineInstalled(true);truck.setWheelsInstalled(true);
+                        if(!truck.mount(player))throw new IllegalStateException("operator could not mount carrier");
+                        player.sendMessage("RECOVERY_DRIVE_START");
                     }
-                    if(ticks==360) {
+                    if(ticks==440) {
+                        var endBase=truck.location();double r=Math.toRadians(endBase.getYaw());
+                        var endGround=endBase.clone().add(9.8*Math.sin(r),0,-9.8*Math.cos(r));
                         if(status!=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.State.ON_GROUND
-                                || car.location().distance(carStart)>1e-5 || !route.finishOnGround())
+                                || car.location().distance(endGround)>1e-5 || !route.finishOnGround())
                             throw new IllegalStateException("round trip did not return to ground");
                         if(!observedTilt)throw new IllegalStateException("vehicle rig did not pitch on ramp");
                         if(main.vehicles().byId(car.id()).isPresent() || main.vehicles().garageSize()!=initialGarage+1)
@@ -281,7 +301,7 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                         cancel();main.vehicles().remove(car);main.vehicles().remove(truck);
                         verifyStoppedRoute(main,player,base);
                         player.teleport(home);
-                        getLogger().info("RECOVERY_ROUND_TRIP_OK ticks="+ticks+" tilted rig and level-bed cable clearance checked");
+                        getLogger().info("RECOVERY_ROUND_TRIP_OK ticks="+ticks+" loaded vehicle followed driven carrier");
                     }
                 } catch(Throwable error) {
                     cancel();getLogger().severe("RECOVERY_PROBE_FAIL timed round trip: "+error);error.printStackTrace();

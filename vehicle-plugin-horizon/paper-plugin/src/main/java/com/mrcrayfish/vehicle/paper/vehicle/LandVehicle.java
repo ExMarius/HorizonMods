@@ -1726,6 +1726,22 @@ public final class LandVehicle {
         recoveryPitchDegrees=pitchDegrees;
         rig.updateRecoveryPose(location,frontWheelRotation,rearWheelRotation,recoveryPitchDegrees,age);
     }
+    /** Disposable-test only: keep the identity lock but permit carrier physics. */
+    void startRecoveryTestDrive(UUID token) {
+        if(!recoveryMotionLockedBy(token) || !transported)throw new IllegalStateException("Recovery lock lost");
+        transported=false;
+    }
+    void stopRecoveryTestDrive(UUID token) {
+        if(!recoveryMotionLockedBy(token) || transported || recoveryHasPassengers())throw new IllegalStateException("Carrier not empty");
+        velocity.zero();motion.zero();verticalVelocity=0;waterSpeed=0;transported=true;
+    }
+    /** Adapted from placeOnTrailer; the recovery deck uses its own local offset. */
+    void followRecoveryTestCarrier(UUID token, Location carrier) {
+        if(!recoveryMotionLockedBy(token) || !transported)throw new IllegalStateException("Recovery lock lost");
+        location=local(carrier,0,.86,-2.64);location.setYaw(carrier.getYaw());
+        velocity.zero();motion.zero();verticalVelocity=0;waterSpeed=0;recoveryPitchDegrees=0;
+        rig.updateRecoveryPose(location,frontWheelRotation,rearWheelRotation,0F,age);
+    }
     void endRecoveryMotion(UUID token) {
         if (!recoveryMotionLockedBy(token)) throw new IllegalStateException("Recovery lock lost");
         recoveryMotionToken=null;transported=false;onGround=false;recoveryPitchDegrees=0F;

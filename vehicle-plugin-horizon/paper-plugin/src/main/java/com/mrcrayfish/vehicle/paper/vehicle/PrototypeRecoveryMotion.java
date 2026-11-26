@@ -30,7 +30,7 @@ public final class PrototypeRecoveryMotion {
     private final Authority authority;
     private final UUID token=UUID.randomUUID();
     private final RecoveryInterlock interlock=new RecoveryInterlock();
-    private boolean closed, halted;
+    private boolean closed, halted, testDriving;
 
     private PrototypeRecoveryMotion(VehicleManager manager,LandVehicle carrier,LandVehicle target,Player operator,Authority authority){
         this.manager=manager;this.carrier=carrier;this.target=target;this.operator=operator;this.authority=authority;
@@ -102,9 +102,29 @@ public final class PrototypeRecoveryMotion {
         if(moved.distanceSquared(delta)>1e-10)return false;
         target.applyRecoveryMotion(token,delta,(float)-Math.toDegrees(pitchRadians));return true;
     }
+    /** Test-only carrier movement, not collision-safe or crash-safe for production. */
+    boolean startTestDrive() {
+        if(!Bukkit.isPrimaryThread()||closed||halted||testDriving || !carrier.recoveryMotionLockedBy(token)
+                ||!target.recoveryMotionLockedBy(token)||target.recoveryHasPassengers()||carrier.recoveryHasPassengers()
+                ||carrier.rig().recoveryRampProgress()!=0D)return false;
+        carrier.startRecoveryTestDrive(token);testDriving=true;return true;
+    }
+    boolean followTestDrive() {
+        if(!Bukkit.isPrimaryThread()||closed||halted||!testDriving || !operator.isOnline()
+                ||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token)
+                ||!carrier.rig().valid()||!target.rig().valid()||target.recoveryHasPassengers()
+                ||manager.byId(carrier.id()).orElse(null)!=carrier || manager.byId(target.id()).orElse(null)!=target
+                ||manager.trailers().referencesVehicle(carrier.id())||manager.trailers().referencesVehicle(target.id())
+                ||carrier.location().getWorld()==null || !carrier.location().getWorld().equals(target.location().getWorld()))return false;
+        target.followRecoveryTestCarrier(token,carrier.location());return true;
+    }
+    boolean endTestDrive() {
+        if(!Bukkit.isPrimaryThread()||!testDriving||carrier.recoveryHasPassengers()||!followTestDrive())return false;
+        carrier.stopRecoveryTestDrive(token);testDriving=false;return true;
+    }
     /** Test cleanup only: release both locks on solid ground. No secured transport. */
     public boolean releaseOnGround(){
-        if(!Bukkit.isPrimaryThread()||closed||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token))return false;
+        if(!Bukkit.isPrimaryThread()||closed||testDriving||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token))return false;
         Location where=target.location();
         if(where.getWorld()==null || target.recoveryHasPassengers() || carrier.recoveryHasPassengers()
                 || Math.abs(target.recoveryPitchDegrees())>.1F || !groundSupportsFootprint(where))return false;
