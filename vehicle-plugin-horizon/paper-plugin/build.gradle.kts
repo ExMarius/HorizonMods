@@ -59,3 +59,18 @@ tasks.register<Exec>("resourcePack") {
         rootProject.layout.buildDirectory.file("MrCrayfishVehiclePlugin-resource-pack-1.21.4-r39.zip").get().asFile.absolutePath
     )
 }
+
+// Disposable CI fixture only; excluded from the production plugin and normal build.
+val compileRecoverySmoke by tasks.registering(JavaCompile::class) {
+    dependsOn(tasks.classes)
+    setSource(fileTree("src/recoverySmoke/java") { include("**/*.java") })
+    classpath = sourceSets.main.get().output + configurations.compileClasspath.get()
+    destinationDirectory.set(layout.buildDirectory.dir("recovery-smoke/classes"))
+}
+tasks.register<Jar>("recoverySmokeJar") {
+    dependsOn(compileRecoverySmoke)
+    archiveFileName.set("RecoveryProbe.jar")
+    destinationDirectory.set(layout.buildDirectory.dir("recovery-smoke"))
+    from(compileRecoverySmoke.flatMap { it.destinationDirectory })
+    from("src/recoverySmoke/resources")
+}
