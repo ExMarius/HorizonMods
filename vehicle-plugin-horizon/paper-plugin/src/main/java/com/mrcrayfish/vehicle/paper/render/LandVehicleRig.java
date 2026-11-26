@@ -98,6 +98,7 @@ public final class LandVehicleRig {
     private float seatGauge = 1.0F;
     // Prototype-only visual value; no player commands or loading logic use it yet.
     private double recoveryRampProgress;
+    private boolean recoveryRootPivot;
     private final List<ItemDisplay> recoveryCableDisplays = new ArrayList<>();
     private List<com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point> recoveryCable = List.of();
     private float propellerRotation;
@@ -350,6 +351,16 @@ public final class LandVehicleRig {
     private static void mark(Entity entity, UUID vehicleId) {
         entity.addScoreboardTag(ENTITY_TAG);
         entity.addScoreboardTag("mcv_" + vehicleId);
+    }
+
+    /** Isolated recovery test: pitch the complete rig around its root, not the wheelie axle.
+     * This only changes rendering and does not validate tilted-body clearance. */
+    public void updateRecoveryPose(Location root, float frontSpin, float rearSpin, float pitchDegrees, int tickCount) {
+        if (!Float.isFinite(pitchDegrees) || Math.abs(pitchDegrees)>45F)
+            throw new IllegalArgumentException("Invalid recovery pitch");
+        recoveryRootPivot=true;
+        try { update(root,0F,frontSpin,rearSpin,pitchDegrees,0F,false,tickCount); }
+        finally { recoveryRootPivot=false; }
     }
 
     public void update(Location root, float renderSteeringAngle, float frontWheelRotation,
@@ -724,7 +735,7 @@ public final class LandVehicleRig {
             return SourceTransforms.aircraftPoint(sourcePoint, wheelieAngle, bodyRoll);
         }
         return SourceTransforms.chassisPoint(
-                sourcePoint, point(spec.wheeliePivot()), wheelieAngle, bodyRoll);
+                sourcePoint, recoveryRootPivot ? new Vector3f() : point(spec.wheeliePivot()), wheelieAngle, bodyRoll);
     }
 
     private boolean usesAircraftBodyRotation() {

@@ -104,6 +104,7 @@ public final class LandVehicle {
     private boolean transported;
     // Isolated recovery prototype only. Not persisted or connected to commands.
     private UUID recoveryMotionToken;
+    private float recoveryPitchDegrees;
     /** Showroom podium car: display-only - never saved, never parkable, never driven.
      *  Clicking it runs the purchase flow instead of mounting. */
     private boolean showcase;
@@ -225,7 +226,8 @@ public final class LandVehicle {
         if (transported) {
             soundController.tick(location, false, spec.minEnginePitch(), List.of());
             if (openablesChanged) {
-                rig.update(location, renderWheelAngle, frontWheelRotation, rearWheelRotation,
+                if (recoveryLocked()) rig.updateRecoveryPose(location,frontWheelRotation,rearWheelRotation,recoveryPitchDegrees,age);
+                else rig.update(location, renderWheelAngle, frontWheelRotation, rearWheelRotation,
                         0.0F, 0.0F, false, age);
             }
             return;
@@ -1226,6 +1228,10 @@ public final class LandVehicle {
         if (!rig.valid()) {
             return;
         }
+        if (recoveryLocked()) {
+            rig.updateRecoveryPose(location,frontWheelRotation,rearWheelRotation,recoveryPitchDegrees,age);
+            return;
+        }
         boolean engineRunning = driver()
                 .map(d -> d.getGameMode() == org.bukkit.GameMode.CREATIVE || fuel > 0.0F)
                 .orElse(false);
@@ -1713,14 +1719,16 @@ public final class LandVehicle {
     }
     public boolean recoveryLocked() { return recoveryMotionToken!=null; }
     boolean recoveryMotionLockedBy(UUID token) { return token!=null && token.equals(recoveryMotionToken); }
-    void applyRecoveryMotion(UUID token, Vector displacement) {
+    void applyRecoveryMotion(UUID token, Vector displacement, float pitchDegrees) {
         if (!recoveryMotionLockedBy(token)) throw new IllegalStateException("Recovery lock lost");
         location.add(displacement);velocity.zero();motion.zero();verticalVelocity=0;
-        rig.update(location,0F,frontWheelRotation,rearWheelRotation,0F,0F,false,age);
+        recoveryPitchDegrees=pitchDegrees;
+        rig.updateRecoveryPose(location,frontWheelRotation,rearWheelRotation,recoveryPitchDegrees,age);
     }
     void endRecoveryMotion(UUID token) {
         if (!recoveryMotionLockedBy(token)) throw new IllegalStateException("Recovery lock lost");
-        recoveryMotionToken=null;transported=false;onGround=false;
+        recoveryMotionToken=null;transported=false;onGround=false;recoveryPitchDegrees=0F;
+        rig.update(location,0F,frontWheelRotation,rearWheelRotation,0F,0F,false,age);
     }
 
     public void placeOnTrailer(Location trailerLocation) {

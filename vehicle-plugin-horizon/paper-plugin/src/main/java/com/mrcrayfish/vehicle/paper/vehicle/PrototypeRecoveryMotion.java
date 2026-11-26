@@ -56,15 +56,20 @@ public final class PrototypeRecoveryMotion {
     }
     /** One step, zero on any denial. The caller must re-supply all live safety checks. */
     public boolean step(Vector delta,RecoveryInterlock.Safety safety){
+        return step(delta,safety,0D);
+    }
+    /** Visual pitch only. The caller must independently check the full tilted body. */
+    public boolean step(Vector delta,RecoveryInterlock.Safety safety,double pitchRadians){
         if(halted || closed)return false;
         boolean accepted;
-        try { accepted=checkedStep(delta,safety); }
+        try { accepted=checkedStep(delta,safety,pitchRadians); }
         catch (RuntimeException ex) { halted=true; return false; }
         if(!accepted)halted=true; // explicit intervention required, never auto-resume
         return accepted;
     }
-    private boolean checkedStep(Vector delta,RecoveryInterlock.Safety safety){
-        if(!Bukkit.isPrimaryThread()||closed||delta==null||!Double.isFinite(delta.getX())||!Double.isFinite(delta.getY())||!Double.isFinite(delta.getZ())
+    private boolean checkedStep(Vector delta,RecoveryInterlock.Safety safety,double pitchRadians){
+        if(!Double.isFinite(pitchRadians)||Math.abs(pitchRadians)>Math.PI/4
+                ||!Bukkit.isPrimaryThread()||closed||delta==null||!Double.isFinite(delta.getX())||!Double.isFinite(delta.getY())||!Double.isFinite(delta.getZ())
                 ||delta.lengthSquared()<1e-12 ||delta.lengthSquared()>.08D*.08D || !operator.isOnline()
                 || !carrier.canDrive(operator) || !target.canDrive(operator)
                 ||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token)
@@ -92,7 +97,7 @@ public final class PrototypeRecoveryMotion {
         for(Entity e:world.getNearbyEntities(swept))if(e.isValid()&&!own.contains(e.getUniqueId()))return false;
         var moved=VehicleCollisionMover.move(world,start,delta,false,width,height,0D,false).movement();
         if(moved.distanceSquared(delta)>1e-10)return false;
-        target.applyRecoveryMotion(token,delta);return true;
+        target.applyRecoveryMotion(token,delta,(float)-Math.toDegrees(pitchRadians));return true;
     }
     /** Test cleanup only: release both locks on solid ground. No secured transport. */
     public boolean releaseOnGround(){
