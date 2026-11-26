@@ -60,7 +60,9 @@ public final class PrototypeRecoveryRoute {
             boolean loading=state==State.LOADING;
             double from=loading?START:DECK,to=loading?DECK:START;
             var previous=RecoveryLoadingPath.sample(from,to,WHEELBASE,step/(double)STEPS);
-            if(target.location().distanceSquared(destination(previous))>1e-8) return stop();
+            Location actual=target.location();
+            if(!origin.getWorld().equals(actual.getWorld()) || actual.distanceSquared(destination(previous))>1e-8
+                    || Math.abs(Math.IEEEremainder(actual.getYaw()-origin.getYaw(),360D))>.01D) return stop();
             var next=RecoveryLoadingPath.sample(from,to,WHEELBASE,(step+1D)/STEPS);
             var cable=cable(next);
             if(!RecoveryCable.clearsLevelBed(cable,.18,5.35,.86,.018))return stop();

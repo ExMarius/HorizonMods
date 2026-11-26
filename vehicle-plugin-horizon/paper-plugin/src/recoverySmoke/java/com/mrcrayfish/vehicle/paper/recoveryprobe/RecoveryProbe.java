@@ -265,7 +265,9 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                             throw new IllegalStateException("round trip did not return to ground");
                         if(!observedTilt)throw new IllegalStateException("vehicle rig did not pitch on ramp");
                         truck.rig().setRecoveryCable(java.util.List.of());
-                        cancel();main.vehicles().remove(car);main.vehicles().remove(truck);player.teleport(home);
+                        cancel();main.vehicles().remove(car);main.vehicles().remove(truck);
+                        verifyStoppedRoute(main,player,base);
+                        player.teleport(home);
                         getLogger().info("RECOVERY_ROUND_TRIP_OK ticks="+ticks+" tilted rig and level-bed cable clearance checked");
                     }
                 } catch(Throwable error) {
@@ -275,6 +277,24 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                 }
             }
         }.runTaskTimer(this,1L,1L);
+    }
+    private void verifyStoppedRoute(VehiclePlugin main,org.bukkit.entity.Player player,org.bukkit.Location base) {
+        var truck=main.vehicles().spawn(RecoveryTruckPrototype.create(),base);
+        truck.rig().setRecoveryRampProgress(1);
+        double yaw=Math.toRadians(base.getYaw()), sin=Math.sin(yaw),cos=Math.cos(yaw);
+        var target=main.vehicles().spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,base.clone().add(9.8*sin,0,-9.8*cos));
+        var safety=new RecoveryInterlock.Safety(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
+        var route=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.begin(main.vehicles(),truck,target,player,(a,w,b)->true,safety);
+        if(route==null)throw new IllegalStateException("stop-test lock failed");
+        var obstacle=base.clone().add(3*sin,1,-3*cos).getBlock();var old=obstacle.getBlockData();
+        obstacle.setType(org.bukkit.Material.STONE,false);
+        try {
+            if(route.tick(safety)!=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.State.STOPPED)
+                throw new IllegalStateException("route did not stop for cable obstacle");
+        } finally {obstacle.setBlockData(old,false);}
+        if(route.tick(safety)!=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.State.STOPPED || !route.finishOnGround())
+            throw new IllegalStateException("stopped route resumed or could not release on ground");
+        main.vehicles().remove(target);main.vehicles().remove(truck);
     }
     private static void expect(Map<String,Integer> counts,String name,int count){
         if(counts.getOrDefault(name,0)!=count)throw new IllegalStateException(name+" count="+counts.getOrDefault(name,0));

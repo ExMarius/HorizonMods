@@ -41,6 +41,7 @@ public final class PrototypeRecoveryMotion {
         if(!Bukkit.isPrimaryThread()||manager==null||carrier==null||target==null||operator==null||authority==null||safety==null
                 ||!RecoveryTruckPrototype.ID.equals(carrier.spec().id()) || carrier==target
                 ||manager.byId(carrier.id()).orElse(null)!=carrier || manager.byId(target.id()).orElse(null)!=target
+                ||!carrier.rig().valid() || !target.rig().valid()
                 ||!operator.isOnline() || !carrier.canDrive(operator) || !target.canDrive(operator)
                 ||carrier.rig().recoveryRampProgress()!=1D || carrier.horizontalSpeed()>.01D
                 ||carrier.location().getWorld()==null || !carrier.location().getWorld().equals(target.location().getWorld())
@@ -72,6 +73,7 @@ public final class PrototypeRecoveryMotion {
                 ||!Bukkit.isPrimaryThread()||closed||delta==null||!Double.isFinite(delta.getX())||!Double.isFinite(delta.getY())||!Double.isFinite(delta.getZ())
                 ||delta.lengthSquared()<1e-12 ||delta.lengthSquared()>.08D*.08D || !operator.isOnline()
                 || !carrier.canDrive(operator) || !target.canDrive(operator)
+                ||!carrier.rig().valid() || !target.rig().valid()
                 ||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token)
                 ||manager.byId(carrier.id()).orElse(null)!=carrier||manager.byId(target.id()).orElse(null)!=target
                 ||!manager.trailers().recoveryLinksKnown()
