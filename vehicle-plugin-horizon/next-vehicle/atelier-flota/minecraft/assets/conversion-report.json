@@ -2,8 +2,8 @@
   "itemDisplayScale": 4,
   "models": {
     "horizon_service_cab": 107,
-    "horizon_service_flatbed": 64,
-    "horizon_service_workshop": 69,
+    "horizon_service_flatbed": 62,
+    "horizon_service_workshop": 67,
     "horizon_service_steering": 5,
     "horizon_service_wheel": 20,
     "horizon_service_ramp": 10

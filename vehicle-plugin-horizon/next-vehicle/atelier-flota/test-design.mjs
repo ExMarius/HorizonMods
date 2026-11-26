@@ -25,6 +25,22 @@ for(const [x,y,z,scale] of wheels.slice(2)){
  assert.ok(Math.abs(y-.45*scale)<1e-8,'workshop rear tyre must touch ground');
  assert.ok(y+.45*scale<=.64+1e-8,'rear tyre must remain below body floor');
 }
+// Check cylinders against axis-aligned body boxes, allowing only the axle to
+// enter a tyre. This catches rails, guards and fender trim protruding into it;
+// rotated pieces still require visual inspection.
+for(const [name,parts,centres] of [['platforma',[...cab,...platforma],platformWheels],['atelier',[...cab,...atelier],wheels]]){
+ for(const [x,y,z,scale] of centres){
+  const radius=.45*scale,halfWidth=.165*scale;
+  for(const part of parts){
+   const [material,px,py,pz,w,h,d,rotation=0]=part;
+   if(rotation||Math.abs(px-x)>=w/2+halfWidth)continue;
+   const dy=Math.max(0,Math.abs(y-py)-h/2),dz=Math.max(0,Math.abs(z-pz)-d/2);
+   if(dy*dy+dz*dz>=(radius-.005)**2)continue;
+   const axle=material==='chassis'&&px===0&&Math.abs(py-y)<1e-9&&Math.abs(pz-z)<1e-9&&h<=.16&&d<=.14;
+   assert.ok(axle,`${name}: wheel at ${x},${z} intersects ${JSON.stringify(part)}`);
+  }
+ }
+}
 assert.equal(wheels.length,4);assert.equal(platformWheels.length,4);
 assert.notDeepEqual(platforma,atelier);
 console.log('Window openings, interior, wheel clearances and separate bodies validated.');

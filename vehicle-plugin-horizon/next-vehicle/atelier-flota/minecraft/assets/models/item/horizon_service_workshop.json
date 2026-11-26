@@ -2372,144 +2372,6 @@
     {
       "name": "horizon_service_workshop_34",
       "from": [
-        3.8,
-        9.6,
-        14.64
-      ],
-      "to": [
-        4.92,
-        10.8,
-        17.52
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#chassis"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#chassis"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#chassis"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#chassis"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#chassis"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#chassis"
-        }
-      }
-    },
-    {
-      "name": "horizon_service_workshop_35",
-      "from": [
-        11.08,
-        9.6,
-        14.64
-      ],
-      "to": [
-        12.2,
-        10.8,
-        17.52
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#chassis"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#chassis"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#chassis"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#chassis"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#chassis"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#chassis"
-        }
-      }
-    },
-    {
-      "name": "horizon_service_workshop_36",
-      "from": [
         3.92,
         8.96,
         16.12
@@ -2577,16 +2439,154 @@
       }
     },
     {
-      "name": "horizon_service_workshop_37",
+      "name": "horizon_service_workshop_35",
       "from": [
         3.24,
-        10.52,
+        10.58,
         14.5
       ],
       "to": [
         3.72,
-        10.68,
+        10.74,
         18.3
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_workshop_36",
+      "from": [
+        12.28,
+        10.58,
+        14.5
+      ],
+      "to": [
+        12.76,
+        10.74,
+        18.3
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_workshop_37",
+      "from": [
+        3.24,
+        9.22,
+        14.4
+      ],
+      "to": [
+        3.72,
+        10.62,
+        14.72
       ],
       "faces": {
         "north": {
@@ -2649,13 +2649,13 @@
       "name": "horizon_service_workshop_38",
       "from": [
         12.28,
-        10.52,
-        14.5
+        9.22,
+        14.4
       ],
       "to": [
         12.76,
-        10.68,
-        18.3
+        10.62,
+        14.72
       ],
       "faces": {
         "north": {
@@ -2719,12 +2719,12 @@
       "from": [
         3.24,
         9.22,
-        14.4
+        18.08
       ],
       "to": [
         3.72,
         10.62,
-        14.72
+        18.4
       ],
       "faces": {
         "north": {
@@ -2788,12 +2788,12 @@
       "from": [
         12.28,
         9.22,
-        14.4
+        18.08
       ],
       "to": [
         12.76,
         10.62,
-        14.72
+        18.4
       ],
       "faces": {
         "north": {
@@ -2854,144 +2854,6 @@
     },
     {
       "name": "horizon_service_workshop_41",
-      "from": [
-        3.24,
-        9.22,
-        18.08
-      ],
-      "to": [
-        3.72,
-        10.62,
-        18.4
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        }
-      }
-    },
-    {
-      "name": "horizon_service_workshop_42",
-      "from": [
-        12.28,
-        9.22,
-        18.08
-      ],
-      "to": [
-        12.76,
-        10.62,
-        18.4
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        }
-      }
-    },
-    {
-      "name": "horizon_service_workshop_43",
       "from": [
         4.96,
         16.98,
@@ -3060,7 +2922,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_44",
+      "name": "horizon_service_workshop_42",
       "from": [
         10.72,
         16.98,
@@ -3129,7 +2991,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_45",
+      "name": "horizon_service_workshop_43",
       "from": [
         4.94,
         17.42,
@@ -3198,7 +3060,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_46",
+      "name": "horizon_service_workshop_44",
       "from": [
         4.94,
         17.42,
@@ -3267,7 +3129,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_47",
+      "name": "horizon_service_workshop_45",
       "from": [
         4.94,
         17.42,
@@ -3336,7 +3198,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_48",
+      "name": "horizon_service_workshop_46",
       "from": [
         6.96,
         17.18,
@@ -3405,7 +3267,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_49",
+      "name": "horizon_service_workshop_47",
       "from": [
         3.54,
         11.48,
@@ -3415,6 +3277,144 @@
         3.82,
         16.6,
         8.04
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_workshop_48",
+      "from": [
+        12.18,
+        11.48,
+        7.72
+      ],
+      "to": [
+        12.46,
+        16.6,
+        8.04
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#steel"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_workshop_49",
+      "from": [
+        3.54,
+        11.48,
+        19.44
+      ],
+      "to": [
+        3.82,
+        16.6,
+        19.76
       ],
       "faces": {
         "north": {
@@ -3478,12 +3478,12 @@
       "from": [
         12.18,
         11.48,
-        7.72
+        19.44
       ],
       "to": [
         12.46,
         16.6,
-        8.04
+        19.76
       ],
       "faces": {
         "north": {
@@ -3544,144 +3544,6 @@
     },
     {
       "name": "horizon_service_workshop_51",
-      "from": [
-        3.54,
-        11.48,
-        19.44
-      ],
-      "to": [
-        3.82,
-        16.6,
-        19.76
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#steel"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#steel"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#steel"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#steel"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#steel"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#steel"
-        }
-      }
-    },
-    {
-      "name": "horizon_service_workshop_52",
-      "from": [
-        12.18,
-        11.48,
-        19.44
-      ],
-      "to": [
-        12.46,
-        16.6,
-        19.76
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#steel"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#steel"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#steel"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#steel"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#steel"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#steel"
-        }
-      }
-    },
-    {
-      "name": "horizon_service_workshop_53",
       "from": [
         3.31,
         12.64,
@@ -3750,7 +3612,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_54",
+      "name": "horizon_service_workshop_52",
       "from": [
         3.31,
         12.64,
@@ -3819,7 +3681,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_55",
+      "name": "horizon_service_workshop_53",
       "from": [
         12.59,
         12.64,
@@ -3888,7 +3750,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_56",
+      "name": "horizon_service_workshop_54",
       "from": [
         12.59,
         12.64,
@@ -3957,7 +3819,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_57",
+      "name": "horizon_service_workshop_55",
       "from": [
         5.28,
         9.36,
@@ -4026,7 +3888,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_58",
+      "name": "horizon_service_workshop_56",
       "from": [
         5.56,
         9.68,
@@ -4095,7 +3957,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_59",
+      "name": "horizon_service_workshop_57",
       "from": [
         4.76,
         9.64,
@@ -4164,7 +4026,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_60",
+      "name": "horizon_service_workshop_58",
       "from": [
         10.76,
         9.64,
@@ -4233,7 +4095,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_61",
+      "name": "horizon_service_workshop_59",
       "from": [
         3.58,
         11.22,
@@ -4243,6 +4105,144 @@
         3.7,
         11.58,
         8.92
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#amber"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#amber"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#amber"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#amber"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#amber"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#amber"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_workshop_60",
+      "from": [
+        12.3,
+        11.22,
+        8.2
+      ],
+      "to": [
+        12.42,
+        11.58,
+        8.92
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#amber"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#amber"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#amber"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#amber"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#amber"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#amber"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_workshop_61",
+      "from": [
+        3.58,
+        11.22,
+        18.56
+      ],
+      "to": [
+        3.7,
+        11.58,
+        19.28
       ],
       "faces": {
         "north": {
@@ -4306,12 +4306,12 @@
       "from": [
         12.3,
         11.22,
-        8.2
+        18.56
       ],
       "to": [
         12.42,
         11.58,
-        8.92
+        19.28
       ],
       "faces": {
         "north": {
@@ -4372,144 +4372,6 @@
     },
     {
       "name": "horizon_service_workshop_63",
-      "from": [
-        3.58,
-        11.22,
-        18.56
-      ],
-      "to": [
-        3.7,
-        11.58,
-        19.28
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#amber"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#amber"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#amber"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#amber"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#amber"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#amber"
-        }
-      }
-    },
-    {
-      "name": "horizon_service_workshop_64",
-      "from": [
-        12.3,
-        11.22,
-        18.56
-      ],
-      "to": [
-        12.42,
-        11.58,
-        19.28
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#amber"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#amber"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#amber"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#amber"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#amber"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#amber"
-        }
-      }
-    },
-    {
-      "name": "horizon_service_workshop_65",
       "from": [
         4.88,
         15.74,
@@ -4578,7 +4440,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_66",
+      "name": "horizon_service_workshop_64",
       "from": [
         5.06,
         15.976,
@@ -4647,7 +4509,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_67",
+      "name": "horizon_service_workshop_65",
       "from": [
         5.06,
         15.816,
@@ -4716,7 +4578,7 @@
       }
     },
     {
-      "name": "horizon_service_workshop_68",
+      "name": "horizon_service_workshop_66",
       "from": [
         9.44,
         15.94,

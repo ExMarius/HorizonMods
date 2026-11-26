@@ -67,7 +67,7 @@ function tickDemo(now){
  if(demo.lastZ!==null)for(const w of carData.tires)w.rotation.x+=(state.car.z-demo.lastZ)/.40;
  demo.lastZ=state.car.z;carData.car.updateMatrixWorld(true);
  if(demo.mode==='winch' && state.phase!=='closing' && state.phase!=='done'){
-  putCable(new T.Vector3(0,1.06,.30),carData.attach.getWorldPosition(new T.Vector3()));
+  putCable(new T.Vector3(0,1.06,.18),carData.attach.getWorldPosition(new T.Vector3()));
  }else if(cable){scene.remove(cable);cable.geometry.dispose();cable.material.dispose();cable=null}
  const phaseText={ramps:'Rampele se deschid',moving:demo.unload?'Dacia coboară de pe platformă':demo.mode==='winch'?'Troliul trage Dacia pe platformă':'Dacia urcă pe roți',settling:'Vehiculul se oprește',closing:'Rampele se pliază',done:demo.unload?'Vehicul descărcat':'Vehicul încărcat'};
  document.querySelector('#demo-status').textContent=phaseText[state.phase]+' · simulare 3D, nu comandă în joc.';

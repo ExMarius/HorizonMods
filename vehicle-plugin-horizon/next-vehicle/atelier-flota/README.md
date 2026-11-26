@@ -51,3 +51,9 @@ din browser, nu citește remorcile din joc. Când încărcarea va fi implementat
 în plugin, trebuie verificată starea reală de cuplare pentru orice vehicul
 candidat atât la pornire, cât și pe parcurs, în ambele moduri; cuplarea trebuie
 refuzată în timpul manevrei. Regulile nu sunt încă implementate pe server.
+
+Verificările de geometrie controlează separat spațiul anvelopelor față de
+piesele neînclinate, admițând doar axa, poziția mașinii față de rampele pliate
+și contactul rampelor cu solul pe parcursul animației. Sunt verificări ale
+conceptului 3D, nu o simulare completă de coliziune și nici test în joc;
+îmbinările intenționate și piesele înclinate necesită în continuare control vizual.

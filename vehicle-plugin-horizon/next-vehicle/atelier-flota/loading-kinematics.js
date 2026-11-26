@@ -1,8 +1,11 @@
 /** Geometry and timing for the browser demonstration only (not gameplay). */
 export const LOADING={deckTop:.86,deckEnd:5.35,rampLength:2.48,wheelbase:3.30,
- carStart:9.8,carLoaded:2.72,rampDuration:2.8,driveDuration:7,holdDuration:1};
-export const rampAngle=Math.asin(LOADING.deckTop/LOADING.rampLength);
-export const rampRun=Math.sqrt(LOADING.rampLength**2-LOADING.deckTop**2);
+ carStart:9.8,carLoaded:2.64,rampDuration:2.8,driveDuration:7,holdDuration:1};
+// The underside at the free tip must touch, never penetrate, the ground.
+const rampHalfThickness=.05;
+export const rampAngle=Math.asin(LOADING.deckTop/Math.hypot(LOADING.rampLength,rampHalfThickness))
+ - Math.atan2(rampHalfThickness,LOADING.rampLength);
+export const rampRun=LOADING.rampLength*Math.cos(rampAngle);
 export function groundHeight(z){
  if(z<=LOADING.deckEnd)return LOADING.deckTop;
  if(z>=LOADING.deckEnd+rampRun)return 0;
