@@ -35,8 +35,20 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                 expect(counts,"vehicle:horizon_service_steering",1);
                 expect(counts,"vehicle:horizon_service_wheel",4);
                 expect(counts,"vehicle:horizon_service_ramp",2);
+                // Exercise both real ItemDisplay transforms, then refold before cleanup.
+                var ramps=v.rig().entities().stream().filter(e->e instanceof ItemDisplay)
+                    .map(e->(ItemDisplay)e)
+                    .filter(d->d.getItemStack().getItemMeta()!=null
+                        && new org.bukkit.NamespacedKey("vehicle","horizon_service_ramp").equals(d.getItemStack().getItemMeta().getItemModel())).toList();
+                var before=ramps.get(0).getTransformation().getLeftRotation();
+                v.rig().setRecoveryRampProgress(1.0);v.forceVisualSync();
+                for(var ramp:ramps){
+                    var after=ramp.getTransformation().getLeftRotation();
+                    if(Math.abs(before.dot(after))>.999F)throw new IllegalStateException("ramp did not animate");
+                }
+                v.rig().setRecoveryRampProgress(0);v.forceVisualSync();
                 if(v.spec().seats().size()!=2)throw new IllegalStateException("seat count");
-                getLogger().info("RECOVERY_PROBE_OK models="+counts+" seat definitions=2; visual/gameplay not tested");
+                getLogger().info("RECOVERY_PROBE_OK models="+counts+" both ramp transforms checked; seat definitions=2; visual/gameplay not tested");
             } catch(Throwable e){ getLogger().severe("RECOVERY_PROBE_FAIL "+e); e.printStackTrace(); }
             finally{
                 VehiclePlugin main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");

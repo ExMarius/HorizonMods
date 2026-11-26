@@ -96,6 +96,8 @@ public final class LandVehicleRig {
     private final List<SeatCarrier> seats;
     private final List<Entity> entities;
     private float seatGauge = 1.0F;
+    // Prototype-only visual value; no player commands or loading logic use it yet.
+    private double recoveryRampProgress;
     private float propellerRotation;
     private float flapAngle;
     private float elevatorAngle;
@@ -513,6 +515,9 @@ public final class LandVehicleRig {
         LandVehicleSpec.Part part = partDisplay.properties;
         Vector3f center = chassis(point(part.center()), wheelieAngle, bodyRoll);
         Quaternionf rotation = new Quaternionf(chassisRotation);
+        if ("horizon_recovery_prototype".equals(spec.id()) && "horizon_service_ramp".equals(part.model())) {
+            rotation.rotateX(com.mrcrayfish.vehicle.paper.recovery.RecoveryRampKinematics.paperOffsetRadians(recoveryRampProgress));
+        }
         if (part.openable() != null) {
             float angle = radians(partDisplay.openAngle());
             switch (part.openable().axis()) {
@@ -817,6 +822,13 @@ public final class LandVehicleRig {
             }
         }
         return changed;
+    }
+
+    /** Prototype-only display control. No collision or permission checks are implied. */
+    public void setRecoveryRampProgress(double progress) {
+        if (!"horizon_recovery_prototype".equals(spec.id())) throw new IllegalStateException("Not a recovery prototype");
+        com.mrcrayfish.vehicle.paper.recovery.RecoveryRampKinematics.paperOffsetRadians(progress);
+        recoveryRampProgress = progress;
     }
 
     public boolean toggleOpenable(String id, Location root) {
