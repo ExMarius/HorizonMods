@@ -1040,6 +1040,7 @@ public final class LandVehicleRig {
     }
 
     static String wheelModelFor(LandVehicleSpec spec, LandVehicleSpec.Wheel wheel, String requested) {
+        if ("horizon_recovery_prototype".equals(spec.id())) return "horizon_service_wheel";
         if ("bmw_m6".equals(spec.id())) return "horizon_coupe_wheel";
         return "utb_650".equals(spec.id()) && "standard_wheel".equals(requested)
                 ? (wheel.front() ? "utb_650_wheel_front" : "utb_650_wheel_rear") : requested;

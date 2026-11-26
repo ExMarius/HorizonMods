@@ -1054,6 +1054,8 @@ public record LandVehicleSpec(
     }
 
     public Point bodyOrigin() {
+        // Prototype service models are authored around the world-ground origin.
+        if ("horizon_recovery_prototype".equals(id)) return new Point(0F, 0F, 0F);
         Point translation = bodyRenderTranslation();
         return new Point(translation.x(),
                 translation.y() + (0.5F + (axleOffset + wheelOffset) * MODEL_UNIT) * bodyScale,

@@ -27,7 +27,10 @@ componente izolate, fără conexiune la runtime, fără efect în joc.
 ## Ce este pregătit
 
 - Modelul candidat, exportul separat și constructorul de resource pack care
-  verifică hash-ul bazei și coliziunile; nu este montat într-un rig Paper.
+  verifică hash-ul bazei și coliziunile. `RecoveryTruckPrototype` leagă cabina,
+  platforma, volanul, roțile și rampele în poziție pliată de structurile rig-ului
+  Paper. **Nu este în catalog** și nu se poate spawna; poziția, scaunele și
+  orientarea trebuie validate vizual, iar rampele încă nu sunt animate în joc.
 - `RecoveryInterlock`: controlor izolat pentru stările încărcării și validarea
   repetată fail-closed; condițiile sunt furnizate de viitorul adaptor Paper.
   Refuză și starea necunoscută, nu doar o remorcă detectată. Nu salvează date,
