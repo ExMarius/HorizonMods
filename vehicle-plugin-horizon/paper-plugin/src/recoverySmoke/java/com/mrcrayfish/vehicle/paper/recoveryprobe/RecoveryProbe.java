@@ -209,8 +209,8 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
         var carStart=base.clone().add(9.8*sin,0,-9.8*cos);
         var car=main.vehicles().spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,carStart);
         var safety=new RecoveryInterlock.Safety(true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
-        var motion=PrototypeRecoveryMotion.begin(main.vehicles(),truck,car,player,(a,w,b)->true,safety);
-        if(motion==null)throw new IllegalStateException("timed round trip lock failed");
+        var route=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.begin(main.vehicles(),truck,car,player,(a,w,b)->true,safety);
+        if(route==null)throw new IllegalStateException("timed round trip lock failed");
         var ignored=new java.util.HashSet<java.util.UUID>();
         truck.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
         car.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
@@ -244,31 +244,18 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                     int step=direction==0?ticks:ticks-180;
                     double from=direction==0?9.8:2.64,to=direction==0?2.64:9.8;
                     var pose=com.mrcrayfish.vehicle.paper.recovery.RecoveryLoadingPath.sample(from,to,3.3,step/180D);
-                    var destination=base.clone().add(pose.centerZ()*sin,pose.height(),-pose.centerZ()*cos);
-                    // Preview tow-eye, rotated about the car root using the same
-                    // estimated pitch as the rig. It is not a measured in-game hook.
-                    double c=Math.cos(pose.pitch()), sinPitch=Math.sin(pose.pitch());
-                    double hookY=pose.height()+.005+.35*c+2.43*sinPitch;
-                    double hookZ=pose.centerZ()+.35*sinPitch-2.43*c;
-                    var cable=com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.route(
-                            new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(0,1.06,.18),
-                            new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(0,.99,5.40),
-                            new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(0,hookY,hookZ));
-                    if(!com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.clearsLevelBed(cable,.18,5.35,.86,.018))
-                        throw new IllegalStateException("cable intersects level bed at "+ticks);
-                    // Model +Z rear maps to Paper -Z; transform each point to world.
-                    var worldCable=cable.stream().map(p -> new com.mrcrayfish.vehicle.paper.recovery.RecoveryCable.Point(
-                            base.getX()-p.x()*cos+p.z()*sin,base.getY()+p.y(),base.getZ()-p.x()*sin-p.z()*cos)).toList();
-                    if(!com.mrcrayfish.vehicle.paper.recovery.RecoveryCableWorldCheck.clear(base.getWorld(),worldCable,.018,ignored))
-                        throw new IllegalStateException("world obstructs cable at "+ticks);
-                    truck.rig().setRecoveryCable(cable);truck.forceVisualSync();
-                    var delta=destination.toVector().subtract(car.location().toVector());
-                    if(!motion.step(delta,safety,pose.pitch()))throw new IllegalStateException("timed movement blocked at "+ticks);
+                    var status=route.tick(safety);
+                    if(status==com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.State.STOPPED)
+                        throw new IllegalStateException("timed route blocked at "+ticks);
                     if(pose.pitch()>.05 && Math.abs(levelRotation.dot(body.getTransformation().getLeftRotation()))<.9999F) observedTilt=true;
-                    if(ticks==180 && Math.abs(car.location().getY()-base.getY()-.86)>1e-5)
-                        throw new IllegalStateException("car did not reach deck height");
+                    if(ticks==180) {
+                        if(status!=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.State.AT_DECK
+                                || Math.abs(car.location().getY()-base.getY()-.86)>1e-5 || !route.beginUnload())
+                            throw new IllegalStateException("car did not reach deck height");
+                    }
                     if(ticks==360) {
-                        if(car.location().distance(carStart)>1e-5 || !motion.releaseOnGround())
+                        if(status!=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.State.ON_GROUND
+                                || car.location().distance(carStart)>1e-5 || !route.finishOnGround())
                             throw new IllegalStateException("round trip did not return to ground");
                         if(!observedTilt)throw new IllegalStateException("vehicle rig did not pitch on ramp");
                         truck.rig().setRecoveryCable(java.util.List.of());
