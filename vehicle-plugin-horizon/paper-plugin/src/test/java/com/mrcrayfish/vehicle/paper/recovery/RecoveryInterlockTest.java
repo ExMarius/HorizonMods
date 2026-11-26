@@ -9,13 +9,13 @@ class RecoveryInterlockTest {
     private static final UUID CARRIER=UUID.randomUUID(), TARGET=UUID.randomUUID(), OPERATOR=UUID.randomUUID();
     // Independent switches keep it easy to exercise missing and bad information.
     private static Safety safety(boolean... bad) {
-        boolean[] v = new boolean[19]; java.util.Arrays.fill(v,true);
+        boolean[] v = new boolean[20]; java.util.Arrays.fill(v,true);
         // cable is absent until explicitly requested.
-        v[14]=false; v[17]=false; v[18]=false;
+        v[14]=false; v[17]=false; v[18]=false; v[19]=false;
         for(int i=0;i<bad.length;i++)if(bad[i])v[i]=!v[i];
-        return new Safety(v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],v[15],v[16],v[17],v[18]);
+        return new Safety(v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],v[8],v[9],v[10],v[11],v[12],v[13],v[14],v[15],v[16],v[17],v[18],v[19]);
     }
-    private static Safety flip(int... indexes){boolean[] bad=new boolean[19];for(int i:indexes)bad[i]=true;return safety(bad);}
+    private static Safety flip(int... indexes){boolean[] bad=new boolean[20];for(int i:indexes)bad[i]=true;return safety(bad);}
     private static void opened(RecoveryInterlock m, Mode mode){assertEquals(Denial.NONE,m.openRamps(CARRIER,TARGET,OPERATOR,mode,safety()));assertEquals(Denial.NONE,m.rampsReady(safety()));}
     @Test void rejectsUnknownSafetyConditionsAndCoupledVehicles(){
         Denial[] expected={Denial.MISSING_ENTITY,Denial.UNAUTHORIZED,Denial.PROTECTION_UNAVAILABLE,Denial.PROHIBITED_AREA,
@@ -30,7 +30,7 @@ class RecoveryInterlockTest {
         assertEquals(Denial.CABLE_NOT_ATTACHED,s.startMovement(safety()));
         assertEquals(Denial.RAMPS_NOT_OPEN,s.startMovement(flip(14,16)));
         assertEquals(Denial.NONE,s.startMovement(flip(14)));
-        assertFalse(s.mayDriveCarrier());
+        assertFalse(s.mayDriveCarrier(null));
         assertEquals(Denial.TRAILER_ATTACHED,s.checkMovement(flip(6,14)));
         assertEquals(Phase.PAUSED,s.phase());
         assertEquals(Denial.INVALID_PHASE,s.checkMovement(flip(14)));
@@ -54,7 +54,8 @@ class RecoveryInterlockTest {
         assertEquals(Denial.CABLE_STILL_ATTACHED,s.secure(flip(14,16,17,18)));
         assertEquals(Denial.RAMPS_NOT_CLOSED,s.secure(flip(16,18)));
         assertEquals(Denial.NOT_SECURED,s.secure(flip(16,17)));
-        assertEquals(Denial.NONE,s.secure(flip(16,17,18)));assertTrue(s.mayDriveCarrier());
+        assertEquals(Denial.NONE,s.secure(flip(16,17,18,19)));assertFalse(s.mayDriveCarrier(null)); assertTrue(s.mayDriveCarrier(flip(16,17,18,19)));
+        assertFalse(s.mayDriveCarrier(flip(16,17,18)));
         assertEquals(Denial.INVALID_PHASE,s.resetIfEmptyAndSafe(true,true,true));
     }
     @Test void cannotEraseAnActiveVehicleOrGuessAtMissingState(){
@@ -63,7 +64,7 @@ class RecoveryInterlockTest {
         assertEquals(Denial.INVALID_PHASE,s.resetIfEmptyAndSafe(true,false,true));
         assertEquals(Denial.INVALID_PHASE,s.resetIfEmptyAndSafe(true,true,false));
         assertEquals(Denial.NONE,s.resetIfEmptyAndSafe(true,true,true));
-        assertNull(s.target());assertTrue(s.mayDriveCarrier());
+        assertNull(s.target());assertTrue(s.mayDriveCarrier(null));
         assertEquals(Denial.MISSING_ENTITY,s.openRamps(CARRIER,TARGET,OPERATOR,Mode.DRIVEN,null));
     }
 }

@@ -18,7 +18,9 @@ public final class RecoveryInterlock {
         NOT_CENTERED, RAMPS_NOT_OPEN, RAMPS_NOT_CLOSED, NOT_SECURED
     }
 
-    /** Every 'known/checked' flag is separate from its value: unknown is not safe. */
+    /** Every 'known/checked' flag is separate from its value: unknown is not safe.
+     * targetFree means not linked to a conflicting carrier; linkedToThisCarrier
+     * separately proves that the current carrier's link is present. */
     public record Safety(boolean entitiesPresent, boolean operatorAuthorized,
                          boolean protectionChecked, boolean areaAllowed,
                          boolean truckStationary, boolean couplingKnown,
@@ -27,7 +29,8 @@ public final class RecoveryInterlock {
                          boolean pathChecked, boolean pathClear,
                          boolean driverAuthorizedAndAlone, boolean targetEmpty,
                          boolean cableAttached, boolean centered,
-                         boolean rampsOpen, boolean rampsClosed, boolean strapsConfirmed) { }
+                         boolean rampsOpen, boolean rampsClosed, boolean strapsConfirmed,
+                         boolean linkedToThisCarrier) { }
 
     private Phase phase = Phase.IDLE;
     private Phase pausedFrom;
@@ -40,7 +43,16 @@ public final class RecoveryInterlock {
     public UUID operator() { return operator; }
     public Mode mode() { return mode; }
     public boolean locked() { return phase != Phase.IDLE; }
-    public boolean mayDriveCarrier() { return phase == Phase.IDLE || phase == Phase.SECURED; }
+    /** Re-check the actual link and restraints every time the carrier may move.
+     * General driving rules still apply separately. */
+    public boolean mayDriveCarrier(Safety s) {
+        if (phase == Phase.IDLE) return true;
+        return phase == Phase.SECURED && s != null && s.entitiesPresent()
+                && s.couplingKnown() && s.attachmentFree() && s.geometryKnown() && s.fits()
+                && s.targetEmpty() && s.centered() && !s.cableAttached()
+                && !s.rampsOpen() && s.rampsClosed() && s.strapsConfirmed()
+                && s.linkedToThisCarrier();
+    }
 
     public Denial openRamps(UUID carrier, UUID target, UUID operator, Mode mode, Safety safety) {
         if (phase != Phase.IDLE) return Denial.INVALID_PHASE;
@@ -113,7 +125,7 @@ public final class RecoveryInterlock {
         if (!safety.centered()) return Denial.NOT_CENTERED;
         if (safety.cableAttached()) return Denial.CABLE_STILL_ATTACHED;
         if (!safety.rampsClosed() || safety.rampsOpen()) return Denial.RAMPS_NOT_CLOSED;
-        if (!safety.strapsConfirmed()) return Denial.NOT_SECURED;
+        if (!safety.strapsConfirmed() || !safety.linkedToThisCarrier()) return Denial.NOT_SECURED;
         phase = Phase.SECURED;
         return Denial.NONE;
     }
