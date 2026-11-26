@@ -6,8 +6,8 @@ import {sequence,rampRotation,LOADING,loadingEligibility} from './loading-kinema
 import {buildMinecraftPreview} from './minecraft-preview.js';
 
 const data={
- platforma:{pieces:platforma,title:'Platformă auto',desc:'Cabină închisă fără geamuri, platformă dimensionată pentru Dacia, troliu și rampe articulate.',idea:'Concept pentru recuperarea și transportul unui vehicul defect.',index:'01'},
- atelier:{pieces:atelier,title:'Atelier mobil',desc:'Cabină închisă fără geamuri și caroserie de service cu obloane și suport pe acoperiș.',idea:'Concept pentru intervenții mecanice și echipamente de service.',index:'02'}
+ platforma:{pieces:platforma,title:'Platformă auto',desc:'Cabină cu geamuri și interior vizibil, platformă dimensionată pentru Dacia, troliu și rampe articulate.',idea:'Concept pentru recuperarea și transportul unui vehicul defect.',index:'01'},
+ atelier:{pieces:atelier,title:'Atelier mobil',desc:'Cabină cu geamuri și interior vizibil, caroserie de service cu obloane și suport pe acoperiș.',idea:'Concept pentru intervenții mecanice și echipamente de service.',index:'02'}
 };
 const holder=document.querySelector('#scene'),status=document.querySelector('#loading');
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(37,1,.04,100),renderer=new T.WebGLRenderer({antialias:true,alpha:true});
@@ -37,6 +37,9 @@ function makeVehicle(kind){
  const group=new T.Group();for(const p of cab)box(p,group);for(const p of data[kind].pieces)box(p,group);
  if(kind==='platforma')for(const side of [-1,1]){const hinge=new T.Group();hinge.name='ramp';hinge.position.set(side*1.05,LOADING.deckTop,LOADING.deckEnd);hinge.rotation.x=rampRotation(0);for(const piece of ramp)box(piece,hinge);group.add(hinge)}
  for(const [x,y,z,scale] of (kind==='platforma'?platformWheels:wheels))wheel(group,x,y,z,scale);
+ // Steering wheel and column are visible through the open cabin windows.
+ const steering=new T.Mesh(new T.TorusGeometry(.17,.024,6,16),mats.black);steering.position.set(-.43,1.32,-1.49);steering.rotation.x=-.4;group.add(steering);
+ const stem=new T.Mesh(new T.CylinderGeometry(.025,.025,.25,8),mats.black);stem.position.set(-.43,1.21,-1.57);stem.rotation.x=.6;group.add(stem);
  group.position.y=.005;return group;
 }
 function center(){camera.position.set(9,5.4,-11);controls.target.set(0,1.0,currentKind==='platforma'?1.3:.18);controls.update()}

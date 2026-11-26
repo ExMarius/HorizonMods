@@ -2579,6 +2579,300 @@
     {
       "name": "horizon_service_cab_37",
       "from": [
+        4.02,
+        12.16,
+        0.52
+      ],
+      "to": [
+        4.54,
+        16.88,
+        1.08
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        }
+      },
+      "rotation": {
+        "origin": [
+          4.28,
+          14.52,
+          0.8
+        ],
+        "axis": "x",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "horizon_service_cab_38",
+      "from": [
+        11.46,
+        12.16,
+        0.52
+      ],
+      "to": [
+        11.98,
+        16.88,
+        1.08
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        }
+      },
+      "rotation": {
+        "origin": [
+          11.72,
+          14.52,
+          0.8
+        ],
+        "axis": "x",
+        "angle": 22.5
+      }
+    },
+    {
+      "name": "horizon_service_cab_39",
+      "from": [
+        4.02,
+        12.34,
+        5.86
+      ],
+      "to": [
+        4.54,
+        16.94,
+        6.38
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_40",
+      "from": [
+        11.46,
+        12.34,
+        5.86
+      ],
+      "to": [
+        11.98,
+        16.94,
+        6.38
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#white"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_41",
+      "from": [
         3.9,
         16.58,
         0.12
@@ -2646,292 +2940,16 @@
       }
     },
     {
-      "name": "horizon_service_cab_38",
-      "from": [
-        3.96,
-        12.72,
-        0.32
-      ],
-      "to": [
-        12.04,
-        16.72,
-        0.96
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        }
-      }
-    },
-    {
-      "name": "horizon_service_cab_39",
-      "from": [
-        3.96,
-        12.72,
-        0.6
-      ],
-      "to": [
-        4.36,
-        16.72,
-        6.2
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        }
-      }
-    },
-    {
-      "name": "horizon_service_cab_40",
-      "from": [
-        11.64,
-        12.72,
-        0.6
-      ],
-      "to": [
-        12.04,
-        16.72,
-        6.2
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        }
-      }
-    },
-    {
-      "name": "horizon_service_cab_41",
-      "from": [
-        3.96,
-        12.72,
-        5.8
-      ],
-      "to": [
-        12.04,
-        16.72,
-        6.44
-      ],
-      "faces": {
-        "north": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "up": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        },
-        "down": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#white"
-        }
-      }
-    },
-    {
       "name": "horizon_service_cab_42",
       "from": [
-        4.72,
-        14.08,
-        0.244
+        4.36,
+        16.28,
+        0.52
       ],
       "to": [
-        11.28,
-        16,
-        0.324
+        11.64,
+        16.6,
+        1
       ],
       "faces": {
         "north": {
@@ -2993,14 +3011,14 @@
     {
       "name": "horizon_service_cab_43",
       "from": [
-        4.96,
-        14.28,
-        0.204
+        4.36,
+        16,
+        5.86
       ],
       "to": [
-        11.04,
-        15.8,
-        0.252
+        11.64,
+        16.4,
+        6.38
       ],
       "faces": {
         "north": {
@@ -3062,14 +3080,14 @@
     {
       "name": "horizon_service_cab_44",
       "from": [
-        3.904,
-        13.42,
-        1.2
+        4.36,
+        12.94,
+        5.86
       ],
       "to": [
-        3.96,
-        16.1,
-        5.68
+        11.64,
+        13.38,
+        6.38
       ],
       "faces": {
         "north": {
@@ -3079,7 +3097,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#white"
         },
         "south": {
           "uv": [
@@ -3088,7 +3106,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#white"
         },
         "east": {
           "uv": [
@@ -3097,7 +3115,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#white"
         },
         "west": {
           "uv": [
@@ -3106,7 +3124,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#white"
         },
         "up": {
           "uv": [
@@ -3115,7 +3133,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#white"
         },
         "down": {
           "uv": [
@@ -3124,21 +3142,21 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#white"
         }
       }
     },
     {
       "name": "horizon_service_cab_45",
       "from": [
-        12.04,
-        13.42,
-        1.2
+        4.64,
+        13.24,
+        0.57
       ],
       "to": [
-        12.096,
-        16.1,
-        5.68
+        11.36,
+        16.2,
+        0.71
       ],
       "faces": {
         "north": {
@@ -3148,7 +3166,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#glass"
         },
         "south": {
           "uv": [
@@ -3157,7 +3175,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#glass"
         },
         "east": {
           "uv": [
@@ -3166,7 +3184,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#glass"
         },
         "west": {
           "uv": [
@@ -3175,7 +3193,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#glass"
         },
         "up": {
           "uv": [
@@ -3184,7 +3202,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#glass"
         },
         "down": {
           "uv": [
@@ -3193,21 +3211,30 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#glass"
         }
+      },
+      "rotation": {
+        "origin": [
+          8,
+          14.72,
+          0.64
+        ],
+        "axis": "x",
+        "angle": 22.5
       }
     },
     {
       "name": "horizon_service_cab_46",
       "from": [
-        3.868,
-        13.64,
-        1.42
+        4.17,
+        13.28,
+        1.04
       ],
       "to": [
-        3.908,
-        15.88,
-        5.46
+        4.27,
+        16.16,
+        5.52
       ],
       "faces": {
         "north": {
@@ -3217,7 +3244,7 @@
             16,
             16
           ],
-          "texture": "#white"
+          "texture": "#glass"
         },
         "south": {
           "uv": [
@@ -3226,7 +3253,7 @@
             16,
             16
           ],
-          "texture": "#white"
+          "texture": "#glass"
         },
         "east": {
           "uv": [
@@ -3235,7 +3262,7 @@
             16,
             16
           ],
-          "texture": "#white"
+          "texture": "#glass"
         },
         "west": {
           "uv": [
@@ -3244,7 +3271,7 @@
             16,
             16
           ],
-          "texture": "#white"
+          "texture": "#glass"
         },
         "up": {
           "uv": [
@@ -3253,7 +3280,7 @@
             16,
             16
           ],
-          "texture": "#white"
+          "texture": "#glass"
         },
         "down": {
           "uv": [
@@ -3262,21 +3289,21 @@
             16,
             16
           ],
-          "texture": "#white"
+          "texture": "#glass"
         }
       }
     },
     {
       "name": "horizon_service_cab_47",
       "from": [
-        12.092,
-        13.64,
-        1.42
+        11.73,
+        13.28,
+        1.04
       ],
       "to": [
-        12.132,
-        15.88,
-        5.46
+        11.83,
+        16.16,
+        5.52
       ],
       "faces": {
         "north": {
@@ -3286,7 +3313,7 @@
             16,
             16
           ],
-          "texture": "#white"
+          "texture": "#glass"
         },
         "south": {
           "uv": [
@@ -3295,7 +3322,7 @@
             16,
             16
           ],
-          "texture": "#white"
+          "texture": "#glass"
         },
         "east": {
           "uv": [
@@ -3304,7 +3331,7 @@
             16,
             16
           ],
-          "texture": "#white"
+          "texture": "#glass"
         },
         "west": {
           "uv": [
@@ -3313,7 +3340,7 @@
             16,
             16
           ],
-          "texture": "#white"
+          "texture": "#glass"
         },
         "up": {
           "uv": [
@@ -3322,7 +3349,7 @@
             16,
             16
           ],
-          "texture": "#white"
+          "texture": "#glass"
         },
         "down": {
           "uv": [
@@ -3331,21 +3358,21 @@
             16,
             16
           ],
-          "texture": "#white"
+          "texture": "#glass"
         }
       }
     },
     {
       "name": "horizon_service_cab_48",
       "from": [
-        4.7,
-        13.84,
-        6.44
+        4.9,
+        13.46,
+        6.07
       ],
       "to": [
-        11.3,
-        15.92,
-        6.48
+        11.1,
+        16.06,
+        6.17
       ],
       "faces": {
         "north": {
@@ -3355,7 +3382,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#glass"
         },
         "south": {
           "uv": [
@@ -3364,7 +3391,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#glass"
         },
         "east": {
           "uv": [
@@ -3373,7 +3400,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#glass"
         },
         "west": {
           "uv": [
@@ -3382,7 +3409,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#glass"
         },
         "up": {
           "uv": [
@@ -3391,7 +3418,7 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#glass"
         },
         "down": {
           "uv": [
@@ -3400,12 +3427,918 @@
             16,
             16
           ],
-          "texture": "#whitedark"
+          "texture": "#glass"
         }
       }
     },
     {
       "name": "horizon_service_cab_49",
+      "from": [
+        4.98,
+        12.97,
+        0.31
+      ],
+      "to": [
+        7.5,
+        13.11,
+        0.41
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_50",
+      "from": [
+        8.5,
+        12.97,
+        0.31
+      ],
+      "to": [
+        11.02,
+        13.11,
+        0.41
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_51",
+      "from": [
+        4.54,
+        12.24,
+        0.44
+      ],
+      "to": [
+        11.46,
+        12.96,
+        1.8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dashboard"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dashboard"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dashboard"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dashboard"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dashboard"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dashboard"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_52",
+      "from": [
+        5.32,
+        12.91,
+        1.56
+      ],
+      "to": [
+        7.32,
+        13.09,
+        1.88
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_53",
+      "from": [
+        5.02,
+        11.32,
+        2.98
+      ],
+      "to": [
+        7.54,
+        12.28,
+        5.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_54",
+      "from": [
+        8.46,
+        11.32,
+        2.98
+      ],
+      "to": [
+        10.98,
+        12.28,
+        5.5
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_55",
+      "from": [
+        5.02,
+        12.04,
+        5.12
+      ],
+      "to": [
+        7.54,
+        14.6,
+        5.76
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_56",
+      "from": [
+        8.46,
+        12.04,
+        5.12
+      ],
+      "to": [
+        10.98,
+        14.6,
+        5.76
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_57",
+      "from": [
+        5.58,
+        14.6,
+        5.26
+      ],
+      "to": [
+        6.98,
+        15.4,
+        5.78
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_58",
+      "from": [
+        9.02,
+        14.6,
+        5.26
+      ],
+      "to": [
+        10.42,
+        15.4,
+        5.78
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#seat"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_59",
+      "from": [
+        7.56,
+        11,
+        1.72
+      ],
+      "to": [
+        8.44,
+        12.28,
+        4.52
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#chassis"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#chassis"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#chassis"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#chassis"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#chassis"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#chassis"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_60",
+      "from": [
+        8.31,
+        12.08,
+        3.39
+      ],
+      "to": [
+        8.49,
+        13.2,
+        3.57
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        }
+      },
+      "rotation": {
+        "origin": [
+          8.4,
+          12.64,
+          3.48
+        ],
+        "axis": "x",
+        "angle": -22.5
+      }
+    },
+    {
+      "name": "horizon_service_cab_61",
+      "from": [
+        5.6,
+        13.45,
+        1.78
+      ],
+      "to": [
+        6.96,
+        13.59,
+        1.98
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_62",
       "from": [
         3.9,
         9.56,
@@ -3474,7 +4407,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_50",
+      "name": "horizon_service_cab_63",
       "from": [
         2.92,
         14.36,
@@ -3543,7 +4476,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_51",
+      "name": "horizon_service_cab_64",
       "from": [
         11.88,
         14.36,
@@ -3612,7 +4545,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_52",
+      "name": "horizon_service_cab_65",
       "from": [
         2.76,
         13.72,
@@ -3681,7 +4614,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_53",
+      "name": "horizon_service_cab_66",
       "from": [
         12.76,
         13.72,
@@ -3750,7 +4683,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_54",
+      "name": "horizon_service_cab_67",
       "from": [
         2.69,
         13.92,
@@ -3819,7 +4752,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_55",
+      "name": "horizon_service_cab_68",
       "from": [
         13.25,
         13.92,
@@ -3888,7 +4821,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_56",
+      "name": "horizon_service_cab_69",
       "from": [
         3.44,
         10.56,
@@ -3957,7 +4890,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_57",
+      "name": "horizon_service_cab_70",
       "from": [
         11.68,
         10.56,
@@ -4026,7 +4959,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_58",
+      "name": "horizon_service_cab_71",
       "from": [
         3.44,
         10.56,
@@ -4095,7 +5028,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_59",
+      "name": "horizon_service_cab_72",
       "from": [
         11.68,
         10.56,
@@ -4164,7 +5097,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_60",
+      "name": "horizon_service_cab_73",
       "from": [
         3.44,
         11.6,
@@ -4233,7 +5166,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_61",
+      "name": "horizon_service_cab_74",
       "from": [
         11.68,
         11.6,
@@ -4302,7 +5235,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_62",
+      "name": "horizon_service_cab_75",
       "from": [
         3.33,
         11.49,
@@ -4371,7 +5304,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_63",
+      "name": "horizon_service_cab_76",
       "from": [
         12.57,
         11.49,
@@ -4440,7 +5373,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_64",
+      "name": "horizon_service_cab_77",
       "from": [
         4.06,
         11.2,
@@ -4509,7 +5442,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_65",
+      "name": "horizon_service_cab_78",
       "from": [
         10.54,
         11.2,
@@ -4578,7 +5511,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_66",
+      "name": "horizon_service_cab_79",
       "from": [
         4.14,
         11.28,
@@ -4647,7 +5580,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_67",
+      "name": "horizon_service_cab_80",
       "from": [
         10.62,
         11.28,
@@ -4716,7 +5649,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_68",
+      "name": "horizon_service_cab_81",
       "from": [
         4.22,
         11.56,
@@ -4785,7 +5718,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_69",
+      "name": "horizon_service_cab_82",
       "from": [
         10.7,
         11.56,
@@ -4854,7 +5787,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_70",
+      "name": "horizon_service_cab_83",
       "from": [
         4.22,
         11.35,
@@ -4923,7 +5856,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_71",
+      "name": "horizon_service_cab_84",
       "from": [
         10.7,
         11.35,
@@ -4992,7 +5925,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_72",
+      "name": "horizon_service_cab_85",
       "from": [
         3.74,
         9.42,
@@ -5061,7 +5994,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_73",
+      "name": "horizon_service_cab_86",
       "from": [
         11.02,
         9.42,
@@ -5130,7 +6063,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_74",
+      "name": "horizon_service_cab_87",
       "from": [
         7.16,
         9.72,
@@ -5199,7 +6132,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_75",
+      "name": "horizon_service_cab_88",
       "from": [
         7.4,
         9.91,
@@ -5268,7 +6201,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_76",
+      "name": "horizon_service_cab_89",
       "from": [
         4.12,
         16.36,
@@ -5337,7 +6270,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_77",
+      "name": "horizon_service_cab_90",
       "from": [
         3.88,
         16.62,
@@ -5406,7 +6339,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_78",
+      "name": "horizon_service_cab_91",
       "from": [
         4.3,
         12.4,
@@ -5475,7 +6408,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_79",
+      "name": "horizon_service_cab_92",
       "from": [
         10.94,
         12.4,
@@ -5544,7 +6477,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_80",
+      "name": "horizon_service_cab_93",
       "from": [
         5.24,
         12.46,
@@ -5613,7 +6546,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_81",
+      "name": "horizon_service_cab_94",
       "from": [
         3.884,
         11.33,
@@ -5682,7 +6615,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_82",
+      "name": "horizon_service_cab_95",
       "from": [
         12.036,
         11.33,
@@ -5751,7 +6684,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_83",
+      "name": "horizon_service_cab_96",
       "from": [
         3.81,
         12.25,
@@ -5820,7 +6753,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_84",
+      "name": "horizon_service_cab_97",
       "from": [
         12.09,
         12.25,
@@ -5889,7 +6822,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_85",
+      "name": "horizon_service_cab_98",
       "from": [
         3.06,
         9.51,
@@ -5958,7 +6891,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_86",
+      "name": "horizon_service_cab_99",
       "from": [
         12.34,
         9.51,
@@ -6027,7 +6960,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_87",
+      "name": "horizon_service_cab_100",
       "from": [
         2.68,
         13.4,
@@ -6096,7 +7029,7 @@
       }
     },
     {
-      "name": "horizon_service_cab_88",
+      "name": "horizon_service_cab_101",
       "from": [
         12.92,
         13.4,
@@ -6106,6 +7039,351 @@
         13.32,
         13.72,
         1.84
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#black"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_102",
+      "from": [
+        5.28,
+        12.9,
+        1.12
+      ],
+      "to": [
+        7.28,
+        13.26,
+        1.6
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_103",
+      "from": [
+        5.72,
+        13.23,
+        1.36
+      ],
+      "to": [
+        6.84,
+        13.33,
+        1.52
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_104",
+      "from": [
+        9,
+        12.44,
+        1.84
+      ],
+      "to": [
+        10.76,
+        12.84,
+        1.92
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_105",
+      "from": [
+        9.6,
+        12.724,
+        1.92
+      ],
+      "to": [
+        10.16,
+        12.796,
+        1.96
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_cab_106",
+      "from": [
+        8.22,
+        13.06,
+        3.18
+      ],
+      "to": [
+        8.58,
+        13.42,
+        3.54
       ],
       "faces": {
         "north": {

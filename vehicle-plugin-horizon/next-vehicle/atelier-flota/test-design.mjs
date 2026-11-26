@@ -8,10 +8,14 @@ for(const [name,parts] of Object.entries({cab,platforma,atelier,ramp})){
   assert.ok(p[4]>0&&p[5]>0&&p[6]>0,`${name}: invalid dimensions`);
  }
 }
-assert.equal(cab.filter(p=>p[0]==='glass').length,0,'cab must not have windows');
-// The opaque shells cover the front, side and rear above the doors.
-for(const [x,z] of [[0,-1.84],[-.96,-1.15],[.96,-1.15],[0,-.47]]){
- assert.ok(cab.some(p=>p[0]==='white'&&p[1]===x&&p[3]===z&&p[5]>=1),'missing closed cab panel');
+const windows=cab.filter(p=>p[0]==='glass');
+assert.equal(windows.length,4,'front, rear and both side windows must be present');
+assert.ok(cab.filter(p=>p[0]==='seat').length>=6,'seats should be visible through windows');
+// Check at the centre of every pane, slightly inside the cabin, for an opaque
+// wall (interior fixtures deeper inside must not be mistaken for window infill).
+for(const point of [[0,1.68,-1.78],[-.90,1.68,-1.18],[.90,1.68,-1.18],[0,1.69,-.53]]){
+ const [x,y,z]=point;
+ assert.ok(!cab.some(p=>p[0]!=='glass'&&Math.abs(x-p[1])<p[4]/2&&Math.abs(y-p[2])<p[5]/2&&Math.abs(z-p[3])<p[6]/2),'opaque panel blocks a window centre');
 }
 for(const [x,y,z,scale] of platformWheels.slice(2)){
  assert.ok(Math.abs(y-.45*scale)<1e-8,'rear tyre must touch ground');
@@ -23,4 +27,4 @@ for(const [x,y,z,scale] of wheels.slice(2)){
 }
 assert.equal(wheels.length,4);assert.equal(platformWheels.length,4);
 assert.notDeepEqual(platforma,atelier);
-console.log('Opaque cab, wheel clearances and separate bodies validated.');
+console.log('Window openings, interior, wheel clearances and separate bodies validated.');
