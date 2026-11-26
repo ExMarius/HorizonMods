@@ -5,7 +5,7 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import {deflateSync} from 'node:zlib';
 import {resolve,join,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {cab,platforma,atelier,palette} from '../design.js';
+import {cab,platforma,atelier,ramp,palette} from '../design.js';
 const here=dirname(fileURLToPath(import.meta.url));
 const out=resolve(process.argv[2]||join(here,'assets'));
 const scale=4, unit=16/scale;
@@ -43,7 +43,7 @@ const wheel=[
  ['rim',-.18,0,0,.04,.52,.52],['rim',.18,0,0,.04,.52,.52],
  ['steel',-.205,0,0,.05,.18,.18],['steel',.205,0,0,.05,.18,.18]
 ];
-const models={horizon_service_cab:cab,horizon_service_flatbed:platforma,horizon_service_workshop:atelier,horizon_service_steering:steering,horizon_service_wheel:wheel};
+const models={horizon_service_cab:cab,horizon_service_flatbed:platforma,horizon_service_workshop:atelier,horizon_service_steering:steering,horizon_service_wheel:wheel,horizon_service_ramp:ramp};
 for(const [name,pieces] of Object.entries(models)){
  const body={textures,elements:pieces.map((p,i)=>cuboid(p,i,name))};
  writeFileSync(join(modelDir,name+'.json'),JSON.stringify(body,null,2)+'\n');

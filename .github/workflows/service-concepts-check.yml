@@ -26,7 +26,10 @@ jobs:
           node --check server.cjs
           node --check app.js
           node --check minecraft-preview.js
+          node --check loading-demo.js
+          node --check loading-kinematics.js
           node test-design.mjs
+          node test-loading.mjs
       - name: Validate item export, texture references and pack safety
         working-directory: vehicle-plugin-horizon/next-vehicle/atelier-flota/minecraft
         run: python3 -m unittest -v test_minecraft
