@@ -95,3 +95,11 @@ este expusă jucătorilor: protecțiile, traseul real și persistența nu sunt l
 înclinare, reversibilă pentru descărcare; nu reprezintă o cale verificată de
 coliziuni și nu trebuie folosită ca autorizație de deplasare. Lipsesc suprafața
 reală, coordonatele vehiculului în joc și verificarea caroseriei și a cablului.
+
+Experimentul de mișcare refuză acum dacă inventarul de remorci de la pornire
+nu poate fi verificat complet, inclusiv când o lume sau un tip este indisponibil;
+verifică și legăturile active la fiecare pas. Aceasta nu rezolvă încă o problemă
+existentă a stocării remorcilor: salvarea obișnuită poate omite înregistrări
+amânate, iar după restart nu se mai poate deduce că au existat. Nu activa
+recuperarea în producție până când stocarea și reconcilierea nu păstrează și
+verifică toate înregistrările, inclusiv cele neîncărcate.

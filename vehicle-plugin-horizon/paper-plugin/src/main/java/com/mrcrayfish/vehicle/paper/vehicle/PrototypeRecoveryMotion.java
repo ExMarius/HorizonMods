@@ -44,6 +44,7 @@ public final class PrototypeRecoveryMotion {
                 ||!operator.isOnline() || !carrier.canDrive(operator) || !target.canDrive(operator)
                 ||carrier.rig().recoveryRampProgress()!=1D || carrier.horizontalSpeed()>.01D
                 ||carrier.location().getWorld()==null || !carrier.location().getWorld().equals(target.location().getWorld())
+                ||!manager.trailers().recoveryLinksKnown()
                 ||manager.trailers().referencesVehicle(target.id()) || manager.trailers().referencesVehicle(carrier.id())) return null;
         PrototypeRecoveryMotion run=new PrototypeRecoveryMotion(manager,carrier,target,operator,authority);
         if(run.interlock.openRamps(carrier.id(),target.id(),operator.getUniqueId(),RecoveryInterlock.Mode.WINCH,safety)!=RecoveryInterlock.Denial.NONE
@@ -68,6 +69,7 @@ public final class PrototypeRecoveryMotion {
                 || !carrier.canDrive(operator) || !target.canDrive(operator)
                 ||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token)
                 ||manager.byId(carrier.id()).orElse(null)!=carrier||manager.byId(target.id()).orElse(null)!=target
+                ||!manager.trailers().recoveryLinksKnown()
                 ||manager.trailers().referencesVehicle(carrier.id())||manager.trailers().referencesVehicle(target.id())
                 ||carrier.rig().recoveryRampProgress()!=1D||target.occupied()||carrier.occupied()
                 ||target.onJack()||target.jackId()!=null||carrier.onJack()||carrier.jackId()!=null

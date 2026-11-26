@@ -3,6 +3,7 @@ package com.mrcrayfish.vehicle.paper.runtime;
 import com.mrcrayfish.vehicle.paper.VehiclePlugin;
 import com.mrcrayfish.vehicle.paper.persistence.StoredTrailer;
 import com.mrcrayfish.vehicle.paper.persistence.TrailerStore;
+import com.mrcrayfish.vehicle.paper.persistence.TrailerRecoveryAudit;
 import com.mrcrayfish.vehicle.paper.render.LandVehicleRig;
 import com.mrcrayfish.vehicle.paper.vehicle.LandVehicle;
 import com.mrcrayfish.vehicle.paper.vehicle.LandVehicleSpec;
@@ -48,6 +49,8 @@ public final class TrailerManager {
     private final Map<UUID, Interaction> waterPlacementTargets = new HashMap<>();
     private final Map<UUID, UUID> waterPlacementTargetOwners = new HashMap<>();
     private int entityIndexTicks;
+    // Sticky for this server session: saving active trailers can discard deferred records.
+    private boolean recoveryLinksKnown;
 
     public TrailerManager(VehiclePlugin plugin, VehicleManager vehicles) {
         this.plugin = plugin;
@@ -57,10 +60,15 @@ public final class TrailerManager {
 
     public void start() {
         int releasedPlayerLinks = 0;
-        for (StoredTrailer stored : store.loadAll()) {
+        int trustedRecords = TrailerRecoveryAudit.countTrustedRecords(
+                new java.io.File(plugin.getDataFolder(), "trailers.yml"));
+        var storedTrailers = store.loadAll();
+        boolean complete = trustedRecords >= 0 && trustedRecords == storedTrailers.size();
+        for (StoredTrailer stored : storedTrailers) {
             TrailerSpec spec = TrailerSpec.byId(stored.type());
             World world = Bukkit.getWorld(stored.worldId());
             if (spec == null || world == null) {
+                complete = false;
                 plugin.getLogger().warning("Deferring unsupported/unavailable trailer " + stored.id());
                 continue;
             }
@@ -77,6 +85,8 @@ public final class TrailerManager {
                     pullerType, pullerId, stored.loadedVehicleId(),
                     stored.fluidMaterial(), stored.fluidAmount(), stored.inventory());
         }
+        recoveryLinksKnown = complete;
+        if (!complete) plugin.getLogger().warning("Recovery operations disabled: trailer linkage records are incomplete or unavailable.");
         plugin.getLogger().info("Loaded " + trailers.size() + " trailer(s)."
                 + (releasedPlayerLinks == 0 ? "" : " Released " + releasedPlayerLinks
                 + " stale player-held link(s)."));
@@ -715,6 +725,9 @@ public final class TrailerManager {
         });
         trailer.setLoadedVehicleId(null);
     }
+
+    /** Recovery must refuse unknown state even if no active trailer references the vehicle. */
+    public boolean recoveryLinksKnown() { return recoveryLinksKnown; }
 
     public boolean referencesVehicle(UUID vehicleId) {
         return trailers.values().stream().anyMatch(trailer ->
