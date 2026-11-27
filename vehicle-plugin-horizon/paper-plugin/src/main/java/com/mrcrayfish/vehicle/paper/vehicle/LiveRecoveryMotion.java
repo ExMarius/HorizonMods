@@ -31,10 +31,12 @@ public final class LiveRecoveryMotion {
     private final UUID token=UUID.randomUUID();
     private final RecoveryInterlock interlock=new RecoveryInterlock();
     private boolean closed, halted, testDriving, evacuationPending;
+    private final float cargoYawOffset;
     private final Set<UUID> pendingEvacuees = new HashSet<>();
 
     private LiveRecoveryMotion(VehicleManager manager,LandVehicle carrier,LandVehicle target,Player operator,Authority authority){
         this.manager=manager;this.carrier=carrier;this.target=target;this.operator=operator;this.authority=authority;
+        this.cargoYawOffset=(float)Math.IEEEremainder(target.location().getYaw()-carrier.location().getYaw(),360D);
     }
     /** SAFETY is a snapshot supplied by the test harness; production adapter does not yet exist. */
     public static LiveRecoveryMotion begin(VehicleManager manager,LandVehicle carrier,LandVehicle target,
@@ -135,7 +137,17 @@ public final class LiveRecoveryMotion {
         for(Entity entity:world.getNearbyEntities(swept))if(entity.isValid()&&!ignored.contains(entity.getUniqueId()))return false;
         if(delta.lengthSquared()>1e-12 && VehicleCollisionMover.move(world,start,delta,false,width,height,0D,false)
                 .movement().distanceSquared(delta)>1e-10)return false;
-        target.followRecoveryCarrier(token,carrierPose);return true;
+        target.followRecoveryCarrier(token,carrierPose,cargoYawOffset);return true;
+    }
+    void pause() {
+        if (testDriving && carrier.recoveryMotionLockedBy(token) && !carrier.transported())
+            carrier.freezeRecoveryTestDrive(token);
+    }
+    boolean resume() {
+        if (closed || !operator.isOnline() || !carrier.recoveryMotionLockedBy(token) || !target.recoveryMotionLockedBy(token)) return false;
+        halted=false;
+        if (testDriving && carrier.transported()) carrier.startRecoveryTestDrive(token);
+        return true;
     }
     boolean endTestDrive() {
         if(!Bukkit.isPrimaryThread()||!testDriving||carrier.recoveryHasPassengers()||!followTestDrive())return false;

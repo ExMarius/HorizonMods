@@ -26,6 +26,9 @@ public final class LiveRecoveryRoute {
     private Location origin;
     private double sin,cos,startZ,lateral,groundOffset;
     private float cargoYaw;
+    private final float cargoYawOffset;
+    private final double pitchDirection;
+    private State pausedState;
     private int step;
     private State state=State.LOADING;
 
@@ -36,6 +39,8 @@ public final class LiveRecoveryRoute {
         startZ=-dx*sin+dz*cos;lateral=-dx*cos-dz*sin;
         groundOffset=actual.getY()-origin.getY()-RecoveryLoadingPath.pose(startZ,WHEELBASE).height();
         cargoYaw=actual.getYaw();
+        cargoYawOffset=(float)Math.IEEEremainder(cargoYaw-origin.getYaw(),360D);
+        pitchDirection=Math.cos(Math.toRadians(cargoYawOffset))<0?-1D:1D;
     }
     /** Common centred route for approved small/medium vehicles on level ground.
      * The shared wheelbase and tow-eye geometry are approximate for other models. */
@@ -70,14 +75,14 @@ public final class LiveRecoveryRoute {
     }
     public boolean tickTestDrive() {
         if(!Bukkit.isPrimaryThread()||state!=State.TEST_DRIVING)return false;
-        if(!motion.followTestDrive()){state=State.STOPPED;return false;}
+        if(!motion.followTestDrive()){pause();return false;}
         return true;
     }
     public boolean endTestDrive() {
         if(!Bukkit.isPrimaryThread()||state!=State.TEST_DRIVING||!motion.endTestDrive())return false;
         origin=carrier.location().clone();
         double yaw=Math.toRadians(origin.getYaw());sin=Math.sin(yaw);cos=Math.cos(yaw);
-        lateral=0;groundOffset=0;cargoYaw=origin.getYaw();
+        lateral=0;groundOffset=0;cargoYaw=origin.getYaw()+cargoYawOffset;
         startZ=Math.max(startZ,9.55D);
         carrier.rig().setRecoveryRampProgress(1);carrier.forceVisualSync();
         state=State.AT_DECK;return true;
@@ -94,13 +99,15 @@ public final class LiveRecoveryRoute {
             if (!sameCarrierPose()) return stop();
             boolean loading=state==State.LOADING;
             double from=loading?startZ:DECK,to=loading?DECK:startZ;
-            var previous=RecoveryLoadingPath.sample(from,to,WHEELBASE,step/(double)STEPS);
+            double previousProgress=ease(step/(double)STEPS);
+            var previous=RecoveryLoadingPath.sample(from,to,WHEELBASE,previousProgress);
             Location actual=target.location();
-            double previousFactor=loading ? 1D-step/(double)STEPS : 0D;
+            double previousFactor=loading ? 1D-previousProgress : 0D;
             if(!origin.getWorld().equals(actual.getWorld()) || actual.distanceSquared(destination(previous,previousFactor))>1e-8
                     || Math.abs(Math.IEEEremainder(actual.getYaw()-cargoYaw,360D))>.01D) return stop();
-            var next=RecoveryLoadingPath.sample(from,to,WHEELBASE,(step+1D)/STEPS);
-            double nextFactor=loading ? 1D-(step+1D)/STEPS : 0D;
+            double nextProgress=ease((step+1D)/STEPS);
+            var next=RecoveryLoadingPath.sample(from,to,WHEELBASE,nextProgress);
+            double nextFactor=loading ? 1D-nextProgress : 0D;
             var cable=cable(next,lateral*nextFactor,groundOffset*nextFactor);
             if(!RecoveryCable.clearsLevelBed(cable,.18,5.35,.86,.018))return stop();
             Set<UUID> ignored=new HashSet<>();
@@ -110,7 +117,7 @@ public final class LiveRecoveryRoute {
                     origin.getX()-p.x()*cos-p.z()*sin,origin.getY()+p.y(),origin.getZ()-p.x()*sin+p.z()*cos)).toList();
             if(!RecoveryCableWorldCheck.clear(origin.getWorld(),worldCable,.018,ignored))return stop();
             var delta=destination(next,nextFactor).toVector().subtract(target.location().toVector());
-            if(!motion.step(delta,safety,next.pitch()))return stop();
+            if(!motion.step(delta,safety,next.pitch()*pitchDirection))return stop();
             carrier.rig().setRecoveryCable(cable);carrier.forceVisualSync();
             if(++step==STEPS)state=loading?State.AT_DECK:State.ON_GROUND;
             return state;
@@ -135,7 +142,16 @@ public final class LiveRecoveryRoute {
         manager.returnOfflineRecoveredVehicle(target);
         return true;
     }
-    private State stop(){state=State.STOPPED;return state;}
+    private static double ease(double t){return t*t*(3D-2D*t);}
+    void pause(){
+        if(state==State.STOPPED)return;
+        pausedState=state;motion.pause();state=State.STOPPED;
+    }
+    boolean resume(){
+        if(state!=State.STOPPED || pausedState==null || !motion.resume())return false;
+        state=pausedState;pausedState=null;return true;
+    }
+    private State stop(){pause();return state;}
     private boolean sameCarrierPose(){
         Location now=carrier.location();
         return origin.getWorld().equals(now.getWorld()) && origin.distanceSquared(now)<1e-8

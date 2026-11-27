@@ -91,8 +91,19 @@ public final class RecoveryTowCommands {
         return player.isOp() || carrier.canDrive(player);
     }
     private void start(Player player,LandVehicle carrier) {
-        if(operations.containsKey(carrier.id()) || carrier.occupied() || carrier.horizontalSpeed()>.01) {
-            player.sendMessage("Oprește platforma, coboară și încheie transportul anterior.");return;
+        Operation existing=operations.get(carrier.id());
+        if(existing!=null && !manager.recoveryPairActive(carrier.id())) {
+            existing.finishTask();existing=null;
+        }
+        if(existing!=null) {
+            if(!existing.operator.getUniqueId().equals(player.getUniqueId())) {player.sendMessage("Operatorul inițial trebuie să reia manevra.");return;}
+            if(existing.route.state()==LiveRecoveryRoute.State.STOPPED && existing.route.resume()) {
+                existing.schedule();player.sendMessage("Manevra a fost reluată; zona este verificată din nou.");return;
+            }
+            player.sendMessage("Există deja o manevră activă pe platformă.");return;
+        }
+        if(carrier.occupied() || carrier.horizontalSpeed()>.01) {
+            player.sendMessage("Oprește platforma și coboară.");return;
         }
         Location base=carrier.location();
         LandVehicle target=manager.vehicles().stream().filter(v -> v!=carrier && RecoveryTargetPolicy.supports(v.spec()))
@@ -122,7 +133,7 @@ public final class RecoveryTowCommands {
         }
         Operation operation=new Operation(carrier,target,route,player);
         operations.put(carrier.id(),operation);
-        operation.task=Bukkit.getScheduler().runTaskTimer(plugin,operation::tick,1L,1L);
+        operation.schedule();
         player.sendMessage("Troliul a început încărcarea.");
     }
     private void unload(Player player,LandVehicle carrier) {
@@ -139,6 +150,7 @@ public final class RecoveryTowCommands {
         Operation(LandVehicle carrier,LandVehicle target,LiveRecoveryRoute route,Player operator) {
             this.carrier=carrier;this.target=target;this.route=route;this.operator=operator;
         }
+        void schedule(){if(task!=null)task.cancel();task=Bukkit.getScheduler().runTaskTimer(plugin,this::tick,1L,1L);}
         void tick() {
             try {
                 if(!manager.recoveryPairActive(carrier.id())) {finishTask();return;}
@@ -153,14 +165,18 @@ public final class RecoveryTowCommands {
                         if(!route.finishOnGround())throw new IllegalStateException("Recovery release failed after commit");
                         operator.sendMessage("Mașina a fost descărcată.");finishTask();
                     } else if(state==LiveRecoveryRoute.State.STOPPED) stop();
+                } else if(state==LiveRecoveryRoute.State.AT_DECK) {
+                    if(!route.beginTestDrive()) {stop();return;}
+                    operator.sendMessage("Mașina este fixată; poți conduce platforma.");
                 } else if(state==LiveRecoveryRoute.State.TEST_DRIVING && !route.tickTestDrive()) stop();
             } catch(Exception error) {
                 plugin.getLogger().warning("[Recovery] Manevra oprită: "+error.getMessage());stop();
             }
         }
         void stop() {
-            operator.sendMessage("Manevra s-a oprit; vehiculele sunt trimise în garaj în siguranță.");
-            manager.recoveryOwnerQuit(carrier.owner().orElse(operator.getUniqueId()));finishTask();
+            route.pause();
+            if(task!=null){task.cancel();task=null;}
+            operator.sendMessage("Manevra s-a oprit; vehiculele rămân pe loc și blocate. Eliberează zona, apoi folosește /vehicle tractare incarca pentru reluare.");
         }
         void finishTask(){if(task!=null)task.cancel();operations.remove(carrier.id(),this);}
     }

@@ -1753,6 +1753,13 @@ public final class LandVehicle {
     boolean recoveryMotionLockedBy(UUID token) { return token!=null && token.equals(recoveryMotionToken); }
     void applyRecoveryMotion(UUID token, Vector displacement, float pitchDegrees) {
         if (!recoveryMotionLockedBy(token)) throw new IllegalStateException("Recovery lock lost");
+        double signed=displacement.dot(forward(location.getYaw()));
+        if (!spec.wheels().isEmpty()) {
+            double front=Math.max(.1D,24D*spec.firstFrontWheel().scaleY());
+            double rear=Math.max(.1D,24D*spec.firstRearWheel().scaleY());
+            frontWheelRotation-=(float)(signed*320D/front);
+            rearWheelRotation-=(float)(signed*320D/rear);
+        }
         location.add(displacement);velocity.zero();motion.zero();verticalVelocity=0;
         recoveryPitchDegrees=pitchDegrees;
         rig.updateRecoveryPose(location,frontWheelRotation,rearWheelRotation,recoveryPitchDegrees,age);
@@ -1778,9 +1785,9 @@ public final class LandVehicle {
         rig.updateRecoveryPose(location,frontWheelRotation,rearWheelRotation,0F,age);
     }
     /** Live recovery deck offset; kept separate from the legacy prototype path. */
-    void followRecoveryCarrier(UUID token, Location carrier) {
+    void followRecoveryCarrier(UUID token, Location carrier, float yawOffset) {
         if(!recoveryMotionLockedBy(token) || !transported)throw new IllegalStateException("Recovery lock lost");
-        location=local(carrier,0,.86,2.64);location.setYaw(carrier.getYaw());
+        location=local(carrier,0,.86,2.64);location.setYaw(carrier.getYaw()+yawOffset);
         velocity.zero();motion.zero();verticalVelocity=0;waterSpeed=0;recoveryPitchDegrees=0;
         rig.updateRecoveryPose(location,frontWheelRotation,rearWheelRotation,0F,age);
     }
