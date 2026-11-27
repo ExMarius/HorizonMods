@@ -14,6 +14,19 @@ def offline_properties(api):
         raise ValueError('Server started during installation; do not modify live files')
     return _original_properties(api)
 installer.properties=offline_properties
+
+# Guard each mutating operation, not just the initial snapshot. Backup uploads
+# at the server root remain permitted, while live plugin/config writes do not.
+class OfflineFalix(installer.f.Falix):
+    def upload(self, directory, name, content):
+        if directory != '/' and self.status() != 'offline':
+            raise ValueError('Server started; refusing plugin file write')
+        return super().upload(directory,name,content)
+    def api(self, path, data=None, method=None):
+        if path == '/properties' and method == 'PUT' and self.status() != 'offline':
+            raise ValueError('Server started; refusing resource pack configuration change')
+        return super().api(path,data,method)
+installer.f.Falix=OfflineFalix
 if __name__=='__main__':
     if installer.f.Falix(installer.f.login()).status()!='offline':raise SystemExit('Server must remain offline; no installation performed')
     installer.main()

@@ -1,0 +1,72 @@
+name: Resume recovery platform installation
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['.github/workflows/recovery-resume-install.yml']
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+concurrency:
+  group: falix-vehicle-deploy
+  cancel-in-progress: false
+jobs:
+  install:
+    if: startsWith(github.event.head_commit.message, 'Resume recovery installation')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Retrieve tested build and verify candidate pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run view 46001982701 --json headSha,conclusion --jq 'select(.headSha|startswith("4664b13"))|select(.conclusion=="success")|.headSha' | grep -q .
+          mkdir -p /tmp/recovery-new /tmp/recovery-base /tmp/recovery-existing
+          gh run download 46001982701 -n MrCrayfishVehiclePlugin-recovery -D /tmp/recovery-new
+          gh release download horizon-offroader-45727535290 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/recovery-base
+          gh release download horizon-offroader-46003712699 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/recovery-existing
+          echo '136f003f9c56ee849881d41fb6697876353b5681  /tmp/recovery-base/HorizonOffRoader-1.21.4.zip' | sha1sum -c -
+          python3 vehicle-plugin-horizon/next-vehicle/atelier-flota/minecraft/build_pack.py /tmp/recovery-base/HorizonOffRoader-1.21.4.zip /tmp/recovery-new/HorizonOffRoader-1.21.4.zip --expected-sha1 136f003f9c56ee849881d41fb6697876353b5681
+          cmp /tmp/recovery-new/HorizonOffRoader-1.21.4.zip /tmp/recovery-existing/HorizonOffRoader-1.21.4.zip
+          sha256sum /tmp/recovery-new/*
+      - name: Confirm offline before touching server
+        run: |
+          python3 - <<'PY'
+          import importlib.util
+          spec=importlib.util.spec_from_file_location('f','paper-vehicles/deploy/falix_auto_update.py')
+          f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
+          if f.Falix(f.login()).status()!='offline':raise SystemExit('Server is not offline: no installation attempted')
+          PY
+      - name: Make fresh offline backup of plugin data, old JAR and pack
+        run: python3 paper-vehicles/deploy/falix_recovery_backup.py /tmp/recovery-base/HorizonOffRoader-1.21.4.zip
+      - name: Install tested JAR and matching resource pack
+        env:
+          PACK_URL: https://github.com/ExMarius/HorizonMods/releases/download/horizon-offroader-46003712699/HorizonOffRoader-1.21.4.zip
+        run: |
+          set -o pipefail
+          python3 paper-vehicles/deploy/falix_install_recovery.py /tmp/recovery-new/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/recovery-new/HorizonOffRoader-1.21.4.zip "$PACK_URL" 2>&1 | tee /tmp/install.log || {
+            python3 -c "from pathlib import Path; print('::error::'+' | '.join(Path('/tmp/install.log').read_text().splitlines()[-8:]).replace('%','%25')[:4000])"
+            exit 1
+          }
+      - name: Start server and verify plugin startup
+        run: |
+          python3 - <<'PY'
+          import importlib.util,time
+          spec=importlib.util.spec_from_file_location('f','paper-vehicles/deploy/falix_auto_update.py')
+          f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
+          a=f.Falix(f.login())
+          if a.status()!='offline':raise ValueError('Server not offline; start request not sent')
+          a.api('/power',{'signal':'start'},'POST')
+          for _ in range(60):
+              time.sleep(5)
+              if a.status()=='running':
+                  text=a.download('/logs/latest.log').decode('utf-8','replace')
+                  if 'Error occurred while enabling MrCrayfishVehiclePlugin' in text:raise ValueError('Plugin enable failed')
+                  if 'Enabling MrCrayfishVehiclePlugin' in text and 'Done (' in text:break
+          else:raise ValueError('Server or plugin startup not confirmed; inspect panel')
+          f.notice('Restart verified','Server running and plugin enabled; in-game visuals still need testing')
+          PY
