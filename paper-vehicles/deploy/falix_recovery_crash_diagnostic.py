@@ -3,6 +3,30 @@ import importlib.util,re
 from pathlib import Path
 spec=importlib.util.spec_from_file_location('f',Path(__file__).with_name('falix_auto_update.py'))
 f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f);api=f.Falix(f.login())
+# Emit the latest opt-in measurement before other notices: GitHub caps annotations
+# per step and truncates individual messages. Compression preserves the samples.
+try:
+    import base64, gzip
+    lines=api.download('/logs/latest.log').decode('utf-8','replace').splitlines()
+    seat=[line.split('[SeatMeasure] ',1)[1] for line in lines if '[SeatMeasure] ' in line]
+    starts=[i for i,line in enumerate(seat) if line.startswith('BEGIN ')]
+    if starts:
+        latest=seat[starts[-1]:]
+        if not latest[-1].startswith('END'):
+            f.notice('Seat measurement', 'Incomplete session')
+        else:
+            encoded=base64.b64encode(gzip.compress(('\n'.join(latest)).encode())).decode()
+            chunks=[encoded[i:i+3000] for i in range(0,len(encoded),3000)]
+            if len(chunks) > 9:
+                f.notice('Seat measurement', 'Measurement too large to export safely in annotations')
+            else:
+                for i,chunk in enumerate(chunks,1):
+                    f.notice(f'Seat measurement {i:02}/{len(chunks):02}',chunk)
+    else:
+        f.notice('Seat measurement', 'No completed measurement in latest.log')
+except BaseException as e:
+    f.notice('Seat measurement error',str(e))
+
 f.notice('Server status',str(api.status()))
 props={e['key']:str(e.get('value','')) for e in api.api('/properties') if isinstance(e,dict) and 'key' in e}
 f.notice('Resource pack status',repr({k:props.get(k) for k in ('resource-pack','resource-pack-sha1','resource-pack-id','require-resource-pack')}))
@@ -39,17 +63,3 @@ try:
     f.notice('Timer diagnostic events', ' | '.join(matches[-20:]).replace('%','%25') or 'No matching events in latest.log')
 except BaseException as e:
     f.notice('Timer diagnostic read error',str(e))
-
-# Only the latest explicitly opted-in seat measurement; fixed-format lines contain no player name or coordinates.
-try:
-    lines=api.download('/logs/latest.log').decode('utf-8','replace').splitlines()
-    seat=[line.split('[SeatMeasure] ',1)[1] for line in lines if '[SeatMeasure] ' in line]
-    starts=[i for i,line in enumerate(seat) if line.startswith('BEGIN ')]
-    if starts:
-        latest=seat[starts[-1]:]
-        for i in range(0,len(latest),5):
-            f.notice('Seat measurement', ' | '.join(latest[i:i+5]).replace('%','%25'))
-    else:
-        f.notice('Seat measurement', 'No completed measurement in latest.log')
-except BaseException as e:
-    f.notice('Seat measurement error', str(e))
