@@ -55,3 +55,5 @@ jobs:
           else:raise ValueError('Server startup not confirmed; inspect panel')
           f.notice('Server started','Plugin startup confirmed; visual checks remain')
           PY
+
+# User confirmed server stopped for the requested update.
