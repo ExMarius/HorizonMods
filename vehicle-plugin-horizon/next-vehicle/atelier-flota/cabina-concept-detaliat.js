@@ -4,7 +4,11 @@ const add=(group,mat,x,y,z,w,h,d,rx=0)=>group.push([mat,x,y,z,w,h,d,rx]);
 const pair=(group,mat,x,y,z,w,h,d,rx=0)=>{for(const side of [-1,1])add(group,mat,x*side,y,z,w,h,d,rx)};
 // Full-width nose, lower valance and bumper cover the gap under the front.
 add(body,'chassis',0,.40,-2.61,2.66,.27,.23);
-add(body,'dark',0,.57,-2.59,2.60,.10,.17);
+add(body,'dark',0,.58,-2.59,2.60,.12,.17);
+// Solid lower front belly pan connects the bumper to the chassis and floor.
+add(body,'chassis',0,.32,-2.30,2.12,.16,.50);
+add(body,'dark',0,.48,-2.30,2.12,.16,.48);
+add(body,'chassis',0,.56,-1.83,2.12,.16,.46);
 add(body,'white',0,.85,-2.48,2.60,.47,.34);
 add(body,'whiteDark',0,1.105,-2.43,2.55,.07,.40);
 add(body,'white',0,1.155,-2.38,2.53,.04,.42);
@@ -26,17 +30,27 @@ pair(body,'amber',1.03,.835,-2.689,.35,.04,.01);
 // Frame, flat floor, wheelhouse walls: the tyre stays outside the footwell.
 pair(body,'chassis',.85,.44,-1.45,.16,.19,2.25);
 add(body,'chassis',0,.69,-1.42,2.18,.16,2.20);
+// Closed firewall and lower interior side trims connect floor to dashboard.
+add(body,'dashboard',0,1.005,-2.225,2.18,.47,.06);
+pair(body,'dashboard',1.17,1.04,-.69,.12,.54,.62);
+pair(body,'dark',1.11,1.31,-.69,.025,.06,.62);
 pair(body,'dashboard',1.10,.99,-1.66,.07,.48,1.10);
 pair(body,'dashboard',1.01,1.245,-1.66,.20,.045,1.10);
 // Wheel arch crown and front/rear arch edges; doors end behind the front tyre.
 pair(body,'white',1.31,1.12,-1.66,.14,.12,1.18);
+// Fill the former strip between arch crown and the window sill.
+pair(body,'white',1.30,1.2525,-1.66,.13,.145,1.18);
 pair(body,'white',1.31,.83,-2.28,.14,.45,.10);
 pair(body,'white',1.31,.83,-1.04,.14,.45,.10);
 pair(body,'white',1.30,1.01,-.66,.14,.63,.65);
 pair(body,'whiteDark',1.30,1.36,-1.48,.13,.07,1.68);
+// The rear end of the door and sill meet the rear corner, not open air.
+pair(body,'white',1.30,1.01,-.345,.14,.63,.12);
+pair(body,'whiteDark',1.30,1.36,-.49,.13,.07,.30);
 pair(body,'dark',1.378,1.08,-.65,.015,.045,.20);
 pair(body,'silver',1.391,1.09,-.65,.012,.018,.13);
 pair(body,'chassis',1.25,.44,-.67,.22,.16,.68);
+pair(body,'whiteDark',1.30,.655,-.67,.14,.08,.68);
 pair(body,'steel',1.39,.49,-.67,.18,.07,.68);
 pair(body,'dark',1.39,.531,-.67,.16,.012,.59);
 // Closed rear wall, narrow high rear window, and a shallow transition to bed.
