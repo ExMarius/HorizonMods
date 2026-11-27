@@ -44,7 +44,7 @@ public final class LiveRecoveryMotion {
                 ||manager.byId(carrier.id()).orElse(null)!=carrier || manager.byId(target.id()).orElse(null)!=target
                 ||!carrier.rig().valid() || !target.rig().valid()
                 ||target.recoveryHasPassengers() || carrier.recoveryHasPassengers()
-                ||!operator.isOnline() || !RecoveryTowCommands.canOperateCarrier(carrier,operator) || !target.canDrive(operator)
+                ||!operator.isOnline() || !RecoveryTowCommands.canOperateCarrier(carrier,operator) || (!target.canDrive(operator) && !operator.isOp())
                 ||carrier.rig().recoveryRampProgress()!=1D || carrier.horizontalSpeed()>.01D
                 ||carrier.location().getWorld()==null || !carrier.location().getWorld().equals(target.location().getWorld())
                 ||!manager.trailers().recoveryLinksKnown()
@@ -74,7 +74,7 @@ public final class LiveRecoveryMotion {
         if(!Double.isFinite(pitchRadians)||Math.abs(pitchRadians)>Math.PI/4
                 ||!Bukkit.isPrimaryThread()||closed||delta==null||!Double.isFinite(delta.getX())||!Double.isFinite(delta.getY())||!Double.isFinite(delta.getZ())
                 ||delta.lengthSquared()<1e-12 ||delta.lengthSquared()>.08D*.08D || !operator.isOnline()
-                || !RecoveryTowCommands.canOperateCarrier(carrier,operator) || !target.canDrive(operator)
+                || !RecoveryTowCommands.canOperateCarrier(carrier,operator) || (!target.canDrive(operator) && !operator.isOp())
                 ||!carrier.rig().valid() || !target.rig().valid()
                 ||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token)
                 ||manager.byId(carrier.id()).orElse(null)!=carrier||manager.byId(target.id()).orElse(null)!=target

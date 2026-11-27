@@ -20,7 +20,7 @@ public final class RecoveryCable {
      */
     public static List<Point> route(Point outlet, Point roller, Point hook) {
         if (outlet == null || roller == null || hook == null ||
-                outlet.x() != 0 || roller.x() != 0 || hook.x() != 0 ||
+                outlet.x() != 0 || roller.x() != 0 ||
                 roller.z() <= outlet.z() || hook.z() <= outlet.z())
             throw new IllegalArgumentException("Unaligned or invalid cable geometry");
         if (hook.z() > roller.z()) {
@@ -37,7 +37,7 @@ public final class RecoveryCable {
         for(int i=0;i<path.size();i++){
             Point p=path.get(i);
             // Visual prototype has no safe representation for huge or non-centred points.
-            if(p==null || p.x()!=0 || p.y()<radius || Math.abs(p.y())>64 || Math.abs(p.z())>64) return false;
+            if(p==null || Math.abs(p.x())>2 || p.y()<radius || Math.abs(p.y())>64 || Math.abs(p.z())>64) return false;
             if(i==0)continue;
             Point a=path.get(i-1),b=p;
             if(b.z()<=a.z() || Math.hypot(b.y()-a.y(),b.z()-a.z())<1e-5) return false;

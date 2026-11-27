@@ -49,7 +49,7 @@ public final class VehicleManager {
         boolean closing;
         RecoveryPair(LandVehicle carrier, LandVehicle target, UUID token, UUID custodian) {
             this.carrier=carrier; this.target=target; this.token=token;
-            this.carrierOwner=carrier.owner().orElse(custodian); this.targetOwner=target.owner().orElseThrow();
+            this.carrierOwner=carrier.owner().orElse(custodian); this.targetOwner=target.owner().orElse(custodian);
         }
     }
     private final Map<UUID, VehicleChunk> chunkTickets = new HashMap<>();
@@ -408,7 +408,7 @@ public final class VehicleManager {
         for (LandVehicle vehicle : List.of(carrier, target)) {
             if (vehicles.get(vehicle.id()) != vehicle || !vehicle.recoveryMotionLockedBy(token)
                     || (vehicle == carrier ? !RecoveryTowCommands.canOperateCarrier(vehicle, operator)
-                                           : vehicle.owner().isEmpty() || !vehicle.canDrive(operator))
+                                           : !vehicle.canDrive(operator) && !operator.isOp())
                     || (vehicle == carrier ? !vehicle.recoveryOnlyDriver(operator) : vehicle.recoveryHasPassengers())
                     || vehicle.recoveryHasStorageViewers()
                     || vehicle.showcase() || vehicle.onJack() || vehicle.jackId() != null
@@ -418,13 +418,14 @@ public final class VehicleManager {
                     || vehicle.rig().entities().stream().anyMatch(Entity::isPersistent)) return false;
         }
         if (carrier.location().getWorld() == null || !carrier.location().getWorld().equals(target.location().getWorld())) return false;
-        StoredVehicle targetRecord = StoredVehicle.from(target);
         YamlConfiguration snapshot = collectYaml();
         // A public truck remains public during normal use. If interrupted, the
         // operator is its garage custodian so the crash snapshot is retrievable.
         if (carrier.owner().isEmpty()) snapshot.set("vehicles."+carrier.id()+".owner",operator.getUniqueId().toString());
+        if (target.owner().isEmpty()) snapshot.set("vehicles."+target.id()+".owner",operator.getUniqueId().toString());
         com.mrcrayfish.vehicle.paper.persistence.GarageTransitSnapshot.reserve(snapshot, carrier.id(), target.id());
         StoredVehicle carrierRecord = StoredVehicle.read(snapshot,"garage."+carrier.id(),carrier.id().toString());
+        StoredVehicle targetRecord = StoredVehicle.read(snapshot,"garage."+target.id(),target.id().toString());
         byte[] bytes = snapshot.saveToString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         try {
             synchronized (asyncSaveLock) {

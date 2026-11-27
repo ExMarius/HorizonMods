@@ -27,8 +27,8 @@ public final class RecoveryRearApproach {
         double z=offset.longitudinal();
         // Both axles start on ground, not suspended halfway up a ramp.
         double minZ=RecoveryLoadingPath.RAMP_END+3.3D/2D;
-        return z >= minZ && Math.abs(offset.lateral()) <= .05D
-                && Math.abs(yDifference) <= .05D
-                && Math.abs(Math.IEEEremainder(yawDifference,360D)) <= 2D;
+        return z >= minZ && Math.abs(offset.lateral()) <= .5D
+                && Math.abs(yDifference) <= .15D
+                && Math.abs(Math.IEEEremainder(yawDifference,360D)) <= 10D;
     }
 }

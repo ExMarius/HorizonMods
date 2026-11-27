@@ -93,25 +93,11 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
-      - name: Retrieve prebuilt matching files
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          gh run view 46014984743 --json headSha,conclusion --jq 'select(.headSha|startswith("80b77c3"))|select(.conclusion=="success")|.headSha' | grep -q .
-          mkdir -p /tmp/recovery-candidate
-          gh run download 46014984743 -n Recovery-install-candidate -D /tmp/recovery-candidate
-          jar=$(find /tmp/recovery-candidate -name 'MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar' -print -quit)
-          pack=$(find /tmp/recovery-candidate -name 'HorizonRecovery-candidate.zip' -print -quit)
-          test -n "$jar" && test -n "$pack"
-          cp "$jar" /tmp/recovery.jar
-          cp "$pack" /tmp/HorizonOffRoader-1.21.4.zip
-      - name: Publish resource pack
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          tag="horizon-offroader-${GITHUB_RUN_ID}"
-          gh release create "$tag" /tmp/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Recovery resource pack' --notes 'Resource pack for in-game recovery platform testing.'
-          echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
-      - name: Install JAR and matching resource pack while server is running
-        run: python3 paper-vehicles/deploy/falix_recovery_live_install.py /tmp/recovery.jar /tmp/HorizonOffRoader-1.21.4.zip "$PACK_URL"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile JAR without tests
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean jar
+      - name: Install JAR on test server
+        run: python3 paper-vehicles/deploy/falix_recovery_live_jar.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar

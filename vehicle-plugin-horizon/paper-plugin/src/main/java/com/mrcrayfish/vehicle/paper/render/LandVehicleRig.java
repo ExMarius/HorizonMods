@@ -497,6 +497,7 @@ public final class LandVehicleRig {
         for (WheelDisplay wheelDisplay : wheels) {
             LandVehicleSpec.Wheel wheel = wheelDisplay.properties;
             float spin = wheel.front() ? frontWheelRotation : rearWheelRotation;
+            if ("horizon_recovery_prototype".equals(spec.id())) spin = -spin;
             Vector3f center;
             Quaternionf rotation;
             Quaternionf sourceRotation;

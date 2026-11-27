@@ -66,8 +66,8 @@ public final class RecoveryTowCommands {
                 })
                 .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(base))).orElse(null);
         if(target==null){player.sendMessage("Nu există niciun vehicul mic sau mediu compatibil în spatele platformei la maximum 10 blocuri.");return;}
-        if(target.owner().isEmpty() || !target.canDrive(player)) {
-            player.sendMessage("Nu ai drepturi asupra celui mai apropiat vehicul sau acesta nu are proprietar.");return;
+        if(!target.canDrive(player) && !player.isOp()) {
+            player.sendMessage("Nu ai drepturi asupra celui mai apropiat vehicul.");return;
         }
         carrier.rig().setRecoveryRampProgress(1);carrier.forceVisualSync();
         var route=LiveRecoveryRoute.begin(manager,carrier,target,player,(actor,world,box)->actor.isOnline(),SAFETY);
@@ -90,7 +90,7 @@ public final class RecoveryTowCommands {
     private void unload(Player player,LandVehicle carrier) {
         Operation operation=operations.get(carrier.id());
         if(operation==null || operation.route.state()!=LiveRecoveryRoute.State.TEST_DRIVING) {player.sendMessage("Nu există o mașină fixată pe această platformă.");return;}
-        if(!operation.target.canDrive(player) || carrier.occupied() || carrier.horizontalSpeed()>.01) {
+        if((!operation.target.canDrive(player) && !player.isOp()) || carrier.occupied() || carrier.horizontalSpeed()>.01) {
             player.sendMessage("Oprește platforma, coboară și verifică drepturile asupra mașinii.");return;
         }
         if(!operation.route.endTestDrive() || !operation.route.beginUnload()) {player.sendMessage("Descărcarea a fost refuzată; verifică zona.");return;}
