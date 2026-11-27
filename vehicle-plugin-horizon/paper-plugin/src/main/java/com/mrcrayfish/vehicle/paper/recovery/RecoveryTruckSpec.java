@@ -35,8 +35,8 @@ public final class RecoveryTruckSpec {
                         part("horizon_service_ramp",-1.05F,.86F,5.35F,-90F),
                         part("horizon_service_ramp",1.05F,.86F,5.35F,-90F)),
                 List.of(
-                        wheel(-1,true,-1.35F,.53F,-1.488F,MODEL_SCALE*1.18F),
-                        wheel(1,true,1.35F,.53F,-1.488F,MODEL_SCALE*1.18F),
+                        wheel(-1,true,-1.225F,.53F,-1.488F,MODEL_SCALE*1.18F),
+                        wheel(1,true,1.225F,.53F,-1.488F,MODEL_SCALE*1.18F),
                         wheel(-1,false,-1.20F,.35F,3.22F,MODEL_SCALE*.35F/.45F),
                         wheel(1,false,1.20F,.35F,3.22F,MODEL_SCALE*.35F/.45F)),
                 List.of(new LandVehicleSpec.Seat(true,p(-.62F,.08F,-.80F),180F),

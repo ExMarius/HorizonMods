@@ -18,6 +18,7 @@ def build(base: bytes, expected_sha1: str) -> bytes:
     with tempfile.TemporaryDirectory() as tmp:
         output=Path(tmp)
         subprocess.run(['node',str(HERE/'export.mjs'),str(output)],check=True,stdout=subprocess.DEVNULL)
+        subprocess.run(['python3',str(HERE/'import_user_model.py'),str(output)],check=True)
         additions={f'assets/vehicle/{p.relative_to(output).as_posix()}':p.read_bytes()
                    for p in output.rglob('*') if p.is_file() and p.name!='conversion-report.json'}
         if not additions or set(files)&set(additions): raise ValueError('asset collision')
