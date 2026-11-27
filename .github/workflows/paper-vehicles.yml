@@ -15,6 +15,10 @@ on:
       - '.github/workflows/paper-vehicles.yml'
   workflow_dispatch:
     inputs:
+      checkpoint_plugin:
+        description: Capture plugin, data and pack without modifying the server
+        type: boolean
+        default: false
       install_new_cab:
         description: Back up and install the approved recovery cab
         type: boolean
@@ -64,7 +68,7 @@ jobs:
           retention-days: 14
 
   recovery-package:
-    if: github.event_name == 'workflow_dispatch' && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab
+    if: github.event_name == 'workflow_dispatch' && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab && !inputs.checkpoint_plugin
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -91,6 +95,26 @@ jobs:
             /tmp/recovery-pack/HorizonRecovery-candidate.zip
           if-no-files-found: error
           retention-days: 14
+
+  plugin-checkpoint:
+    if: github.event_name == 'workflow_dispatch' && inputs.checkpoint_plugin && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: falix-vehicle-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download current resource pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/checkpoint-pack
+          gh release download horizon-offroader-46057404122 --repo "$GITHUB_REPOSITORY" --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/checkpoint-pack
+      - name: Capture and verify plugin checkpoint on test server
+        env:
+          CHECKPOINT_PACK: /tmp/checkpoint-pack/HorizonOffRoader-1.21.4.zip
+        run: python3 paper-vehicles/deploy/falix_plugin_checkpoint.py
 
   recovery-install:
     if: github.event_name == 'workflow_dispatch' && inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab
