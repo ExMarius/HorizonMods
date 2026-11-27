@@ -59,6 +59,7 @@ public final class VehicleManager {
     private final CameraYawExperiment cameraYawExperiment;
     private final BodySeatExperiment bodySeatExperiment;
     private final BoatSeatProbe boatSeatProbe;
+    private final SeatTelemetry seatTelemetry;
     private final com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal recoveryJournal;
     private BukkitTask tickTask;
     private BukkitTask saveTask;
@@ -111,6 +112,7 @@ public final class VehicleManager {
         this.cameraYawExperiment = new CameraYawExperiment(plugin);
         this.bodySeatExperiment = new BodySeatExperiment();
         this.boatSeatProbe = new BoatSeatProbe(plugin);
+        this.seatTelemetry = new SeatTelemetry(plugin, this);
         try {
             var journal = new com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal(
                     plugin.getDataFolder().toPath().resolve("recovery-live.journal"));
@@ -182,6 +184,7 @@ public final class VehicleManager {
     public void stop() {
         cameraYawExperiment.clear();
         bodySeatExperiment.clear();
+        seatTelemetry.shutdown();
         boatSeatProbe.shutdown();
         if (tickTask != null) {
             tickTask.cancel();
@@ -1205,6 +1208,11 @@ public final class VehicleManager {
         LandVehicle driven = vehicles.values().stream()
                 .filter(v -> v.driver().filter(player::equals).isPresent()).findFirst().orElse(null);
         cameraYawExperiment.start(player, driven);
+    }
+
+    public void seatMeasurement(Player player, boolean enable) {
+        if (!player.isOp()) return;
+        if (enable) seatTelemetry.start(player); else seatTelemetry.stop(player);
     }
 
     /** Disposable, visible boat hierarchy probe, not a persisted vehicle. */

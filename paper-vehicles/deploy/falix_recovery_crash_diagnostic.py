@@ -39,3 +39,17 @@ try:
     f.notice('Timer diagnostic events', ' | '.join(matches[-20:]).replace('%','%25') or 'No matching events in latest.log')
 except BaseException as e:
     f.notice('Timer diagnostic read error',str(e))
+
+# Only the latest explicitly opted-in seat measurement; fixed-format lines contain no player name or coordinates.
+try:
+    lines=api.download('/logs/latest.log').decode('utf-8','replace').splitlines()
+    seat=[line.split('[SeatMeasure] ',1)[1] for line in lines if '[SeatMeasure] ' in line]
+    starts=[i for i,line in enumerate(seat) if line.startswith('BEGIN ')]
+    if starts:
+        latest=seat[starts[-1]:]
+        for i in range(0,len(latest),5):
+            f.notice('Seat measurement', ' | '.join(latest[i:i+5]).replace('%','%25'))
+    else:
+        f.notice('Seat measurement', 'No completed measurement in latest.log')
+except BaseException as e:
+    f.notice('Seat measurement error', str(e))
