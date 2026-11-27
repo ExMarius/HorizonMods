@@ -14,9 +14,16 @@ on:
       - 'LICENSE'
       - '.github/workflows/paper-vehicles.yml'
   workflow_dispatch:
+    inputs:
+      deploy_recovery:
+        description: Install the prebuilt recovery candidate on the test server
+        type: boolean
+        default: false
 
 permissions:
-  contents: read
+  contents: write
+  actions: read
+  id-token: write
 
 jobs:
   build:
@@ -49,7 +56,7 @@ jobs:
           retention-days: 14
 
   recovery-package:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && !inputs.deploy_recovery
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -76,3 +83,35 @@ jobs:
             /tmp/recovery-pack/HorizonRecovery-candidate.zip
           if-no-files-found: error
           retention-days: 14
+
+  recovery-install:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_recovery
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    concurrency:
+      group: falix-vehicle-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve prebuilt matching files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run view 46014984743 --json headSha,conclusion --jq 'select(.headSha|startswith("80b77c3"))|select(.conclusion=="success")|.headSha' | grep -q .
+          mkdir -p /tmp/recovery-candidate
+          gh run download 46014984743 -n Recovery-install-candidate -D /tmp/recovery-candidate
+          jar=$(find /tmp/recovery-candidate -name 'MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar' -print -quit)
+          pack=$(find /tmp/recovery-candidate -name 'HorizonRecovery-candidate.zip' -print -quit)
+          test -n "$jar" && test -n "$pack"
+          cp "$jar" /tmp/recovery.jar
+          cp "$pack" /tmp/HorizonOffRoader-1.21.4.zip
+      - name: Publish resource pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="horizon-offroader-${GITHUB_RUN_ID}"
+          gh release create "$tag" /tmp/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Recovery resource pack' --notes 'Resource pack for in-game recovery platform testing.'
+          echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
+      - name: Install JAR and matching resource pack while server is running
+        run: python3 paper-vehicles/deploy/falix_recovery_live_install.py /tmp/recovery.jar /tmp/HorizonOffRoader-1.21.4.zip "$PACK_URL"
