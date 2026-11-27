@@ -66,7 +66,7 @@ jobs:
               exit 1
             }
           done
-      - name: Test gated recovery command loading and unloading on Paper
+      - name: Test default-enabled recovery command loading and unloading on Paper
         env:
           NODE_PATH: /tmp/recovery-test/node_modules
         run: |
@@ -87,3 +87,10 @@ jobs:
             exit 1
           }
           done
+      - name: Upload tested Paper plugin jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: MrCrayfishVehiclePlugin-recovery
+          path: vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
+          if-no-files-found: error
+          retention-days: 14

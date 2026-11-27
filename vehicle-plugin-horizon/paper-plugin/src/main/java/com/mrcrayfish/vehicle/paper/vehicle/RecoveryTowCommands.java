@@ -11,9 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/** Command-driven recovery experiment. Disabled unless explicitly enabled by
- * the disposable Paper test property. Geometry and full road collision safety
- * are not validated for production; do not deploy with the property enabled. */
+/** Command-driven recovery. Geometry, crash handling and full road collision safety
+ * still require validation on a disposable server before production use. */
 public final class RecoveryTowCommands {
     private final VehiclePlugin plugin;
     private final VehicleManager manager;
@@ -23,9 +22,6 @@ public final class RecoveryTowCommands {
     public RecoveryTowCommands(VehiclePlugin plugin,VehicleManager manager){this.plugin=plugin;this.manager=manager;}
 
     public void execute(Player player,String action) {
-        if(!Boolean.getBoolean("horizon.recovery.commandtest")) {
-            player.sendMessage("Tractarea prin comandă este încă în testare și nu este activată.");return;
-        }
         if(!player.hasPermission("vehicle.use")) {player.sendMessage("Nu ai permisiunea vehicle.use.");return;}
         LandVehicle carrier=manager.vehicles().stream()
                 .filter(v -> "horizon_recovery_prototype".equals(v.spec().id()) && v.owner().isPresent() && v.canDrive(player))
