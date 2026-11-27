@@ -55,6 +55,7 @@ public final class VehicleManager {
     private final Map<UUID, VehicleChunk> chunkTickets = new HashMap<>();
     private final File storageFile;
     private final TrailerManager trailers;
+    private final RecoveryTowCommands recoveryTowCommands;
     private final com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal recoveryJournal;
     private BukkitTask tickTask;
     private BukkitTask saveTask;
@@ -86,6 +87,7 @@ public final class VehicleManager {
         this.plugin = plugin;
         this.storageFile = new File(plugin.getDataFolder(), "vehicles.yml");
         this.trailers = new TrailerManager(plugin, this);
+        this.recoveryTowCommands = new RecoveryTowCommands(plugin, this);
         try {
             var journal = new com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal(
                     plugin.getDataFolder().toPath().resolve("recovery-live.journal"));
@@ -439,6 +441,33 @@ public final class VehicleManager {
         return true;
     }
 
+    /** Commit both parked-on-ground world records before releasing transit locks.
+     * Only the winch controller may call this after independent ground checks. */
+    boolean commitRecoveryUnload(LandVehicle carrier, LandVehicle target, UUID token) throws IOException {
+        if(!Bukkit.isPrimaryThread() || recoveryPersistenceHalted || carrier==null || target==null
+                || recoveryPairs.get(carrier.id())==null || recoveryPairs.get(carrier.id())!=recoveryPairs.get(target.id())
+                || !carrier.recoveryMotionLockedBy(token) || !target.recoveryMotionLockedBy(token)
+                || carrier.recoveryHasPassengers() || target.recoveryHasPassengers()
+                || carrier.recoveryHasStorageViewers() || target.recoveryHasStorageViewers()) return false;
+        var snapshot=collectYaml();
+        for(LandVehicle vehicle:List.of(carrier,target)) {
+            snapshot.set("garage."+vehicle.id(),null);
+            write(snapshot,StoredVehicle.from(vehicle));
+        }
+        byte[] bytes=snapshot.saveToString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        try {
+            synchronized(asyncSaveLock) { pendingAsyncYaml=null; persistRecoverySnapshot(bytes); }
+        } catch(IOException error) {
+            recoveryPersistenceHalted=true;
+            plugin.getLogger().log(Level.SEVERE,"Recovery unload snapshot failed; vehicle saving halted until restart",error);
+            throw error;
+        }
+        for(LandVehicle vehicle:List.of(carrier,target)) {
+            garage.remove(vehicle.id()); recoveryTransit.remove(vehicle.id()); recoveryPairs.remove(vehicle.id());
+        }
+        return true;
+    }
+
     private void persistRecoverySnapshot(byte[] bytes) throws IOException {
         java.nio.file.Path path = storageFile.toPath().toAbsolutePath(), parent = path.getParent();
         if (parent == null || !Files.isDirectory(parent)) throw new IOException("Missing vehicle snapshot directory");
@@ -456,8 +485,13 @@ public final class VehicleManager {
         } finally { Files.deleteIfExists(temp); }
     }
 
-    /** Main-thread quit hook for reserved pairs; the transport entry point is not
-     * yet public. A failed teleport keeps both identities locked. */
+    boolean recoveryPairActive(UUID carrierId) {
+        RecoveryPair pair=recoveryPairs.get(carrierId);
+        return pair!=null && !pair.closing && !recoveryPersistenceHalted;
+    }
+
+    /** Main-thread quit hook for reserved pairs; a failed teleport keeps both
+     * identities locked. */
     public void recoveryOwnerQuit(UUID ownerId) {
         if (!Bukkit.isPrimaryThread() || ownerId == null) return;
         for (RecoveryPair pair : new java.util.HashSet<>(recoveryPairs.values())) {
@@ -1065,6 +1099,8 @@ public final class VehicleManager {
     public TrailerManager trailers() {
         return trailers;
     }
+
+    public RecoveryTowCommands recoveryTowCommands() { return recoveryTowCommands; }
 
     public Optional<LandVehicle> nearest(Location origin, double maximumDistance) {
         return nearest(origin, maximumDistance, true);

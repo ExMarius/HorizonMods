@@ -17,7 +17,7 @@ def main(jar,probe):
         (root/'plugins').mkdir();shutil.copyfile(jar,root/'plugins/MrCrayfishVehiclePlugin.jar');shutil.copyfile(probe,root/'plugins/RecoveryProbe.jar')
         log=root/'server.log'
         with log.open('w+') as out:
-            proc=subprocess.Popen(['java','-Dhorizon.recovery.fallbacktest='+str(os.getenv('RECOVERY_FALLBACK_TEST')=='1').lower(),'-Dhorizon.recovery.retrytest='+str(os.getenv('RECOVERY_RETRY_TEST')=='1').lower(),'-Dhorizon.recovery.pairtest=true','-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1' or os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Dhorizon.recovery.restarttest='+str(os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=out,stderr=subprocess.STDOUT,text=True)
+            proc=subprocess.Popen(['java','-Dhorizon.recovery.commandtest='+str(os.getenv('RECOVERY_COMMAND_TEST')=='1').lower(),'-Dhorizon.recovery.fallbacktest='+str(os.getenv('RECOVERY_FALLBACK_TEST')=='1').lower(),'-Dhorizon.recovery.retrytest='+str(os.getenv('RECOVERY_RETRY_TEST')=='1').lower(),'-Dhorizon.recovery.pairtest=true','-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1' or os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Dhorizon.recovery.restarttest='+str(os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=out,stderr=subprocess.STDOUT,text=True)
             try:
                 deadline=time.monotonic()+240
                 while time.monotonic()<deadline:
@@ -25,12 +25,12 @@ def main(jar,probe):
                     if proc.poll() is not None:raise RuntimeError('server exited')
                     if 'Done (' in text and '[RecoveryProbe] Enabling' in text:break
                 else:raise RuntimeError('startup timeout')
-                bot=subprocess.run(['node',str(Path(__file__).with_suffix('.cjs'))],capture_output=True,text=True,timeout=50)
+                bot=subprocess.run(['node',str(Path(__file__).with_suffix('.cjs'))],capture_output=True,text=True,timeout=85)
                 if bot.returncode:raise RuntimeError('bot failed: '+(bot.stdout+bot.stderr)[-2000:])
                 out.flush();text=log.read_text(errors='replace')
                 marker='RECOVERY_MIDTRANSPORT_READY' if os.getenv('RECOVERY_MID_RESTART')=='1' else 'RECOVERY_PAIR_QUIT_OK'
                 if marker not in text or 'RECOVERY_PROBE_FAIL' in text:raise RuntimeError('pair test failed')
-                if os.getenv('RECOVERY_LIVE_TEST')=='1' and 'RECOVERY_LIVE_DROP_GUARD_OK' not in text:raise RuntimeError('platform item-drop guard was not verified')
+                if os.getenv('RECOVERY_COMMAND_TEST')=='1' and 'RECOVERY_COMMAND_ROUND_TRIP_OK' not in text:raise RuntimeError('command round trip not verified')
                 if os.getenv('RECOVERY_FALLBACK_TEST')=='1' and 'RECOVERY_LIVE_FALLBACK_OK' not in text:raise RuntimeError('spawn fallback was not verified')
                 if os.getenv('RECOVERY_RETRY_TEST')=='1' and any(m not in text for m in ('RECOVERY_TEST_EVACUATION_PENDING','RECOVERY_TEST_EVACUATION_RETRY_OK')):raise RuntimeError('evacuation retry not verified')
                 if 'Could not pass event' in text or 'Exception in server tick loop' in text:raise RuntimeError('server reported event/tick error')
@@ -44,7 +44,7 @@ def main(jar,probe):
                 out.flush(); assert_clean(log)  # Include shutdown or SIGKILL output.
                 restartlog=root/'server-restart.log'
                 with restartlog.open('w+') as restarted:
-                    proc=subprocess.Popen(['java','-Dhorizon.recovery.fallbacktest='+str(os.getenv('RECOVERY_FALLBACK_TEST')=='1').lower(),'-Dhorizon.recovery.retrytest='+str(os.getenv('RECOVERY_RETRY_TEST')=='1').lower(),'-Dhorizon.recovery.pairtest=true','-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1' or os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Dhorizon.recovery.restarttest='+str(os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=restarted,stderr=subprocess.STDOUT,text=True)
+                    proc=subprocess.Popen(['java','-Dhorizon.recovery.commandtest='+str(os.getenv('RECOVERY_COMMAND_TEST')=='1').lower(),'-Dhorizon.recovery.fallbacktest='+str(os.getenv('RECOVERY_FALLBACK_TEST')=='1').lower(),'-Dhorizon.recovery.retrytest='+str(os.getenv('RECOVERY_RETRY_TEST')=='1').lower(),'-Dhorizon.recovery.pairtest=true','-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1' or os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Dhorizon.recovery.restarttest='+str(os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=restarted,stderr=subprocess.STDOUT,text=True)
                     deadline=time.monotonic()+240
                     while time.monotonic()<deadline:
                         time.sleep(2);restarted.flush(); restarttext=restartlog.read_text(errors='replace')

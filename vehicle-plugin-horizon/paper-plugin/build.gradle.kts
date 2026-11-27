@@ -93,3 +93,16 @@ tasks.register<Jar>("recoveryLiveProbeJar") {
     from(compileRecoveryLiveProbe.flatMap { it.destinationDirectory })
     from("src/recoveryLiveProbe/resources")
 }
+val compileRecoveryCommandProbe by tasks.registering(JavaCompile::class) {
+    dependsOn(tasks.classes)
+    setSource(fileTree("src/recoveryCommandProbe/java") { include("**/*.java") })
+    classpath = sourceSets.main.get().output + configurations.compileClasspath.get()
+    destinationDirectory.set(layout.buildDirectory.dir("recovery-command-probe/classes"))
+}
+tasks.register<Jar>("recoveryCommandProbeJar") {
+    dependsOn(compileRecoveryCommandProbe)
+    archiveFileName.set("RecoveryProbe.jar")
+    destinationDirectory.set(layout.buildDirectory.dir("recovery-command-probe"))
+    from(compileRecoveryCommandProbe.flatMap { it.destinationDirectory })
+    from("src/recoveryCommandProbe/resources")
+}

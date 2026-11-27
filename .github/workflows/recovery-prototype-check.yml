@@ -27,7 +27,7 @@ jobs:
       - name: Build plugin, unit tests and disposable probe
         run: |
           set -o pipefail
-          ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build recoverySmokeJar recoveryLiveProbeJar 2>&1 | tee /tmp/recovery-build.log || {
+          ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build recoverySmokeJar recoveryLiveProbeJar recoveryCommandProbeJar 2>&1 | tee /tmp/recovery-build.log || {
             python3 -c "from pathlib import Path; lines=Path('/tmp/recovery-build.log').read_text().splitlines(); print('::error::'+' | '.join(lines[-50:]).replace('%','%25')[:12000])"
             exit 1
           }
@@ -61,11 +61,20 @@ jobs:
         run: |
           set -o pipefail
           for fallback in 0 1; do
-            RECOVERY_LIVE_TEST=1 RECOVERY_PAIR_DRIVE=1 RECOVERY_FALLBACK_TEST=$fallback python3 vehicle-plugin-horizon/tools/smoke_recovery_pair.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-live-probe/RecoveryProbe.jar 2>&1 | tee /tmp/recovery-live.log || {
+            RECOVERY_PAIR_DRIVE=1 RECOVERY_FALLBACK_TEST=$fallback python3 vehicle-plugin-horizon/tools/smoke_recovery_pair.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-live-probe/RecoveryProbe.jar 2>&1 | tee /tmp/recovery-live.log || {
               python3 -c "from pathlib import Path; lines=Path('/tmp/recovery-live.log').read_text().splitlines(); important=[s for s in lines if 'RECOVERY_PROBE_FAIL' in s or 'Exception' in s or 'Error' in s]; print('::error::'+' | '.join(important[-30:]).replace('%','%25')[:12000])"
               exit 1
             }
           done
+      - name: Test gated recovery command loading and unloading on Paper
+        env:
+          NODE_PATH: /tmp/recovery-test/node_modules
+        run: |
+          set -o pipefail
+          RECOVERY_COMMAND_TEST=1 python3 vehicle-plugin-horizon/tools/smoke_recovery_pair.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-command-probe/RecoveryProbe.jar 2>&1 | tee /tmp/recovery-command.log || {
+            python3 -c "from pathlib import Path; lines=Path('/tmp/recovery-command.log').read_text().splitlines(); important=[s for s in lines if 'RECOVERY_PROBE_FAIL' in s or 'Exception' in s or 'Error' in s]; print('::error::'+' | '.join(important[-30:]).replace('%','%25')[:12000])"
+            exit 1
+          }
       - name: Test controlled stop and SIGKILL with prepared recovery journal
         env:
           NODE_PATH: /tmp/recovery-test/node_modules

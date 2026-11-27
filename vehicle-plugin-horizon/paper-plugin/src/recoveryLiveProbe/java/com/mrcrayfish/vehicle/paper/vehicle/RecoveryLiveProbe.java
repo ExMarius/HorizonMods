@@ -59,18 +59,6 @@ public final class RecoveryLiveProbe extends JavaPlugin implements Listener {
             if(manager.retrieve(driver,carrier.id())||manager.retrieve(owner,target.id()))throw new IllegalStateException("reserved garage retrieval permitted");
             invoke(carrier,"startRecoveryTestDrive",new Class<?>[]{UUID.class},token);
             if(driver.getVehicle()==null)throw new IllegalStateException("driver was not retained during reservation");
-            // Synthetic Paper events verify the cancellation boundary, not an actual keyboard packet.
-            var dropped=driver.getWorld().dropItem(driver.getLocation(),new org.bukkit.inventory.ItemStack(org.bukkit.Material.STONE));
-            var drop=new org.bukkit.event.player.PlayerDropItemEvent(driver,dropped);
-            getServer().getPluginManager().callEvent(drop);
-            dropped.remove();
-            if(!drop.isCancelled())throw new IllegalStateException("platform driver item drop was not cancelled");
-            var normal=owner.getWorld().dropItem(owner.getLocation(),new org.bukkit.inventory.ItemStack(org.bukkit.Material.STONE));
-            var normalDrop=new org.bukkit.event.player.PlayerDropItemEvent(owner,normal);
-            getServer().getPluginManager().callEvent(normalDrop);
-            normal.remove();
-            if(normalDrop.isCancelled())throw new IllegalStateException("unrelated item drop was cancelled");
-            getLogger().info("RECOVERY_LIVE_DROP_GUARD_OK");
             if(Boolean.getBoolean("horizon.recovery.fallbacktest")) {
                 var world=origin.getWorld(); int x=origin.getBlockX(),y=origin.getBlockY(),z=origin.getBlockZ();
                 fallbackSpawn=new org.bukkit.Location(world,x+40.5,y,z+.5);

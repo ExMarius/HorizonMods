@@ -48,6 +48,10 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
         }
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "spawn" -> spawn(sender, args);
+            case "tractare" -> {
+                if (sender instanceof Player player && args.length == 2) vehicles.recoveryTowCommands().execute(player, args[1]);
+                else sender.sendMessage("Utilizare în joc: /vehicle tractare incarca|descarca");
+            }
             case "sirena" -> siren(sender);
             case "cupleaza_remorca" -> { if (sender instanceof Player player) vehicles.trailers().coupleFarmTrailer(player); else sender.sendMessage("Doar din joc."); }
             case "cupleaza" -> { if (sender instanceof Player player) vehicles.trailers().couplePlough(player); else sender.sendMessage("Doar din joc."); }
