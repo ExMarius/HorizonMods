@@ -34,7 +34,7 @@ try:
     lines=api.download('/logs/latest.log').decode('utf-8','replace').splitlines()
     needles=('Pausing dedicated server', 'Server empty for', 'Unpausing dedicated server',
              'Recovery operations disabled', 'startup recovery deferred',
-             'Could not atomically save vehicles.yml', 'Startup recovery:')
+             'Could not atomically save vehicles.yml', 'Startup recovery:', '[CameraTest]')
     matches=[re.sub(r'\x1b\[[0-9;]*m','',line)[:400] for line in lines if any(n.lower() in line.lower() for n in needles)]
     f.notice('Timer diagnostic events', ' | '.join(matches[-20:]).replace('%','%25') or 'No matching events in latest.log')
 except BaseException as e:
