@@ -62,7 +62,12 @@ jobs:
           curl -fsSL --retry 3 "https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" -o /tmp/public-recovery.zip
           cmp /tmp/public-recovery.zip /tmp/recovery-new/HorizonOffRoader-1.21.4.zip
       - name: Install verified matching JAR and pack settings
-        run: python3 paper-vehicles/deploy/falix_install_recovery.py /tmp/recovery-new/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/recovery-new/HorizonOffRoader-1.21.4.zip "$PACK_URL"
+        run: |
+          set -o pipefail
+          python3 paper-vehicles/deploy/falix_install_recovery.py /tmp/recovery-new/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/recovery-new/HorizonOffRoader-1.21.4.zip "$PACK_URL" 2>&1 | tee /tmp/recovery-install.log || {
+            python3 -c "from pathlib import Path; print('::error::'+' | '.join(Path('/tmp/recovery-install.log').read_text().splitlines()[-8:]).replace('%','%25')[:4000])"
+            exit 1
+          }
       - name: Start server and verify startup
         run: |
           python3 - <<'PY'
