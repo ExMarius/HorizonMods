@@ -60,6 +60,8 @@ public final class VehicleManager {
     private BukkitTask tickTask;
     private BukkitTask saveTask;
     private BukkitTask sweepTask;
+    /** Timers belong to the exact live vehicle, never a replacement spawned with the same ID. */
+    private final Map<UUID, BukkitTask> offlineOwnerTimers = new HashMap<>();
     /** CICLUL AF: cate secunde consecutive a stat fiecare vehicul GOAL intr-un cerc
      *  de parcare. Cheia dispare cand vehiculul pleaca din cerc / se occupa / iese
      *  din lume (retainAll la inceputul fiecarui sweep). */
@@ -162,6 +164,8 @@ public final class VehicleManager {
         if (sweepTask != null) {
             sweepTask.cancel();
         }
+        offlineOwnerTimers.values().forEach(BukkitTask::cancel);
+        offlineOwnerTimers.clear();
         trailers.returnCarriedVehicles();
         saveNow(); // onDisable: flush SINCRON - un task async ar putea fi pierdut la oprire
         trailers.stop();
@@ -284,10 +288,9 @@ public final class VehicleManager {
     }
 
     /**
-     * Quit flow of the ONE global garage: every vehicle of the leaving owner is stored
-     * under garage.<uuid>.* immediately - no flags, no differentiation, nothing of his
-     * stays in the world ticking while he is offline. Where he pulls it OUT decides the
-     * price: personal circle = free, public circle = the config fee.
+     * Quit flow of the global garage. Vehicles already driven by an authorized
+     * non-owner remain available until that driver leaves and the grace period
+     * expires. Other ordinary owned vehicles follow the existing immediate rule.
      */
     public int parkAllOwnedBy(java.util.UUID playerId) {
         int storedCount = 0;
@@ -298,6 +301,14 @@ public final class VehicleManager {
             if (vehicle.showcase() || vehicle.onJack() || vehicle.recoveryLocked()) {
                 // showcase = al podiumului; PE CRIC = in service: ramane in lume
                 // peste restart (garajul nu ia masini ridicate la mecanic).
+                continue;
+            }
+            // Do not remove a vehicle from under an authorized non-owner driver.
+            // Their eventual dismount starts the offline-owner grace period.
+            Player currentDriver = vehicle.driver().orElse(null);
+            if (currentDriver != null && !currentDriver.getUniqueId().equals(playerId)
+                    && vehicle.canDrive(currentDriver)) {
+                currentDriver.sendMessage("Proprietarul este offline; poți termina cursa. După coborâre începe perioada de 5 minute.");
                 continue;
             }
             StoredVehicle stored = StoredVehicle.from(vehicle);
@@ -340,6 +351,12 @@ public final class VehicleManager {
             if (ownerId == null || !quitterDrivesIt) {
                 continue;
             }
+            Player ownerOnline = Bukkit.getPlayer(ownerId);
+            if (ownerOnline == null || !ownerOnline.isOnline()) {
+                // Wait a tick for Paper to detach the quitting driver.
+                Bukkit.getScheduler().runTask(plugin, () -> startOfflineOwnerTimer(vehicle));
+                continue;
+            }
             StoredVehicle stored = StoredVehicle.from(vehicle);
             String displayName = vehicle.spec().displayName();
             unindex(vehicle);
@@ -350,7 +367,6 @@ public final class VehicleManager {
             vehicle.remove();
             garage.put(stored.id(), stored);
             storedCount++;
-            org.bukkit.entity.Player ownerOnline = plugin.getServer().getPlayer(ownerId);
             if (ownerOnline != null) {
                 String quitterName = org.bukkit.Bukkit.getOfflinePlayer(quitterId).getName();
                 ownerOnline.sendRichMessage("<gray>[Garaj] Masina ta <gold>" + displayName
@@ -364,6 +380,43 @@ public final class VehicleManager {
                     + " vehicule conduse cu trust au intrat in garajul proprietarului (soferul a iesit).");
         }
         return storedCount;
+    }
+
+    /** Begin five minutes after a trusted driver leaves an ordinary vehicle.
+     * Recovery reservations keep their own quit/unload policy and are excluded. */
+    public void startOfflineOwnerTimer(LandVehicle vehicle) {
+        if (!Bukkit.isPrimaryThread() || vehicle == null || vehicles.get(vehicle.id()) != vehicle
+                || vehicle.recoveryLocked() || vehicle.owner().isEmpty() || vehicle.driver().isPresent()) return;
+        UUID owner = vehicle.owner().orElseThrow();
+        Player online = Bukkit.getPlayer(owner);
+        if (online != null && online.isOnline()) return;
+        cancelOfflineOwnerTimer(vehicle.id());
+        BukkitTask task = new org.bukkit.scheduler.BukkitRunnable() {
+            @Override public void run() {
+                if (vehicles.get(vehicle.id()) != vehicle || vehicle.owner().filter(owner::equals).isEmpty()) {
+                    cancelOfflineOwnerTimer(vehicle.id()); return;
+                }
+                Player present = Bukkit.getPlayer(owner);
+                if (present != null && present.isOnline()) { cancelOfflineOwnerTimer(vehicle.id()); return; }
+                // Never despawn riders, moving vehicles, linked trailers or active recovery cargo.
+                if (vehicle.occupied() || vehicle.horizontalSpeed() > .01D || vehicle.recoveryLocked()
+                        || vehicle.transported() || vehicle.showcase() || vehicle.onJack() || vehicle.jackId() != null
+                        || vehicle.recoveryHasStorageViewers() || corruptLocation(vehicle.location())
+                        || !trailers.recoveryLinksKnown() || trailers.referencesVehicle(vehicle.id())) return;
+                if (storeVehicleNow(vehicle, null)) {
+                    cancelOfflineOwnerTimer(vehicle.id()); save();
+                }
+            }
+        }.runTaskTimer(plugin, 5L * 60L * 20L, 20L);
+        offlineOwnerTimers.put(vehicle.id(), task);
+    }
+    public void cancelOfflineOwnerTimer(UUID vehicleId) {
+        BukkitTask task = offlineOwnerTimers.remove(vehicleId);
+        if (task != null) task.cancel();
+    }
+    public void cancelOfflineOwnerTimersFor(UUID ownerId) {
+        for (LandVehicle vehicle : vehicles.values())
+            if (vehicle.owner().filter(ownerId::equals).isPresent()) cancelOfflineOwnerTimer(vehicle.id());
     }
 
     /** CICLUL AF: nimeni nu e in niciun scaun/carrier al rig-ului. Scanner complet
@@ -662,7 +715,8 @@ public final class VehicleManager {
         parkedInSpotSeconds.keySet().retainAll(vehicles.keySet());
         int storedNow = 0;
         for (LandVehicle vehicle : new ArrayList<>(vehicles.values())) {
-            boolean eligible = !vehicle.showcase() && !vehicle.onJack() && !vehicle.recoveryLocked()
+            boolean eligible = !offlineOwnerTimers.containsKey(vehicle.id())
+                    && !vehicle.showcase() && !vehicle.onJack() && !vehicle.recoveryLocked()
                     && nobodyAboard(vehicle)
                     && vehicle.owner().isPresent()
                     && plugin.garageStations().insideAnySpot(vehicle.location());

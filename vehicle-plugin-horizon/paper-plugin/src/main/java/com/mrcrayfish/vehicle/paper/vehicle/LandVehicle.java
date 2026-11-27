@@ -1738,6 +1738,7 @@ public final class LandVehicle {
                 return false;
             }
         }
+        if (result) plugin.vehicles().cancelOfflineOwnerTimer(id);
         return result;
     }
 

@@ -250,6 +250,7 @@ public final class VehicleListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
+        vehicles.cancelOfflineOwnerTimersFor(event.getPlayer().getUniqueId());
         vehicles.trailers().hideWaterPlacementTargetsFrom(event.getPlayer());
         if (!vehicles.garagedOf(event.getPlayer()).isEmpty()) {
             event.getPlayer().sendRichMessage("<gray>🚗 Mai ai vehicule in garaj: "
@@ -313,11 +314,20 @@ public final class VehicleListener implements Listener {
     /** Stepping out inside a marked circle = parked: the car stays on the asphalt and
      *  slips into resting (0 CPU) on the next tick when it settles. Anti-theft remains
      *  the vehicle's own trust gate (canDrive: owner + trusted only). */
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onVehicleDismount(org.bukkit.event.entity.EntityDismountEvent event) {
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }
+        // Unlike the informational parking hint, the delayed garage action
+        // requires an exact rig match; never use nearest-vehicle fallback.
+        vehicles.vehicles().stream()
+                .filter(v -> v.rig().entities().contains(event.getDismounted()))
+                .filter(v -> v.driver().filter(player::equals).isPresent())
+                .filter(v -> v.owner().filter(owner -> !owner.equals(player.getUniqueId())).isPresent())
+                .filter(v -> v.canDrive(player))
+                .findFirst().ifPresent(vehicle -> Bukkit.getScheduler().runTask(plugin,
+                        () -> vehicles.startOfflineOwnerTimer(vehicle)));
         mountedVehicle(event.getDismounted()).ifPresent(vehicle -> {
             if (plugin.garageStations().isLegallyParked(player.getUniqueId(), vehicle.location())) {
                 player.sendRichMessage("<green>\ud83c\udfc1 Ai parcat in zona marcata - "
