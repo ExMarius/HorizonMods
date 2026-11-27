@@ -60,8 +60,17 @@ public final class VehicleManager {
     private BukkitTask tickTask;
     private BukkitTask saveTask;
     private BukkitTask sweepTask;
-    /** Timers belong to the exact live vehicle, never a replacement spawned with the same ID. */
-    private final Map<UUID, BukkitTask> offlineOwnerTimers = new HashMap<>();
+    /** Monotonic deadline survives idle tick pauses, not a process restart. */
+    private static final class OfflineOwnerTimer {
+        final UUID owner;
+        final long deadlineNanos;
+        BukkitTask task;
+        boolean warned;
+        OfflineOwnerTimer(UUID owner, long deadlineNanos) {
+            this.owner = owner; this.deadlineNanos = deadlineNanos;
+        }
+    }
+    private final Map<UUID, OfflineOwnerTimer> offlineOwnerTimers = new HashMap<>();
     /** CICLUL AF: cate secunde consecutive a stat fiecare vehicul GOAL intr-un cerc
      *  de parcare. Cheia dispare cand vehiculul pleaca din cerc / se occupa / iese
      *  din lume (retainAll la inceputul fiecarui sweep). */
@@ -165,7 +174,7 @@ public final class VehicleManager {
         if (sweepTask != null) {
             sweepTask.cancel();
         }
-        offlineOwnerTimers.values().forEach(BukkitTask::cancel);
+        offlineOwnerTimers.values().forEach(timer -> timer.task.cancel());
         offlineOwnerTimers.clear();
         trailers.returnCarriedVehicles();
         saveNow(); // onDisable: flush SINCRON - un task async ar putea fi pierdut la oprire
@@ -338,48 +347,65 @@ public final class VehicleManager {
         Player online = Bukkit.getPlayer(owner);
         if (online != null && online.isOnline()) return;
         cancelOfflineOwnerTimer(vehicleId);
-        BukkitTask task = new org.bukkit.scheduler.BukkitRunnable() {
-            @Override public void run() {
-                Player present = Bukkit.getPlayer(owner);
-                if (present != null && present.isOnline()) { cancelOfflineOwnerTimer(vehicleId); return; }
-                if (garage.containsKey(vehicleId)) { cancelOfflineOwnerTimer(vehicleId); return; }
-                LandVehicle vehicle = vehicles.get(vehicleId);
-                StoredVehicle pending = pendingWorlds.get(vehicleId);
-                if (vehicle == null && pending == null) { cancelOfflineOwnerTimer(vehicleId); return; }
-                if (!trailers.recoveryLinksKnown() || trailers.referencesVehicle(vehicleId)) return;
-                if (vehicle != null) {
-                    if (vehicle.owner().filter(owner::equals).isEmpty()) { cancelOfflineOwnerTimer(vehicleId); return; }
-                    if (vehicle.occupied() || vehicle.horizontalSpeed() > .01D || vehicle.recoveryLocked()
-                            || vehicle.transported() || vehicle.showcase() || vehicle.onJack() || vehicle.jackId() != null
-                            || vehicle.recoveryHasStorageViewers() || corruptLocation(vehicle.location())) return;
-                    if (storeVehicleNow(vehicle, null)) save();
-                    return;
-                }
-                if (!owner.toString().equals(pending.owner())) { cancelOfflineOwnerTimer(vehicleId); return; }
-                if (pending.jackId() != null || (pending.jackState() != null && !"NONE".equals(pending.jackState()))) return;
-                // A hibernated vehicle can be garaged without loading its chunk.
-                // Persist before making its garage entry available to players.
-                pendingWorlds.remove(vehicleId);
-                garage.put(vehicleId, pending);
-                if (!saveNow()) {
-                    garage.remove(vehicleId);
-                    pendingWorlds.put(vehicleId, pending);
-                    return; // retry without exposing an unpersisted garage entry
-                }
-                cancelOfflineOwnerTimer(vehicleId);
+        OfflineOwnerTimer timer = new OfflineOwnerTimer(owner,
+                System.nanoTime() + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(delayTicks * 50L));
+        offlineOwnerTimers.put(vehicleId, timer);
+        // Paper stops ticking while empty. Check a wall-clock deadline rather
+        // than counting ticks; join also calls this before cancelling timers.
+        timer.task = Bukkit.getScheduler().runTaskTimer(plugin,
+                () -> expireOfflineOwnerTimer(vehicleId, timer), 20L, 20L);
+    }
+    private void expireOfflineOwnerTimer(UUID vehicleId, OfflineOwnerTimer timer) {
+        if (offlineOwnerTimers.get(vehicleId) != timer || System.nanoTime() - timer.deadlineNanos < 0L) return;
+        if (garage.containsKey(vehicleId)) { cancelOfflineOwnerTimer(vehicleId); return; }
+        LandVehicle vehicle = vehicles.get(vehicleId);
+        StoredVehicle pending = pendingWorlds.get(vehicleId);
+        if (vehicle == null && pending == null) { cancelOfflineOwnerTimer(vehicleId); return; }
+        if (!trailers.recoveryLinksKnown() || trailers.referencesVehicle(vehicleId)) {
+            warnOfflineTimerBlocked(vehicleId, timer, "trailer link unavailable or attached"); return;
+        }
+        if (vehicle != null) {
+            if (vehicle.owner().filter(timer.owner::equals).isEmpty()) { cancelOfflineOwnerTimer(vehicleId); return; }
+            if (vehicle.occupied() || vehicle.horizontalSpeed() > .01D || vehicle.recoveryLocked()
+                    || vehicle.transported() || vehicle.showcase() || vehicle.onJack() || vehicle.jackId() != null
+                    || vehicle.recoveryHasStorageViewers() || corruptLocation(vehicle.location())) {
+                warnOfflineTimerBlocked(vehicleId, timer, "vehicle in use, moving, locked or unsafe"); return;
             }
-        }.runTaskTimer(plugin, delayTicks, 20L);
-        offlineOwnerTimers.put(vehicleId, task);
+            if (storeVehicleNow(vehicle, null)) save();
+            return;
+        }
+        if (!timer.owner.toString().equals(pending.owner())) { cancelOfflineOwnerTimer(vehicleId); return; }
+        if (pending.jackId() != null || (pending.jackState() != null && !"NONE".equals(pending.jackState()))) {
+            warnOfflineTimerBlocked(vehicleId, timer, "vehicle in workshop"); return;
+        }
+        // Persist a hibernated vehicle before exposing its garage entry.
+        pendingWorlds.remove(vehicleId);
+        garage.put(vehicleId, pending);
+        if (!saveNow()) {
+            garage.remove(vehicleId);
+            pendingWorlds.put(vehicleId, pending);
+            warnOfflineTimerBlocked(vehicleId, timer, "snapshot save failed"); return;
+        }
+        cancelOfflineOwnerTimer(vehicleId);
+    }
+    private void warnOfflineTimerBlocked(UUID vehicleId, OfflineOwnerTimer timer, String reason) {
+        if (!timer.warned) {
+            timer.warned = true;
+            plugin.getLogger().warning("[Garaj] Offline timer for " + vehicleId + " waiting: " + reason);
+        }
     }
     public void cancelOfflineOwnerTimer(UUID vehicleId) {
-        BukkitTask task = offlineOwnerTimers.remove(vehicleId);
-        if (task != null) task.cancel();
+        OfflineOwnerTimer timer = offlineOwnerTimers.remove(vehicleId);
+        if (timer != null && timer.task != null) timer.task.cancel();
     }
     public void cancelOfflineOwnerTimersFor(UUID ownerId) {
-        for (LandVehicle vehicle : vehicles.values())
-            if (vehicle.owner().filter(ownerId::equals).isPresent()) cancelOfflineOwnerTimer(vehicle.id());
-        for (StoredVehicle stored : pendingWorlds.values())
-            if (ownerId.toString().equals(stored.owner())) cancelOfflineOwnerTimer(stored.id());
+        for (var entry : new ArrayList<>(offlineOwnerTimers.entrySet())) {
+            if (!entry.getValue().owner.equals(ownerId)) continue;
+            // If the server was paused while empty, the deadline may already
+            // have passed even though no scheduler tick was executed.
+            expireOfflineOwnerTimer(entry.getKey(), entry.getValue());
+            cancelOfflineOwnerTimer(entry.getKey());
+        }
     }
 
     /** CICLUL AF: nimeni nu e in niciun scaun/carrier al rig-ului. Scanner complet

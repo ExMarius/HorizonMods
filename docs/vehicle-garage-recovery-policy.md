@@ -4,7 +4,7 @@ Decizii discutate cu utilizatorul; comportamentul este supus verificării în Mi
 
 ## Vehicule obișnuite
 - Proprietarul rămâne proprietar și numai garajul lui primește vehiculul; trustul oferă drept de condus, nu proprietate.
-- Când proprietarul iese, vehiculele obișnuite neconduse rămân afară 5 minute înainte de a fi garate în siguranță; întoarcerea lui anulează așteptarea. Nu se aplică perechii rezervate pe platformă, care are regula specială de mai jos.
+- Când proprietarul iese, vehiculele obișnuite neconduse rămân afară 5 minute înainte de a fi garate în siguranță; întoarcerea lui înainte de expirare anulează așteptarea. Cronometrul măsoară timpul real chiar dacă serverul își suspendă tick-urile fără jucători; dacă a expirat în pauză, gararea este verificată la reluare/reconectare. Nu se aplică perechii rezervate pe platformă, care are regula specială de mai jos.
 - Dacă proprietarul pleacă în timp ce un șofer autorizat conduce, șoferul își poate termina cursa. Când coboară, dacă proprietarul este offline, începe o perioadă de 5 minute. Reintrarea proprietarului sau urcarea unei persoane anulează temporizatorul. Nu se scoate vehiculul de sub ocupanți sau în mișcare.
 - Excepțiile existente pentru vehicule pe cric, vitrine și legături cu remorci trebuie păstrate în siguranță. După expirare se așteaptă dacă situația nu permite gararea.
 
