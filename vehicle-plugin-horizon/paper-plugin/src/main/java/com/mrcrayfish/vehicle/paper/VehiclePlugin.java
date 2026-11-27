@@ -151,6 +151,18 @@ public final class VehiclePlugin extends JavaPlugin {
         dataWipedThisBoot = wipeDataIfRequested();
         saveDefaultConfig();
 
+        // Reconcile v2 only before any vehicle writers or rig spawns exist.
+        // An old-format live journal has no rig session IDs, so fail closed.
+        try {
+            var directory=getDataFolder().toPath();
+            if(!new com.mrcrayfish.vehicle.paper.recovery.RecoveryJournal(directory.resolve("recovery-live.journal")).read().isEmpty())
+                throw new java.io.IOException("Legacy recovery journal requires manual reconciliation");
+            int recovered=com.mrcrayfish.vehicle.paper.persistence.RecoveryLiveStartup.reconcile(directory);
+            if(recovered>0)getLogger().warning("[Recovery] Reconciled " + recovered + " recovery pair(s) before vehicle load.");
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException("Recovery startup failed; refusing vehicle load",e);
+        }
+
         // Disposable CI fixture only. This property is never set for deployment.
         if (Boolean.getBoolean("horizon.recovery.restarttest")) {
             try {
