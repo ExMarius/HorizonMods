@@ -50,10 +50,12 @@ public final class RecoveryLiveProbe extends JavaPlugin implements Listener {
             target=manager.spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,origin.clone().add(0,0,10));
             target.setOwner(owner.getUniqueId()); target.trust(driver.getUniqueId());
             token=UUID.randomUUID();
-            if(!carrier.beginRecoveryMotion(token)||!target.beginRecoveryMotion(token))throw new IllegalStateException("lock failed");
-            if(!manager.reserveGarageTransit(carrier,target,driver,token))throw new IllegalStateException("live reservation refused");
+            if(!(boolean)invoke(carrier,"beginRecoveryMotion",new Class<?>[]{UUID.class},token)
+                    || !(boolean)invoke(target,"beginRecoveryMotion",new Class<?>[]{UUID.class},token))throw new IllegalStateException("lock failed");
+            if(!(boolean)invoke(manager,"reserveGarageTransit",new Class<?>[]{LandVehicle.class,LandVehicle.class,Player.class,UUID.class},carrier,target,driver,token))
+                throw new IllegalStateException("live reservation refused");
             if(manager.retrieve(driver,carrier.id())||manager.retrieve(owner,target.id()))throw new IllegalStateException("reserved garage retrieval permitted");
-            carrier.startRecoveryTestDrive(token);
+            invoke(carrier,"startRecoveryTestDrive",new Class<?>[]{UUID.class},token);
             if(!carrier.mount(driver))throw new IllegalStateException("driver mount failed");
             Files.createDirectories(getDataFolder().toPath());
             Files.writeString(marker(),carrier.id()+"\n"+target.id()+"\n");
@@ -73,6 +75,15 @@ public final class RecoveryLiveProbe extends JavaPlugin implements Listener {
                 getLogger().info("RECOVERY_PAIR_QUIT_OK");
             } catch(Throwable e){fail(e);}
         },40L);
+    }
+    private static Object invoke(Object instance,String name,Class<?>[] types,Object... args)throws Exception {
+        var method=instance.getClass().getDeclaredMethod(name,types);
+        method.setAccessible(true);
+        try {return method.invoke(instance,args);}
+        catch(java.lang.reflect.InvocationTargetException e) {
+            if(e.getCause() instanceof Exception cause)throw cause;
+            throw e;
+        }
     }
     private void fail(Throwable error){getLogger().severe("RECOVERY_PROBE_FAIL live: "+error);error.printStackTrace();}
 }
