@@ -47,9 +47,9 @@ public final class VehicleManager {
         final UUID token, carrierOwner, targetOwner;
         final java.util.Set<UUID> waitingPlayers = new java.util.HashSet<>();
         boolean closing;
-        RecoveryPair(LandVehicle carrier, LandVehicle target, UUID token) {
+        RecoveryPair(LandVehicle carrier, LandVehicle target, UUID token, UUID custodian) {
             this.carrier=carrier; this.target=target; this.token=token;
-            this.carrierOwner=carrier.owner().orElseThrow(); this.targetOwner=target.owner().orElseThrow();
+            this.carrierOwner=carrier.owner().orElse(custodian); this.targetOwner=target.owner().orElseThrow();
         }
     }
     private final Map<UUID, VehicleChunk> chunkTickets = new HashMap<>();
@@ -407,7 +407,8 @@ public final class VehicleManager {
                 || !trailers.recoveryLinksKnown()) return false;
         for (LandVehicle vehicle : List.of(carrier, target)) {
             if (vehicles.get(vehicle.id()) != vehicle || !vehicle.recoveryMotionLockedBy(token)
-                    || vehicle.owner().isEmpty() || !vehicle.canDrive(operator)
+                    || (vehicle == carrier ? !RecoveryTowCommands.canOperateCarrier(vehicle, operator)
+                                           : vehicle.owner().isEmpty() || !vehicle.canDrive(operator))
                     || (vehicle == carrier ? !vehicle.recoveryOnlyDriver(operator) : vehicle.recoveryHasPassengers())
                     || vehicle.recoveryHasStorageViewers()
                     || vehicle.showcase() || vehicle.onJack() || vehicle.jackId() != null
@@ -417,9 +418,13 @@ public final class VehicleManager {
                     || vehicle.rig().entities().stream().anyMatch(Entity::isPersistent)) return false;
         }
         if (carrier.location().getWorld() == null || !carrier.location().getWorld().equals(target.location().getWorld())) return false;
-        StoredVehicle carrierRecord = StoredVehicle.from(carrier), targetRecord = StoredVehicle.from(target);
+        StoredVehicle targetRecord = StoredVehicle.from(target);
         YamlConfiguration snapshot = collectYaml();
+        // A public truck remains public during normal use. If interrupted, the
+        // operator is its garage custodian so the crash snapshot is retrievable.
+        if (carrier.owner().isEmpty()) snapshot.set("vehicles."+carrier.id()+".owner",operator.getUniqueId().toString());
         com.mrcrayfish.vehicle.paper.persistence.GarageTransitSnapshot.reserve(snapshot, carrier.id(), target.id());
+        StoredVehicle carrierRecord = StoredVehicle.read(snapshot,"garage."+carrier.id(),carrier.id().toString());
         byte[] bytes = snapshot.saveToString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         try {
             synchronized (asyncSaveLock) {
@@ -436,7 +441,7 @@ public final class VehicleManager {
         }
         garage.put(carrier.id(), carrierRecord); garage.put(target.id(), targetRecord);
         recoveryTransit.put(carrier.id(), "OUT_TOWING"); recoveryTransit.put(target.id(), "TOWED");
-        RecoveryPair pair = new RecoveryPair(carrier, target, token);
+        RecoveryPair pair = new RecoveryPair(carrier, target, token, operator.getUniqueId());
         recoveryPairs.put(carrier.id(), pair); recoveryPairs.put(target.id(), pair);
         return true;
     }

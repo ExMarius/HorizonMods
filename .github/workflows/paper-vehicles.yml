@@ -20,6 +20,7 @@ permissions:
 
 jobs:
   build:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,5 +45,34 @@ jobs:
         with:
           name: HorizonVehiclesPaper-development
           path: paper-vehicles/build/libs/HorizonVehiclesPaper-*.jar
+          if-no-files-found: error
+          retention-days: 14
+
+  recovery-package:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile recovery JAR without tests
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean jar
+      - name: Build visual pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/recovery-pack
+          gh release download horizon-offroader-45724921999 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/recovery-pack
+          python3 vehicle-plugin-horizon/next-vehicle/atelier-flota/minecraft/build_pack.py /tmp/recovery-pack/HorizonOffRoader-1.21.4.zip /tmp/recovery-pack/HorizonRecovery-candidate.zip --expected-sha1 136f003f9c56ee849881d41fb6697876353b5681
+          sha256sum vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Recovery-install-candidate
+          path: |
+            vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
+            /tmp/recovery-pack/HorizonRecovery-candidate.zip
           if-no-files-found: error
           retention-days: 14

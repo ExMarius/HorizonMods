@@ -26,24 +26,31 @@ public final class RecoveryTowCommands {
     public void execute(Player player,String action) {
         if(!player.hasPermission("vehicle.use")) {player.sendMessage("Nu ai permisiunea vehicle.use.");return;}
         LandVehicle carrier=manager.vehicles().stream()
-                .filter(v -> "horizon_recovery_prototype".equals(v.spec().id()) && v.owner().isPresent() && v.canDrive(player))
+                .filter(v -> "horizon_recovery_prototype".equals(v.spec().id()) && canOperateCarrier(v,player))
                 .filter(v -> v.location().getWorld()!=null && v.location().getWorld().equals(player.getWorld()))
-                .filter(v -> v.location().distanceSquared(player.getLocation())<=16*16)
-                .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(player.getLocation()))).orElse(null);
+                .filter(v -> v.driver().filter(player::equals).isPresent() || v.location().distanceSquared(player.getLocation())<=16*16)
+                .min(java.util.Comparator.<LandVehicle>comparingInt(v -> v.driver().filter(player::equals).isPresent()?0:1)
+                        .thenComparingDouble(v -> v.location().distanceSquared(player.getLocation()))).orElse(null);
         if(carrier==null){
-            LandVehicle nearby=manager.vehicles().stream()
-                    .filter(v -> "horizon_recovery_prototype".equals(v.spec().id()))
-                    .filter(v -> player.getWorld().equals(v.location().getWorld()))
-                    .filter(v -> v.location().distanceSquared(player.getLocation())<=16*16)
-                    .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(player.getLocation()))).orElse(null);
-            if(nearby==null)player.sendMessage("Nu găsesc o platformă activă în această lume la maximum 16 blocuri. Apropie-te de cabină sau verifică garajul.");
-            else if(nearby.owner().isEmpty())player.sendMessage("Platforma din apropiere nu are proprietar; nu o pot atribui automat. Folosește o platformă deținută.");
-            else player.sendMessage("Platforma din apropiere aparține altcuiva. Proprietarul trebuie să îți acorde trust pentru a o folosi.");
+            boolean nearby=manager.vehicles().stream().anyMatch(v -> "horizon_recovery_prototype".equals(v.spec().id())
+                    && player.getWorld().equals(v.location().getWorld()) && v.location().distanceSquared(player.getLocation())<=16*16);
+            player.sendMessage(nearby ? "Nu ai permisiune pentru platforma din apropiere."
+                    : "Nu găsesc o platformă activă în această lume la maximum 16 blocuri.");
             return;
+        }
+        // The winch requires an empty carrier for collision and evacuation safety.
+        if(carrier.driver().filter(player::equals).isPresent()) {
+            if(carrier.horizontalSpeed()>.01 || !player.leaveVehicle()) {
+                player.sendMessage("Oprește platforma pentru a coborî înainte de manevră.");return;
+            }
+            player.sendMessage("Ai coborât din platformă pentru manevra troliului.");
         }
         if(action.equalsIgnoreCase("incarca")) start(player,carrier);
         else if(action.equalsIgnoreCase("descarca")) unload(player,carrier);
         else player.sendMessage("Utilizare: /vehicle tractare incarca|descarca");
+    }
+    static boolean canOperateCarrier(LandVehicle carrier,Player player) {
+        return player.isOp() || carrier.canDrive(player);
     }
     private void start(Player player,LandVehicle carrier) {
         if(operations.containsKey(carrier.id()) || carrier.occupied() || carrier.horizontalSpeed()>.01) {
@@ -115,7 +122,7 @@ public final class RecoveryTowCommands {
         }
         void stop() {
             operator.sendMessage("Manevra s-a oprit; vehiculele sunt trimise în garaj în siguranță.");
-            manager.recoveryOwnerQuit(carrier.owner().orElse(null));finishTask();
+            manager.recoveryOwnerQuit(carrier.owner().orElse(operator.getUniqueId()));finishTask();
         }
         void finishTask(){if(task!=null)task.cancel();operations.remove(carrier.id(),this);}
     }
