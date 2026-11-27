@@ -1,5 +1,7 @@
-/* Concept separat: cabina de înlocuire nu modifică modelul sau JAR-ul instalat.
- * Coordonate în blocuri; fața este spre -Z, platforma existentă începe la -.15. */
+/* Concept separat, inspirat de proporțiile unei cabine Iveco Daily de tractare:
+ * https://www.gmpcars.co.uk/detail/1366339/used-iveco-daily-35s14b-2-3-35s14b-recovery-truck-lwb-preston
+ * Nu modifică modelul sau JAR-ul instalat. Fața este -Z, puntea începe la -.15.
+ * Ferestrele sunt goluri intenționate, fără panouri albastre. */
 export const cabinaNoua = [
  // Longer frame, bumper and front landing step, all tied to the existing deck.
  ['chassis',-.78,.48,-.95,.18,.22,4.45],['chassis',.78,.48,-.95,.18,.22,4.45],
@@ -8,9 +10,11 @@ export const cabinaNoua = [
  ['steel',-1.16,.45,-3.22,.32,.16,.12],['steel',1.16,.45,-3.22,.32,.16,.12],
  ['white',0,.50,-3.265,.48,.12,.02],['dark',0,.50,-3.28,.34,.03,.02],
  // Floor and low nose: no opaque wall behind the windscreen.
- ['chassis',0,.70,-1.62,2.46,.17,2.64],
+ ['chassis',0,.70,-1.62,2.26,.17,2.64],
  ['white',0,.91,-2.85,2.64,.42,.40],['white',0,1.14,-2.84,2.58,.08,.45],
  ['whiteDark',0,1.12,-2.58,2.52,.12,.12],
+ // Nose joins the pillars; the wheel opening remains unobstructed below.
+ ['white',0,1.16,-2.54,2.54,.20,.22],
  // Front: inset broad grille, separated lamp pockets, horizontal brightwork.
  ['dark',0,.91,-3.065,1.65,.35,.04],['black',0,.91,-3.091,1.51,.27,.018],
  ['steel',0,1.035,-3.105,1.54,.025,.015],['steel',0,.785,-3.105,1.54,.025,.015],
@@ -34,27 +38,34 @@ export const cabinaNoua = [
  // Shaped hood shoulders and a subtle pressed centre section.
  ['whiteDark',-.96,1.19,-2.83,.18,.035,.38],['whiteDark',.96,1.19,-2.83,.18,.035,.38],
  ['white',0,1.20,-2.86,1.40,.035,.34],
- // Door lower panels, sill and open side windows with defined frames.
- ['white',-1.30,1.03,-1.22,.12,.55,1.31],['white',1.30,1.03,-1.22,.12,.55,1.31],
- ['whiteDark',-1.31,1.31,-1.27,.11,.06,1.84],['whiteDark',1.31,1.31,-1.27,.11,.06,1.84],
- ['dark',-1.375,1.08,-.93,.03,.05,.23],['dark',1.375,1.08,-.93,.03,.05,.23],
- ['dark',-1.368,.89,-1.18,.025,.035,1.18],['dark',1.368,.89,-1.18,.025,.035,1.18],
- ['silver',-1.38,1.10,-.94,.02,.025,.17],['silver',1.38,1.10,-.94,.02,.025,.17],
- ['amber',-1.38,.81,-1.73,.02,.08,.16],['amber',1.38,.81,-1.73,.02,.08,.16],
- ['white',-1.24,2.04,-2.39,.14,1.63,.16,.13],['white',1.24,2.04,-2.39,.14,1.63,.16,.13],
- ['white',-1.24,2.04,-.40,.14,1.62,.14],['white',1.24,2.04,-.40,.14,1.62,.14],
+ // Continuous lower cab: doors sit BEHIND the front wheel openings.
+ // The rear bulkhead closes the cabin below the rear window opening.
+ ['white',-1.30,1.00,-.925,.12,.64,1.05],['white',1.30,1.00,-.925,.12,.64,1.05],
+ ['white',0,1.02,-.40,2.48,.64,.12],
+ ['whiteDark',-1.31,1.31,-1.40,.11,.08,1.98],['whiteDark',1.31,1.31,-1.40,.11,.08,1.98],
+ ['white',-1.30,1.18,-1.99,.12,.20,1.18],['white',1.30,1.18,-1.99,.12,.20,1.18],
+ // Door seams and handles attach directly to the door panels.
+ ['dark',-1.369,.99,-.48,.018,.47,.025],['dark',1.369,.99,-.48,.018,.47,.025],
+ ['dark',-1.369,.99,-1.42,.018,.47,.025],['dark',1.369,.99,-1.42,.018,.47,.025],
+ ['dark',-1.369,1.08,-.93,.02,.05,.23],['dark',1.369,1.08,-.93,.02,.05,.23],
+ ['silver',-1.383,1.09,-.93,.014,.022,.15],['silver',1.383,1.09,-.93,.014,.022,.15],
+ ['dark',-1.369,.89,-.95,.018,.035,.86],['dark',1.369,.89,-.95,.018,.035,.86],
+ // Four upright pillars meet both the continuous sill and the roof.
+ ['white',-1.24,2.04,-2.39,.14,1.57,.16],['white',1.24,2.04,-2.39,.14,1.57,.16],
+ ['white',-1.24,2.04,-.40,.14,1.57,.14],['white',1.24,2.04,-.40,.14,1.57,.14],
  ['white',0,2.87,-1.41,2.68,.16,2.20],
- ['whiteDark',0,2.76,-2.42,2.43,.08,.14],['white',0,2.73,-.40,2.41,.10,.14],
- ['white',0,1.36,-.40,2.41,.10,.14],
- // Window apertures are intentionally empty: no blue glass panels or infill.
+ ['whiteDark',0,2.76,-2.39,2.43,.08,.16],['white',0,2.73,-.40,2.41,.10,.14],
+ ['white',0,1.36,-.40,2.41,.10,.14],['whiteDark',0,1.29,-2.39,2.42,.10,.15],
+ // All four window apertures deliberately contain no blue glass or infill.
  // Visor, mirrors, amber markers and steps.
  ['whiteDark',0,2.80,-2.53,2.52,.08,.27],['white',0,2.86,-2.54,2.68,.07,.32],
  ['dark',0,2.77,-2.685,1.86,.025,.025],
  ['silver',-.97,2.77,-2.68,.11,.035,.03],['silver',.97,2.77,-2.68,.11,.035,.03],
  ['amber',-.88,2.98,-1.65,.27,.08,.28],['amber',.88,2.98,-1.65,.27,.08,.28],
- ['dark',-1.42,1.91,-2.11,.33,.06,.06],['dark',1.42,1.91,-2.11,.33,.06,.06],
- ['dark',-1.58,1.91,-2.11,.13,.43,.19],['dark',1.58,1.91,-2.11,.13,.43,.19],
- ['silver',-1.66,1.91,-2.11,.015,.33,.13],['silver',1.66,1.91,-2.11,.015,.33,.13],
+ ['dark',-1.42,1.91,-2.39,.33,.07,.08],['dark',1.42,1.91,-2.39,.33,.07,.08],
+ ['dark',-1.58,1.91,-2.39,.13,.43,.19],['dark',1.58,1.91,-2.39,.13,.43,.19],
+ ['silver',-1.66,1.91,-2.39,.015,.33,.13],['silver',1.66,1.91,-2.39,.015,.33,.13],
+ ['chassis',-1.20,.45,-.95,.22,.16,1.15],['chassis',1.20,.45,-.95,.22,.16,1.15],
  ['steel',-1.38,.45,-.95,.30,.10,1.15],['steel',1.38,.45,-.95,.30,.10,1.15],
  ['dark',-1.40,.52,-.95,.27,.025,1.06],['dark',1.40,.52,-.95,.27,.025,1.06],
  // Interior: independent seats, backrests, dash and center console.
@@ -67,8 +78,8 @@ export const cabinaNoua = [
  ['black',.12,1.48,-1.40,.10,.10,.10],
  // Front axle and short arch caps, kept above/outside the wheel envelope.
  ['chassis',0,.53,-2.05,2.55,.12,.13],
- ['white',-1.31,1.09,-2.05,.15,.10,1.19],['white',1.31,1.09,-2.05,.15,.10,1.19],
- ['white',-1.31,.84,-2.66,.15,.40,.10],['white',1.31,.84,-2.66,.15,.40,.10],
+ ['white',-1.31,1.13,-2.05,.15,.10,1.19],['white',1.31,1.13,-2.05,.15,.10,1.19],
+ ['white',-1.31,.84,-2.65,.15,.40,.10],['white',1.31,.84,-2.65,.15,.40,.10],
  ['white',-1.31,.84,-1.44,.15,.40,.10],['white',1.31,.84,-1.44,.15,.40,.10],
 ];
 export const frontWheels=[[-1.35,.53,-2.05,1.18],[1.35,.53,-2.05,1.18]];
