@@ -39,7 +39,19 @@ public final class VehicleManager {
     private final Map<UUID, StoredVehicle> garage = new HashMap<>();
     /** In-memory retrieval guard for snapshots reserved before recovery motion. */
     private final Map<UUID, String> recoveryTransit = new HashMap<>();
+    private final Map<UUID, RecoveryPair> recoveryPairs = new HashMap<>();
     private boolean recoveryPersistenceHalted;
+
+    private static final class RecoveryPair {
+        final LandVehicle carrier, target;
+        final UUID token, carrierOwner, targetOwner;
+        final java.util.Set<UUID> waitingPlayers = new java.util.HashSet<>();
+        boolean closing;
+        RecoveryPair(LandVehicle carrier, LandVehicle target, UUID token) {
+            this.carrier=carrier; this.target=target; this.token=token;
+            this.carrierOwner=carrier.owner().orElseThrow(); this.targetOwner=target.owner().orElseThrow();
+        }
+    }
     private final Map<UUID, VehicleChunk> chunkTickets = new HashMap<>();
     private final File storageFile;
     private final TrailerManager trailers;
@@ -421,6 +433,8 @@ public final class VehicleManager {
         }
         garage.put(carrier.id(), carrierRecord); garage.put(target.id(), targetRecord);
         recoveryTransit.put(carrier.id(), "OUT_TOWING"); recoveryTransit.put(target.id(), "TOWED");
+        RecoveryPair pair = new RecoveryPair(carrier, target, token);
+        recoveryPairs.put(carrier.id(), pair); recoveryPairs.put(target.id(), pair);
         return true;
     }
 
@@ -439,6 +453,109 @@ public final class VehicleManager {
             catch (AtomicMoveNotSupportedException e) { throw new IOException("Atomic vehicle snapshot unavailable", e); }
             try (var directory = java.nio.channels.FileChannel.open(parent, java.nio.file.StandardOpenOption.READ)) { directory.force(true); }
         } finally { Files.deleteIfExists(temp); }
+    }
+
+    /** Main-thread quit hook for reserved pairs; the transport entry point is not
+     * yet public. A failed teleport keeps both identities locked. */
+    public void recoveryOwnerQuit(UUID ownerId) {
+        if (!Bukkit.isPrimaryThread() || ownerId == null) return;
+        for (RecoveryPair pair : new java.util.HashSet<>(recoveryPairs.values())) {
+            if (pair.closing || (!ownerId.equals(pair.carrierOwner) && !ownerId.equals(pair.targetOwner))) continue;
+            pair.closing = true;
+            pair.carrier.freezeRecoveryTestDrive(pair.token);
+            new org.bukkit.scheduler.BukkitRunnable() {
+                int attempts;
+                @Override public void run() {
+                    try {
+                        attempts++;
+                        if (evacuateAndParkRecoveryPair(pair, ownerId, attempts >= 5)) { cancel(); return; }
+                        if (attempts == 5) plugin.getLogger().warning("[Recovery] No safe evacuation yet; retrying without deleting the vehicles.");
+                    } catch (RuntimeException error) {
+                        cancel();
+                        plugin.getLogger().log(Level.SEVERE, "Recovery evacuation halted; both vehicles remain locked", error);
+                    }
+                }
+            }.runTaskTimer(plugin, 1L, 20L);
+        }
+    }
+
+    private boolean evacuateAndParkRecoveryPair(RecoveryPair pair, UUID quittingOwner, boolean trySpawn) {
+        if (recoveryPersistenceHalted || vehicles.get(pair.carrier.id()) != pair.carrier
+                || vehicles.get(pair.target.id()) != pair.target
+                || !pair.carrier.recoveryMotionLockedBy(pair.token) || !pair.target.recoveryMotionLockedBy(pair.token)) return false;
+        var technical = new java.util.HashSet<UUID>();
+        pair.carrier.rig().entities().forEach(e -> technical.add(e.getUniqueId()));
+        pair.target.rig().entities().forEach(e -> technical.add(e.getUniqueId()));
+        // Track even players who were dismounted by a failed teleport.
+        for (Entity entity : pair.carrier.rig().entities()) for (Entity passenger : entity.getPassengers()) {
+            if (technical.contains(passenger.getUniqueId())) continue;
+            if (!(passenger instanceof Player)) return false;
+            pair.waitingPlayers.add(passenger.getUniqueId());
+        }
+        for (UUID id : java.util.List.copyOf(pair.waitingPlayers)) {
+            Player rider = Bukkit.getPlayer(id);
+            if (rider == null || !rider.isOnline() || id.equals(quittingOwner)) {
+                // The quit event can run before Paper has actually detached the player.
+                if (rider != null && rider.getVehicle() != null && technical.contains(rider.getVehicle().getUniqueId())) return false;
+                pair.waitingPlayers.remove(id);
+                continue;
+            }
+            Location exit = findRecoveryExit(pair.carrier.location(), technical, pair.waitingPlayers, trySpawn);
+            if (exit == null) {
+                rider.sendActionBar(net.kyori.adventure.text.Component.text("Platforma este oprită: caut un loc sigur pentru coborâre."));
+                return false;
+            }
+            Entity mount = rider.getVehicle();
+            if (mount != null && (!technical.contains(mount.getUniqueId()) || !rider.leaveVehicle())) return false;
+            if (!rider.teleport(exit)) return false;
+            pair.waitingPlayers.remove(id);
+        }
+        if (pair.carrier.recoveryHasPassengers() || pair.target.recoveryHasPassengers()
+                || trailers.referencesVehicle(pair.carrier.id()) || trailers.referencesVehicle(pair.target.id())) return false;
+        for (LandVehicle vehicle : List.of(pair.carrier, pair.target)) {
+            unindex(vehicle); releaseChunkTicket(vehicle); vehicles.remove(vehicle.id());
+            parkedInSpotSeconds.remove(vehicle.id()); vehicle.remove();
+            recoveryTransit.remove(vehicle.id()); recoveryPairs.remove(vehicle.id());
+        }
+        // If this async write is interrupted, the durable transit snapshot is
+        // still recovered as two garage records on the next boot.
+        save();
+        return true;
+    }
+
+    private Location findRecoveryExit(Location base, java.util.Set<UUID> technical,
+                                      java.util.Set<UUID> waitingPlayers, boolean trySpawn) {
+        World world = base.getWorld(); if (world == null) return null;
+        for (int radius=5; radius<=9; radius++) for (int dx=-radius; dx<=radius; dx++) for (int dz=-radius; dz<=radius; dz++) {
+            if (Math.max(Math.abs(dx), Math.abs(dz)) != radius) continue;
+            for (int dy=1; dy>=-2; dy--) {
+                Location candidate = new Location(world,base.getBlockX()+dx+.5,base.getBlockY()+dy,base.getBlockZ()+dz+.5,base.getYaw(),0);
+                if (safeRecoveryExit(candidate,technical,waitingPlayers)) return candidate;
+            }
+        }
+        if (trySpawn) {
+            Location spawn=world.getSpawnLocation().clone();
+            Location candidate=new Location(world,spawn.getBlockX()+.5,spawn.getBlockY(),spawn.getBlockZ()+.5,spawn.getYaw(),0);
+            if (safeRecoveryExit(candidate,technical,waitingPlayers)) return candidate;
+        }
+        return null;
+    }
+
+    private boolean safeRecoveryExit(Location place, java.util.Set<UUID> technical, java.util.Set<UUID> waitingPlayers) {
+        World world=place.getWorld(); if (world==null) return false;
+        int x=place.getBlockX(),y=place.getBlockY(),z=place.getBlockZ();
+        if (!world.isChunkLoaded(x>>4,z>>4) || y<=world.getMinHeight() || y+1>=world.getMaxHeight()
+                || !world.getWorldBorder().isInside(place)) return false;
+        var floor=world.getBlockAt(x,y-1,z); var feet=world.getBlockAt(x,y,z); var head=world.getBlockAt(x,y+1,z);
+        String type=floor.getType().name();
+        if (!floor.getType().isSolid() || !feet.getType().isAir() || !head.getType().isAir()
+                || type.contains("MAGMA") || type.contains("CAMPFIRE") || type.contains("CACTUS")
+                || type.contains("BERRY") || type.contains("FIRE")) return false;
+        if (floor.getCollisionShape().getBoundingBoxes().stream().noneMatch(b -> b.getMinX()<=0 && b.getMinZ()<=0
+                && b.getMaxX()>=1 && b.getMaxZ()>=1 && b.getMaxY()>=1)) return false;
+        var box=new org.bukkit.util.BoundingBox(x+.2,y,z+.2,x+.8,y+1.9,z+.8);
+        return world.getNearbyEntities(box).stream().noneMatch(e -> e.isValid() && !technical.contains(e.getUniqueId())
+                && !waitingPlayers.contains(e.getUniqueId()));
     }
 
     /** Test-only recovery emergency. Both snapshots enter the existing garage
@@ -1003,6 +1120,15 @@ public final class VehicleManager {
         if (vehicle.showcase()) {
             return; // podium cars: never pushed, carried, attached or driven (buy = right-click)
         }
+        String transit = recoveryTransit.get(vehicle.id());
+        if (transit != null) {
+            // A reserved target cannot be entered or edited. The carrier may be
+            // mounted only when its recovery controller has enabled driving.
+            if ("OUT_TOWING".equals(transit) && !player.isSneaking()
+                    && player.getInventory().getItemInMainHand().getType().isAir() && vehicle.mount(player)) return;
+            player.sendRichMessage("<yellow>Vehiculul este rezervat pentru transport.</yellow>");
+            return;
+        }
         // Sistemul mecanic: uneltele (cheie de mecanic/spray/motor/roti)
         // consuma interactiunea - jucatorul NU urca in masina.
         if (plugin.mechanic() != null && plugin.mechanic().handleToolClick(player, vehicle,
@@ -1084,6 +1210,7 @@ public final class VehicleManager {
     /** Hammer: masina se demonteaza in "cufar de transport" (item) pentru proprietar.
      *  Continutul depozitelor se varsa pe jos (nu bagam inventare intregi in PDC). */
     public boolean dismantleToCrate(Player player, LandVehicle vehicle) {
+        if (vehicle.recoveryLocked() || recoveryTransit.containsKey(vehicle.id())) return false;
         if (!hasVehicleId(vehicle.id())) {
             return false;
         }
@@ -1164,7 +1291,7 @@ public final class VehicleManager {
 
     public void handleAttack(Player player, Entity clicked) {
         LandVehicle vehicle = entities.get(clicked.getUniqueId());
-        if (vehicle == null || !player.hasPermission("vehicle.use")) {
+        if (vehicle == null || !player.hasPermission("vehicle.use") || recoveryTransit.containsKey(vehicle.id())) {
             return;
         }
         if (vehicle.handleSpecialAttack(player, clicked)) {
