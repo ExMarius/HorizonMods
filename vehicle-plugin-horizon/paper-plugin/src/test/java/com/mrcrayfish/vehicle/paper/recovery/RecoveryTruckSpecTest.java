@@ -14,7 +14,9 @@ class RecoveryTruckSpecTest {
         assertEquals(3.92F,spec.wheels().get(3).axleZ());
         var ramps=spec.bodyParts().stream().filter(p->p.model().equals("horizon_service_ramp")).toList();
         assertEquals(2,ramps.size());
-        ramps.forEach(ramp->assertEquals(5.35F,ramp.center().z()));
+        ramps.forEach(ramp->{assertEquals(5.35F,ramp.center().z());assertEquals(-90F,ramp.rotationX());});
         spec.seats().forEach(seat->assertEquals(-.94F,seat.sourceOffset().z()));
+        assertEquals(-.43F,spec.seats().get(0).sourceOffset().x());
+        assertEquals(180F,spec.seats().get(0).yawOffset());
     }
 }

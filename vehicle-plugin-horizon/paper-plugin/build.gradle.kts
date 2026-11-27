@@ -106,3 +106,17 @@ tasks.register<Jar>("recoveryCommandProbeJar") {
     from(compileRecoveryCommandProbe.flatMap { it.destinationDirectory })
     from("src/recoveryCommandProbe/resources")
 }
+
+val compileRecoveryDriveProbe by tasks.registering(JavaCompile::class) {
+    dependsOn(tasks.classes)
+    setSource(fileTree("src/recoveryDriveProbe/java") { include("**/*.java") })
+    classpath = sourceSets.main.get().output + configurations.compileClasspath.get()
+    destinationDirectory.set(layout.buildDirectory.dir("recovery-drive-probe/classes"))
+}
+tasks.register<Jar>("recoveryDriveProbeJar") {
+    dependsOn(compileRecoveryDriveProbe)
+    archiveFileName.set("RecoveryDriveProbe.jar")
+    destinationDirectory.set(layout.buildDirectory.dir("recovery-drive-probe"))
+    from(compileRecoveryDriveProbe.flatMap { it.destinationDirectory })
+    from("src/recoveryDriveProbe/resources")
+}

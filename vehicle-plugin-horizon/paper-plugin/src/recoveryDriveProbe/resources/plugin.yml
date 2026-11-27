@@ -1,0 +1,5 @@
+name: RecoveryDriveProbe
+version: '1.0'
+main: com.mrcrayfish.vehicle.paper.vehicle.RecoveryDriveProbe
+api-version: '1.21.4'
+depend: [MrCrayfishVehiclePlugin]

@@ -459,7 +459,7 @@ public final class LandVehicleRig {
         updateRecoveryCable(renderAnchor,driverSeat,yaw,wheelieAngle,bodyRoll);
         for (PartDisplay partDisplay : chassisParts) {
             placePropertyPart(partDisplay, renderAnchor, driverSeat,
-                    yaw, wheelieAngle, bodyRoll, chassisRotation);
+                    yaw, wheelieAngle, bodyRoll, chassisRotation, renderSteeringAngle);
         }
 
         for (PartDisplay partDisplay : forkParts) {
@@ -573,12 +573,24 @@ public final class LandVehicleRig {
 
     private void placePropertyPart(PartDisplay partDisplay,
                                    Location renderAnchor, Vector3f driverSeat, float yaw,
-                                   float wheelieAngle, float bodyRoll, Quaternionf chassisRotation) {
+                                   float wheelieAngle, float bodyRoll, Quaternionf chassisRotation,
+                                   float renderSteeringAngle) {
         LandVehicleSpec.Part part = partDisplay.properties;
-        Vector3f center = chassis(point(part.center()), wheelieAngle, bodyRoll);
+        Vector3f point=point(part.center());
         Quaternionf rotation = new Quaternionf(chassisRotation);
+        if ("horizon_recovery_prototype".equals(spec.id()) && "horizon_service_steering".equals(part.model())
+                && part.center().x()<0F) {
+            // Existing item has geometry baked off-centre; compensate around the rim's centre.
+            Vector3f pivot=new Vector3f(.43F,1.32F,1.49F);
+            Quaternionf turn=new Quaternionf().rotateZ(radians(-renderSteeringAngle*2F));
+            point.add(new Vector3f(pivot).sub(turn.transform(new Vector3f(pivot))));
+            rotation.mul(turn);
+        }
+        Vector3f center = chassis(point, wheelieAngle, bodyRoll);
         if ("horizon_recovery_prototype".equals(spec.id()) && "horizon_service_ramp".equals(part.model())) {
-            rotation.rotateX(com.mrcrayfish.vehicle.paper.recovery.RecoveryRampKinematics.paperOffsetRadians(recoveryRampProgress));
+            float offset=com.mrcrayfish.vehicle.paper.recovery.RecoveryRampKinematics.paperOffsetRadians(recoveryRampProgress);
+            // The corrected live rig faces the opposite longitudinal direction to the legacy test rig.
+            rotation.rotateX(part.center().z()>0 ? -offset : offset);
         }
         if (part.openable() != null) {
             float angle = radians(partDisplay.openAngle());

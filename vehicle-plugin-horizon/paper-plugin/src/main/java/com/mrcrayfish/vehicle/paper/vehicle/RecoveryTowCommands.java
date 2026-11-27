@@ -30,7 +30,17 @@ public final class RecoveryTowCommands {
                 .filter(v -> v.location().getWorld()!=null && v.location().getWorld().equals(player.getWorld()))
                 .filter(v -> v.location().distanceSquared(player.getLocation())<=16*16)
                 .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(player.getLocation()))).orElse(null);
-        if(carrier==null){player.sendMessage("Nu există o platformă autorizată la maximum 16 blocuri.");return;}
+        if(carrier==null){
+            LandVehicle nearby=manager.vehicles().stream()
+                    .filter(v -> "horizon_recovery_prototype".equals(v.spec().id()))
+                    .filter(v -> player.getWorld().equals(v.location().getWorld()))
+                    .filter(v -> v.location().distanceSquared(player.getLocation())<=16*16)
+                    .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(player.getLocation()))).orElse(null);
+            if(nearby==null)player.sendMessage("Nu găsesc o platformă activă în această lume la maximum 16 blocuri. Apropie-te de cabină sau verifică garajul.");
+            else if(nearby.owner().isEmpty())player.sendMessage("Platforma din apropiere nu are proprietar; nu o pot atribui automat. Folosește o platformă deținută.");
+            else player.sendMessage("Platforma din apropiere aparține altcuiva. Proprietarul trebuie să îți acorde trust pentru a o folosi.");
+            return;
+        }
         if(action.equalsIgnoreCase("incarca")) start(player,carrier);
         else if(action.equalsIgnoreCase("descarca")) unload(player,carrier);
         else player.sendMessage("Utilizare: /vehicle tractare incarca|descarca");

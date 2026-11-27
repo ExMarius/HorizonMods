@@ -11,6 +11,8 @@ for(const [name,parts] of Object.entries({cab,platforma,atelier,ramp})){
 const windows=cab.filter(p=>p[0]==='glass');
 assert.equal(windows.length,4,'front, rear and both side windows must be present');
 assert.ok(cab.filter(p=>p[0]==='seat').length>=6,'seats should be visible through windows');
+const cabRoof=cab.find(p=>p[0]==='white' && p[1]===0 && p[3]===-1.18 && p[4]===2.05);
+assert.ok(cabRoof && cabRoof[2]-cabRoof[5]/2>=2.5,'cab roof must provide extra headroom');
 // Check at the centre of every pane, slightly inside the cabin, for an opaque
 // wall (interior fixtures deeper inside must not be mistaken for window infill).
 for(const point of [[0,1.68,-1.78],[-.90,1.68,-1.18],[.90,1.68,-1.18],[0,1.69,-.53]]){

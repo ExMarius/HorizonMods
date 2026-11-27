@@ -284,7 +284,7 @@ public final class LandVehicle {
                 && (creativeDriver || fuel > 0.0F) && !engineBroken();
         updateInput(driver);
         updateCharging(enginePowered);
-        float targetRenderAngle = !charging && isSliding(forward(location.getYaw()))
+        float targetRenderAngle = !charging && isSliding(drivingForward())
                 ? -clamp(steeringAngle * 2.0F, (float) (-spec.maxSteeringAngle() * steeringMultiplier),
                         (float) (spec.maxSteeringAngle() * steeringMultiplier))
                 : steeringAngle;
@@ -995,7 +995,7 @@ public final class LandVehicle {
     /** Direct Paper-vector translation of LandVehicleEntity#updateVehicleMotion. */
     private void updateVehicleMotion(double globalSpeedLimit, boolean enginePowered) {
         motion = new Vector();
-        Vector forward = forward(location.getYaw());
+        Vector forward = drivingForward();
 
         if (charging) {
             float speed = 0.1F;
@@ -1137,7 +1137,7 @@ public final class LandVehicle {
         if (spec.wheels().isEmpty()) {
             return;
         }
-        double direction = forward(location.getYaw()).dot(normalized(motion));
+        double direction = drivingForward().dot(normalized(motion));
         if (onGround || throttle != 0.0F) {
             rearWheelRotationSpeed = (float) (motion.length() * direction * 20.0D);
         } else {
@@ -2279,6 +2279,13 @@ public final class LandVehicle {
         double sin = Math.sin(radians);
         double cos = Math.cos(radians);
         return new Vector(x * cos - z * sin, y, x * sin + z * cos);
+    }
+
+    /** The authored recovery cab faces the opposite direction to the default rig. */
+    private Vector drivingForward() {
+        Vector direction=forward(location.getYaw());
+        if ("horizon_recovery_prototype".equals(spec.id())) direction.multiply(-1D);
+        return direction;
     }
 
     private static Vector forward(float yaw) {

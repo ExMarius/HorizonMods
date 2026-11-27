@@ -1,0 +1,31 @@
+name: Recovery driving controls
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths:
+      - '.github/workflows/recovery-drive-check.yml'
+      - 'vehicle-plugin-horizon/paper-plugin/**'
+      - 'vehicle-plugin-horizon/tools/smoke_recovery_drive.*'
+permissions:
+  contents: read
+jobs:
+  drive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build plugin and drive probe
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build recoveryDriveProbeJar
+      - name: Install offline test client
+        run: npm install --prefix /tmp/recovery-test mineflayer@4.39.0
+      - name: Check forward and steering on Paper
+        env:
+          NODE_PATH: /tmp/recovery-test/node_modules
+        run: python3 vehicle-plugin-horizon/tools/smoke_recovery_drive.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-drive-probe/RecoveryDriveProbe.jar
