@@ -1095,7 +1095,15 @@ public final class LandVehicle {
         Vector dragForce = velocity.clone().multiply(velocity.length()).multiply(-DRAG * 0.05D);
         acceleration.add(dragForce).add(frictionForce).add(handbrakeForce);
         velocity.add(acceleration);
-        clampLength(velocity, Math.max(0.0D, globalSpeedLimit));
+        double speedLimit = Math.max(0.0D, globalSpeedLimit);
+        if ("horizon_recovery_prototype".equals(spec.id())) {
+            // Match the existing HUD's cosmetic multiplier: 70 displayed km/h
+            // corresponds to 70 / (3.6 * factor) actual blocks per second.
+            double displayFactor = plugin.getConfig().getDouble("hud.speed-display-factor", 1.75D);
+            if (!Double.isFinite(displayFactor) || displayFactor <= 0D) displayFactor = 1.75D;
+            speedLimit = Math.min(speedLimit, 70D / (3.6D * displayFactor));
+        }
+        clampLength(velocity, speedLimit);
 
         if (isSliding(forward) && throttle > 0.0F) {
             traction = wheelType.slideTraction();

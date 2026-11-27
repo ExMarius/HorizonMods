@@ -7,7 +7,7 @@ f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
 jar=f.verify_jar(Path(sys.argv[1]));api=f.Falix(f.login())
 if api.status() not in ('running','offline','sleeping'):raise ValueError('Server transitioning; upload refused')
 old=api.download('/plugins/'+f.NAME)
-if f.sha(old)!='fdbe986f14610bb23dfe3bef8b41d4251ce8add4f28c005d2f12381a41231129':raise ValueError('Installed JAR differs from expected; upload refused')
+if f.sha(old)!='9b314d1c29df22089c7c63f4a594afb1356b3a749e2f8935ae5bc6c83642af1d':raise ValueError('Installed JAR differs from expected; upload refused')
 try:
     api.upload('/plugins',f.NAME,jar)
     if f.sha(api.download('/plugins/'+f.NAME))!=f.sha(jar):raise ValueError('Uploaded JAR checksum mismatch')

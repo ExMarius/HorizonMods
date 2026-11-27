@@ -25,7 +25,7 @@ public final class RecoveryTruckSpec {
                 ID,"Platformă auto (prototip)","horizon_service_cab",
                 2.9F,3.1F,1.0F,
                 MODEL_SCALE,0F,0F,
-                8F,28F,1.488F,-3.22F,3F,
+                12F,28F,1.488F,-3.22F,3F,
                 15_000F,.3F,.7F,1.4F,"vehicle:entity.tractor.engine",
                 false,p(0,0,0),null,null,null,null,
                 List.of(
