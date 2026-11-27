@@ -49,7 +49,7 @@ public final class RecoveryTowCommands {
                 .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(expected))).orElse(null);
         if(target==null){player.sendMessage("Aliniază Dacia autorizată în spatele platformei, la aproximativ 9,8 blocuri.");return;}
         carrier.rig().setRecoveryRampProgress(1);carrier.forceVisualSync();
-        var route=PrototypeRecoveryRoute.begin(manager,carrier,target,player,(actor,world,box)->actor.isOnline(),SAFETY);
+        var route=LiveRecoveryRoute.begin(manager,carrier,target,player,(actor,world,box)->actor.isOnline(),SAFETY);
         if(route==null) {carrier.rig().setRecoveryRampProgress(0);carrier.forceVisualSync();player.sendMessage("Încărcare refuzată: verifică alinierea, ocupanții și cuplajele.");return;}
         try {
             if(!manager.reserveGarageTransit(carrier,target,player,route.lockToken())) {
@@ -68,7 +68,7 @@ public final class RecoveryTowCommands {
     }
     private void unload(Player player,LandVehicle carrier) {
         Operation operation=operations.get(carrier.id());
-        if(operation==null || operation.route.state()!=PrototypeRecoveryRoute.State.TEST_DRIVING) {player.sendMessage("Nu există o mașină fixată pe această platformă.");return;}
+        if(operation==null || operation.route.state()!=LiveRecoveryRoute.State.TEST_DRIVING) {player.sendMessage("Nu există o mașină fixată pe această platformă.");return;}
         if(!operation.target.canDrive(player) || carrier.occupied() || carrier.horizontalSpeed()>.01) {
             player.sendMessage("Oprește platforma, coboară și verifică drepturile asupra mașinii.");return;
         }
@@ -76,25 +76,25 @@ public final class RecoveryTowCommands {
         player.sendMessage("Troliul a început descărcarea.");
     }
     private final class Operation {
-        final LandVehicle carrier,target;final PrototypeRecoveryRoute route;final Player operator;BukkitTask task;
-        Operation(LandVehicle carrier,LandVehicle target,PrototypeRecoveryRoute route,Player operator) {
+        final LandVehicle carrier,target;final LiveRecoveryRoute route;final Player operator;BukkitTask task;
+        Operation(LandVehicle carrier,LandVehicle target,LiveRecoveryRoute route,Player operator) {
             this.carrier=carrier;this.target=target;this.route=route;this.operator=operator;
         }
         void tick() {
             try {
                 if(!manager.recoveryPairActive(carrier.id())) {finishTask();return;}
                 var state=route.state();
-                if(state==PrototypeRecoveryRoute.State.LOADING || state==PrototypeRecoveryRoute.State.UNLOADING) {
+                if(state==LiveRecoveryRoute.State.LOADING || state==LiveRecoveryRoute.State.UNLOADING) {
                     state=route.tick(SAFETY);
-                    if(state==PrototypeRecoveryRoute.State.AT_DECK) {
+                    if(state==LiveRecoveryRoute.State.AT_DECK) {
                         if(!route.beginTestDrive()) {stop();return;}
                         operator.sendMessage("Mașina este fixată; poți conduce platforma.");
-                    } else if(state==PrototypeRecoveryRoute.State.ON_GROUND) {
+                    } else if(state==LiveRecoveryRoute.State.ON_GROUND) {
                         if(!route.canReleaseOnGround() || !manager.commitRecoveryUnload(carrier,target,route.lockToken())) {stop();return;}
                         if(!route.finishOnGround())throw new IllegalStateException("Recovery release failed after commit");
                         operator.sendMessage("Mașina a fost descărcată.");finishTask();
-                    } else if(state==PrototypeRecoveryRoute.State.STOPPED) stop();
-                } else if(state==PrototypeRecoveryRoute.State.TEST_DRIVING && !route.tickTestDrive()) stop();
+                    } else if(state==LiveRecoveryRoute.State.STOPPED) stop();
+                } else if(state==LiveRecoveryRoute.State.TEST_DRIVING && !route.tickTestDrive()) stop();
             } catch(Exception error) {
                 plugin.getLogger().warning("[Recovery] Manevra oprită: "+error.getMessage());stop();
             }

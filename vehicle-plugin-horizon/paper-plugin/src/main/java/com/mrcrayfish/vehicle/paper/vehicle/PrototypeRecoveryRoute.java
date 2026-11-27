@@ -23,18 +23,13 @@ public final class PrototypeRecoveryRoute {
     private final VehicleManager manager;
     private final LandVehicle carrier,target;
     private Location origin;
-    private double sin,cos,startZ,lateral,groundOffset;
-    private float cargoYaw;
+    private double sin,cos;
     private int step;
     private State state=State.LOADING;
 
     private PrototypeRecoveryRoute(VehicleManager manager,PrototypeRecoveryMotion motion,LandVehicle carrier,LandVehicle target) {
         this.manager=manager;this.motion=motion;this.carrier=carrier;this.target=target;origin=carrier.location().clone();
         double yaw=Math.toRadians(origin.getYaw());sin=Math.sin(yaw);cos=Math.cos(yaw);
-        Location actual=target.location();double dx=actual.getX()-origin.getX(),dz=actual.getZ()-origin.getZ();
-        startZ=dx*sin-dz*cos;lateral=-dx*cos-dz*sin;
-        groundOffset=actual.getY()-origin.getY()-RecoveryLoadingPath.pose(startZ,WHEELBASE).height();
-        cargoYaw=actual.getYaw();
     }
     /** Only the Dacia example geometry on a level approach is modelled. The
      * caller is responsible for proving those dimensions and all permissions. */
@@ -45,23 +40,14 @@ public final class PrototypeRecoveryRoute {
                 || !"dacia_logan_police".equals(target.spec().id())) return null;
         Location base=carrier.location(), start=target.location();
         if(base.getWorld()==null || !base.getWorld().equals(start.getWorld()))return null;
-        double yaw=Math.toRadians(base.getYaw()),sin=Math.sin(yaw),cos=Math.cos(yaw);
-        double dx=start.getX()-base.getX(),dz=start.getZ()-base.getZ();
-        double z=dx*sin-dz*cos,lateral=-dx*cos-dz*sin;
-        if(Math.abs(z-START)>.25 || Math.abs(lateral)>.05
-                || Math.abs(start.getY()-base.getY()-RecoveryLoadingPath.pose(z,WHEELBASE).height())>.05
-                || Math.abs(Math.IEEEremainder(start.getYaw()-base.getYaw(),360D))>2F) return null;
+        double yaw=Math.toRadians(base.getYaw());
+        Location expected=base.clone().add(START*Math.sin(yaw),0,-START*Math.cos(yaw));
+        if(expected.distanceSquared(start)>1e-8 || Math.abs(Math.IEEEremainder(start.getYaw()-base.getYaw(),360D))>.01F) return null;
         PrototypeRecoveryMotion motion=PrototypeRecoveryMotion.begin(manager,carrier,target,player,authority,safety);
         if(motion==null)return null;
         return new PrototypeRecoveryRoute(manager,motion,carrier,target);
     }
     public State state(){return state;}
-    UUID lockToken(){return motion.lockToken();}
-    boolean canReleaseOnGround(){return motion.canReleaseOnGround();}
-    void abortUnmoved(){
-        if(step!=0 || state!=State.LOADING)throw new IllegalStateException("Recovery already moved");
-        motion.abortUnmoved();state=State.FINISHED;
-    }
     /** Tests only: vehicle_trailer-like fixed transform, no durable restraints. */
     public boolean beginTestDrive() {
         if(!Bukkit.isPrimaryThread() || state!=State.AT_DECK)return false;
@@ -78,7 +64,6 @@ public final class PrototypeRecoveryRoute {
         if(!Bukkit.isPrimaryThread()||state!=State.TEST_DRIVING||!motion.endTestDrive())return false;
         origin=carrier.location().clone();
         double yaw=Math.toRadians(origin.getYaw());sin=Math.sin(yaw);cos=Math.cos(yaw);
-        lateral=0;groundOffset=0;cargoYaw=origin.getYaw();
         carrier.rig().setRecoveryRampProgress(1);carrier.forceVisualSync();
         state=State.AT_DECK;return true;
     }
@@ -93,13 +78,13 @@ public final class PrototypeRecoveryRoute {
         try {
             if (!sameCarrierPose()) return stop();
             boolean loading=state==State.LOADING;
-            double from=loading?startZ:DECK,to=loading?DECK:startZ;
+            double from=loading?START:DECK,to=loading?DECK:START;
             var previous=RecoveryLoadingPath.sample(from,to,WHEELBASE,step/(double)STEPS);
             Location actual=target.location();
             if(!origin.getWorld().equals(actual.getWorld()) || actual.distanceSquared(destination(previous))>1e-8
-                    || Math.abs(Math.IEEEremainder(actual.getYaw()-cargoYaw,360D))>.01D) return stop();
+                    || Math.abs(Math.IEEEremainder(actual.getYaw()-origin.getYaw(),360D))>.01D) return stop();
             var next=RecoveryLoadingPath.sample(from,to,WHEELBASE,(step+1D)/STEPS);
-            var cable=cable(next,lateral,groundOffset);
+            var cable=cable(next);
             if(!RecoveryCable.clearsLevelBed(cable,.18,5.35,.86,.018))return stop();
             Set<UUID> ignored=new HashSet<>();
             carrier.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
@@ -140,12 +125,12 @@ public final class PrototypeRecoveryRoute {
                 && Math.abs(Math.IEEEremainder(now.getYaw()-origin.getYaw(),360D))<.01F;
     }
     private Location destination(RecoveryLoadingPath.Pose pose){
-        return origin.clone().add(-lateral*cos+pose.centerZ()*sin,pose.height()+groundOffset,-lateral*sin-pose.centerZ()*cos);
+        return origin.clone().add(pose.centerZ()*sin,pose.height(),-pose.centerZ()*cos);
     }
-    private static List<RecoveryCable.Point> cable(RecoveryLoadingPath.Pose pose,double lateral,double groundOffset){
+    private static List<RecoveryCable.Point> cable(RecoveryLoadingPath.Pose pose){
         double c=Math.cos(pose.pitch()),s=Math.sin(pose.pitch());
-        double hookY=pose.height()+groundOffset+.005+.35*c+2.43*s, hookZ=pose.centerZ()+.35*s-2.43*c;
+        double hookY=pose.height()+.005+.35*c+2.43*s, hookZ=pose.centerZ()+.35*s-2.43*c;
         return RecoveryCable.route(new RecoveryCable.Point(0,1.06,.18),new RecoveryCable.Point(0,.99,5.40),
-                new RecoveryCable.Point(lateral,hookY,hookZ));
+                new RecoveryCable.Point(0,hookY,hookZ));
     }
 }

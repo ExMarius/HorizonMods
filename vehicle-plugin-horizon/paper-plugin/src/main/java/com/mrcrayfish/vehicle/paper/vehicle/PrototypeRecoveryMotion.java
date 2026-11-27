@@ -117,25 +117,7 @@ public final class PrototypeRecoveryMotion {
                 ||manager.byId(carrier.id()).orElse(null)!=carrier || manager.byId(target.id()).orElse(null)!=target
                 ||manager.trailers().referencesVehicle(carrier.id())||manager.trailers().referencesVehicle(target.id())
                 ||carrier.location().getWorld()==null || !carrier.location().getWorld().equals(target.location().getWorld()))return false;
-        Location carrierPose=carrier.location(), start=target.location();
-        double yaw=Math.toRadians(carrierPose.getYaw());
-        Location end=carrierPose.clone().add(2.64*Math.sin(yaw),.86,-2.64*Math.cos(yaw));
-        Vector delta=end.toVector().subtract(start.toVector());
-        double width=Math.max(5D,target.spec().entityWidth()),height=Math.max(2.5D,target.spec().entityHeight()),half=width/2;
-        BoundingBox swept=new BoundingBox(start.getX()-half,start.getY(),start.getZ()-half,
-                start.getX()+half,start.getY()+height,start.getZ()+half);
-        swept.union(swept.clone().shift(delta));
-        World world=start.getWorld();
-        for(int x=((int)Math.floor(swept.getMinX()))>>4;x<=((int)Math.floor(swept.getMaxX()))>>4;x++)
-            for(int z=((int)Math.floor(swept.getMinZ()))>>4;z<=((int)Math.floor(swept.getMaxZ()))>>4;z++)
-                if(!world.isChunkLoaded(x,z))return false;
-        Set<UUID> ignored=new HashSet<>();
-        carrier.rig().entities().forEach(e -> {ignored.add(e.getUniqueId());e.getPassengers().forEach(p -> ignored.add(p.getUniqueId()));});
-        target.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
-        for(Entity entity:world.getNearbyEntities(swept))if(entity.isValid()&&!ignored.contains(entity.getUniqueId()))return false;
-        if(delta.lengthSquared()>1e-12 && VehicleCollisionMover.move(world,start,delta,false,width,height,0D,false)
-                .movement().distanceSquared(delta)>1e-10)return false;
-        target.followRecoveryTestCarrier(token,carrierPose);return true;
+        target.followRecoveryTestCarrier(token,carrier.location());return true;
     }
     boolean endTestDrive() {
         if(!Bukkit.isPrimaryThread()||!testDriving||carrier.recoveryHasPassengers()||!followTestDrive())return false;
@@ -206,26 +188,14 @@ public final class PrototypeRecoveryMotion {
         }
         return null;
     }
-    UUID lockToken() { return token; }
-
-    /** The reservation caller uses this only if no movement was attempted and
-     * the durable snapshot was not written. */
-    void abortUnmoved() {
-        if(!Bukkit.isPrimaryThread() || closed || testDriving || halted) throw new IllegalStateException("Cannot abort recovery lock");
-        target.endRecoveryMotion(token); carrier.endRecoveryMotion(token); closed=true;
-    }
-
-    boolean canReleaseOnGround(){
+    /** Test cleanup only: release both locks on solid ground. No secured transport. */
+    public boolean releaseOnGround(){
         if(!Bukkit.isPrimaryThread()||closed||testDriving||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token))return false;
         Location where=target.location();
         if(where.getWorld()==null || target.recoveryHasPassengers() || carrier.recoveryHasPassengers()
                 || Math.abs(target.recoveryPitchDegrees())>.1F || !groundSupportsFootprint(where))return false;
         BoundingBox point=new BoundingBox(where.getX()-.1,where.getY()-.1,where.getZ()-.1,where.getX()+.1,where.getY()+.1,where.getZ()+.1);
-        return authority.allows(operator,where.getWorld(),point);
-    }
-    /** Test cleanup only: release both locks on solid ground. No secured transport. */
-    public boolean releaseOnGround(){
-        if(!canReleaseOnGround())return false;
+        if(!authority.allows(operator,where.getWorld(),point))return false;
         target.endRecoveryMotion(token);carrier.endRecoveryMotion(token);closed=true;return true;
     }
     /** Conservative support under centre and four corners, with no chunk loads.
