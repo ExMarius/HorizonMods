@@ -17,7 +17,7 @@ def main(jar,probe):
         (root/'plugins').mkdir();shutil.copyfile(jar,root/'plugins/MrCrayfishVehiclePlugin.jar');shutil.copyfile(probe,root/'plugins/RecoveryProbe.jar')
         log=root/'server.log'
         with log.open('w+') as out:
-            proc=subprocess.Popen(['java','-Dhorizon.recovery.commandcrash=true','-Dhorizon.recovery.fallbacktest='+str(os.getenv('RECOVERY_FALLBACK_TEST')=='1').lower(),'-Dhorizon.recovery.retrytest='+str(os.getenv('RECOVERY_RETRY_TEST')=='1').lower(),'-Dhorizon.recovery.pairtest=true','-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1' or os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Dhorizon.recovery.restarttest='+str(os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=out,stderr=subprocess.STDOUT,text=True)
+            proc=subprocess.Popen(['java','-Dhorizon.recovery.commandcrash=true','-Dhorizon.recovery.fallbacktest='+str(os.getenv('RECOVERY_FALLBACK_TEST')=='1').lower(),'-Dhorizon.recovery.retrytest='+str(os.getenv('RECOVERY_RETRY_TEST')=='1').lower(),'-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1' or os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Dhorizon.recovery.restarttest='+str(os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=out,stderr=subprocess.STDOUT,text=True)
             try:
                 deadline=time.monotonic()+240
                 while time.monotonic()<deadline:
@@ -40,7 +40,7 @@ def main(jar,probe):
                 out.flush(); assert_clean(log)  # Include shutdown or SIGKILL output.
                 restartlog=root/'server-restart.log'
                 with restartlog.open('w+') as restarted:
-                    proc=subprocess.Popen(['java','-Dhorizon.recovery.fallbacktest='+str(os.getenv('RECOVERY_FALLBACK_TEST')=='1').lower(),'-Dhorizon.recovery.retrytest='+str(os.getenv('RECOVERY_RETRY_TEST')=='1').lower(),'-Dhorizon.recovery.pairtest=true','-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1' or os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Dhorizon.recovery.restarttest='+str(os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=restarted,stderr=subprocess.STDOUT,text=True)
+                    proc=subprocess.Popen(['java','-Dhorizon.recovery.fallbacktest='+str(os.getenv('RECOVERY_FALLBACK_TEST')=='1').lower(),'-Dhorizon.recovery.retrytest='+str(os.getenv('RECOVERY_RETRY_TEST')=='1').lower(),'-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1' or os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Dhorizon.recovery.restarttest='+str(os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=restarted,stderr=subprocess.STDOUT,text=True)
                     deadline=time.monotonic()+240
                     while time.monotonic()<deadline:
                         time.sleep(2);restarted.flush(); restarttext=restartlog.read_text(errors='replace')

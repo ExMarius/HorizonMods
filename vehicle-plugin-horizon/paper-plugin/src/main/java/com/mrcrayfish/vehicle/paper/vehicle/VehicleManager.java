@@ -896,10 +896,6 @@ public final class VehicleManager {
             return false;
         }
         LandVehicleSpec spec = LandVehicleSpec.byId(stored.type());
-        // Disposable CI probe only: the prototype is deliberately not in the public catalog.
-        if (spec == null && Boolean.getBoolean("horizon.recovery.pairtest")
-                && com.mrcrayfish.vehicle.paper.recovery.RecoveryTruckPrototype.ID.equals(stored.type()))
-            spec = com.mrcrayfish.vehicle.paper.recovery.RecoveryTruckPrototype.create();
         if (spec == null) {
             return false;
         }

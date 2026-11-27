@@ -39,9 +39,14 @@ public final class RecoveryCommandProbe extends JavaPlugin implements Listener {
         try {
             var owner=getServer().getPlayerExact("RecoveryOwnerBot");if(owner==null)throw new IllegalStateException("missing owner");
             driver.addAttachment(this,"vehicle.use",true);
+            var admin=driver.addAttachment(this,"vehicle.admin",true);
             var manager=main().vehicles();var base=driver.getLocation();double yaw=Math.toRadians(base.getYaw());
             owner.teleport(base.clone().add(25,0,25));
-            carrier=manager.spawn(RecoveryTruckPrototype.create(),base.clone());carrier.setOwner(driver.getUniqueId());
+            if(!driver.performCommand("vehicle spawn horizon_recovery_prototype"))throw new IllegalStateException("platform spawn command failed");
+            carrier=manager.vehicles().stream().filter(v->RecoveryTruckPrototype.ID.equals(v.spec().id())
+                    && v.owner().filter(driver.getUniqueId()::equals).isPresent()).findFirst()
+                    .orElseThrow(()->new IllegalStateException("public platform missing or not owned"));
+            driver.removeAttachment(admin);
             target=manager.spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,base.clone().add(9.8*Math.sin(yaw),0,-9.8*Math.cos(yaw)));
             target.setOwner(owner.getUniqueId());target.trust(driver.getUniqueId());
             driver.teleport(base.clone().add(10*Math.cos(yaw),0,10*Math.sin(yaw)));
