@@ -11,12 +11,15 @@ CONFIG='/plugins/MrCrayfishVehiclePlugin/config.yml'
 KEYS=('resource-pack','resource-pack-sha1','resource-pack-id','require-resource-pack')
 i.OLD_PACK=OLD_PACK;i.OLD_CONFIG_SUFFIX=OLD_URL
 
+def normalize(key,value):
+    return value.replace('\\','') if key == 'resource-pack' else value
+
 def current(api):
     state=api.status()
     if state not in ('running','offline'):raise ValueError('Server transitioning; refusing update')
     jar=api.download('/plugins/'+f.NAME);config=api.download(CONFIG);props=i.properties(api)
     if f.sha(jar)!=OLD_JAR:raise ValueError('Installed JAR differs; refusing update')
-    if any(k not in props for k in KEYS) or props['resource-pack-sha1'].lower()!=OLD_PACK or props['resource-pack']!=OLD_URL:
+    if any(k not in props for k in KEYS) or props['resource-pack-sha1'].lower()!=OLD_PACK or normalize('resource-pack',props['resource-pack'])!=OLD_URL:
         raise ValueError('Installed resource pack differs; refusing update')
     return jar,config,{k:props[k] for k in KEYS}
 
@@ -48,14 +51,14 @@ def install(api,jar,newpack,url,run):
         api.upload('/plugins/MrCrayfishVehiclePlugin','config.yml',newconfig)
         if api.download(CONFIG)!=newconfig:raise ValueError('Plugin config upload mismatch')
         api.api('/properties',{'properties':newprops},'PUT')
-        if any(i.properties(api).get(k,'').lower()!=v.lower() for k,v in newprops.items()):raise ValueError('Pack properties mismatch')
+        if any(normalize(k,i.properties(api).get(k,'')).lower()!=normalize(k,v).lower() for k,v in newprops.items()):raise ValueError('Pack properties mismatch')
         api.upload('/plugins',f.NAME,jar)
         if f.sha(api.download('/plugins/'+f.NAME))!=f.sha(jar):raise ValueError('JAR upload mismatch')
     except BaseException:
         try:
             api.upload('/plugins',f.NAME,oldjar);api.upload('/plugins/MrCrayfishVehiclePlugin','config.yml',oldconfig)
-            api.api('/properties',{'properties':oldprops},'PUT')
-            if f.sha(api.download('/plugins/'+f.NAME))!=OLD_JAR or api.download(CONFIG)!=oldconfig or any(i.properties(api).get(k)!=oldprops[k] for k in KEYS):raise ValueError('Rollback mismatch')
+            api.api('/properties',{'properties':{k:normalize(k,v) for k,v in oldprops.items()}},'PUT')
+            if f.sha(api.download('/plugins/'+f.NAME))!=OLD_JAR or api.download(CONFIG)!=oldconfig or any(normalize(k,i.properties(api).get(k,''))!=normalize(k,oldprops[k]) for k in KEYS):raise ValueError('Rollback mismatch')
             f.notice('Rollback','Previous plugin, config and pack settings restored')
         except BaseException:print('::error::Rollback not verified. Inspect files before restarting.',flush=True)
         raise
