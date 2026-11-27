@@ -462,7 +462,8 @@ class LandVehicleSpecTest {
         assertEquals(180.0F, spec.seats().get(3).yawOffset(), EPSILON);
         assertFalse(spec.canTowTrailers());
         assertEquals(spec, LandVehicleSpec.byId("golf_cart"));
-        assertEquals(28, LandVehicleSpec.ids().size());
+        assertEquals(29, LandVehicleSpec.ids().size());
+        assertTrue(LandVehicleSpec.ids().contains("horizon_recovery_prototype"));
     }
 
     @Test

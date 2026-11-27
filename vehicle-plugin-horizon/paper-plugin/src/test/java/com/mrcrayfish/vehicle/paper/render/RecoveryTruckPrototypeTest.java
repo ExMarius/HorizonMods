@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class RecoveryTruckPrototypeTest {
-    @Test void isolatedPrototypeHasCorrectModelsPivotsAndIsNotSpawnable() {
+    @Test void registeredPrototypeHasCorrectModelsAndPivots() {
         var spec=RecoveryTruckPrototype.create();
-        assertNull(LandVehicleSpec.byId(spec.id()),"must not enter public catalog before safety integration");
+        assertEquals(spec, LandVehicleSpec.byId(spec.id()), "platform must be resolvable from the vehicle catalog");
         assertEquals("horizon_service_cab",spec.bodyModel());
         assertEquals(4F,spec.bodyScale());
         assertEquals(new LandVehicleSpec.Point(0,0,0),spec.bodyOrigin());
