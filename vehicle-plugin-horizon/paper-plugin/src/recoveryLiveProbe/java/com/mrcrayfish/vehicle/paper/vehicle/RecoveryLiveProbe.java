@@ -17,6 +17,7 @@ public final class RecoveryLiveProbe extends JavaPlugin implements Listener {
     private LandVehicle carrier, target;
     private UUID token;
     private boolean started;
+    private org.bukkit.Location fallbackSpawn;
     private VehiclePlugin main() { return (VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin"); }
     private java.nio.file.Path marker(){return getDataFolder().toPath().resolve("expected-pair.txt");}
     @Override public void onEnable(){getServer().getPluginManager().registerEvents(this,this);}
@@ -57,6 +58,21 @@ public final class RecoveryLiveProbe extends JavaPlugin implements Listener {
             if(manager.retrieve(driver,carrier.id())||manager.retrieve(owner,target.id()))throw new IllegalStateException("reserved garage retrieval permitted");
             invoke(carrier,"startRecoveryTestDrive",new Class<?>[]{UUID.class},token);
             if(!carrier.mount(driver))throw new IllegalStateException("driver mount failed");
+            if(Boolean.getBoolean("horizon.recovery.fallbacktest")) {
+                var world=origin.getWorld(); int x=origin.getBlockX(),y=origin.getBlockY(),z=origin.getBlockZ();
+                fallbackSpawn=new org.bukkit.Location(world,x+40.5,y,z+.5);
+                world.getChunkAt(fallbackSpawn).load();
+                world.getBlockAt(x+40,y-1,z).setType(org.bukkit.Material.STONE,false);
+                world.getBlockAt(x+40,y,z).setType(org.bukkit.Material.AIR,false);
+                world.getBlockAt(x+40,y+1,z).setType(org.bukkit.Material.AIR,false);
+                world.setSpawnLocation(fallbackSpawn);
+                // Remove safe floors from every locally searched candidate height.
+                for(int dx=-9;dx<=9;dx++)for(int dz=-9;dz<=9;dz++) {
+                    int radius=Math.max(Math.abs(dx),Math.abs(dz));
+                    if(radius<5 || radius>9)continue;
+                    for(int dy=-3;dy<=-1;dy++)world.getBlockAt(x+dx,y+dy,z+dz).setType(org.bukkit.Material.LAVA,false);
+                }
+            }
             Files.createDirectories(getDataFolder().toPath());
             Files.writeString(marker(),carrier.id()+"\n"+target.id()+"\n");
             driver.sendMessage("RECOVERY_OWNER_CAN_QUIT");
@@ -72,9 +88,14 @@ public final class RecoveryLiveProbe extends JavaPlugin implements Listener {
                 var exit=driver.getLocation();
                 if(!exit.clone().subtract(0,.1,0).getBlock().getType().isSolid() || !exit.getBlock().getType().isAir()
                         || !exit.clone().add(0,1,0).getBlock().getType().isAir())throw new IllegalStateException("unsafe driver exit");
+                if(fallbackSpawn!=null) {
+                    if(exit.getWorld()!=fallbackSpawn.getWorld() || exit.distanceSquared(fallbackSpawn)>1.0)
+                        throw new IllegalStateException("driver did not reach validated world spawn");
+                    getLogger().info("RECOVERY_LIVE_FALLBACK_OK");
+                }
                 getLogger().info("RECOVERY_PAIR_QUIT_OK");
             } catch(Throwable e){fail(e);}
-        },40L);
+        },fallbackSpawn==null?40L:140L);
     }
     private static Object invoke(Object instance,String name,Class<?>[] types,Object... args)throws Exception {
         var method=instance.getClass().getDeclaredMethod(name,types);

@@ -18,7 +18,7 @@ owner.once('spawn',()=>{
    }
    if(!process.env.RECOVERY_PAIR_RESTART && message.includes('RECOVERY_RESTART_NOW')) { clearTimeout(timer);owner.quit();driver.quit(); }
    if(!process.env.RECOVERY_PAIR_RESTART && message.includes('RECOVERY_OWNER_CAN_QUIT')) {
-     owner.quit();setTimeout(()=>{clearTimeout(timer);driver.quit()},3500);
+     owner.quit();setTimeout(()=>{clearTimeout(timer);driver.quit()},process.env.RECOVERY_FALLBACK_TEST === '1' ? 10000 : 3500);
    }
  });
 });
