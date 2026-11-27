@@ -143,6 +143,11 @@ public final class LiveRecoveryMotion {
         for(Entity entity:world.getNearbyEntities(swept)) {
             if(!entity.isValid() || ignored.contains(entity.getUniqueId()))continue;
             BoundingBox obstacle=entity.getBoundingBox();
+            // Ground animals beside/under the bed are not cargo-level obstacles.
+            // The truck's own collision behaviour remains unchanged; players,
+            // vehicles and animals standing on the deck still block the cargo.
+            if(entity instanceof org.bukkit.entity.Animals
+                    && obstacle.getMinY()<currentBox.getMinY()-.15D) continue;
             if(currentBox.overlaps(obstacle)) {
                 double dx=start.getX()-(obstacle.getMinX()+obstacle.getMaxX())*.5D;
                 double dz=start.getZ()-(obstacle.getMinZ()+obstacle.getMaxZ())*.5D;
