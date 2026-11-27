@@ -17,7 +17,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh run view 46003712699 --log-failed > /tmp/recovery-failed.log || true
+          gh run view 46004502958 --log-failed > /tmp/recovery-failed.log || true
           python3 - <<'PY'
           import importlib.util
           from pathlib import Path
