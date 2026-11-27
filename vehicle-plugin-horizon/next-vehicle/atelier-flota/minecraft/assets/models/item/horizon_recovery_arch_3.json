@@ -1,0 +1,93 @@
+{
+  "textures": {
+    "t0": "vehicle:item/horizon_recovery_edit_00",
+    "t1": "vehicle:item/horizon_recovery_edit_01",
+    "t2": "vehicle:item/horizon_recovery_edit_02",
+    "t3": "vehicle:item/horizon_recovery_edit_03",
+    "t4": "vehicle:item/horizon_recovery_edit_04",
+    "t5": "vehicle:item/horizon_recovery_edit_05",
+    "t6": "vehicle:item/horizon_recovery_edit_06",
+    "t7": "vehicle:item/horizon_recovery_edit_07",
+    "t8": "vehicle:item/horizon_recovery_edit_08",
+    "t9": "vehicle:item/horizon_recovery_edit_09",
+    "t10": "vehicle:item/horizon_recovery_edit_10",
+    "t11": "vehicle:item/horizon_recovery_edit_11",
+    "t12": "vehicle:item/horizon_recovery_edit_12",
+    "t13": "vehicle:item/horizon_recovery_edit_13",
+    "t14": "vehicle:item/horizon_recovery_edit_14",
+    "t15": "vehicle:item/horizon_recovery_edit_15",
+    "t16": "vehicle:item/horizon_recovery_edit_16",
+    "t17": "vehicle:item/horizon_recovery_edit_17"
+  },
+  "elements": [
+    {
+      "name": "horizon_service_cab_50",
+      "from": [
+        2.48,
+        10.42,
+        -0.632
+      ],
+      "to": [
+        3.04,
+        12.22,
+        -0.232
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t2"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t2"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t2"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t2"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t2"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t2"
+        }
+      }
+    }
+  ]
+}

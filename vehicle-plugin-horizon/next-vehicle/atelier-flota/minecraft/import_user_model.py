@@ -36,6 +36,19 @@ for title,modelname in [('Cabina si interior','cab'),('Platforma si cutie','flat
             if f.get('tint') is not None and f['tint']!=-1:face['tintindex']=f['tint']
             faces[side]=face
         piece={'name':e['name'],'from':a,'to':b,'faces':faces}
+        # Vanilla model-element rotations cannot express 11 degrees. Export
+        # each such bar around its own pivot as a separate item display; the
+        # rig applies the exact angle with a display transformation instead.
+        if title=='Cabina si interior' and abs(rot[0])==11 and not rot[1] and not rot[2]:
+            idx={'horizon_service_cab_49':0,'horizon_service_cab_51':1,
+                 'horizon_service_cab_52':2,'horizon_service_cab_50':3}[e['name']]
+            item=f'horizon_recovery_arch_{idx}'
+            piece['from']=[round(a[i]-origin[i]+8,6) for i in range(3)]
+            piece['to']=[round(b[i]-origin[i]+8,6) for i in range(3)]
+            (out/'models/item'/f'{item}.json').write_text(json.dumps({'textures':texture_map,'elements':[piece]},indent=2)+'\n')
+            (out/'items'/f'{item}.json').write_text(json.dumps({'model':{'type':'minecraft:model','model':'vehicle:item/'+item}},indent=2)+'\n')
+            print('Separate exact-angle bar:',e['name'],rot[0],origin)
+            continue
         axes=[i for i,v in enumerate(rot) if abs(v)>1e-6]
         if len(axes)>1:raise ValueError('Minecraft cannot export multi-axis rotation: '+e['name'])
         if axes:

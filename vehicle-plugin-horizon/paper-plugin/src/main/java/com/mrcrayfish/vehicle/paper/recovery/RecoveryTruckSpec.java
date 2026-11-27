@@ -31,6 +31,11 @@ public final class RecoveryTruckSpec {
                 List.of(
                         part("horizon_service_flatbed",0,0,0,0),
                         part("horizon_service_steering",0,0,0,0),
+                        // Separate displays preserve the user's exact 11-degree Blockbench rotations.
+                        part("horizon_recovery_arch_0",0F,-.325F,-.15F,11F),
+                        part("horizon_recovery_arch_1",0F,.275F,.05F,-11F),
+                        part("horizon_recovery_arch_2",2.625F,.275F,.05F,-11F),
+                        part("horizon_recovery_arch_3",2.625F,-.325F,-.15F,11F),
                         // Closed position, pivoted at the independently authored hinges.
                         part("horizon_service_ramp",-1.05F,.86F,5.35F,-90F),
                         part("horizon_service_ramp",1.05F,.86F,5.35F,-90F)),
