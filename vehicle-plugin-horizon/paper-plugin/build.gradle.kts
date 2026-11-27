@@ -78,3 +78,18 @@ tasks.register<Jar>("recoverySmokeJar") {
     from(compileRecoverySmoke.flatMap { it.destinationDirectory })
     from("src/recoverySmoke/resources")
 }
+
+// Separate disposable fixture exercises the live manager/quit hook.
+val compileRecoveryLiveProbe by tasks.registering(JavaCompile::class) {
+    dependsOn(tasks.classes)
+    setSource(fileTree("src/recoveryLiveProbe/java") { include("**/*.java") })
+    classpath = sourceSets.main.get().output + configurations.compileClasspath.get()
+    destinationDirectory.set(layout.buildDirectory.dir("recovery-live-probe/classes"))
+}
+tasks.register<Jar>("recoveryLiveProbeJar") {
+    dependsOn(compileRecoveryLiveProbe)
+    archiveFileName.set("RecoveryProbe.jar")
+    destinationDirectory.set(layout.buildDirectory.dir("recovery-live-probe"))
+    from(compileRecoveryLiveProbe.flatMap { it.destinationDirectory })
+    from("src/recoveryLiveProbe/resources")
+}
