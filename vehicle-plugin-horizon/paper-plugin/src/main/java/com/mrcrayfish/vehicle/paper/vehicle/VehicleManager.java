@@ -496,12 +496,14 @@ public final class VehicleManager {
         return pair!=null && !pair.closing && !recoveryPersistenceHalted;
     }
 
-    /** Main-thread quit hook for reserved pairs; a failed teleport keeps both
-     * identities locked. */
+    /** Only the carrier owner's quit parks a reserved pair immediately.
+     * A target whose owner leaves remains reserved and on the carrier until a
+     * checked unload; finishOnGround returns it to its offline owner's garage.
+     * A failed evacuation keeps both identities locked. */
     public void recoveryOwnerQuit(UUID ownerId) {
         if (!Bukkit.isPrimaryThread() || ownerId == null) return;
         for (RecoveryPair pair : new java.util.HashSet<>(recoveryPairs.values())) {
-            if (pair.closing || (!ownerId.equals(pair.carrierOwner) && !ownerId.equals(pair.targetOwner))) continue;
+            if (pair.closing || !ownerId.equals(pair.carrierOwner)) continue;
             pair.closing = true;
             pair.carrier.freezeRecoveryTestDrive(pair.token);
             new org.bukkit.scheduler.BukkitRunnable() {
