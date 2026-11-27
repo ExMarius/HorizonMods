@@ -1672,7 +1672,8 @@ public final class LandVehicle {
         // DRIVER seat privilege (user design): post-mount gate - if the player ended up at
         // the wheel without the owner's permission, eject them politely. Passenger seats
         // untouched, exactly like FiveM.
-        if (result && !canDrive(player)) {
+        if (result && !canDrive(player)
+                && !("horizon_recovery_prototype".equals(spec.id()) && recoveryLocked() && player.isOp())) {
             List<Entity> wheel = rig.driverSeat().getPassengers();
             if (wheel.contains(player)) {
                 player.leaveVehicle();

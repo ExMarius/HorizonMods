@@ -123,6 +123,12 @@ public final class LiveRecoveryMotion {
         double yaw=Math.toRadians(carrierPose.getYaw());
         Location end=carrierPose.clone().add(-2.64*Math.sin(yaw),.86,2.64*Math.cos(yaw));
         Vector delta=end.toVector().subtract(start.toVector());
+        // Standing next to a stationary loaded carrier must not prevent mounting.
+        // The swept collision checks remain mandatory once the cargo actually moves.
+        if (delta.lengthSquared()<=1e-12) {
+            target.followRecoveryCarrier(token,carrierPose,cargoYawOffset);
+            return true;
+        }
         double width=Math.max(5D,target.spec().entityWidth()),height=Math.max(2.5D,target.spec().entityHeight()),half=width/2;
         BoundingBox swept=new BoundingBox(start.getX()-half,start.getY(),start.getZ()-half,
                 start.getX()+half,start.getY()+height,start.getZ()+half);

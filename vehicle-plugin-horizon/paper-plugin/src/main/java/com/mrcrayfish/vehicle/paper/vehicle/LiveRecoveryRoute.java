@@ -117,7 +117,7 @@ public final class LiveRecoveryRoute {
                     origin.getX()-p.x()*cos-p.z()*sin,origin.getY()+p.y(),origin.getZ()-p.x()*sin+p.z()*cos)).toList();
             if(!RecoveryCableWorldCheck.clear(origin.getWorld(),worldCable,.018,ignored))return stop();
             var delta=destination(next,nextFactor).toVector().subtract(target.location().toVector());
-            if(!motion.step(delta,safety,next.pitch()*pitchDirection))return stop();
+            if(!motion.step(delta,safety,-next.pitch()*pitchDirection))return stop();
             carrier.rig().setRecoveryCable(cable);carrier.forceVisualSync();
             if(++step==STEPS)state=loading?State.AT_DECK:State.ON_GROUND;
             return state;

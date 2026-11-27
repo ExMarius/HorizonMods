@@ -1163,8 +1163,8 @@ public final class VehicleManager {
         if (transit != null) {
             // A reserved target cannot be entered or edited. The carrier may be
             // mounted only when its recovery controller has enabled driving.
-            if ("OUT_TOWING".equals(transit) && !player.isSneaking()
-                    && player.getInventory().getItemInMainHand().getType().isAir() && vehicle.mount(player)) return;
+            if ("OUT_TOWING".equals(transit) && !vehicle.transported() && !player.isSneaking()
+                    && RecoveryTowCommands.canOperateCarrier(vehicle, player) && vehicle.mount(player)) return;
             player.sendRichMessage("<yellow>Vehiculul este rezervat pentru transport.</yellow>");
             return;
         }
