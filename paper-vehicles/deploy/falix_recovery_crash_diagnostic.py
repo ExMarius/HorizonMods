@@ -27,6 +27,17 @@ try:
 except BaseException as e:
     f.notice('Seat measurement error',str(e))
 
+# Check only for packet-library filenames; this does not prove the plugins loaded.
+try:
+    response=api.api('/files?directory=%2Fplugins&limit=100')
+    entries=response.get('data', []) if isinstance(response,dict) else response
+    names=[str(e.get('name','')).lower() for e in entries if isinstance(e,dict)]
+    protocols=any(re.fullmatch(r'protocollib(?:[-_.].*)?\.jar',n) for n in names)
+    events=any(re.fullmatch(r'packetevents(?:[-_.].*)?\.jar',n) for n in names)
+    f.notice('Packet libraries', f'ProtocolLib jar={protocols}; PacketEvents jar={events}; listing count={len(names)}; enabled state not checked')
+except BaseException as e:
+    f.notice('Packet libraries', 'Directory lookup failed: '+str(e))
+
 f.notice('Server status',str(api.status()))
 props={e['key']:str(e.get('value','')) for e in api.api('/properties') if isinstance(e,dict) and 'key' in e}
 f.notice('Resource pack status',repr({k:props.get(k) for k in ('resource-pack','resource-pack-sha1','resource-pack-id','require-resource-pack')}))
