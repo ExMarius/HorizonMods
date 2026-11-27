@@ -1723,6 +1723,27 @@ public final class LandVehicle {
         velocity.zero();motion.zero();verticalVelocity=0;waterSpeed=0;
         return true;
     }
+    /** Freeze a stationary recovery carrier while retaining its authorized driver.
+     * The winch controller must still establish durable reservation before moving. */
+    boolean beginRecoveryCarrier(UUID token, Player operator) {
+        if (token==null || operator==null || recoveryMotionToken!=null || transported || showcase()
+                || onJack() || jackId!=null || pusher!=null || horizontalSpeed()>.01D
+                || !recoveryOnlyDriver(operator)) return false;
+        recoveryMotionToken=token;transported=true;
+        velocity.zero();motion.zero();verticalVelocity=0;waterSpeed=0;
+        return true;
+    }
+    /** At most the operator may be mounted, and only in the actual driver seat. */
+    boolean recoveryOnlyDriver(Player operator) {
+        java.util.Set<UUID> technical = rig.entities().stream().map(Entity::getUniqueId)
+                .collect(java.util.stream.Collectors.toSet());
+        for (Entity entity : rig.entities()) for (Entity passenger : entity.getPassengers()) {
+            if (technical.contains(passenger.getUniqueId())) continue;
+            if (!(passenger instanceof Player player) || !player.getUniqueId().equals(operator.getUniqueId())
+                    || driver().map(d -> !d.getUniqueId().equals(player.getUniqueId())).orElse(true)) return false;
+        }
+        return true;
+    }
     public boolean recoveryLocked() { return recoveryMotionToken!=null; }
     float recoveryPitchDegrees() { return recoveryPitchDegrees; }
     boolean recoveryMotionLockedBy(UUID token) { return token!=null && token.equals(recoveryMotionToken); }

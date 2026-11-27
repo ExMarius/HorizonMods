@@ -46,18 +46,19 @@ public final class RecoveryLiveProbe extends JavaPlugin implements Listener {
         try {
             var manager=main().vehicles();var owner=getServer().getPlayerExact("RecoveryOwnerBot");
             if(owner==null)throw new IllegalStateException("missing target owner");
-            driver.setOp(true); var origin=driver.getLocation(); owner.teleport(origin.clone().add(25,0,25));
+            var origin=driver.getLocation(); owner.teleport(origin.clone().add(25,0,25));
             carrier=manager.spawn(RecoveryTruckPrototype.create(),origin.clone()); carrier.setOwner(driver.getUniqueId());
             target=manager.spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,origin.clone().add(0,0,10));
             target.setOwner(owner.getUniqueId()); target.trust(driver.getUniqueId());
             token=UUID.randomUUID();
-            if(!(boolean)invoke(carrier,"beginRecoveryMotion",new Class<?>[]{UUID.class},token)
+            if(!carrier.mount(driver))throw new IllegalStateException("driver mount failed");
+            if(!(boolean)invoke(carrier,"beginRecoveryCarrier",new Class<?>[]{UUID.class,Player.class},token,driver)
                     || !(boolean)invoke(target,"beginRecoveryMotion",new Class<?>[]{UUID.class},token))throw new IllegalStateException("lock failed");
             if(!(boolean)invoke(manager,"reserveGarageTransit",new Class<?>[]{LandVehicle.class,LandVehicle.class,Player.class,UUID.class},carrier,target,driver,token))
                 throw new IllegalStateException("live reservation refused");
             if(manager.retrieve(driver,carrier.id())||manager.retrieve(owner,target.id()))throw new IllegalStateException("reserved garage retrieval permitted");
             invoke(carrier,"startRecoveryTestDrive",new Class<?>[]{UUID.class},token);
-            if(!carrier.mount(driver))throw new IllegalStateException("driver mount failed");
+            if(driver.getVehicle()==null)throw new IllegalStateException("driver was not retained during reservation");
             // Synthetic Paper events verify the cancellation boundary, not an actual keyboard packet.
             var dropped=driver.getWorld().dropItem(driver.getLocation(),new org.bukkit.inventory.ItemStack(org.bukkit.Material.STONE));
             var drop=new org.bukkit.event.player.PlayerDropItemEvent(driver,dropped);

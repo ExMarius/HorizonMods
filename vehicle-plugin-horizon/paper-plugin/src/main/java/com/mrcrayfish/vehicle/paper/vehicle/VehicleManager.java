@@ -399,14 +399,15 @@ public final class VehicleManager {
      * method does not implement towing, eviction, or an unlock/finish path. */
     boolean reserveGarageTransit(LandVehicle carrier, LandVehicle target, Player operator, UUID token) throws IOException {
         if (!Bukkit.isPrimaryThread() || recoveryPersistenceHalted || carrier == null || target == null
-                || operator == null || !operator.isOp() || carrier == target
+                || operator == null || !operator.isOnline() || carrier == target
                 || !"horizon_recovery_prototype".equals(carrier.spec().id())
                 || !"dacia_logan_police".equals(target.spec().id())
                 || !trailers.recoveryLinksKnown()) return false;
         for (LandVehicle vehicle : List.of(carrier, target)) {
             if (vehicles.get(vehicle.id()) != vehicle || !vehicle.recoveryMotionLockedBy(token)
                     || vehicle.owner().isEmpty() || !vehicle.canDrive(operator)
-                    || vehicle.recoveryHasPassengers() || vehicle.recoveryHasStorageViewers()
+                    || (vehicle == carrier ? !vehicle.recoveryOnlyDriver(operator) : vehicle.recoveryHasPassengers())
+                    || vehicle.recoveryHasStorageViewers()
                     || vehicle.showcase() || vehicle.onJack() || vehicle.jackId() != null
                     || corruptLocation(vehicle.location()) || garage.containsKey(vehicle.id())
                     || pendingWorlds.containsKey(vehicle.id()) || recoveryTransit.containsKey(vehicle.id())
