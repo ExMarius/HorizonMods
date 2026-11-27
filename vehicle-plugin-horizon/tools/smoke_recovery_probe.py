@@ -13,7 +13,7 @@ def main(jar,probe):
     if hashlib.sha256(paper).hexdigest()!=download['checksums']['sha256']:raise RuntimeError('Paper hash mismatch')
     with tempfile.TemporaryDirectory(prefix='recovery-probe-') as tmp:
         root=Path(tmp);(root/'paper.jar').write_bytes(paper);(root/'eula.txt').write_text('eula=true\n')
-        (root/'server.properties').write_text('online-mode=false\ndifficulty=peaceful\nspawn-monsters=false\nserver-port=25578\nspawn-protection=0\nview-distance=3\nsimulation-distance=3\nlevel-type=minecraft:flat\n')
+        (root/'server.properties').write_text('online-mode=false\ndifficulty=peaceful\nspawn-monsters=false\nserver-port=25578\nspawn-protection=0\ngenerate-structures=false\nview-distance=3\nsimulation-distance=3\nlevel-type=minecraft:flat\n')
         (root/'plugins').mkdir();shutil.copyfile(jar,root/'plugins/MrCrayfishVehiclePlugin.jar');shutil.copyfile(probe,root/'plugins/RecoveryProbe.jar')
         log=root/'server.log'
         with log.open('w+') as out:
