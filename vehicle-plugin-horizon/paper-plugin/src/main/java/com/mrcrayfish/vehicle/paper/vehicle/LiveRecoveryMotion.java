@@ -142,6 +142,12 @@ public final class LiveRecoveryMotion {
         target.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
         for(Entity entity:world.getNearbyEntities(swept)) {
             if(!entity.isValid() || ignored.contains(entity.getUniqueId()))continue;
+            // Other plugin vehicles are non-solid to the empty carrier. Keep the
+            // same behaviour with cargo: their technical displays, interactions
+            // and seat carriers must not turn an otherwise passable vehicle into
+            // an obstacle. Players remain separately checked as real entities.
+            if (!(entity instanceof Player) && entity.getScoreboardTags().contains(
+                    com.mrcrayfish.vehicle.paper.render.LandVehicleRig.ENTITY_TAG)) continue;
             BoundingBox obstacle=entity.getBoundingBox();
             // Ground animals beside/under the bed are not cargo-level obstacles.
             // The truck's own collision behaviour remains unchanged; players,

@@ -5,9 +5,9 @@ from pathlib import Path
 spec=importlib.util.spec_from_file_location('falix',Path(__file__).with_name('falix_auto_update.py'))
 f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
 jar=f.verify_jar(Path(sys.argv[1]));api=f.Falix(f.login())
-if api.status() not in ('running','offline'):raise ValueError('Server transitioning; upload refused')
+if api.status() not in ('running','offline','sleeping'):raise ValueError('Server transitioning; upload refused')
 old=api.download('/plugins/'+f.NAME)
-if f.sha(old)!='4980d5500490d8eb2be48b14352ac495974ef31da7bc53e31e77d53dc86e78f5':raise ValueError('Installed JAR differs from expected; upload refused')
+if f.sha(old)!='fdbe986f14610bb23dfe3bef8b41d4251ce8add4f28c005d2f12381a41231129':raise ValueError('Installed JAR differs from expected; upload refused')
 try:
     api.upload('/plugins',f.NAME,jar)
     if f.sha(api.download('/plugins/'+f.NAME))!=f.sha(jar):raise ValueError('Uploaded JAR checksum mismatch')
