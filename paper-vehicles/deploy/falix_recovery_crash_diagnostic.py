@@ -26,3 +26,16 @@ for directory in ('/logs',):
             relevant=[re.sub(r'\x1b\[[0-9;]*m','',s)[:350] for s in relevant[:100]]
             f.notice('Diagnostic '+path,' | '.join(relevant).replace('%','%25')[:60000] or 'No matching error lines')
     except BaseException as e:f.notice('Diagnostic read error',directory+' '+str(e))
+
+# Read-only timer diagnosis: do not print player names or vehicle data.
+for key in ('pause-when-empty-seconds', 'simulation-distance', 'view-distance'):
+    f.notice('Timer diagnostic property', key+'='+str(props.get(key, '(not present)')))
+try:
+    lines=api.download('/logs/latest.log').decode('utf-8','replace').splitlines()
+    needles=('Pausing dedicated server', 'Server empty for', 'Unpausing dedicated server',
+             'Recovery operations disabled', 'startup recovery deferred',
+             'Could not atomically save vehicles.yml', 'Startup recovery:')
+    matches=[re.sub(r'\x1b\[[0-9;]*m','',line)[:400] for line in lines if any(n.lower() in line.lower() for n in needles)]
+    f.notice('Timer diagnostic events', ' | '.join(matches[-20:]).replace('%','%25') or 'No matching events in latest.log')
+except BaseException as e:
+    f.notice('Timer diagnostic read error',str(e))
