@@ -159,6 +159,8 @@ public final class VehiclePlugin extends JavaPlugin {
                 throw new java.io.IOException("Legacy recovery journal requires manual reconciliation");
             int recovered=com.mrcrayfish.vehicle.paper.persistence.RecoveryLiveStartup.reconcile(directory);
             if(recovered>0)getLogger().warning("[Recovery] Reconciled " + recovered + " recovery pair(s) before vehicle load.");
+            int transit=com.mrcrayfish.vehicle.paper.persistence.GarageTransitSnapshot.recoverAtStartup(directory.resolve("vehicles.yml"));
+            if(transit>0)getLogger().warning("[Recovery] Restored " + transit + " transit vehicle(s) to their garages.");
         } catch (java.io.IOException e) {
             throw new IllegalStateException("Recovery startup failed; refusing vehicle load",e);
         }
