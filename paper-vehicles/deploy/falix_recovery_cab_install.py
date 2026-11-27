@@ -16,7 +16,7 @@ def normalize(key,value):
 
 def current(api):
     state=api.status()
-    if state not in ('running','offline'):raise ValueError('Server transitioning; refusing update')
+    if state not in ('running','offline','sleeping'):raise ValueError('Server transitioning; refusing update')
     jar=api.download('/plugins/'+f.NAME);config=api.download(CONFIG);props=i.properties(api)
     if f.sha(jar)!=OLD_JAR:raise ValueError('Installed JAR differs; refusing update')
     if any(k not in props for k in KEYS) or props['resource-pack-sha1'].lower()!=OLD_PACK or normalize('resource-pack',props['resource-pack'])!=OLD_URL:
