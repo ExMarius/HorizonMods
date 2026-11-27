@@ -1698,6 +1698,7 @@ public final class VehicleManager {
                 hibernate(vehicle);
             }
         }
+        recoveryTowCommands.updateApproachRamps();
         trailers.tick();
         handleBumperCarCollisions();
         } finally {

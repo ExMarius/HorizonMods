@@ -25,10 +25,10 @@ public final class RecoveryRearApproach {
     public static boolean aligned(Offset offset, double yDifference, double yawDifference) {
         if (!selectable(offset) || !Double.isFinite(yDifference) || !Double.isFinite(yawDifference)) return false;
         double z=offset.longitudinal();
-        // Both axles start on ground, not suspended halfway up a ramp.
-        double minZ=RecoveryLoadingPath.RAMP_END+3.3D/2D;
-        return z >= minZ && Math.abs(offset.lateral()) <= .5D
-                && Math.abs(yDifference) <= .15D
-                && Math.abs(Math.IEEEremainder(yawDifference,360D)) <= 10D;
+        // A vehicle can wait at the ramp foot or partially at the start of it.
+        // Both orientations are accepted: different models have opposite yaw conventions.
+        double heading=Math.abs(Math.IEEEremainder(yawDifference,180D));
+        return z >= 7.9D && Math.abs(offset.lateral()) <= 1.1D
+                && Math.abs(yDifference) <= .25D && heading <= 25D;
     }
 }

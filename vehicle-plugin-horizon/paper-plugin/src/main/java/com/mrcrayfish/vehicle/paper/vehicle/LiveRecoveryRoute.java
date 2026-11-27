@@ -78,6 +78,7 @@ public final class LiveRecoveryRoute {
         origin=carrier.location().clone();
         double yaw=Math.toRadians(origin.getYaw());sin=Math.sin(yaw);cos=Math.cos(yaw);
         lateral=0;groundOffset=0;cargoYaw=origin.getYaw();
+        startZ=Math.max(startZ,9.55D);
         carrier.rig().setRecoveryRampProgress(1);carrier.forceVisualSync();
         state=State.AT_DECK;return true;
     }

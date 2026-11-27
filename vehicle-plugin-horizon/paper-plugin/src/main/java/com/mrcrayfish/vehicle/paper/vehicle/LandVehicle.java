@@ -311,7 +311,11 @@ public final class LandVehicle {
                 world, location, requestedMovement, onGround,
                 spec.entityWidth(), spec.entityHeight(), spec.stepHeight(),
                 !spec.climbsStationSlabs());
-        location.add(collision.movement());
+        Vector allowed = plugin.vehicles().recoveryTowCommands().limitApproach(this, location, collision.movement());
+        if (allowed.getX()!=collision.movement().getX() || allowed.getZ()!=collision.movement().getZ()) {
+            velocity.setX(0).setZ(0); motion.setX(0).setZ(0);
+        }
+        location.add(allowed);
         onGround = collision.onGround();
         if (collision.verticalCollision()) {
             verticalVelocity = 0.0D;

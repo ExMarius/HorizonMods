@@ -23,6 +23,44 @@ public final class RecoveryTowCommands {
             true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
     public RecoveryTowCommands(VehiclePlugin plugin,VehicleManager manager){this.plugin=plugin;this.manager=manager;}
 
+    /** Invisible stop line at the foot of the ramps, only for compatible cars approaching from behind. */
+    org.bukkit.util.Vector limitApproach(LandVehicle target, Location start, org.bukkit.util.Vector movement) {
+        if (!RecoveryTargetPolicy.supports(target.spec()) || target.recoveryLocked() || start.getWorld()==null)
+            return movement;
+        for (LandVehicle carrier:manager.vehicles()) {
+            if (!"horizon_recovery_prototype".equals(carrier.spec().id()) || carrier.recoveryLocked()
+                    || carrier.horizontalSpeed()>.01 || !start.getWorld().equals(carrier.location().getWorld())) continue;
+            Location base=carrier.location();
+            var before=RecoveryRearApproach.offset(start.getX()-base.getX(),start.getY()-base.getY(),start.getZ()-base.getZ(),base.getYaw());
+            var after=RecoveryRearApproach.offset(start.getX()+movement.getX()-base.getX(),start.getY()-base.getY(),start.getZ()+movement.getZ()-base.getZ(),base.getYaw());
+            double line=9.55D;
+            if (Math.abs(start.getY()-base.getY())>.6D || Math.abs(after.lateral())>1.1D
+                    || before.longitudinal()<line || after.longitudinal()>=line) continue;
+            double fraction=Math.max(0D,Math.min(1D,(before.longitudinal()-line)/(before.longitudinal()-after.longitudinal())));
+            return new org.bukkit.util.Vector(movement.getX()*fraction,movement.getY(),movement.getZ()*fraction);
+        }
+        return movement;
+    }
+
+    /** Open ramps when a compatible car approaches from the rear; never change an active winch. */
+    void updateApproachRamps() {
+        for (LandVehicle carrier:manager.vehicles()) {
+            if (!"horizon_recovery_prototype".equals(carrier.spec().id()) || carrier.recoveryLocked()
+                    || operations.containsKey(carrier.id()) || carrier.location().getWorld()==null) continue;
+            Location base=carrier.location();
+            boolean approaching=carrier.horizontalSpeed()<=.01 && manager.vehicles().stream().anyMatch(target -> {
+                if (target==carrier || !RecoveryTargetPolicy.supports(target.spec()) || !base.getWorld().equals(target.location().getWorld())) return false;
+                Location at=target.location();
+                var offset=RecoveryRearApproach.offset(at.getX()-base.getX(),at.getY()-base.getY(),at.getZ()-base.getZ(),base.getYaw());
+                return offset.longitudinal()>=7.5D && offset.longitudinal()<=13D && Math.abs(offset.lateral())<=2D && Math.abs(at.getY()-base.getY())<=1D;
+            });
+            double wanted=approaching?1D:0D;
+            if (carrier.rig().recoveryRampProgress()!=wanted) {
+                carrier.rig().setRecoveryRampProgress(wanted);carrier.forceVisualSync();
+            }
+        }
+    }
+
     public void execute(Player player,String action) {
         if(!player.hasPermission("vehicle.use")) {player.sendMessage("Nu ai permisiunea vehicle.use.");return;}
         LandVehicle carrier=manager.vehicles().stream()
@@ -71,7 +109,7 @@ public final class RecoveryTowCommands {
         }
         carrier.rig().setRecoveryRampProgress(1);carrier.forceVisualSync();
         var route=LiveRecoveryRoute.begin(manager,carrier,target,player,(actor,world,box)->actor.isOnline(),SAFETY);
-        if(route==null) {carrier.rig().setRecoveryRampProgress(0);carrier.forceVisualSync();player.sendMessage("Vehicul găsit, dar traseul verificat cere aliniere dreaptă pe sol în spatele rampelor, aproape de limita de 10 blocuri. Verifică și ocupanții/cuplajele.");return;}
+        if(route==null) {player.sendMessage("Oprește mașina în spatele rampelor, aproape de centru, și coboară din ea. Verifică să nu fie cuplată la o remorcă.");return;}
         try {
             if(!manager.reserveGarageTransit(carrier,target,player,route.lockToken())) {
                 route.abortUnmoved();carrier.rig().setRecoveryRampProgress(0);carrier.forceVisualSync();
