@@ -56,11 +56,6 @@ public final class VehicleManager {
     private final File storageFile;
     private final TrailerManager trailers;
     private final RecoveryTowCommands recoveryTowCommands;
-    private final CameraYawExperiment cameraYawExperiment;
-    private final BodySeatExperiment bodySeatExperiment;
-    private final BoatSeatProbe boatSeatProbe;
-    private final PigSeatProbe pigSeatProbe;
-    private final SeatTelemetry seatTelemetry;
     private final com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal recoveryJournal;
     private BukkitTask tickTask;
     private BukkitTask saveTask;
@@ -110,11 +105,6 @@ public final class VehicleManager {
         this.storageFile = new File(plugin.getDataFolder(), "vehicles.yml");
         this.trailers = new TrailerManager(plugin, this);
         this.recoveryTowCommands = new RecoveryTowCommands(plugin, this);
-        this.cameraYawExperiment = new CameraYawExperiment(plugin);
-        this.bodySeatExperiment = new BodySeatExperiment();
-        this.boatSeatProbe = new BoatSeatProbe(plugin);
-        this.pigSeatProbe = new PigSeatProbe(plugin);
-        this.seatTelemetry = new SeatTelemetry(plugin, this);
         try {
             var journal = new com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal(
                     plugin.getDataFolder().toPath().resolve("recovery-live.journal"));
@@ -184,11 +174,6 @@ public final class VehicleManager {
     }
 
     public void stop() {
-        cameraYawExperiment.clear();
-        bodySeatExperiment.clear();
-        seatTelemetry.shutdown();
-        boatSeatProbe.shutdown();
-        pigSeatProbe.shutdown();
         if (tickTask != null) {
             tickTask.cancel();
         }
@@ -1202,55 +1187,6 @@ public final class VehicleManager {
 
     public RecoveryTowCommands recoveryTowCommands() { return recoveryTowCommands; }
 
-    /** OP-only experiment for the single vehicle the player currently drives. */
-    public void cameraTest(Player player, boolean enable) {
-        if (!player.isOp()) { player.sendMessage("[CameraTest] Doar administratorii pot folosi experimentul."); return; }
-        if (!enable) { cameraYawExperiment.stop(player); return; }
-        if (boatSeatProbe.active()) { player.sendMessage("Oprește mai întâi /vehicle testbarca oprit."); return; }
-        if (pigSeatProbe.active()) { player.sendMessage("Oprește mai întâi /vehicle testporc oprit."); return; }
-        if (bodySeatExperiment.active()) { player.sendMessage("Oprește mai întâi /vehicle corptest oprit."); return; }
-        LandVehicle driven = vehicles.values().stream()
-                .filter(v -> v.driver().filter(player::equals).isPresent()).findFirst().orElse(null);
-        cameraYawExperiment.start(player, driven);
-    }
-
-    public void seatMeasurement(Player player, boolean enable) {
-        if (!player.isOp()) return;
-        if (enable) seatTelemetry.start(player); else seatTelemetry.stop(player);
-    }
-
-    /** Disposable, visible boat hierarchy probe, not a persisted vehicle. */
-    public void boatSeatTest(Player player, boolean enable) {
-        if (!player.isOp()) { player.sendMessage("[BarcaTest] Doar administratorii pot folosi experimentul."); return; }
-        if (!enable) { boatSeatProbe.stop(player); return; }
-        if (pigSeatProbe.active() || bodySeatExperiment.active() || cameraYawExperiment.active()) {
-            player.sendMessage("[BarcaTest] Oprește întâi celelalte experimente."); return;
-        }
-        boatSeatProbe.start(player);
-    }
-
-    /** Disposable pig mount probe, independent from the real vehicles. */
-    public void pigSeatTest(Player player, boolean enable) {
-        if (!player.isOp()) { player.sendMessage("[PorcTest] Doar administratorii pot folosi experimentul."); return; }
-        if (!enable) { pigSeatProbe.stop(player); return; }
-        if (boatSeatProbe.active() || bodySeatExperiment.active() || cameraYawExperiment.active()) {
-            player.sendMessage("[PorcTest] Oprește întâi celelalte experimente."); return;
-        }
-        pigSeatProbe.start(player);
-    }
-
-    /** Compare seat orientation separately from the packet-based camera experiment. */
-    public void bodySeatTest(Player player, boolean enable) {
-        if (!player.isOp()) { player.sendMessage("[CorpTest] Doar administratorii pot folosi experimentul."); return; }
-        if (!enable) { bodySeatExperiment.stop(player); return; }
-        if (boatSeatProbe.active()) { player.sendMessage("Oprește mai întâi /vehicle testbarca oprit."); return; }
-        if (pigSeatProbe.active()) { player.sendMessage("Oprește mai întâi /vehicle testporc oprit."); return; }
-        if (cameraYawExperiment.active()) { player.sendMessage("Oprește mai întâi /vehicle cameratest oprit."); return; }
-        LandVehicle driven = vehicles.values().stream()
-                .filter(v -> v.driver().filter(player::equals).isPresent()).findFirst().orElse(null);
-        bodySeatExperiment.start(player, driven);
-    }
-
     public Optional<LandVehicle> nearest(Location origin, double maximumDistance) {
         return nearest(origin, maximumDistance, true);
     }
@@ -1856,8 +1792,6 @@ public final class VehicleManager {
                 hibernate(vehicle);
             }
         }
-        cameraYawExperiment.tick(this);
-        bodySeatExperiment.tick(this);
         recoveryTowCommands.updateApproachRamps();
         trailers.tick();
         handleBumperCarCollisions();

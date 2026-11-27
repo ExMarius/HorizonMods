@@ -90,41 +90,6 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
             case "give" -> give(sender, args);
             case "propsdebug" -> propsDebug(sender);
             case "seattest" -> seatTest(sender, args);
-            case "masurare" -> {
-                if (!(sender instanceof Player player) || !player.isOp()) {
-                    sender.sendMessage("[Masurare] Doar operatorii pot înregistra propria sesiune în joc.");
-                } else if (args.length == 2 && (args[1].equalsIgnoreCase("pornit") || args[1].equalsIgnoreCase("oprit"))) {
-                    vehicles.seatMeasurement(player, args[1].equalsIgnoreCase("pornit"));
-                } else sender.sendMessage("Utilizare: /vehicle masurare pornit|oprit");
-            }
-            case "testporc" -> {
-                if (!(sender instanceof Player player) || !player.isOp()) {
-                    sender.sendMessage("[PorcTest] Doar administratorii pot folosi experimentul în joc.");
-                } else if (args.length == 2 && (args[1].equalsIgnoreCase("pornit") || args[1].equalsIgnoreCase("oprit"))) {
-                    vehicles.pigSeatTest(player, args[1].equalsIgnoreCase("pornit"));
-                } else sender.sendMessage("Utilizare: /vehicle testporc pornit|oprit");
-            }
-            case "testbarca" -> {
-                if (!(sender instanceof Player player) || !player.isOp()) {
-                    sender.sendMessage("[BarcaTest] Doar administratorii pot folosi experimentul în joc.");
-                } else if (args.length == 2 && (args[1].equalsIgnoreCase("pornit") || args[1].equalsIgnoreCase("oprit"))) {
-                    vehicles.boatSeatTest(player, args[1].equalsIgnoreCase("pornit"));
-                } else sender.sendMessage("Utilizare: /vehicle testbarca pornit|oprit");
-            }
-            case "corptest" -> {
-                if (!(sender instanceof Player player) || !player.isOp()) {
-                    sender.sendMessage("[CorpTest] Doar administratorii pot folosi experimentul în joc.");
-                } else if (args.length == 2 && (args[1].equalsIgnoreCase("pornit") || args[1].equalsIgnoreCase("oprit"))) {
-                    vehicles.bodySeatTest(player, args[1].equalsIgnoreCase("pornit"));
-                } else sender.sendMessage("Utilizare: /vehicle corptest pornit|oprit");
-            }
-            case "cameratest" -> {
-                if (!(sender instanceof Player player) || !player.isOp()) {
-                    sender.sendMessage("[CameraTest] Doar administratorii pot folosi experimentul în joc.");
-                } else if (args.length == 2 && (args[1].equalsIgnoreCase("pornit") || args[1].equalsIgnoreCase("oprit"))) {
-                    vehicles.cameraTest(player, args[1].equalsIgnoreCase("pornit"));
-                } else sender.sendMessage("Utilizare: /vehicle cameratest pornit|oprit");
-            }
             default -> help(sender, label);
         }
         return true;
@@ -845,7 +810,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
                                                  @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            return filter(List.of("spawn", "cupleaza_remorca", "cupleaza_disc", "disc", "cupleaza", "plug", "sirena", "remove", "refuel", "gaspump", "jerrycan", "trust", "untrust", "trusted", "magazin", "podium", "list", "save", "pack", "creative", "paint", "vopsea", "vopseste", "garaj", "perf", "consum", "stats", "give", "propsdebug", "seattest", "cameratest", "corptest", "testbarca", "testporc", "masurare"), args[0]);
+            return filter(List.of("spawn", "cupleaza_remorca", "cupleaza_disc", "disc", "cupleaza", "plug", "sirena", "remove", "refuel", "gaspump", "jerrycan", "trust", "untrust", "trusted", "magazin", "podium", "list", "save", "pack", "creative", "paint", "vopsea", "vopseste", "garaj", "perf", "consum", "stats", "give", "propsdebug", "seattest"), args[0]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("trust") || args[0].equalsIgnoreCase("untrust"))) {
             return filter(onTabPlayers(), args[1]);
@@ -858,9 +823,6 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 4 && args[0].equalsIgnoreCase("podium") && "set".equalsIgnoreCase(args[1])) {
             return filter(java.util.List.of("10000", "25000", "60000", "100000"), args[3]);
-        }
-        if (args.length == 2 && (args[0].equalsIgnoreCase("cameratest") || args[0].equalsIgnoreCase("corptest") || args[0].equalsIgnoreCase("testbarca") || args[0].equalsIgnoreCase("testporc") || args[0].equalsIgnoreCase("masurare")) && sender.isOp()) {
-            return filter(List.of("pornit", "oprit"), args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("seattest")) {
             return filter(List.of("b", "c"), args[1]);
