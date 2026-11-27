@@ -40,8 +40,8 @@ public final class GarageTransitSnapshot {
         }
         for(UUID id:new UUID[]{carrier,target}) {
             String garage="garage."+id;
-            yaml.set(garage,records.get(id));
-            yaml.set(garage+"."+MARKER,id.equals(carrier)?"OUT_TOWING":"TOWED");
+            ConfigurationSection section=yaml.createSection(garage,records.get(id));
+            section.set(MARKER,id.equals(carrier)?"OUT_TOWING":"TOWED");
             yaml.set("vehicles."+id,null);
         }
     }
