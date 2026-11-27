@@ -145,13 +145,13 @@ public final class LiveRecoveryMotion {
             // Other plugin vehicles are non-solid to the empty carrier. Keep the
             // same behaviour with cargo: their technical displays, interactions
             // and seat carriers must not turn an otherwise passable vehicle into
-            // an obstacle. Players remain separately checked as real entities.
-            if (!(entity instanceof Player) && entity.getScoreboardTags().contains(
+            // an obstacle. Match the empty carrier's player pass-through as well;
+            // loading/unloading use their separate, stricter safety check.
+            if (entity instanceof Player || entity.getScoreboardTags().contains(
                     com.mrcrayfish.vehicle.paper.render.LandVehicleRig.ENTITY_TAG)) continue;
             BoundingBox obstacle=entity.getBoundingBox();
             // Ground animals beside/under the bed are not cargo-level obstacles.
-            // The truck's own collision behaviour remains unchanged; players,
-            // vehicles and animals standing on the deck still block the cargo.
+            // Animals standing on the deck still block the cargo.
             if(entity instanceof org.bukkit.entity.Animals
                     && obstacle.getMinY()<currentBox.getMinY()-.15D) continue;
             if(currentBox.overlaps(obstacle)) {
