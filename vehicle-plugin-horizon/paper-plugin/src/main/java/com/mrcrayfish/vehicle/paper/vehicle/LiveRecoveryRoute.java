@@ -19,7 +19,7 @@ import java.util.UUID;
 public final class LiveRecoveryRoute {
     public enum State { LOADING, AT_DECK, TEST_DRIVING, PENDING_EVACUATION, UNLOADING, ON_GROUND, STOPPED, FINISHED, TEST_PARKED }
     private static final int STEPS=180;
-    private static final double DECK=2.64, WHEELBASE=3.3;
+    private static final double DECK=2.64, DEFAULT_WHEELBASE=3.3;
     private final LiveRecoveryMotion motion;
     private final VehicleManager manager;
     private final LandVehicle carrier,target;
@@ -27,7 +27,7 @@ public final class LiveRecoveryRoute {
     private double sin,cos,startZ,lateral,groundOffset;
     private float cargoYaw;
     private final float cargoYawOffset;
-    private final double pitchDirection;
+    private final double pitchDirection, wheelbase;
     private State pausedState;
     private int step;
     private State state=State.LOADING;
@@ -37,7 +37,12 @@ public final class LiveRecoveryRoute {
         double yaw=Math.toRadians(origin.getYaw());sin=Math.sin(yaw);cos=Math.cos(yaw);
         Location actual=target.location();double dx=actual.getX()-origin.getX(),dz=actual.getZ()-origin.getZ();
         startZ=-dx*sin+dz*cos;lateral=-dx*cos-dz*sin;
-        groundOffset=actual.getY()-origin.getY()-RecoveryLoadingPath.pose(startZ,WHEELBASE).height();
+        // Both Off Roader variants have symmetric, measured axle offsets; the
+        // 3.3-block generic estimate puts their wheels at the wrong ramp height.
+        String id=target.spec().id();
+        boolean offRoader="off_roader".equals(id) || "horizon_off_roader".equals(id);
+        wheelbase=offRoader ? Math.abs(target.spec().frontAxleOffset()-target.spec().rearAxleOffset()) : DEFAULT_WHEELBASE;
+        groundOffset=actual.getY()-origin.getY()-RecoveryLoadingPath.pose(startZ,wheelbase).height();
         cargoYaw=actual.getYaw();
         cargoYawOffset=(float)Math.IEEEremainder(cargoYaw-origin.getYaw(),360D);
         pitchDirection=Math.cos(Math.toRadians(cargoYawOffset))<0?-1D:1D;
@@ -110,13 +115,13 @@ public final class LiveRecoveryRoute {
             boolean loading=state==State.LOADING;
             double from=loading?startZ:DECK,to=loading?DECK:startZ;
             double previousProgress=ease(step/(double)STEPS);
-            var previous=RecoveryLoadingPath.sample(from,to,WHEELBASE,previousProgress);
+            var previous=RecoveryLoadingPath.sample(from,to,wheelbase,previousProgress);
             Location actual=target.location();
             double previousFactor=loading ? 1D-previousProgress : 0D;
             if(!origin.getWorld().equals(actual.getWorld()) || actual.distanceSquared(destination(previous,previousFactor))>1e-8
                     || Math.abs(Math.IEEEremainder(actual.getYaw()-cargoYaw,360D))>.01D) return stop();
             double nextProgress=ease((step+1D)/STEPS);
-            var next=RecoveryLoadingPath.sample(from,to,WHEELBASE,nextProgress);
+            var next=RecoveryLoadingPath.sample(from,to,wheelbase,nextProgress);
             double nextFactor=loading ? 1D-nextProgress : 0D;
             var cable=cable(next,lateral*nextFactor,groundOffset*nextFactor);
             if(!RecoveryCable.clearsLevelBed(cable,.18,5.35,.86,.018))return stop();
