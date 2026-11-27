@@ -998,6 +998,10 @@ public final class LandVehicle {
     }
 
     private void updateCharging(boolean enginePowered) {
+        if ("horizon_recovery_prototype".equals(spec.id())) {
+            charging=false;chargingAmount=0F;boosting=false;boostStrength=0F;boostTimer=0;speedMultiplier=0F;wheelieCount=0;
+            return;
+        }
         boolean oldCharging = charging;
         charging = enginePowered && velocity.length() < 5.0D && handbraking && throttle > 0.0F;
         if (oldCharging && !charging && chargingAmount > 0.0F) {
@@ -1765,10 +1769,10 @@ public final class LandVehicle {
         if (!recoveryMotionLockedBy(token)) throw new IllegalStateException("Recovery lock lost");
         double signed=displacement.dot(forward(location.getYaw()));
         if (!spec.wheels().isEmpty()) {
-            double front=Math.max(.1D,24D*spec.firstFrontWheel().scaleY());
-            double rear=Math.max(.1D,24D*spec.firstRearWheel().scaleY());
-            frontWheelRotation-=(float)(signed*320D/front);
-            rearWheelRotation-=(float)(signed*320D/rear);
+            double front=Math.max(.1D,2D*Math.PI*.45D*spec.firstFrontWheel().scaleY());
+            double rear=Math.max(.1D,2D*Math.PI*.45D*spec.firstRearWheel().scaleY());
+            frontWheelRotation-=(float)(signed*360D/front);
+            rearWheelRotation-=(float)(signed*360D/rear);
         }
         location.add(displacement);velocity.zero();motion.zero();verticalVelocity=0;
         recoveryPitchDegrees=pitchDegrees;
@@ -2599,6 +2603,7 @@ public final class LandVehicle {
 
     /** Boost pad: intensifica temporar forta (acelasi tel ca rampota din mod). */
     public void applyBoost(float strength, int ticks) {
+        if ("horizon_recovery_prototype".equals(spec.id())) return;
         boostStrength = strength;
         speedMultiplier = Math.max(speedMultiplier, strength);
         boostTimer = Math.max(boostTimer, ticks);

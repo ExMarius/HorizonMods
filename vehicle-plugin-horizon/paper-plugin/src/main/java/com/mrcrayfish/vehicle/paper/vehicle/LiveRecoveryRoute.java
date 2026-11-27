@@ -153,6 +153,10 @@ public final class LiveRecoveryRoute {
         if(state==State.STOPPED)return;
         pausedState=state;motion.pause();state=State.STOPPED;
     }
+    boolean canAutoResume(){
+        return state==State.STOPPED && (pausedState==State.LOADING || pausedState==State.UNLOADING
+                || pausedState==State.AT_DECK || pausedState==State.ON_GROUND);
+    }
     boolean resume(){
         if(state!=State.STOPPED || pausedState==null || !motion.resume())return false;
         state=pausedState;pausedState=null;return true;

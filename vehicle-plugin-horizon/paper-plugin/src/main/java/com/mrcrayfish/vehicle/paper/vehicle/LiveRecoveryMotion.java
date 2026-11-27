@@ -126,9 +126,9 @@ public final class LiveRecoveryMotion {
         Vector delta=end.toVector().subtract(start.toVector());
         if (delta.lengthSquared()<=1e-12) return true;
         double width=Math.max(5D,target.spec().entityWidth()),height=Math.max(2.5D,target.spec().entityHeight()),half=width/2;
-        BoundingBox swept=new BoundingBox(start.getX()-half,start.getY(),start.getZ()-half,
+        BoundingBox currentBox=new BoundingBox(start.getX()-half,start.getY(),start.getZ()-half,
                 start.getX()+half,start.getY()+height,start.getZ()+half);
-        swept.union(swept.clone().shift(delta));
+        BoundingBox swept=currentBox.clone().union(currentBox.clone().shift(delta));
         World world=start.getWorld();
         for(int x=((int)Math.floor(swept.getMinX()))>>4;x<=((int)Math.floor(swept.getMaxX()))>>4;x++)
             for(int z=((int)Math.floor(swept.getMinZ()))>>4;z<=((int)Math.floor(swept.getMaxZ()))>>4;z++)
@@ -136,7 +136,17 @@ public final class LiveRecoveryMotion {
         Set<UUID> ignored=new HashSet<>();
         carrier.rig().entities().forEach(e -> {ignored.add(e.getUniqueId());e.getPassengers().forEach(p -> ignored.add(p.getUniqueId()));});
         target.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
-        for(Entity entity:world.getNearbyEntities(swept))if(entity.isValid()&&!ignored.contains(entity.getUniqueId()))return false;
+        for(Entity entity:world.getNearbyEntities(swept)) {
+            if(!entity.isValid() || ignored.contains(entity.getUniqueId()))continue;
+            BoundingBox obstacle=entity.getBoundingBox();
+            if(currentBox.overlaps(obstacle)) {
+                double dx=start.getX()-(obstacle.getMinX()+obstacle.getMaxX())*.5D;
+                double dz=start.getZ()-(obstacle.getMinZ()+obstacle.getMaxZ())*.5D;
+                // Permit escaping an existing overlap, never advancing into it.
+                if(dx*delta.getX()+dz*delta.getZ()>1e-8)continue;
+            }
+            return false;
+        }
         return VehicleCollisionMover.move(world,start,delta,false,width,height,0D,false)
                 .movement().distanceSquared(delta)<=1e-10;
     }
