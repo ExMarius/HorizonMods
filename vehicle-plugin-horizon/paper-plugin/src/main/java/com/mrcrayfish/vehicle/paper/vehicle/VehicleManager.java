@@ -37,6 +37,9 @@ public final class VehicleManager {
     private final Map<UUID, LandVehicle> entities = new HashMap<>();
     private final Map<UUID, StoredVehicle> pendingWorlds = new HashMap<>();
     private final Map<UUID, StoredVehicle> garage = new HashMap<>();
+    /** In-memory retrieval guard for snapshots reserved before recovery motion. */
+    private final Map<UUID, String> recoveryTransit = new HashMap<>();
+    private boolean recoveryPersistenceHalted;
     private final Map<UUID, VehicleChunk> chunkTickets = new HashMap<>();
     private final File storageFile;
     private final TrailerManager trailers;
@@ -378,6 +381,66 @@ public final class VehicleManager {
         return true;
     }
 
+    /** Prepare the authoritative garage snapshot for a future recovery flow.
+     * Not exposed as a command: the caller must already hold both recovery locks,
+     * and must not move either vehicle until this returns successfully. This
+     * method does not implement towing, eviction, or an unlock/finish path. */
+    boolean reserveGarageTransit(LandVehicle carrier, LandVehicle target, Player operator, UUID token) throws IOException {
+        if (!Bukkit.isPrimaryThread() || recoveryPersistenceHalted || carrier == null || target == null
+                || operator == null || !operator.isOp() || carrier == target
+                || !"horizon_recovery_prototype".equals(carrier.spec().id())
+                || !"dacia_logan_police".equals(target.spec().id())
+                || !trailers.recoveryLinksKnown()) return false;
+        for (LandVehicle vehicle : List.of(carrier, target)) {
+            if (vehicles.get(vehicle.id()) != vehicle || !vehicle.recoveryMotionLockedBy(token)
+                    || vehicle.owner().isEmpty() || !vehicle.canDrive(operator)
+                    || vehicle.recoveryHasPassengers() || vehicle.recoveryHasStorageViewers()
+                    || vehicle.showcase() || vehicle.onJack() || vehicle.jackId() != null
+                    || corruptLocation(vehicle.location()) || garage.containsKey(vehicle.id())
+                    || pendingWorlds.containsKey(vehicle.id()) || recoveryTransit.containsKey(vehicle.id())
+                    || trailers.referencesVehicle(vehicle.id()) || !vehicle.rig().valid()
+                    || vehicle.rig().entities().stream().anyMatch(Entity::isPersistent)) return false;
+        }
+        if (carrier.location().getWorld() == null || !carrier.location().getWorld().equals(target.location().getWorld())) return false;
+        StoredVehicle carrierRecord = StoredVehicle.from(carrier), targetRecord = StoredVehicle.from(target);
+        YamlConfiguration snapshot = collectYaml();
+        com.mrcrayfish.vehicle.paper.persistence.GarageTransitSnapshot.reserve(snapshot, carrier.id(), target.id());
+        byte[] bytes = snapshot.saveToString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        try {
+            synchronized (asyncSaveLock) {
+                // Block old coalesced snapshots from overwriting the reservation.
+                pendingAsyncYaml = null;
+                persistRecoverySnapshot(bytes);
+            }
+        } catch (IOException error) {
+            // The atomic rename may have happened even when a later fsync failed.
+            // Never resume motion or write another snapshot in this process.
+            recoveryPersistenceHalted = true;
+            plugin.getLogger().log(Level.SEVERE, "Recovery snapshot failed; vehicle saving halted until restart", error);
+            throw error;
+        }
+        garage.put(carrier.id(), carrierRecord); garage.put(target.id(), targetRecord);
+        recoveryTransit.put(carrier.id(), "OUT_TOWING"); recoveryTransit.put(target.id(), "TOWED");
+        return true;
+    }
+
+    private void persistRecoverySnapshot(byte[] bytes) throws IOException {
+        java.nio.file.Path path = storageFile.toPath().toAbsolutePath(), parent = path.getParent();
+        if (parent == null || !Files.isDirectory(parent)) throw new IOException("Missing vehicle snapshot directory");
+        java.nio.file.Path temp = Files.createTempFile(parent, ".garage-transit-", ".tmp");
+        try {
+            try (var file = java.nio.channels.FileChannel.open(temp, java.nio.file.StandardOpenOption.WRITE,
+                    java.nio.file.StandardOpenOption.TRUNCATE_EXISTING)) {
+                var buffer = java.nio.ByteBuffer.wrap(bytes);
+                while (buffer.hasRemaining()) file.write(buffer);
+                file.force(true);
+            }
+            try { Files.move(temp, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
+            catch (AtomicMoveNotSupportedException e) { throw new IOException("Atomic vehicle snapshot unavailable", e); }
+            try (var directory = java.nio.channels.FileChannel.open(parent, java.nio.file.StandardOpenOption.READ)) { directory.force(true); }
+        } finally { Files.deleteIfExists(temp); }
+    }
+
     /** Test-only recovery emergency. Both snapshots enter the existing garage
      * map together; save() remains asynchronous and this is NOT crash-safe. */
     boolean parkRecoveryPairForTest(LandVehicle carrier, LandVehicle target) {
@@ -672,6 +735,7 @@ public final class VehicleManager {
 
     /** Same, but the vehicle exits at the physical STATION anchor when one is known (GTA 1:1). */
     public boolean retrieve(Player player, UUID vehicleId, Location anchor) {
+        if (recoveryTransit.containsKey(vehicleId) || recoveryPersistenceHalted) return false;
         StoredVehicle stored = garage.get(vehicleId);
         if (stored == null) {
             return false;
@@ -1126,13 +1190,16 @@ public final class VehicleManager {
             write(data, stored);
         }
         for (LandVehicle vehicle : vehicles.values()) {
-            if (vehicle.showcase()) {
-                continue; // showroom podium cars are display-only, never persisted
+            if (vehicle.showcase() || recoveryTransit.containsKey(vehicle.id())) {
+                continue; // showroom is display-only; transit is authoritative in garage
             }
             write(data, StoredVehicle.from(vehicle));
         }
         for (StoredVehicle stored : garage.values()) {
-            write(data, "garage." + stored.id(), stored);
+            String path = "garage." + stored.id();
+            write(data, path, stored);
+            String transit = recoveryTransit.get(stored.id());
+            if (transit != null) data.set(path + ".recovery-transit", transit);
         }
         return data;
     }
@@ -1145,6 +1212,7 @@ public final class VehicleManager {
     /** Save to a same-directory temporary file and atomically replace the last good snapshot.
      *  Collection stays synchronous; the disk I/O itself runs on an async worker (0 TPS cost). */
     public void save() {
+        if (recoveryPersistenceHalted) return;
         YamlConfiguration data = collectYaml();
         synchronized (asyncSaveLock) {
             pendingAsyncYaml = data;
@@ -1168,6 +1236,10 @@ public final class VehicleManager {
 
     /** Synchronous flush - used ONLY in stop()/onDisable, where async work would be lost. */
     public void saveNow() {
+        if (recoveryPersistenceHalted) {
+            plugin.getLogger().severe("Vehicle snapshot not overwritten after recovery persistence failure");
+            return;
+        }
         YamlConfiguration snapshot = collectYaml();
         synchronized (asyncSaveLock) {
             pendingAsyncYaml = null;

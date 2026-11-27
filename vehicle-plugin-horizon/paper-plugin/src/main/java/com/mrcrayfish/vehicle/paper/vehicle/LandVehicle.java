@@ -1513,6 +1513,12 @@ public final class LandVehicle {
                 || compartmentInventories.containsValue(inventory);
     }
 
+    /** Reservations cannot snapshot an inventory while another player edits it. */
+    boolean recoveryHasStorageViewers() {
+        return (storageInventory != null && !storageInventory.getViewers().isEmpty())
+                || compartmentInventories.values().stream().anyMatch(inventory -> !inventory.getViewers().isEmpty());
+    }
+
     public void storageClosed(Inventory inventory) {
         Location soundLocation = null;
         if (storageInventory != null && chestAttached && storageInventory == inventory
