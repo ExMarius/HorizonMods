@@ -293,6 +293,25 @@ public final class VehicleListener implements Listener {
         }
     }
 
+    /** Paper emits this only when a drop is attempted; an empty hand may not
+     * generate an event. Reserve Q for the recovery driver's winch without ever
+     * consuming or dropping the held item. The live winch is still unavailable. */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onRecoveryWinchKey(org.bukkit.event.player.PlayerDropItemEvent event) {
+        Player player = event.getPlayer();
+        var carrier = vehicles.vehicles().stream()
+                .filter(v -> "horizon_recovery_prototype".equals(v.spec().id()))
+                .filter(v -> v.driver().map(driver -> driver.getUniqueId().equals(player.getUniqueId())).orElse(false))
+                .findFirst();
+        if (carrier.isEmpty()) return;
+        event.setCancelled(true);
+        if (carrier.get().owner().isEmpty() || !carrier.get().canDrive(player)) {
+            player.sendActionBar(Component.text("Doar proprietarul sau un șofer autorizat poate folosi troliul.", NamedTextColor.RED));
+            return;
+        }
+        player.sendActionBar(Component.text("Troliul nu este încă disponibil.", NamedTextColor.YELLOW));
+    }
+
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         vehicles.recoveryOwnerQuit(event.getPlayer().getUniqueId());

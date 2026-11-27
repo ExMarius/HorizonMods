@@ -30,6 +30,7 @@ def main(jar,probe):
                 out.flush();text=log.read_text(errors='replace')
                 marker='RECOVERY_MIDTRANSPORT_READY' if os.getenv('RECOVERY_MID_RESTART')=='1' else 'RECOVERY_PAIR_QUIT_OK'
                 if marker not in text or 'RECOVERY_PROBE_FAIL' in text:raise RuntimeError('pair test failed')
+                if os.getenv('RECOVERY_LIVE_TEST')=='1' and 'RECOVERY_LIVE_DROP_GUARD_OK' not in text:raise RuntimeError('platform item-drop guard was not verified')
                 if os.getenv('RECOVERY_FALLBACK_TEST')=='1' and 'RECOVERY_LIVE_FALLBACK_OK' not in text:raise RuntimeError('spawn fallback was not verified')
                 if os.getenv('RECOVERY_RETRY_TEST')=='1' and any(m not in text for m in ('RECOVERY_TEST_EVACUATION_PENDING','RECOVERY_TEST_EVACUATION_RETRY_OK')):raise RuntimeError('evacuation retry not verified')
                 if 'Could not pass event' in text or 'Exception in server tick loop' in text:raise RuntimeError('server reported event/tick error')
