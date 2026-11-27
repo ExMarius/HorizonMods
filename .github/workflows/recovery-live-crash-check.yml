@@ -6,6 +6,8 @@ on:
       - '.github/workflows/recovery-live-crash-check.yml'
       - 'vehicle-plugin-horizon/tools/smoke_recovery_live_crash.py'
       - 'vehicle-plugin-horizon/paper-plugin/src/recoveryCommandProbe/**'
+      - 'vehicle-plugin-horizon/paper-plugin/src/main/java/**'
+      - 'vehicle-plugin-horizon/paper-plugin/src/test/java/**'
 permissions:
   contents: read
 jobs:
