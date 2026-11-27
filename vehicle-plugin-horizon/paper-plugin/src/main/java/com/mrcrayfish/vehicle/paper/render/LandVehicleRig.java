@@ -548,9 +548,11 @@ public final class LandVehicleRig {
             if (display.isVisibleByDefault()!=visible) display.setVisibleByDefault(visible);
             if (!visible) continue;
             var a=recoveryCable.get(i);var b=recoveryCable.get(i+1);
-            // The recovery path's longitudinal coordinates use the rig's rearward axis.
-            Vector3f from=chassis(new Vector3f((float)-a.x(),(float)a.y(),(float)a.z()),wheelie,roll);
-            Vector3f to=chassis(new Vector3f((float)-b.x(),(float)b.y(),(float)b.z()),wheelie,roll);
+            // The legacy isolated rig used the opposite longitudinal convention.
+            boolean corrected=spec.bodyParts().stream().anyMatch(p -> "horizon_service_ramp".equals(p.model()) && p.center().z()>0);
+            float longitudinal=corrected ? 1F : -1F;
+            Vector3f from=chassis(new Vector3f((float)-a.x(),(float)a.y(),longitudinal*(float)a.z()),wheelie,roll);
+            Vector3f to=chassis(new Vector3f((float)-b.x(),(float)b.y(),longitudinal*(float)b.z()),wheelie,roll);
             Vector3f delta=new Vector3f(to).sub(from);float length=delta.length();
             if (length<1.0e-5F) {display.setVisibleByDefault(false);continue;}
             Vector3f center=new Vector3f(from).add(to).mul(.5F);
