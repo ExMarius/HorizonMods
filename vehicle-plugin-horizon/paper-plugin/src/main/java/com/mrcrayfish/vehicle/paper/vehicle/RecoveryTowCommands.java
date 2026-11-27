@@ -154,9 +154,24 @@ public final class RecoveryTowCommands {
         if(!operation.route.endTestDrive() || !operation.route.beginUnload()) {player.sendMessage("Descărcarea a fost refuzată; verifică zona.");return;}
         player.sendMessage("Troliul a început descărcarea.");
     }
+    /** Called after the owner removes trust from the transported target. */
+    public void onTargetTrustRevoked(LandVehicle target, UUID playerId) {
+        if (!Bukkit.isPrimaryThread() || target == null || playerId == null) return;
+        for (Operation operation : operations.values()) {
+            boolean wasOperator = operation.operator.getUniqueId().equals(playerId);
+            boolean isDriver = operation.carrier.driver().map(p -> p.getUniqueId().equals(playerId)).orElse(false);
+            if (operation.target != target || (!wasOperator && !isDriver)
+                    || operation.route.state() != LiveRecoveryRoute.State.TEST_DRIVING) continue;
+            operation.revokedReturnPending = true;
+            Player revoked = Bukkit.getPlayer(playerId);
+            if (revoked != null) revoked.sendMessage("Proprietarul a retras trustul. Oprește platforma și coboară; mașina va fi descărcată când zona este sigură.");
+            return;
+        }
+    }
+
     private final class Operation {
         final LandVehicle carrier,target;final LiveRecoveryRoute route;final Player operator;BukkitTask task;
-        int retryTicks;boolean waiting;
+        int retryTicks;boolean waiting, revokedReturnPending;
         Operation(LandVehicle carrier,LandVehicle target,LiveRecoveryRoute route,Player operator) {
             this.carrier=carrier;this.target=target;this.route=route;this.operator=operator;
         }
@@ -165,6 +180,16 @@ public final class RecoveryTowCommands {
             try {
                 if(!manager.recoveryPairActive(carrier.id())) {finishTask();return;}
                 var state=route.state();
+                if (revokedReturnPending && state==LiveRecoveryRoute.State.TEST_DRIVING
+                        && !carrier.occupied() && carrier.horizontalSpeed()<=.01D) {
+                    // Never eject the driver or drop cargo: wait until they have
+                    // left the stopped truck, then use the normal checked winch.
+                    if (!route.endTestDrive()) return;
+                    if (!route.beginRevokedUnload()) { stop(); return; }
+                    revokedReturnPending=false;
+                    operator.sendMessage("Trust retras: încep descărcarea când traseul este liber.");
+                    state=route.state();
+                }
                 if(state==LiveRecoveryRoute.State.STOPPED && route.canAutoResume()) {
                     if(++retryTicks<20)return;
                     retryTicks=0;

@@ -98,6 +98,10 @@ public final class LiveRecoveryRoute {
         if(!Bukkit.isPrimaryThread()||state!=State.AT_DECK)return false;
         step=0;state=State.UNLOADING;return true;
     }
+    boolean beginRevokedUnload() {
+        if (!Bukkit.isPrimaryThread() || state != State.AT_DECK || !motion.allowRevokedUnload()) return false;
+        return beginUnload();
+    }
     /** One tick on the main thread. Any failed check halts and cannot auto-resume. */
     public State tick(RecoveryInterlock.Safety safety) {
         if(!Bukkit.isPrimaryThread() || (state!=State.LOADING && state!=State.UNLOADING)) return state;

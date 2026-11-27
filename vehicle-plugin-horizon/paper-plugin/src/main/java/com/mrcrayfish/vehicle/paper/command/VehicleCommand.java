@@ -430,6 +430,7 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
             return;
         }
         vehicles.save();
+        vehicles.recoveryTowCommands().onTargetTrustRevoked(vehicle, targetUuid);
         sender.sendRichMessage("<red>I-ai retras accesul: " + args[1]
                 + " nu mai poate conduce mașina ta.</red>");
         // Ciclul AC (spec-ul userului, modulul 3): revocarea in timpul mersului =

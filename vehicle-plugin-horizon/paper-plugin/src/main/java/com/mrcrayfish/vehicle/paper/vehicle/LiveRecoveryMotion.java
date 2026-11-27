@@ -30,7 +30,7 @@ public final class LiveRecoveryMotion {
     private final Authority authority;
     private final UUID token=UUID.randomUUID();
     private final RecoveryInterlock interlock=new RecoveryInterlock();
-    private boolean closed, halted, testDriving, evacuationPending;
+    private boolean closed, halted, testDriving, evacuationPending, revokedUnload;
     private final float cargoYawOffset;
     private final Set<UUID> pendingEvacuees = new HashSet<>();
 
@@ -46,7 +46,8 @@ public final class LiveRecoveryMotion {
                 ||manager.byId(carrier.id()).orElse(null)!=carrier || manager.byId(target.id()).orElse(null)!=target
                 ||!carrier.rig().valid() || !target.rig().valid()
                 ||target.recoveryHasPassengers() || carrier.recoveryHasPassengers()
-                ||!operator.isOnline() || !RecoveryTowCommands.canOperateCarrier(carrier,operator) || (!target.canDrive(operator) && !operator.isOp())
+                ||!operator.isOnline() || !RecoveryTowCommands.canOperateCarrier(carrier,operator)
+                || (!revokedUnload && !target.canDrive(operator) && !operator.isOp())
                 ||carrier.rig().recoveryRampProgress()!=1D || carrier.horizontalSpeed()>.01D
                 ||carrier.location().getWorld()==null || !carrier.location().getWorld().equals(target.location().getWorld())
                 ||!manager.trailers().recoveryLinksKnown()
@@ -76,7 +77,8 @@ public final class LiveRecoveryMotion {
         if(!Double.isFinite(pitchRadians)||Math.abs(pitchRadians)>Math.PI/4
                 ||!Bukkit.isPrimaryThread()||closed||delta==null||!Double.isFinite(delta.getX())||!Double.isFinite(delta.getY())||!Double.isFinite(delta.getZ())
                 ||delta.lengthSquared()<1e-12 ||delta.lengthSquared()>.08D*.08D || !operator.isOnline()
-                || !RecoveryTowCommands.canOperateCarrier(carrier,operator) || (!target.canDrive(operator) && !operator.isOp())
+                || !RecoveryTowCommands.canOperateCarrier(carrier,operator)
+                || (!revokedUnload && !target.canDrive(operator) && !operator.isOp())
                 ||!carrier.rig().valid() || !target.rig().valid()
                 ||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token)
                 ||manager.byId(carrier.id()).orElse(null)!=carrier||manager.byId(target.id()).orElse(null)!=target
@@ -104,6 +106,17 @@ public final class LiveRecoveryMotion {
         var moved=VehicleCollisionMover.move(world,start,delta,false,width,height,0D,false).movement();
         if(moved.distanceSquared(delta)>1e-10)return false;
         target.applyRecoveryMotion(token,delta,(float)-Math.toDegrees(pitchRadians));return true;
+    }
+    // One-way exception for the already reserved pair, only after the carrier is
+    // stopped and empty. It permits returning the target to the ground, not a
+    // new tow or driving another owner's vehicle.
+    boolean allowRevokedUnload() {
+        if (!Bukkit.isPrimaryThread() || closed || halted || testDriving
+                || !carrier.recoveryMotionLockedBy(token) || !target.recoveryMotionLockedBy(token)
+                || carrier.recoveryHasPassengers() || target.recoveryHasPassengers()
+                || carrier.horizontalSpeed() > .01D) return false;
+        revokedUnload = true;
+        return true;
     }
     /** Test-only carrier movement, not collision-safe or crash-safe for production. */
     boolean startTestDrive() {
