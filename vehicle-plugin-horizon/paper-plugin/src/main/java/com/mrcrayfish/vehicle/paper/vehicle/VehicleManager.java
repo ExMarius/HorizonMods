@@ -58,6 +58,7 @@ public final class VehicleManager {
     private final RecoveryTowCommands recoveryTowCommands;
     private final CameraYawExperiment cameraYawExperiment;
     private final BodySeatExperiment bodySeatExperiment;
+    private final BoatSeatProbe boatSeatProbe;
     private final com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal recoveryJournal;
     private BukkitTask tickTask;
     private BukkitTask saveTask;
@@ -109,6 +110,7 @@ public final class VehicleManager {
         this.recoveryTowCommands = new RecoveryTowCommands(plugin, this);
         this.cameraYawExperiment = new CameraYawExperiment(plugin);
         this.bodySeatExperiment = new BodySeatExperiment();
+        this.boatSeatProbe = new BoatSeatProbe(plugin);
         try {
             var journal = new com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal(
                     plugin.getDataFolder().toPath().resolve("recovery-live.journal"));
@@ -180,6 +182,7 @@ public final class VehicleManager {
     public void stop() {
         cameraYawExperiment.clear();
         bodySeatExperiment.clear();
+        boatSeatProbe.shutdown();
         if (tickTask != null) {
             tickTask.cancel();
         }
@@ -1201,6 +1204,16 @@ public final class VehicleManager {
         LandVehicle driven = vehicles.values().stream()
                 .filter(v -> v.driver().filter(player::equals).isPresent()).findFirst().orElse(null);
         cameraYawExperiment.start(player, driven);
+    }
+
+    /** Disposable, visible boat hierarchy probe, not a persisted vehicle. */
+    public void boatSeatTest(Player player, boolean enable) {
+        if (!player.isOp()) { player.sendMessage("[BarcaTest] Doar administratorii pot folosi experimentul."); return; }
+        if (!enable) { boatSeatProbe.stop(player); return; }
+        if (bodySeatExperiment.active() || cameraYawExperiment.active()) {
+            player.sendMessage("[BarcaTest] Oprește întâi celelalte experimente."); return;
+        }
+        boatSeatProbe.start(player);
     }
 
     /** Compare seat orientation separately from the packet-based camera experiment. */
