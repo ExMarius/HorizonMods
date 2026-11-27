@@ -1,6 +1,6 @@
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const root=__dirname,port=Number(process.env.PORT||4176);
-const files=new Map([['/','index.html'],['/index.html','index.html'],['/app.js','app.js'],['/design.js','design.js'],['/loading-demo.js','loading-demo.js'],['/loading-kinematics.js','loading-kinematics.js'],['/minecraft-preview.js','minecraft-preview.js'],['/style.css','style.css']]);
+const files=new Map([['/',process.env.CAB_PREVIEW==='1'?'cabina-preview.html':'index.html'],['/index.html','index.html'],['/app.js','app.js'],['/design.js','design.js'],['/loading-demo.js','loading-demo.js'],['/loading-kinematics.js','loading-kinematics.js'],['/minecraft-preview.js','minecraft-preview.js'],['/style.css','style.css'],['/cabina-preview','cabina-preview.html'],['/cabina-preview.html','cabina-preview.html'],['/cabina-preview.css','cabina-preview.css'],['/cabina-preview.js','cabina-preview.js'],['/cabina-noua.js','cabina-noua.js']]);
 http.createServer((req,res)=>{
  if(req.method!=='GET'&&req.method!=='HEAD')return res.writeHead(405).end();
  const p=new URL(req.url,'http://local').pathname;let f=files.get(p);
