@@ -95,6 +95,8 @@ public final class LandVehicleRig {
     private final List<WheelDisplay> wheels;
     private final List<SeatCarrier> seats;
     private final List<Entity> entities;
+    /** New identity for each physical rig, even when the logical vehicle UUID is reused. */
+    private final UUID spawnSessionId = UUID.randomUUID();
     private float seatGauge = 1.0F;
     // Prototype-only visual value; no player commands or loading logic use it yet.
     private double recoveryRampProgress;
@@ -233,8 +235,15 @@ public final class LandVehicleRig {
             rig.daciaWheels = new DaciaHorizonWheels(location, vehicleId, all, spec);
             rig.setWheelModel("standard_wheel");
         }
+        for (Entity entity : all) rig.markSpawnSession(entity);
         rig.update(location, 0.0F, 0.0F, 0.0F, 0.0F, 0.0F, false, 0);
         return rig;
+    }
+
+    public UUID spawnSessionId() { return spawnSessionId; }
+
+    private void markSpawnSession(Entity entity) {
+        entity.addScoreboardTag("mcv_session_" + spawnSessionId);
     }
 
     private static ItemDisplay partDisplay(World world, Location location, LandVehicleSpec.Part part,
@@ -310,6 +319,7 @@ public final class LandVehicleRig {
         }
         Location location = carrier.anchor.getLocation();
         Horse seat = seatCarrier(location.getWorld(), location, vehicleId, seatCarrierScale());
+        markSpawnSession(seat);
         if (!carrier.anchor.addPassenger(seat)) {
             seat.remove();
             return null;

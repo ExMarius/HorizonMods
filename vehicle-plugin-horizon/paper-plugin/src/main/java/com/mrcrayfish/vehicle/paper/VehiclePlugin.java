@@ -159,6 +159,15 @@ public final class VehiclePlugin extends JavaPlugin {
                 throw new IllegalStateException("Test recovery reconciliation failed; no vehicles loaded",e);
             }
         }
+        // Read the exact old entity IDs before registering gameplay listeners or
+        // loading vehicles. A corrupt registry must not silently disable cleanup.
+        try {
+            var guard = com.mrcrayfish.vehicle.paper.recovery.RecoveredEntityGuard.load(getDataFolder().toPath());
+            getServer().getPluginManager().registerEvents(guard, this);
+            guard.sweepLoaded();
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException("Recovery entity registry invalid; refusing vehicle startup", e);
+        }
         vehicleManager = new VehicleManager(this);
         gasPumpManager = new GasPumpManager(this, vehicleManager);
         garageStationManager = new com.mrcrayfish.vehicle.paper.garage.GarageStationManager(this, vehicleManager);
