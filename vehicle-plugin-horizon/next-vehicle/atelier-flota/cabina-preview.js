@@ -19,8 +19,21 @@ function box(part,parent){const [kind,x,y,z,w,h,d,rx=0]=part;const mesh=new T.Me
 function cylinder(parent,material,radius,depth,x,y,z){const mesh=new T.Mesh(new T.CylinderGeometry(radius,radius,depth,24),mats[material]);mesh.rotation.z=Math.PI/2;mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh)}
 function wheel(parent,x,y,z,scale){const group=new T.Group();group.position.set(x,y,z);group.scale.setScalar(scale);parent.add(group);cylinder(group,'rubber',.45,.33,0,0,0);for(const side of [-1,1]){cylinder(group,'dark',.315,.018,side*.171,0,0);cylinder(group,'rim',.265,.025,side*.186,0,0);cylinder(group,'steel',.18,.018,side*.205,0,0);cylinder(group,'silver',.075,.03,side*.22,0,0);for(let i=0;i<6;i++){const a=i*Math.PI/3;cylinder(group,'black',.022,.018,side*.22,Math.cos(a)*.135,Math.sin(a)*.135)}}}
 const truck=new T.Group();scene.add(truck);
-cabinaNoua.forEach(part=>box(part,truck));platforma.forEach(part=>box(part,truck));
-for(const [x,y,z,scale] of [...frontWheels,...platformWheels.slice(2)])wheel(truck,x,y,z,scale);
+cabinaNoua.forEach(part=>box(part,truck));
+// In this concept only, move the complete rear axle assembly forward by one
+// wheel diameter (2 × .35 blocks), leaving the loading deck and ramps intact.
+const rearShift=.70;
+function revisedRearPart(part){
+ const [kind,x,y,z]=part;
+ const axle=kind==='chassis' && x===0 && y===.35 && z===3.92;
+ const trim=kind==='dark' && Math.abs(x)===1.39 && [3.92,3.43,4.41].includes(z);
+ const mudflap=kind==='dark' && Math.abs(x)===1.20 && y===.35 && z===4.49;
+ if(!axle&&!trim&&!mudflap)return part;
+ const revised=[...part];revised[3]-=rearShift;return revised;
+}
+platforma.forEach(part=>box(revisedRearPart(part),truck));
+const rearWheels=platformWheels.slice(2).map(([x,y,z,scale])=>[x,y,z-rearShift,scale]);
+for(const [x,y,z,scale] of [...frontWheels,...rearWheels])wheel(truck,x,y,z,scale);
 for(const side of [-1,1]){const hinge=new T.Group();hinge.position.set(side*1.05,.86,5.35);hinge.rotation.x=Math.PI/2;ramp.forEach(part=>box(part,hinge));truck.add(hinge)}
 // Steering rim and spokes are separate geometry; placement is illustrative, not game animation.
 const steering=new T.Group();steering.position.set(...steeringPosition);steering.rotation.x=-.37;truck.add(steering);
