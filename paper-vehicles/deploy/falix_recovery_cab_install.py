@@ -4,9 +4,9 @@ import hashlib, importlib.util, io, json, os, sys, uuid, zipfile
 from pathlib import Path
 spec=importlib.util.spec_from_file_location('i',Path(__file__).with_name('falix_install_horizon.py'))
 i=importlib.util.module_from_spec(spec);spec.loader.exec_module(i);f=i.f
-OLD_JAR='0a6830426a36c4b7af66ca7d5b1a134c8a9e40fdaa26dc0ed2253810797d00a9'
-OLD_PACK='433f6d815a8a331b77a0c2ea23f8ace84cd817ea'
-OLD_URL='https://github.com/ExMarius/HorizonMods/releases/download/horizon-offroader-46037847103/HorizonOffRoader-1.21.4.zip'
+OLD_JAR='d863663f30f6efdf11d3bbd7ccc67a971776956f7ea2b32df38d7b2662cd1406'
+OLD_PACK='26cd2c8e950cec56aaa3a96772c58f0c5c5fc5aa'
+OLD_URL='https://github.com/ExMarius/HorizonMods/releases/download/horizon-offroader-46039469341/HorizonOffRoader-1.21.4.zip'
 CONFIG='/plugins/MrCrayfishVehiclePlugin/config.yml'
 KEYS=('resource-pack','resource-pack-sha1','resource-pack-id','require-resource-pack')
 i.OLD_PACK=OLD_PACK;i.OLD_CONFIG_SUFFIX=OLD_URL
@@ -29,7 +29,7 @@ def backup(api,oldpack,run):
     data=io.BytesIO()
     with zipfile.ZipFile(data,'w',zipfile.ZIP_DEFLATED) as z:
         for name,content in [('MrCrayfishVehiclePlugin.jar',jar),('config.yml',config),('server.properties',properties),('HorizonOffRoader-1.21.4.zip',oldpack)]:z.writestr(name,content)
-        z.writestr('backup-info.json',json.dumps({'previous_jar_sha256':OLD_JAR,'previous_pack_sha1':OLD_PACK,'previous_pack_url':OLD_URL,'properties_api':props,'previous_live_sources_commit':'6425546'},indent=2))
+        z.writestr('backup-info.json',json.dumps({'previous_jar_sha256':OLD_JAR,'previous_pack_sha1':OLD_PACK,'previous_pack_url':OLD_URL,'properties_api':props,'previous_live_sources_commit':'b095ecb1771b3b8aa119af0ed9aa67c78e30a834'},indent=2))
     content=data.getvalue();name='mcv-before-new-recovery-cab-'+run+'.zip.bak'
     api.upload('/',name,content)
     if f.sha(api.download('/'+name))!=f.sha(content):raise ValueError('Backup checksum mismatch; installation refused')

@@ -5,7 +5,6 @@
     "horizon_service_flatbed": 65,
     "horizon_service_workshop": 67,
     "horizon_service_steering": 7,
-    "horizon_service_wheel": 23,
     "horizon_service_ramp": 10,
     "horizon_service_cable": 1
   },
@@ -30,7 +29,7 @@
     }
   ],
   "notes": [
-    "Vanilla item cuboids replace browser torus/cylinder wheels and steering.",
+    "Wheel uses the existing Horizon sports wheel model; steering uses vanilla cuboids.",
     "Glass alpha must be verified in the target Minecraft client.",
     "Pieces require explicit placement in a future vehicle rig; not installed."
   ]
