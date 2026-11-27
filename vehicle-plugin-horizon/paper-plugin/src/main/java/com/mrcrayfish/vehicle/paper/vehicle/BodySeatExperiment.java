@@ -25,7 +25,8 @@ final class BodySeatExperiment {
         expires = System.nanoTime() + DURATION_NANOS;
         target.rig().setExperimentalDriverYaw(driver);
         player.sendMessage("[CorpTest] Activ pentru șoferul și vehiculul actual, maximum două minute.");
-        player.sendMessage("[CorpTest] Oprește cu /vehicle corptest oprit; corpul poate rămâne controlat de client.");
+        player.sendMessage("[CorpTest] Încerc orientarea corpului pe server; F5 poate rămâne controlat de client.");
+        player.sendMessage("[CorpTest] Nu controlează camera. Oprește cu /vehicle corptest oprit.");
     }
 
     void stop(Player actor) {
@@ -50,6 +51,11 @@ final class BodySeatExperiment {
                 || vehicle.driver().filter(player::equals).isEmpty() || System.nanoTime() - expires >= 0L) {
             clear();
             if (player != null && player.isOnline()) player.sendMessage("[CorpTest] Test încheiat: expirare, coborâre sau schimbare vehicul.");
+            return;
         }
+        // Paper exposes the server-side body yaw; client rendering may ignore or overwrite it.
+        // Do not change the player's head/view yaw or send teleport packets.
+        float yaw = vehicle.location().getYaw();
+        if (Float.isFinite(yaw)) player.setBodyYaw(yaw);
     }
 }
