@@ -30,7 +30,8 @@ public final class PrototypeRecoveryMotion {
     private final Authority authority;
     private final UUID token=UUID.randomUUID();
     private final RecoveryInterlock interlock=new RecoveryInterlock();
-    private boolean closed, halted, testDriving;
+    private boolean closed, halted, testDriving, evacuationPending;
+    private final Set<UUID> pendingEvacuees = new HashSet<>();
 
     private PrototypeRecoveryMotion(VehicleManager manager,LandVehicle carrier,LandVehicle target,Player operator,Authority authority){
         this.manager=manager;this.carrier=carrier;this.target=target;this.operator=operator;this.authority=authority;
@@ -125,16 +126,24 @@ public final class PrototypeRecoveryMotion {
     /** Stop the experimental carrier and evacuate players before garage fallback.
      * No forced ejection when no suitable location exists. Not production-safe. */
     boolean evacuateTestDrive() {
-        if(!Bukkit.isPrimaryThread()||closed||!testDriving||!followTestDrive())return false;
-        carrier.freezeRecoveryTestDrive(token);testDriving=false;
+        if(!Bukkit.isPrimaryThread()||closed||(!testDriving&&!evacuationPending))return false;
+        if(testDriving) {
+            if(!followTestDrive())return false;
+            carrier.freezeRecoveryTestDrive(token);testDriving=false;evacuationPending=true;
+        }
         var technical=new HashSet<UUID>();
         carrier.rig().entities().forEach(e -> technical.add(e.getUniqueId()));
         target.rig().entities().forEach(e -> technical.add(e.getUniqueId()));
-        var riders=new java.util.ArrayList<Player>();
         for(Entity entity:carrier.rig().entities()) for(Entity passenger:entity.getPassengers()) {
             if(technical.contains(passenger.getUniqueId()))continue;
-            if(!(passenger instanceof Player p)||!p.isOnline()||riders.contains(p))return false;
-            riders.add(p);
+            if(!(passenger instanceof Player p)||!p.isOnline())return false;
+            pendingEvacuees.add(p.getUniqueId());
+        }
+        var riders=new java.util.ArrayList<Player>();
+        for(UUID id:pendingEvacuees) {
+            Player player=Bukkit.getPlayer(id);
+            if(player==null||!player.isOnline())return false;
+            riders.add(player);
         }
         var destinations=new java.util.ArrayList<Location>();
         for(Player rider:riders) {
@@ -144,9 +153,13 @@ public final class PrototypeRecoveryMotion {
         }
         for(int i=0;i<riders.size();i++) {
             Player rider=riders.get(i);
-            if(!rider.leaveVehicle() || !rider.teleport(destinations.get(i)))return false;
+            Entity mount=rider.getVehicle();
+            if(mount!=null && (!technical.contains(mount.getUniqueId()) || !rider.leaveVehicle()))return false;
+            if(!rider.teleport(destinations.get(i)))return false;
+            pendingEvacuees.remove(rider.getUniqueId());
         }
-        return !carrier.recoveryHasPassengers();
+        if(carrier.recoveryHasPassengers())return false;
+        evacuationPending=false;return true;
     }
     private Location findTestExit(Location base,Set<UUID> own,java.util.List<Player> riders,java.util.List<Location> chosen) {
         World world=base.getWorld();if(world==null)return null;

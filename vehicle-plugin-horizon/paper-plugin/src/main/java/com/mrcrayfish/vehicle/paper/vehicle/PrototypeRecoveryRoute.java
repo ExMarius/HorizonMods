@@ -16,7 +16,7 @@ import java.util.UUID;
  * Uses a caller-provided safety snapshot and authority, ideal flat terrain, and
  * approximate dimensions/hook point. Experimental transport has no full collision or crash protection. Do not deploy. */
 public final class PrototypeRecoveryRoute {
-    public enum State { LOADING, AT_DECK, TEST_DRIVING, UNLOADING, ON_GROUND, STOPPED, FINISHED, TEST_PARKED }
+    public enum State { LOADING, AT_DECK, TEST_DRIVING, PENDING_EVACUATION, UNLOADING, ON_GROUND, STOPPED, FINISHED, TEST_PARKED }
     private static final int STEPS=180;
     private static final double START=9.8, DECK=2.64, WHEELBASE=3.3;
     private final PrototypeRecoveryMotion motion;
@@ -104,7 +104,10 @@ public final class PrototypeRecoveryRoute {
     public boolean parkBothOnOwnerQuitForTest(UUID ownerId) {
         if(!Bukkit.isPrimaryThread() || ownerId==null || state==State.FINISHED || state==State.TEST_PARKED
                 || !target.owner().map(ownerId::equals).orElse(false))return false;
-        if(state==State.TEST_DRIVING && !motion.evacuateTestDrive()) {state=State.STOPPED;return false;}
+        if(state==State.TEST_DRIVING || state==State.PENDING_EVACUATION) {
+            state=State.PENDING_EVACUATION;
+            if(!motion.evacuateTestDrive())return false;
+        }
         if(!manager.parkRecoveryPairForTest(carrier,target))return false;
         state=State.TEST_PARKED;return true;
     }

@@ -1140,25 +1140,25 @@ public final class VehicleManager {
             asyncSaveQueued = true;
         }
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            for (;;) {
-                YamlConfiguration snapshot;
-                synchronized (asyncSaveLock) {
-                    snapshot = pendingAsyncYaml;
-                }
-                writeYamlAtomically(snapshot);
-                synchronized (asyncSaveLock) {
-                    if (pendingAsyncYaml == snapshot) {
-                        asyncSaveQueued = false;
-                        return;
-                    }
-                }
+            synchronized (asyncSaveLock) {
+                // The shutdown flush uses this same lock. It invalidates a queued
+                // older snapshot before writing, so a worker cannot overwrite it
+                // after stop(). I/O errors still need transactional handling.
+                YamlConfiguration snapshot = pendingAsyncYaml;
+                if (snapshot != null) writeYamlAtomically(snapshot);
+                pendingAsyncYaml = null;
+                asyncSaveQueued = false;
             }
         });
     }
 
     /** Synchronous flush - used ONLY in stop()/onDisable, where async work would be lost. */
     public void saveNow() {
-        writeYamlAtomically(collectYaml());
+        YamlConfiguration snapshot = collectYaml();
+        synchronized (asyncSaveLock) {
+            pendingAsyncYaml = null;
+            writeYamlAtomically(snapshot);
+        }
     }
 
     /** Save a ready snapshot to a same-directory temporary file and atomically move it in place. */

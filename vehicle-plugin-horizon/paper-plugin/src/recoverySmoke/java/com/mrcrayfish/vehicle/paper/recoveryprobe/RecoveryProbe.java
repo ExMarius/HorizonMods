@@ -48,33 +48,58 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
         }
         return true;
     }
+    private boolean denyTestTeleport;
+    @EventHandler public void onTestTeleport(org.bukkit.event.player.PlayerTeleportEvent event) {
+        if(denyTestTeleport && event.getPlayer().getName().equals("RecoveryProbeBot")) {
+            denyTestTeleport=false; event.setCancelled(true);
+        }
+    }
     @EventHandler public void quit(org.bukkit.event.player.PlayerQuitEvent event){
         cleanupDemo(event.getPlayer().getUniqueId());
         if(pairRoute!=null && !Boolean.getBoolean("horizon.recovery.restarttest") && event.getPlayer().getName().equals("RecoveryOwnerBot")) {
+            var ownerId=event.getPlayer().getUniqueId();
             try {
-                var main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
                 var operator=getServer().getPlayerExact("RecoveryProbeBot");
                 if(Boolean.getBoolean("horizon.recovery.drivetest") && (operator==null || operator.getVehicle()==null))
                     throw new IllegalStateException("driver not mounted when owner disconnected");
-                if(!pairRoute.parkBothOnOwnerQuitForTest(event.getPlayer().getUniqueId())
-                        || main.vehicles().hasVehicleId(pairTruck.id()) || main.vehicles().hasVehicleId(pairCar.id()))
-                    throw new IllegalStateException("owner quit did not garage both vehicles");
-                if(Boolean.getBoolean("horizon.recovery.drivetest")) {
-                    var exit=operator.getLocation();
-                    var floor=exit.clone().subtract(0,.1,0).getBlock().getType();
-                    var feet=exit.getBlock().getType();
-                    var head=exit.clone().add(0,1,0).getBlock().getType();
-                    String support=floor.name();
-                    if(operator.getVehicle()!=null || !floor.isSolid() || !feet.isAir() || !head.isAir()
-                            || support.contains("MAGMA") || support.contains("CAMPFIRE")
-                            || support.contains("CACTUS") || support.contains("BERRY") || support.contains("FIRE"))
-                        throw new IllegalStateException("driver not safely dismounted: floor="+floor+", feet="+feet+", head="+head);
+                boolean retry=Boolean.getBoolean("horizon.recovery.retrytest");
+                denyTestTeleport=retry;
+                boolean parked=pairRoute.parkBothOnOwnerQuitForTest(ownerId);
+                if(retry) {
+                    if(parked || pairRoute.state()!=com.mrcrayfish.vehicle.paper.vehicle.PrototypeRecoveryRoute.State.PENDING_EVACUATION)
+                        throw new IllegalStateException("failed evacuation did not remain pending");
+                    getLogger().info("RECOVERY_TEST_EVACUATION_PENDING");
+                    getServer().getScheduler().runTaskLater(this, () -> {
+                        try {
+                            if(!pairRoute.parkBothOnOwnerQuitForTest(ownerId))throw new IllegalStateException("evacuation retry failed");
+                            checkPairParked(operator);getLogger().info("RECOVERY_TEST_EVACUATION_RETRY_OK");
+                        } catch(Throwable error) { getLogger().severe("RECOVERY_PROBE_FAIL pair retry: "+error);error.printStackTrace(); }
+                    },20L);
+                } else {
+                    if(!parked)throw new IllegalStateException("owner quit did not garage both vehicles");
+                    checkPairParked(operator);
                 }
-                if(!getDataFolder().exists() && !getDataFolder().mkdirs())throw new IllegalStateException("probe folder unavailable");
-                java.nio.file.Files.writeString(getDataFolder().toPath().resolve("expected-pair.txt"),pairTruck.id()+"\n"+pairCar.id()+"\n");
-                getLogger().info("RECOVERY_PAIR_QUIT_OK");pairRoute=null;
             } catch(Throwable error){getLogger().severe("RECOVERY_PROBE_FAIL pair quit: "+error);error.printStackTrace();}
         }
+    }
+    private void checkPairParked(org.bukkit.entity.Player operator) throws Exception {
+        var main=(VehiclePlugin)getServer().getPluginManager().getPlugin("MrCrayfishVehiclePlugin");
+        if(main.vehicles().hasVehicleId(pairTruck.id()) || main.vehicles().hasVehicleId(pairCar.id()))
+            throw new IllegalStateException("owner quit did not garage both vehicles");
+        if(Boolean.getBoolean("horizon.recovery.drivetest")) {
+            var exit=operator.getLocation();
+            var floor=exit.clone().subtract(0,.1,0).getBlock().getType();
+            var feet=exit.getBlock().getType();
+            var head=exit.clone().add(0,1,0).getBlock().getType();
+            String support=floor.name();
+            if(operator.getVehicle()!=null || !floor.isSolid() || !feet.isAir() || !head.isAir()
+                    || support.contains("MAGMA") || support.contains("CAMPFIRE")
+                    || support.contains("CACTUS") || support.contains("BERRY") || support.contains("FIRE"))
+                throw new IllegalStateException("driver not safely dismounted: floor="+floor+", feet="+feet+", head="+head);
+        }
+        if(!getDataFolder().exists() && !getDataFolder().mkdirs())throw new IllegalStateException("probe folder unavailable");
+        java.nio.file.Files.writeString(getDataFolder().toPath().resolve("expected-pair.txt"),pairTruck.id()+"\n"+pairCar.id()+"\n");
+        getLogger().info("RECOVERY_PAIR_QUIT_OK");pairRoute=null;
     }
     @Override public void onDisable(){for(var id:java.util.List.copyOf(demoVehicles.keySet()))cleanupDemo(id);}
     private void cleanupDemo(java.util.UUID id){
