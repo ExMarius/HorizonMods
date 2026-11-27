@@ -1,0 +1,36 @@
+name: Test real recovery command crash
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths:
+      - '.github/workflows/recovery-live-crash-check.yml'
+      - 'vehicle-plugin-horizon/tools/smoke_recovery_live_crash.py'
+      - 'vehicle-plugin-horizon/paper-plugin/src/recoveryCommandProbe/**'
+permissions:
+  contents: read
+jobs:
+  crash:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build production plugin and disposable probe
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build recoveryCommandProbeJar
+      - name: Install test client
+        run: npm install --prefix /tmp/recovery-test mineflayer@4.39.0
+      - name: SIGKILL Paper while command is loading
+        env:
+          NODE_PATH: /tmp/recovery-test/node_modules
+        run: |
+          set -o pipefail
+          python3 vehicle-plugin-horizon/tools/smoke_recovery_live_crash.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-command-probe/RecoveryProbe.jar 2>&1 | tee /tmp/recovery-live-crash.log || {
+            python3 -c "from pathlib import Path; print('::error::'+' | '.join(Path('/tmp/recovery-live-crash.log').read_text().splitlines()[-30:]).replace('%','%25')[:12000])"
+            exit 1
+          }

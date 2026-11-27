@@ -46,7 +46,20 @@ public final class RecoveryCommandProbe extends JavaPlugin implements Listener {
             target.setOwner(owner.getUniqueId());target.trust(driver.getUniqueId());
             driver.teleport(base.clone().add(10*Math.cos(yaw),0,10*Math.sin(yaw)));
             if(!driver.performCommand("vehicle tractare incarca"))throw new IllegalStateException("loading command failed");
-            getServer().getScheduler().runTaskLater(this,()->loaded(driver),200L);
+            if(Boolean.getBoolean("horizon.recovery.commandcrash")) {
+                getServer().getScheduler().runTaskLater(this,()->crashReady(base),60L);
+            } else getServer().getScheduler().runTaskLater(this,()->loaded(driver),200L);
+        } catch(Throwable error){fail(error);}
+    }
+    private void crashReady(org.bukkit.Location base) {
+        try {
+            double yaw=Math.toRadians(base.getYaw());
+            var initial=base.clone().add(9.8*Math.sin(yaw),0,-9.8*Math.cos(yaw));
+            if(!carrier.recoveryLocked() || !target.recoveryLocked() || target.location().distanceSquared(initial)<.1)
+                throw new IllegalStateException("live command did not reach mid-loading");
+            Files.createDirectories(getDataFolder().toPath());
+            Files.writeString(marker(),carrier.id()+"\n"+target.id()+"\n");
+            getLogger().info("RECOVERY_LIVE_COMMAND_CRASH_READY");
         } catch(Throwable error){fail(error);}
     }
     private void loaded(Player driver) {
