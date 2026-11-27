@@ -136,3 +136,22 @@ for(const z of [1.73,2.43]){
  add(underbed,'chassis',-1.00,.71,z,.38,.09,.09);
  add(underbed,'steel',-1.24,.695,z,.06,.11,.09);
 }
+
+// Shorten only ahead of the fixed seat reference; width and seat geometry stay unchanged.
+const seatZ=-.80, frontCompression=.80;
+export function compactCabZ(z){return z < seatZ ? seatZ+(z-seatZ)*frontCompression : z;}
+export function compactCabPiece(part, group){
+ const [kind,x,y,z,w,h,d]=part;
+ // Keep both seats, their bases, bolsters and headrests exactly where they were.
+ if(group==='interior' && z>=-1.10) return [...part];
+ const near=compactCabZ(z+d/2), far=compactCabZ(z-d/2);
+ const result=[...part];result[3]=(near+far)/2;result[6]=near-far;
+ // Full-size tyres still need their original clear opening after shortening.
+ const axle=compactCabZ(-1.66);
+ if(group==='body' && Math.abs(x)===1.31 && kind==='white'){
+  if(y===1.12 && z===-1.66){result[3]=axle;result[6]=1.18;}
+  if(y===.83 && z===-2.28){result[3]=axle-.62;result[6]=.10;}
+  if(y===.83 && z===-1.04){result[3]=axle+.62;result[6]=.10;}
+ }
+ return result;
+}
