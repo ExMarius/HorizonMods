@@ -4,6 +4,12 @@ from pathlib import Path
 spec=importlib.util.spec_from_file_location('f',Path(__file__).with_name('falix_auto_update.py'))
 f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f);api=f.Falix(f.login())
 f.notice('Server status',str(api.status()))
+props={e['key']:str(e.get('value','')) for e in api.api('/properties') if isinstance(e,dict) and 'key' in e}
+f.notice('Resource pack status',repr({k:props.get(k) for k in ('resource-pack','resource-pack-sha1','resource-pack-id','require-resource-pack')}))
+config=api.download('/plugins/MrCrayfishVehiclePlugin/config.yml').decode('utf-8','replace')
+m=re.search(r'(?ms)^resource-pack:[^\n]*\n((?:[ \t]+[^\n]*\n|\s*\n|\s*\#.*\n)*)',config)
+f.notice('Plugin pack configuration',m.group(0).replace('%','%25') if m else 'not found')
+
 for directory in ('/logs',):
     try:
         entries=[] if directory=='/logs' else api.api('/files?directory='+directory.replace('/','%2F')+'&limit=100')
