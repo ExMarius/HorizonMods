@@ -145,7 +145,12 @@ jobs:
           gh release download horizon-offroader-46015454177 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/recovery-old
           python3 vehicle-plugin-horizon/next-vehicle/atelier-flota/minecraft/build_pack.py /tmp/recovery-base/HorizonOffRoader-1.21.4.zip /tmp/recovery-new/HorizonOffRoader-1.21.4.zip --expected-sha1 136f003f9c56ee849881d41fb6697876353b5681
       - name: Back up current JAR, pack and configuration
-        run: python3 paper-vehicles/deploy/falix_recovery_cab_install.py backup /tmp/recovery-old/HorizonOffRoader-1.21.4.zip
+        run: |
+          set -o pipefail
+          python3 paper-vehicles/deploy/falix_recovery_cab_install.py backup /tmp/recovery-old/HorizonOffRoader-1.21.4.zip 2>&1 | tee /tmp/cab-backup.log || {
+            python3 -c "from pathlib import Path; s=Path('/tmp/cab-backup.log').read_text().splitlines(); print('::error::'+' | '.join(x for x in s[-12:] if not x.startswith('::add-mask::')).replace('%','%25')[:5000])"
+            exit 1
+          }
       - name: Publish approved resource pack
         env:
           GH_TOKEN: ${{ github.token }}
