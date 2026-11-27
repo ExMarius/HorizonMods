@@ -60,7 +60,7 @@ final class BoatSeatProbe {
                 display.setTeleportDuration(3);
                 display.addScoreboardTag("mcv_boat_probe");
             });
-            Entity spawned = world.spawnEntity(location, EntityType.OAK_BOAT);
+            Entity spawned = world.spawnEntity(location, EntityType.BAMBOO_RAFT);
             if (!(spawned instanceof Boat found)) { spawned.remove(); throw new IllegalStateException("Boat type unavailable"); }
             boat = found;
             boat.setPersistent(false); boat.setInvulnerable(true); boat.setSilent(true); boat.setGravity(false);
@@ -68,7 +68,7 @@ final class BoatSeatProbe {
             rider = player.getUniqueId(); ticks = 0; ending = false;
             if (!root.addPassenger(boat) || !boat.addPassenger(player)) throw new IllegalStateException("Passenger hierarchy refused");
             task = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 1L, 1L);
-            player.sendMessage("[BarcaTest] Prototip separat: barca este vizibilă. W/S mișcă lent; A/D virează numai în mers.");
+            player.sendMessage("[BarcaTest] Prototip separat: pluta de bambus este vizibilă. W/S mișcă lent; A/D virează numai în mers.");
             player.sendMessage("[BarcaTest] Nu este o mașină normală. Shift sau /vehicle testbarca oprit încheie testul; maxim 2 minute.");
         } catch (RuntimeException error) {
             plugin.getLogger().log(Level.WARNING, "[BarcaTest] Could not start", error);
@@ -80,7 +80,7 @@ final class BoatSeatProbe {
     void stop(Player actor) {
         if (!active()) { actor.sendMessage("[BarcaTest] Nu există un test activ."); return; }
         ending = true;
-        actor.sendMessage("[BarcaTest] Oprire; dacă ești în barcă, coboară cu Shift.");
+        actor.sendMessage("[BarcaTest] Oprire; dacă ești pe plută, coboară cu Shift.");
         end();
     }
 

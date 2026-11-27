@@ -1200,6 +1200,7 @@ public final class VehicleManager {
     public void cameraTest(Player player, boolean enable) {
         if (!player.isOp()) { player.sendMessage("[CameraTest] Doar administratorii pot folosi experimentul."); return; }
         if (!enable) { cameraYawExperiment.stop(player); return; }
+        if (boatSeatProbe.active()) { player.sendMessage("Oprește mai întâi /vehicle testbarca oprit."); return; }
         if (bodySeatExperiment.active()) { player.sendMessage("Oprește mai întâi /vehicle corptest oprit."); return; }
         LandVehicle driven = vehicles.values().stream()
                 .filter(v -> v.driver().filter(player::equals).isPresent()).findFirst().orElse(null);
@@ -1220,6 +1221,7 @@ public final class VehicleManager {
     public void bodySeatTest(Player player, boolean enable) {
         if (!player.isOp()) { player.sendMessage("[CorpTest] Doar administratorii pot folosi experimentul."); return; }
         if (!enable) { bodySeatExperiment.stop(player); return; }
+        if (boatSeatProbe.active()) { player.sendMessage("Oprește mai întâi /vehicle testbarca oprit."); return; }
         if (cameraYawExperiment.active()) { player.sendMessage("Oprește mai întâi /vehicle cameratest oprit."); return; }
         LandVehicle driven = vehicles.values().stream()
                 .filter(v -> v.driver().filter(player::equals).isPresent()).findFirst().orElse(null);
