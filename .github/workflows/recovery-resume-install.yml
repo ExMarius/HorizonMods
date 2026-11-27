@@ -70,3 +70,5 @@ jobs:
           else:raise ValueError('Server or plugin startup not confirmed; inspect panel')
           f.notice('Restart verified','Server running and plugin enabled; in-game visuals still need testing')
           PY
+
+# Requested offline installation resume.
