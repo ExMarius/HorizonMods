@@ -1,0 +1,57 @@
+name: Install corrected recovery JAR
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['.github/workflows/recovery-jar-update.yml']
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+concurrency:
+  group: falix-vehicle-deploy
+  cancel-in-progress: false
+jobs:
+  install:
+    if: startsWith(github.event.head_commit.message, 'Deploy corrected recovery JAR')
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve exact validated JAR and existing pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for run in 46010998202 46010998313 46010998112; do
+            gh run view "$run" --json headSha,conclusion --jq 'select(.headSha|startswith("6f20839"))|select(.conclusion=="success")|.headSha' | grep -q .
+          done
+          mkdir -p /tmp/recovery-new /tmp/recovery-old
+          gh run download 46010998202 -n MrCrayfishVehiclePlugin-recovery -D /tmp/recovery-new
+          gh release download horizon-offroader-46003712699 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/recovery-old
+          echo 'cb74ea532786b8a81a0e096aef4a80541eb3e700  /tmp/recovery-old/HorizonOffRoader-1.21.4.zip' | sha1sum -c -
+          sha256sum /tmp/recovery-new/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
+      - name: Backup and install JAR only while server is offline
+        run: |
+          set -o pipefail
+          python3 paper-vehicles/deploy/falix_recovery_jar_update.py /tmp/recovery-new/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/recovery-old/HorizonOffRoader-1.21.4.zip 2>&1 | tee /tmp/recovery-update.log || {
+            python3 -c "from pathlib import Path; print('::error::'+' | '.join(Path('/tmp/recovery-update.log').read_text().splitlines()[-8:]).replace('%','%25')[:4000])"
+            exit 1
+          }
+      - name: Start server and confirm startup
+        run: |
+          python3 - <<'PY'
+          import importlib.util,time
+          spec=importlib.util.spec_from_file_location('f','paper-vehicles/deploy/falix_auto_update.py')
+          f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
+          a=f.Falix(f.login())
+          if a.status()!='offline':raise ValueError('Server not offline; start request not sent')
+          a.api('/power',{'signal':'start'},'POST')
+          for _ in range(60):
+              time.sleep(5)
+              if a.status()=='running':
+                  text=a.download('/logs/latest.log').decode('utf-8','replace')
+                  if 'Error occurred while enabling MrCrayfishVehiclePlugin' in text:raise ValueError('Plugin failed to enable')
+                  if 'Enabling MrCrayfishVehiclePlugin' in text and 'Done (' in text:break
+          else:raise ValueError('Server startup not confirmed; inspect panel')
+          f.notice('Server started','Plugin startup confirmed; visual checks remain')
+          PY
