@@ -16,7 +16,9 @@ Referințe:
 - https://github.com/PaperMC/Paper/blob/ver/1.21.4/paper-api/src/main/java/io/papermc/paper/entity/TeleportFlag.java
 - https://github.com/PaperMC/Paper/blob/ver/1.21.4/paper-server/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 
-Pachetele vanilla/NMS nu se reduc la un singur flag API: trebuie analizate confirmările de teleport și starea serverului și clientului; trimiterea manuală nesincronizată poate produce desincronizare, demontare sau alte efecte. Pachetul de rotație a capului nu dovedește controlul trunchiului local. Fără teste în client nu se pot afirma libertate 360°, fluiditate perfectă sau compatibilitate cu armele.
+Pachetul relativ poate exprima intenția de a adăuga unghiul mașinii la privire, dar nu dovedește că mouse-ul rămâne complet liber și nici că mișcarea este lină. În Paper 1.21.4, `ServerGamePacketListenerImpl.internalTeleport` actualizează și starea jucătorului pe server, `awaitingTeleport`, poziția așteptată și abia apoi trimite pachetul. Tratarea confirmării include o deconectare pentru stare inconsistentă. Prin urmare, **nu trimite doar `ClientboundPlayerPositionPacket` cu un ID inventat**, chiar dacă folosești PacketEvents/ProtocolLib: transportul pachetului nu sincronizează automat starea serverului. Vezi https://github.com/PaperMC/Paper/blob/ver/1.21.4/paper-server/patches/sources/net/minecraft/server/network/ServerGamePacketListenerImpl.java.patch .
+
+Nu există în build-ul curent al pluginului o dependență ProtocolLib sau PacketEvents; folosirea directă NMS ar depinde de versiune și necesită tratarea confirmărilor, a întreruperii, a altor teleportări, a călăririi, a diferenței de timp/ping și a posibilei rotații deja aplicate de montură. Invocarea `internalTeleport` nu demonstrează că acele cazuri sunt rezolvate. Pachetul de rotație a capului nu dovedește controlul trunchiului local. Fără verificări în client nu se pot afirma libertate 360°, fluiditate perfectă sau compatibilitate cu armele.
 
 ## Plan pentru prototip
 
@@ -26,3 +28,11 @@ Pachetele vanilla/NMS nu se reduc la un singur flag API: trebuie analizate confi
 4. Verificăm separat compatibilitatea cu pluginul real de arme înainte să afirmăm că trasul din vehicul funcționează.
 
 Checkpoint-ul proiectului și al pluginului creat înaintea experimentului este descris în `exports/checkpoints/README-revenire.md`.
+
+## Prototip opt-in (Paper 1.21.4)
+
+`/vehicle cameratest pornit` este disponibil doar OP, în timp ce conduce un vehicul care nu este blocat în tractare. Există maximum o sesiune, pentru acel șofer și acel vehicul, cu durată de două minute. `/vehicle cameratest oprit` o oprește; de asemenea se oprește la coborâre, deconectare, schimbarea vehiculului, tractare, eroare, schimbare bruscă a unghiului sau întârzierea confirmării. Implicit nu este activ pentru nimeni.
+
+Cercetarea folosește prin reflecție metoda NMS `internalTeleport` a conexiunii, nu un pachet cu ID inventat. Sunt folosite coordonate și yaw/pitch relative zero în afară de delta-yaw, cu flag-uri de păstrare a vitezei; se așteaptă terminarea unui teleport anterior, se limitează frecvența la cel mult 10 pe secundă și se întrerupe dacă se acumulează o corecție excesivă. Metoda este internă, dependentă de versiune și nu reprezintă un API stabil sau o garanție de funcționare; se oprește dacă clasele ori câmpurile nu există. Folosește metoda internă fără eveniment Bukkit de teleport, deci alte pluginuri/anti-cheat pot reacționa diferit. Montura calului poate adăuga propria rotație și poate apărea supracorecție. Nu există dovezi că trunchiul local sau camera se vor comporta precum la barcă; numai utilizatorul poate evalua vizual. Un teleport deja trimis poate primi confirmarea chiar după oprirea experimentului.
+
+La verificarea în joc: într-o zonă liberă, pe serverul de test, compară mersul fără comandă cu cel după activare, în F5 și prima persoană; rotește mouse-ul stânga/dreapta atât în linie dreaptă, cât și în viraje, verifică coborârea, kick-uri, desincronizări și poziția pentru un observator. Oprește imediat la probleme. Nu extinde la pasageri sau la celelalte vehicule fără validare.

@@ -56,6 +56,7 @@ public final class VehicleManager {
     private final File storageFile;
     private final TrailerManager trailers;
     private final RecoveryTowCommands recoveryTowCommands;
+    private final CameraYawExperiment cameraYawExperiment;
     private final com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal recoveryJournal;
     private BukkitTask tickTask;
     private BukkitTask saveTask;
@@ -105,6 +106,7 @@ public final class VehicleManager {
         this.storageFile = new File(plugin.getDataFolder(), "vehicles.yml");
         this.trailers = new TrailerManager(plugin, this);
         this.recoveryTowCommands = new RecoveryTowCommands(plugin, this);
+        this.cameraYawExperiment = new CameraYawExperiment(plugin);
         try {
             var journal = new com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal(
                     plugin.getDataFolder().toPath().resolve("recovery-live.journal"));
@@ -174,6 +176,7 @@ public final class VehicleManager {
     }
 
     public void stop() {
+        cameraYawExperiment.clear();
         if (tickTask != null) {
             tickTask.cancel();
         }
@@ -1187,6 +1190,15 @@ public final class VehicleManager {
 
     public RecoveryTowCommands recoveryTowCommands() { return recoveryTowCommands; }
 
+    /** OP-only experiment for the single vehicle the player currently drives. */
+    public void cameraTest(Player player, boolean enable) {
+        if (!player.isOp()) { player.sendMessage("[CameraTest] Doar administratorii pot folosi experimentul."); return; }
+        if (!enable) { cameraYawExperiment.stop(player); return; }
+        LandVehicle driven = vehicles.values().stream()
+                .filter(v -> v.driver().filter(player::equals).isPresent()).findFirst().orElse(null);
+        cameraYawExperiment.start(player, driven);
+    }
+
     public Optional<LandVehicle> nearest(Location origin, double maximumDistance) {
         return nearest(origin, maximumDistance, true);
     }
@@ -1792,6 +1804,7 @@ public final class VehicleManager {
                 hibernate(vehicle);
             }
         }
+        cameraYawExperiment.tick(this);
         recoveryTowCommands.updateApproachRamps();
         trailers.tick();
         handleBumperCarCollisions();
