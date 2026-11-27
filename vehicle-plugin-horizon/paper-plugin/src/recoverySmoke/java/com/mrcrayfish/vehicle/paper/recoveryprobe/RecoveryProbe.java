@@ -59,9 +59,17 @@ public final class RecoveryProbe extends JavaPlugin implements Listener {
                 if(!pairRoute.parkBothOnOwnerQuitForTest(event.getPlayer().getUniqueId())
                         || main.vehicles().hasVehicleId(pairTruck.id()) || main.vehicles().hasVehicleId(pairCar.id()))
                     throw new IllegalStateException("owner quit did not garage both vehicles");
-                if(Boolean.getBoolean("horizon.recovery.drivetest") && (operator.getVehicle()!=null
-                        || !operator.getLocation().clone().subtract(0,.1,0).getBlock().getType().isSolid()))
-                    throw new IllegalStateException("driver not safely dismounted");
+                if(Boolean.getBoolean("horizon.recovery.drivetest")) {
+                    var exit=operator.getLocation();
+                    var floor=exit.clone().subtract(0,.1,0).getBlock().getType();
+                    var feet=exit.getBlock().getType();
+                    var head=exit.clone().add(0,1,0).getBlock().getType();
+                    String support=floor.name();
+                    if(operator.getVehicle()!=null || !floor.isSolid() || !feet.isAir() || !head.isAir()
+                            || support.contains("MAGMA") || support.contains("CAMPFIRE")
+                            || support.contains("CACTUS") || support.contains("BERRY") || support.contains("FIRE"))
+                        throw new IllegalStateException("driver not safely dismounted: floor="+floor+", feet="+feet+", head="+head);
+                }
                 if(!getDataFolder().exists() && !getDataFolder().mkdirs())throw new IllegalStateException("probe folder unavailable");
                 java.nio.file.Files.writeString(getDataFolder().toPath().resolve("expected-pair.txt"),pairTruck.id()+"\n"+pairCar.id()+"\n");
                 getLogger().info("RECOVERY_PAIR_QUIT_OK");pairRoute=null;
