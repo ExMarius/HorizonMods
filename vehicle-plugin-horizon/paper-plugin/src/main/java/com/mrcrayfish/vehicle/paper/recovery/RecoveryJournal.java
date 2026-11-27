@@ -70,20 +70,9 @@ public final class RecoveryJournal {
         } catch(EOFException e){throw new IOException("Truncated recovery journal",e);}
     }
     public void write(List<Entry> entries) throws IOException {
-        if(entries==null||entries.size()>MAX_ENTRIES)throw new IOException("Invalid recovery entries");
         // Do not destroy an unreadable or corrupted lock journal.
         read();
-        Set<UUID> used=new HashSet<>();
-        for(Entry e:entries){
-            if(e==null||!used.add(e.carrier())||!used.add(e.target()))throw new IOException("Duplicate recovery vehicle");
-        }
-        ByteArrayOutputStream data=new ByteArrayOutputStream();
-        try(DataOutputStream out=new DataOutputStream(data)){
-            out.writeInt(MAGIC);out.writeInt(VERSION);out.writeInt(entries.size());
-            for(Entry e:entries){uuid(out,e.carrier());uuid(out,e.target());uuid(out,e.operator());out.writeByte(e.mode().ordinal());out.writeByte(e.phase().ordinal());}
-        }
-        byte[] payload=data.toByteArray();CRC32 crc=new CRC32();crc.update(payload);
-        ByteBuffer buffer=ByteBuffer.allocate(payload.length+4).put(payload).putInt((int)crc.getValue());buffer.flip();
+        ByteBuffer buffer=ByteBuffer.wrap(encode(entries));
         Path parent=file.getParent();if(parent==null)throw new IOException("Missing journal directory");
         Files.createDirectories(parent);
         Path tmp=Files.createTempFile(parent,".recovery-", ".tmp");
@@ -98,6 +87,21 @@ public final class RecoveryJournal {
             // Persist the directory entry as well as the file on supported platforms.
             try(FileChannel directory=FileChannel.open(parent,StandardOpenOption.READ)){directory.force(true);}
         } finally {Files.deleteIfExists(tmp);}
+    }
+    /** Make an immutable byte snapshot before submitting it to the ordered writer. */
+    public static byte[] encode(List<Entry> entries) throws IOException {
+        if(entries==null||entries.size()>MAX_ENTRIES)throw new IOException("Invalid recovery entries");
+        Set<UUID> used=new HashSet<>();
+        for(Entry e:entries){
+            if(e==null||!used.add(e.carrier())||!used.add(e.target()))throw new IOException("Duplicate recovery vehicle");
+        }
+        ByteArrayOutputStream data=new ByteArrayOutputStream();
+        try(DataOutputStream out=new DataOutputStream(data)){
+            out.writeInt(MAGIC);out.writeInt(VERSION);out.writeInt(entries.size());
+            for(Entry e:entries){uuid(out,e.carrier());uuid(out,e.target());uuid(out,e.operator());out.writeByte(e.mode().ordinal());out.writeByte(e.phase().ordinal());}
+        }
+        byte[] payload=data.toByteArray();CRC32 crc=new CRC32();crc.update(payload);
+        return ByteBuffer.allocate(payload.length+4).put(payload).putInt((int)crc.getValue()).array();
     }
     private static UUID uuid(DataInputStream in)throws IOException{return new UUID(in.readLong(),in.readLong());}
     private static void uuid(DataOutputStream out,UUID id)throws IOException{out.writeLong(id.getMostSignificantBits());out.writeLong(id.getLeastSignificantBits());}

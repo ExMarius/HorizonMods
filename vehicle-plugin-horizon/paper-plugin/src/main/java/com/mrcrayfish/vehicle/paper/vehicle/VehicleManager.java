@@ -40,6 +40,7 @@ public final class VehicleManager {
     private final Map<UUID, VehicleChunk> chunkTickets = new HashMap<>();
     private final File storageFile;
     private final TrailerManager trailers;
+    private final com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal recoveryJournal;
     private BukkitTask tickTask;
     private BukkitTask saveTask;
     private BukkitTask sweepTask;
@@ -70,6 +71,17 @@ public final class VehicleManager {
         this.plugin = plugin;
         this.storageFile = new File(plugin.getDataFolder(), "vehicles.yml");
         this.trailers = new TrailerManager(plugin, this);
+        try {
+            var journal = new com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal(
+                    plugin.getDataFolder().toPath().resolve("recovery-live.journal"));
+            if (!journal.readAtStartup().isEmpty()) {
+                journal.close();
+                throw new IOException("Pending recovery transaction requires reconciliation before vehicles load");
+            }
+            this.recoveryJournal = journal;
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot safely load recovery journal", e);
+        }
     }
 
     public void start() {
@@ -143,6 +155,8 @@ public final class VehicleManager {
         vehicles.clear();
         entities.clear();
         chunkTickets.clear();
+        try { recoveryJournal.close(); }
+        catch (IOException e) { plugin.getLogger().log(Level.SEVERE, "Recovery journal did not stop safely", e); }
     }
 
     public LandVehicle spawn(LandVehicleSpec spec, Location location) {
