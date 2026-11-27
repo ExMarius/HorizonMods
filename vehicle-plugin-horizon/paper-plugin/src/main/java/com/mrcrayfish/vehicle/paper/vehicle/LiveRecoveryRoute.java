@@ -107,6 +107,10 @@ public final class LiveRecoveryRoute {
         if (!Bukkit.isPrimaryThread() || state != State.AT_DECK || !motion.allowRevokedUnload()) return false;
         return beginUnload();
     }
+    boolean beginAutonomousUnload() {
+        if (!Bukkit.isPrimaryThread() || state != State.AT_DECK || !motion.allowAutonomousUnload()) return false;
+        return beginUnload();
+    }
     /** One tick on the main thread. Any failed check halts and cannot auto-resume. */
     public State tick(RecoveryInterlock.Safety safety) {
         if(!Bukkit.isPrimaryThread() || (state!=State.LOADING && state!=State.UNLOADING)) return state;
@@ -154,7 +158,6 @@ public final class LiveRecoveryRoute {
     public boolean finishOnGround() {
         if(!Bukkit.isPrimaryThread()||(state!=State.ON_GROUND && state!=State.STOPPED)||!motion.releaseOnGround())return false;
         carrier.rig().setRecoveryCable(List.of());carrier.forceVisualSync();state=State.FINISHED;
-        manager.returnOfflineRecoveredVehicle(target);
         return true;
     }
     private static double ease(double t){return t*t*(3D-2D*t);}

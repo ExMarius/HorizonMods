@@ -30,7 +30,7 @@ public final class LiveRecoveryMotion {
     private final Authority authority;
     private final UUID token=UUID.randomUUID();
     private final RecoveryInterlock interlock=new RecoveryInterlock();
-    private boolean closed, halted, testDriving, evacuationPending, revokedUnload;
+    private boolean closed, halted, testDriving, evacuationPending, revokedUnload, autonomousUnload;
     private final float cargoYawOffset;
     private final Set<UUID> pendingEvacuees = new HashSet<>();
 
@@ -76,9 +76,9 @@ public final class LiveRecoveryMotion {
     private boolean checkedStep(Vector delta,RecoveryInterlock.Safety safety,double pitchRadians){
         if(!Double.isFinite(pitchRadians)||Math.abs(pitchRadians)>Math.PI/4
                 ||!Bukkit.isPrimaryThread()||closed||delta==null||!Double.isFinite(delta.getX())||!Double.isFinite(delta.getY())||!Double.isFinite(delta.getZ())
-                ||delta.lengthSquared()<1e-12 ||delta.lengthSquared()>.08D*.08D || !operator.isOnline()
-                || !RecoveryTowCommands.canOperateCarrier(carrier,operator)
-                || (!revokedUnload && !target.canDrive(operator) && !operator.isOp())
+                ||delta.lengthSquared()<1e-12 ||delta.lengthSquared()>.08D*.08D
+                || (!autonomousUnload && (!operator.isOnline() || !RecoveryTowCommands.canOperateCarrier(carrier,operator)
+                    || (!revokedUnload && !target.canDrive(operator) && !operator.isOp())))
                 ||!carrier.rig().valid() || !target.rig().valid()
                 ||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token)
                 ||manager.byId(carrier.id()).orElse(null)!=carrier||manager.byId(target.id()).orElse(null)!=target
@@ -118,6 +118,11 @@ public final class LiveRecoveryMotion {
         revokedUnload = true;
         return true;
     }
+    boolean allowAutonomousUnload() {
+        if (!allowRevokedUnload()) return false;
+        autonomousUnload = true;
+        return true;
+    }
     /** Test-only carrier movement, not collision-safe or crash-safe for production. */
     boolean startTestDrive() {
         if(!Bukkit.isPrimaryThread()||closed||halted||testDriving || !carrier.recoveryMotionLockedBy(token)
@@ -127,7 +132,7 @@ public final class LiveRecoveryMotion {
     }
     /** Check the entire cargo movement before the carrier commits its movement. */
     boolean canFollowPose(Location carrierPose) {
-        if(!Bukkit.isPrimaryThread()||closed||halted||!testDriving || !operator.isOnline()
+        if(!Bukkit.isPrimaryThread()||closed||halted||!testDriving
                 ||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token)
                 ||!carrier.rig().valid()||!target.rig().valid()||target.recoveryHasPassengers()
                 ||manager.byId(carrier.id()).orElse(null)!=carrier || manager.byId(target.id()).orElse(null)!=target
@@ -191,7 +196,7 @@ public final class LiveRecoveryMotion {
             carrier.freezeRecoveryTestDrive(token);
     }
     boolean resume() {
-        if (closed || !operator.isOnline() || !carrier.recoveryMotionLockedBy(token) || !target.recoveryMotionLockedBy(token)) return false;
+        if (closed || (!autonomousUnload && !operator.isOnline()) || !carrier.recoveryMotionLockedBy(token) || !target.recoveryMotionLockedBy(token)) return false;
         halted=false;
         if (testDriving && carrier.transported()) carrier.startRecoveryTestDrive(token);
         return true;

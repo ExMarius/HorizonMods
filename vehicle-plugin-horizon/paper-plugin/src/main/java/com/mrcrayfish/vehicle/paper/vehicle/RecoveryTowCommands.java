@@ -128,7 +128,7 @@ public final class RecoveryTowCommands {
             player.sendMessage("Nu ai drepturi asupra celui mai apropiat vehicul.");return;
         }
         carrier.rig().setRecoveryRampProgress(1);carrier.forceVisualSync();
-        var route=LiveRecoveryRoute.begin(manager,carrier,target,player,(actor,world,box)->actor.isOnline(),SAFETY);
+        var route=LiveRecoveryRoute.begin(manager,carrier,target,player,(actor,world,box)->true,SAFETY);
         if(route==null) {player.sendMessage("Oprește mașina în spatele rampelor, aproape de centru, și coboară din ea. Verifică să nu fie cuplată la o remorcă.");return;}
         try {
             if(!manager.reserveGarageTransit(carrier,target,player,route.lockToken())) {
@@ -171,7 +171,7 @@ public final class RecoveryTowCommands {
 
     private final class Operation {
         final LandVehicle carrier,target;final LiveRecoveryRoute route;final Player operator;BukkitTask task;
-        int retryTicks;boolean waiting, revokedReturnPending;
+        int retryTicks, offlineIdleTicks;boolean waiting, revokedReturnPending, autoReturn, revokedReturn;
         Operation(LandVehicle carrier,LandVehicle target,LiveRecoveryRoute route,Player operator) {
             this.carrier=carrier;this.target=target;this.route=route;this.operator=operator;
         }
@@ -186,9 +186,24 @@ public final class RecoveryTowCommands {
                     // left the stopped truck, then use the normal checked winch.
                     if (!route.endTestDrive()) return;
                     if (!route.beginRevokedUnload()) { stop(); return; }
-                    revokedReturnPending=false;
+                    revokedReturnPending=false; revokedReturn=true;
                     operator.sendMessage("Trust retras: încep descărcarea când traseul este liber.");
                     state=route.state();
+                }
+                if (state==LiveRecoveryRoute.State.TEST_DRIVING && !revokedReturnPending) {
+                    UUID owner=target.owner().orElse(null);
+                    Player ownerOnline=owner==null ? null : Bukkit.getPlayer(owner);
+                    if (owner==null || (ownerOnline!=null && ownerOnline.isOnline()) || carrier.driver().isPresent()) {
+                        offlineIdleTicks=0;
+                    } else if (offlineIdleTicks < 5*60*20) {
+                        offlineIdleTicks++;
+                    }
+                    if (offlineIdleTicks >= 5*60*20 && !carrier.occupied() && carrier.horizontalSpeed()<=.01D) {
+                        if (!route.endTestDrive()) return;
+                        if (!route.beginAutonomousUnload()) { stop(); return; }
+                        autoReturn=true;
+                        state=route.state();
+                    }
                 }
                 if(state==LiveRecoveryRoute.State.STOPPED && route.canAutoResume()) {
                     if(++retryTicks<20)return;
@@ -204,13 +219,13 @@ public final class RecoveryTowCommands {
                     } else if(state==LiveRecoveryRoute.State.ON_GROUND) {
                         if(!route.canReleaseOnGround() || !manager.commitRecoveryUnload(carrier,target,route.lockToken())) {stop();return;}
                         if(!route.finishOnGround())throw new IllegalStateException("Recovery release failed after commit");
-                        operator.sendMessage("Mașina a fost descărcată.");finishTask();
+                        afterUnload();
                     } else if(state==LiveRecoveryRoute.State.STOPPED) stop();
                     else if(waiting) {waiting=false;operator.sendMessage("Tractarea a fost reluată.");}
                 } else if(state==LiveRecoveryRoute.State.ON_GROUND) {
                     if(!route.canReleaseOnGround() || !manager.commitRecoveryUnload(carrier,target,route.lockToken())) {stop();return;}
                     if(!route.finishOnGround())throw new IllegalStateException("Recovery release failed after commit");
-                    operator.sendMessage("Mașina a fost descărcată.");finishTask();
+                    afterUnload();
                 } else if(state==LiveRecoveryRoute.State.AT_DECK) {
                     if(!route.beginTestDrive()) {stop();return;}
                     operator.sendMessage("Mașina este fixată; poți conduce platforma.");
@@ -218,6 +233,14 @@ public final class RecoveryTowCommands {
             } catch(Exception error) {
                 plugin.getLogger().warning("[Recovery] Manevra oprită: "+error.getMessage());stop();
             }
+        }
+        void afterUnload() {
+            if (autoReturn || revokedReturn) {
+                if (!manager.returnOfflineRecoveredVehicle(target)) manager.startOfflineOwnerTimer(target);
+            } else {
+                manager.startOfflineOwnerTimer(target);
+            }
+            operator.sendMessage("Mașina a fost descărcată.");finishTask();
         }
         void stop() {
             route.pause();
