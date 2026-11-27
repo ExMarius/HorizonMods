@@ -748,6 +748,10 @@ public final class LandVehicleRig {
     }
 
     private double seatCarrierScale() {
+        // Paper's horse dismount search can hang with tiny seat hitboxes near blocks.
+        // Use a normal-size invisible carrier for the recovery truck; pigAnchor()
+        // compensates the seat height so the rider stays in the authored cabin.
+        if ("horizon_recovery_prototype".equals(spec.id())) return 1.0D;
         return "utb_650".equals(spec.id()) ? UTB_SEAT_CARRIER_SCALE : SEAT_CARRIER_SCALE;
     }
 

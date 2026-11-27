@@ -125,9 +125,13 @@ public final class LiveRecoveryMotion {
         Location end=carrierPose.clone().add(-2.64*Math.sin(yaw),.86,2.64*Math.cos(yaw));
         Vector delta=end.toVector().subtract(start.toVector());
         if (delta.lengthSquared()<=1e-12) return true;
-        double width=Math.max(5D,target.spec().entityWidth()),height=Math.max(2.5D,target.spec().entityHeight()),half=width/2;
-        BoundingBox currentBox=new BoundingBox(start.getX()-half,start.getY(),start.getZ()-half,
-                start.getX()+half,start.getY()+height,start.getZ()+half);
+        double width=Math.max(1D,target.spec().entityWidth()),height=Math.max(2D,target.spec().entityHeight());
+        double length=Math.max(width,Math.abs(target.spec().frontAxleOffset()-target.spec().rearAxleOffset())+1.3D);
+        double angle=Math.toRadians(start.getYaw());
+        double halfX=(Math.abs(Math.cos(angle))*width+Math.abs(Math.sin(angle))*length)/2D;
+        double halfZ=(Math.abs(Math.sin(angle))*width+Math.abs(Math.cos(angle))*length)/2D;
+        BoundingBox currentBox=new BoundingBox(start.getX()-halfX,start.getY(),start.getZ()-halfZ,
+                start.getX()+halfX,start.getY()+height,start.getZ()+halfZ);
         BoundingBox swept=currentBox.clone().union(currentBox.clone().shift(delta));
         World world=start.getWorld();
         for(int x=((int)Math.floor(swept.getMinX()))>>4;x<=((int)Math.floor(swept.getMaxX()))>>4;x++)
