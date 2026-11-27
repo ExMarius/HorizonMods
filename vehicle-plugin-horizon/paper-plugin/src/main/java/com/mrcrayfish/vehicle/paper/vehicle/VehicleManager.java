@@ -62,15 +62,21 @@ public final class VehicleManager {
     private BukkitTask sweepTask;
     /** Monotonic deadline survives idle tick pauses, not a process restart. */
     private static final class OfflineOwnerTimer {
-        final UUID owner;
+        final UUID vehicleId, owner;
         final long deadlineNanos;
-        BukkitTask task;
+        long nextCheckNanos;
         boolean warned;
-        OfflineOwnerTimer(UUID owner, long deadlineNanos) {
-            this.owner = owner; this.deadlineNanos = deadlineNanos;
+        OfflineOwnerTimer(UUID vehicleId, UUID owner, long deadlineNanos) {
+            this.vehicleId = vehicleId; this.owner = owner;
+            this.deadlineNanos = deadlineNanos; this.nextCheckNanos = deadlineNanos;
         }
     }
     private final Map<UUID, OfflineOwnerTimer> offlineOwnerTimers = new HashMap<>();
+    private final Map<UUID, java.util.Set<UUID>> offlineTimersByOwner = new HashMap<>();
+    private final java.util.NavigableSet<OfflineOwnerTimer> offlineTimerQueue = new java.util.TreeSet<>(
+            java.util.Comparator.comparingLong((OfflineOwnerTimer timer) -> timer.nextCheckNanos)
+                    .thenComparing(timer -> timer.vehicleId));
+    private static final int OFFLINE_TIMERS_PER_SWEEP = 4;
     /** CICLUL AF: cate secunde consecutive a stat fiecare vehicul GOAL intr-un cerc
      *  de parcare. Cheia dispare cand vehiculul pleaca din cerc / se occupa / iese
      *  din lume (retainAll la inceputul fiecarui sweep). */
@@ -122,7 +128,10 @@ public final class VehicleManager {
         long autosave = Math.max(30L, plugin.getConfig().getLong("persistence.autosave-seconds", 300L));
         saveTask = Bukkit.getScheduler().runTaskTimer(plugin, this::save, autosave * 20L, autosave * 20L);
         // Ciclul AF: parcare-cu-timer, verificat o data pe secunda.
-        sweepTask = Bukkit.getScheduler().runTaskTimer(plugin, this::autoStoreSweep, 20L, 20L);
+        sweepTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            sweepOfflineOwnerTimers();
+            autoStoreSweep();
+        }, 20L, 20L);
     }
 
     /** Boot cleanup: rig entity corpses from crashy/ungraceful restarts (tagged mcv_plugin_vehicle
@@ -174,8 +183,9 @@ public final class VehicleManager {
         if (sweepTask != null) {
             sweepTask.cancel();
         }
-        offlineOwnerTimers.values().forEach(timer -> timer.task.cancel());
         offlineOwnerTimers.clear();
+        offlineTimersByOwner.clear();
+        offlineTimerQueue.clear();
         trailers.returnCarriedVehicles();
         saveNow(); // onDisable: flush SINCRON - un task async ar putea fi pierdut la oprire
         trailers.stop();
@@ -347,15 +357,32 @@ public final class VehicleManager {
         Player online = Bukkit.getPlayer(owner);
         if (online != null && online.isOnline()) return;
         cancelOfflineOwnerTimer(vehicleId);
-        OfflineOwnerTimer timer = new OfflineOwnerTimer(owner,
+        OfflineOwnerTimer timer = new OfflineOwnerTimer(vehicleId, owner,
                 System.nanoTime() + java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(delayTicks * 50L));
         offlineOwnerTimers.put(vehicleId, timer);
-        // Paper stops ticking while empty. Check a wall-clock deadline rather
-        // than counting ticks; join also calls this before cancelling timers.
-        timer.task = Bukkit.getScheduler().runTaskTimer(plugin,
-                () -> expireOfflineOwnerTimer(vehicleId, timer), 20L, 20L);
+        offlineTimersByOwner.computeIfAbsent(owner, ignored -> new java.util.HashSet<>()).add(vehicleId);
+        offlineTimerQueue.add(timer);
     }
-    private void expireOfflineOwnerTimer(UUID vehicleId, OfflineOwnerTimer timer) {
+    /** One shared, bounded sweep; only expired/retry entries are visited. */
+    private void sweepOfflineOwnerTimers() {
+        boolean[] liveChanged = {false};
+        for (int count = 0; count < OFFLINE_TIMERS_PER_SWEEP && !offlineTimerQueue.isEmpty(); count++) {
+            OfflineOwnerTimer timer = offlineTimerQueue.first();
+            if (System.nanoTime() - timer.nextCheckNanos < 0L) break;
+            offlineTimerQueue.pollFirst();
+            try {
+                expireOfflineOwnerTimer(timer.vehicleId, timer, liveChanged);
+            } catch (RuntimeException error) {
+                plugin.getLogger().log(Level.WARNING, "[Garaj] Offline timer failed for " + timer.vehicleId, error);
+            }
+            if (offlineOwnerTimers.get(timer.vehicleId) == timer) {
+                timer.nextCheckNanos = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(1L);
+                offlineTimerQueue.add(timer);
+            }
+        }
+        if (liveChanged[0]) save();
+    }
+    private void expireOfflineOwnerTimer(UUID vehicleId, OfflineOwnerTimer timer, boolean[] batchLiveSave) {
         if (offlineOwnerTimers.get(vehicleId) != timer || System.nanoTime() - timer.deadlineNanos < 0L) return;
         if (garage.containsKey(vehicleId)) { cancelOfflineOwnerTimer(vehicleId); return; }
         LandVehicle vehicle = vehicles.get(vehicleId);
@@ -371,7 +398,9 @@ public final class VehicleManager {
                     || vehicle.recoveryHasStorageViewers() || corruptLocation(vehicle.location())) {
                 warnOfflineTimerBlocked(vehicleId, timer, "vehicle in use, moving, locked or unsafe"); return;
             }
-            if (storeVehicleNow(vehicle, null)) save();
+            if (storeVehicleNow(vehicle, null)) {
+                if (batchLiveSave == null) save(); else batchLiveSave[0] = true;
+            }
             return;
         }
         if (!timer.owner.toString().equals(pending.owner())) { cancelOfflineOwnerTimer(vehicleId); return; }
@@ -396,15 +425,23 @@ public final class VehicleManager {
     }
     public void cancelOfflineOwnerTimer(UUID vehicleId) {
         OfflineOwnerTimer timer = offlineOwnerTimers.remove(vehicleId);
-        if (timer != null && timer.task != null) timer.task.cancel();
+        if (timer == null) return;
+        offlineTimerQueue.remove(timer);
+        java.util.Set<UUID> owned = offlineTimersByOwner.get(timer.owner);
+        if (owned != null) {
+            owned.remove(vehicleId);
+            if (owned.isEmpty()) offlineTimersByOwner.remove(timer.owner);
+        }
     }
     public void cancelOfflineOwnerTimersFor(UUID ownerId) {
-        for (var entry : new ArrayList<>(offlineOwnerTimers.entrySet())) {
-            if (!entry.getValue().owner.equals(ownerId)) continue;
-            // If the server was paused while empty, the deadline may already
-            // have passed even though no scheduler tick was executed.
-            expireOfflineOwnerTimer(entry.getKey(), entry.getValue());
-            cancelOfflineOwnerTimer(entry.getKey());
+        java.util.Set<UUID> owned = offlineTimersByOwner.get(ownerId);
+        if (owned == null) return;
+        for (UUID id : java.util.List.copyOf(owned)) {
+            OfflineOwnerTimer timer = offlineOwnerTimers.get(id);
+            if (timer == null || !timer.owner.equals(ownerId)) continue;
+            // Process overdue timers before cancellation after an idle server pause.
+            expireOfflineOwnerTimer(id, timer, null);
+            cancelOfflineOwnerTimer(id);
         }
     }
 
