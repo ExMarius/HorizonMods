@@ -173,6 +173,9 @@ public final class TrailerManager {
     }
 
     public void save() {
+        // Incomplete or unsupported records must never be overwritten by a
+        // partial in-memory list. Keep the original file for later recovery.
+        if (!recoveryLinksKnown) return;
         store.saveAll(trailers.values());
     }
 

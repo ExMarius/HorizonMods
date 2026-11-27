@@ -108,6 +108,7 @@ public final class VehicleManager {
         cleanupOrphanedEntities();
         load();
         trailers.start();
+        recoverOwnedVehiclesOnBoot();
         tickTask = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 1L, 1L);
         long autosave = Math.max(30L, plugin.getConfig().getLong("persistence.autosave-seconds", 300L));
         saveTask = Bukkit.getScheduler().runTaskTimer(plugin, this::save, autosave * 20L, autosave * 20L);
@@ -311,6 +312,13 @@ public final class VehicleManager {
                 currentDriver.sendMessage("Proprietarul este offline; poți termina cursa. După coborâre începe perioada de 5 minute.");
                 continue;
             }
+            // Do not remove passengers, break an uncertain trailer linkage, or
+            // interrupt an open inventory. Start the safe wait after quit detaches.
+            if (vehicle.occupied() || vehicle.recoveryHasStorageViewers()
+                    || !trailers.recoveryLinksKnown() || trailers.referencesVehicle(vehicle.id())) {
+                Bukkit.getScheduler().runTask(plugin, () -> startOfflineOwnerTimer(vehicle));
+                continue;
+            }
             StoredVehicle stored = StoredVehicle.from(vehicle);
             unindex(vehicle);
             releaseChunkTicket(vehicle);
@@ -330,61 +338,25 @@ public final class VehicleManager {
         return storedCount;
     }
 
-    /** CICLUL AD (decizia userului - reguli trust real-life): trustul = VOLAN cu
-     *  proprietarul in preajma, PUNCT. Soferul cu trust iese de pe server -> masina
-     *  intra INSTANT in garajul PROPRIETARULUI: nu apare in garajul altcuiva (garajul
-     *  ramane strict owner-only), nu ramane abandonata in lume (anti-abuz/anti-lag).
-     *  Masinile fara proprietar (taxi public) nu sunt atinse. Aceleasi exceptii ca la
-     *  quit-clasic: podium-ul si masina pe cric raman in lume. */
-    public int parkDrivenByNonOwner(java.util.UUID quitterId) {
-        int storedCount = 0;
-        for (LandVehicle vehicle : new java.util.ArrayList<>(vehicles.values())) {
-            if (vehicle.showcase() || vehicle.onJack() || vehicle.recoveryLocked()) {
-                continue;
-            }
-            if (vehicle.owner().map(quitterId::equals).orElse(false)) {
-                continue; // masinile LUI le acopera parkAllOwnedBy
-            }
-            java.util.UUID ownerId = vehicle.owner().orElse(null);
-            boolean quitterDrivesIt = vehicle.driver()
-                    .map(d -> d.getUniqueId().equals(quitterId)).orElse(false);
-            if (ownerId == null || !quitterDrivesIt) {
-                continue;
-            }
-            Player ownerOnline = Bukkit.getPlayer(ownerId);
-            if (ownerOnline == null || !ownerOnline.isOnline()) {
-                // Wait a tick for Paper to detach the quitting driver.
+    /** A trusted driver may disconnect without removing the owner's car under
+     * other passengers. Start the grace period only when the owner is offline. */
+    public int parkDrivenByNonOwner(UUID quitterId) {
+        for (LandVehicle vehicle : new ArrayList<>(vehicles.values())) {
+            if (vehicle.showcase() || vehicle.onJack() || vehicle.recoveryLocked()
+                    || vehicle.owner().isEmpty() || vehicle.owner().filter(quitterId::equals).isPresent()) continue;
+            if (vehicle.driver().map(p -> p.getUniqueId().equals(quitterId)).orElse(false)) {
                 Bukkit.getScheduler().runTask(plugin, () -> startOfflineOwnerTimer(vehicle));
-                continue;
-            }
-            StoredVehicle stored = StoredVehicle.from(vehicle);
-            String displayName = vehicle.spec().displayName();
-            unindex(vehicle);
-            releaseChunkTicket(vehicle);
-            trailers.onVehicleRemoved(vehicle.id());
-            vehicles.remove(vehicle.id());
-            pendingWorlds.remove(vehicle.id());
-            vehicle.remove();
-            garage.put(stored.id(), stored);
-            storedCount++;
-            if (ownerOnline != null) {
-                String quitterName = org.bukkit.Bukkit.getOfflinePlayer(quitterId).getName();
-                ownerOnline.sendRichMessage("<gray>[Garaj] Masina ta <gold>" + displayName
-                        + "</gold> a intrat in garaj: soferul " + (quitterName == null ? "" : quitterName)
-                        + " (trust) a iesit de pe server.</gray>");
             }
         }
-        if (storedCount > 0) {
-            save();
-            plugin.getLogger().info("[Garaj] " + storedCount
-                    + " vehicule conduse cu trust au intrat in garajul proprietarului (soferul a iesit).");
-        }
-        return storedCount;
+        return 0;
     }
 
     /** Begin five minutes after a trusted driver leaves an ordinary vehicle.
      * Recovery reservations keep their own quit/unload policy and are excluded. */
     public void startOfflineOwnerTimer(LandVehicle vehicle) {
+        startOfflineOwnerTimer(vehicle, 5L * 60L * 20L);
+    }
+    void startOfflineOwnerTimer(LandVehicle vehicle, long delayTicks) {
         if (!Bukkit.isPrimaryThread() || vehicle == null || vehicles.get(vehicle.id()) != vehicle
                 || vehicle.recoveryLocked() || vehicle.owner().isEmpty() || vehicle.driver().isPresent()) return;
         UUID owner = vehicle.owner().orElseThrow();
@@ -407,7 +379,7 @@ public final class VehicleManager {
                     cancelOfflineOwnerTimer(vehicle.id()); save();
                 }
             }
-        }.runTaskTimer(plugin, 5L * 60L * 20L, 20L);
+        }.runTaskTimer(plugin, delayTicks, 20L);
         offlineOwnerTimers.put(vehicle.id(), task);
     }
     public void cancelOfflineOwnerTimer(UUID vehicleId) {
@@ -682,6 +654,7 @@ public final class VehicleManager {
      *  online cu un mesaj de motiv. Returneaza true daca s-a mutat. */
     private boolean storeVehicleNow(LandVehicle vehicle, String ownerMessageRich) {
         if (vehicle.recoveryLocked()) return false;
+        cancelOfflineOwnerTimer(vehicle.id());
         StoredVehicle stored = StoredVehicle.from(vehicle);
         String displayName = vehicle.spec().displayName();
         UUID ownerId = vehicle.owner().orElse(null);
@@ -1456,21 +1429,21 @@ public final class VehicleManager {
         });
     }
 
-    /** Synchronous flush - used ONLY in stop()/onDisable, where async work would be lost. */
-    public void saveNow() {
+    /** Synchronous flush for shutdown and before exposing boot recovery. */
+    public boolean saveNow() {
         if (recoveryPersistenceHalted) {
             plugin.getLogger().severe("Vehicle snapshot not overwritten after recovery persistence failure");
-            return;
+            return false;
         }
         YamlConfiguration snapshot = collectYaml();
         synchronized (asyncSaveLock) {
             pendingAsyncYaml = null;
-            writeYamlAtomically(snapshot);
+            return writeYamlAtomically(snapshot);
         }
     }
 
     /** Save a ready snapshot to a same-directory temporary file and atomically move it in place. */
-    private void writeYamlAtomically(YamlConfiguration data) {
+    private boolean writeYamlAtomically(YamlConfiguration data) {
         File temporary = null;
         try {
             if (!plugin.getDataFolder().exists() && !plugin.getDataFolder().mkdirs()) {
@@ -1484,8 +1457,10 @@ public final class VehicleManager {
             } catch (AtomicMoveNotSupportedException ignored) {
                 Files.move(temporary.toPath(), storageFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
+            return true;
         } catch (IOException exception) {
             plugin.getLogger().log(Level.SEVERE, "Could not atomically save vehicles.yml", exception);
+            return false;
         } finally {
             if (temporary != null && temporary.exists() && !temporary.delete()) {
                 temporary.deleteOnExit();
@@ -1596,6 +1571,36 @@ public final class VehicleManager {
         }
         plugin.getLogger().info("Loaded " + vehicles.size() + " vehicle(s); "
                 + pendingWorlds.size() + " deferred, " + garage.size() + " stored in garages.");
+    }
+
+    /** Move eligible saved vehicles to the owner's garage before they can spawn.
+     * Unknown trailer state, live trailer links, and workshop vehicles remain
+     * untouched: silently breaking a linkage is worse than leaving a vehicle out. */
+    private void recoverOwnedVehiclesOnBoot() {
+        if (!trailers.recoveryLinksKnown()) {
+            plugin.getLogger().warning("[Garaj] Startup recovery deferred: trailer links are not fully known.");
+            return;
+        }
+        int recovered = 0;
+        for (StoredVehicle stored : new ArrayList<>(pendingWorlds.values())) {
+            if (stored.owner() == null || garage.containsKey(stored.id())
+                    || stored.jackId() != null || (stored.jackState() != null && !"NONE".equals(stored.jackState()))
+                    || trailers.referencesVehicle(stored.id())) continue;
+            try { UUID.fromString(stored.owner()); }
+            catch (IllegalArgumentException error) { continue; }
+            pendingWorlds.remove(stored.id());
+            garage.put(stored.id(), stored);
+            recovered++;
+        }
+        if (recovered > 0) {
+            // Persist before players can retrieve anything; recovery is idempotent
+            // because each UUID exists in only one YAML section in this snapshot.
+            if (!saveNow()) {
+                recoveryPersistenceHalted = true;
+                throw new IllegalStateException("Cannot safely persist startup garage recovery");
+            }
+            plugin.getLogger().info("[Garaj] Startup recovery: " + recovered + " vehicles returned to their owners.");
+        }
     }
 
     public void onWorldLoaded(World loadedWorld) {

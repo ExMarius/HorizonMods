@@ -299,11 +299,10 @@ public final class VehicleListener implements Listener {
         vehicles.recoveryOwnerQuit(event.getPlayer().getUniqueId());
         vehicles.trailers().onPlayerQuit(event.getPlayer());
         // Bukkit removes the player from the seat. Vehicle tick resets its input on the next tick.
-        // QUIT: the ONE global garage - everything of his is stored on the spot.
-        // Price depends only on WHERE he pulls it out (/garaj): home = free, public = fee.
+        // Unoccupied owned vehicles are garaged; occupied vehicles and uncertain
+        // trailer links wait until they can be stored safely.
         int stored = vehicles.parkAllOwnedBy(event.getPlayer().getUniqueId());
-        // Ciclul AD: si masinile ALTUIVA pe care le conducea cu trust intra instant
-        // in garajul PROPRIETARULUI (trust = doar volan, cu proprietarul in preajma).
+        // A trusted driver's departure never removes an occupied car instantly.
         stored += vehicles.parkDrivenByNonOwner(event.getPlayer().getUniqueId());
         if (stored > 0) {
             plugin.getLogger().info("[Garaj] " + event.getPlayer().getName() + " a iesit - "
@@ -319,13 +318,10 @@ public final class VehicleListener implements Listener {
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }
-        // Unlike the informational parking hint, the delayed garage action
-        // requires an exact rig match; never use nearest-vehicle fallback.
+        // Dynamic seat mounts are not necessarily present in the original rig
+        // entity index. Match the actual seat, never a nearby unrelated vehicle.
         vehicles.vehicles().stream()
-                .filter(v -> v.rig().entities().contains(event.getDismounted()))
-                .filter(v -> v.driver().filter(player::equals).isPresent())
-                .filter(v -> v.owner().filter(owner -> !owner.equals(player.getUniqueId())).isPresent())
-                .filter(v -> v.canDrive(player))
+                .filter(v -> v.rig().seatCarriers().contains(event.getDismounted()))
                 .findFirst().ifPresent(vehicle -> Bukkit.getScheduler().runTask(plugin,
                         () -> vehicles.startOfflineOwnerTimer(vehicle)));
         mountedVehicle(event.getDismounted()).ifPresent(vehicle -> {

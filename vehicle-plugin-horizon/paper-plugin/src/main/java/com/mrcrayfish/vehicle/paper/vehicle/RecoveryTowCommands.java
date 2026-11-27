@@ -236,7 +236,7 @@ public final class RecoveryTowCommands {
         }
         void afterUnload() {
             if (autoReturn || revokedReturn) {
-                if (!manager.returnOfflineRecoveredVehicle(target)) manager.startOfflineOwnerTimer(target);
+                if (!manager.returnOfflineRecoveredVehicle(target)) manager.startOfflineOwnerTimer(target, 20L);
             } else {
                 manager.startOfflineOwnerTimer(target);
             }
