@@ -47,7 +47,7 @@ public final class LiveRecoveryMotion {
                 ||!carrier.rig().valid() || !target.rig().valid()
                 ||target.recoveryHasPassengers() || carrier.recoveryHasPassengers()
                 ||!operator.isOnline() || !RecoveryTowCommands.canOperateCarrier(carrier,operator)
-                || (!revokedUnload && !target.canDrive(operator) && !operator.isOp())
+                || (!target.canDrive(operator) && !operator.isOp())
                 ||carrier.rig().recoveryRampProgress()!=1D || carrier.horizontalSpeed()>.01D
                 ||carrier.location().getWorld()==null || !carrier.location().getWorld().equals(target.location().getWorld())
                 ||!manager.trailers().recoveryLinksKnown()
