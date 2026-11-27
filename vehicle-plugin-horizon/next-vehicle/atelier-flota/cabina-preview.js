@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {palette,platforma,ramp,platformWheels} from './design.js';
-import {body as cabBody,roof as cabRoof,interior as cabInterior,frontWheels,steeringPosition} from './cabina-concept-detaliat.js';
+import {body as cabBody,roof as cabRoof,interior as cabInterior,underbed,frontWheels,steeringPosition} from './cabina-concept-detaliat.js';
 import {revisedRearPart,rearShift} from './cabina-geometry.js';
 import {loadDacia} from './loading-demo.js';
 
@@ -24,7 +24,13 @@ const truck=new T.Group();scene.add(truck);
 const shell=new T.Group(),roof=new T.Group(),interior=new T.Group();truck.add(shell,roof,interior);
 cabBody.forEach(part=>box(part,shell));cabRoof.forEach(part=>box(part,roof));cabInterior.forEach(part=>box(part,interior));
 // The previous cab's roof lights came from the deck model; the new roof has its own.
-platforma.filter(([kind,x,y,z])=>!(kind==='amber'&&y===2.73&&z===-1.30)).forEach(part=>box(revisedRearPart(part),truck));
+platforma.filter(([kind,x,y,z])=>{
+ if(kind==='amber'&&y===2.73&&z===-1.30)return false;
+ // Replace the old detached toolbox and handle with the mounted assembly.
+ if(z===2.08 && ((kind==='chassis'&&x===-1.04)||(kind==='steel'&&x===-1.24)||(kind==='dark'&&x===-1.263)))return false;
+ return true;
+}).forEach(part=>box(revisedRearPart(part),truck));
+underbed.forEach(part=>box(part,truck));
 const rearWheels=platformWheels.slice(2).map(([x,y,z,scale])=>[x,y,z-rearShift,scale]);
 const compactFrontWheels=frontWheels;
 for(const [x,y,z,scale] of [...compactFrontWheels,...rearWheels])wheel(truck,x,y,z,scale);

@@ -46,6 +46,10 @@ pair(body,'white',1.30,1.01,-.66,.14,.63,.65);
 pair(body,'whiteDark',1.30,1.36,-1.48,.13,.07,1.68);
 // The rear end of the door and sill meet the rear corner, not open air.
 pair(body,'white',1.30,1.01,-.345,.14,.63,.12);
+// Close the lower step riser and the front and rear door jambs.
+pair(body,'whiteDark',1.30,.61,-.67,.14,.17,.68);
+pair(body,'white',1.30,1.01,-1.005,.14,.63,.05);
+pair(body,'white',1.30,1.01,-.315,.14,.63,.06);
 pair(body,'whiteDark',1.30,1.36,-.49,.13,.07,.30);
 pair(body,'dark',1.378,1.08,-.65,.015,.045,.20);
 pair(body,'silver',1.391,1.09,-.65,.012,.018,.13);
@@ -63,7 +67,12 @@ pair(body,'dark',1.16,.50,-.10,.12,.28,.20);
 // A-pillars, windscreen sill, mirror brackets; window apertures left empty.
 pair(body,'white',1.24,1.98,-2.19,.14,1.35,.16);
 pair(body,'white',1.24,2.00,-.27,.14,1.30,.14);
+// Central window/door pillar connects the sill to the roof on each side.
+pair(body,'white',1.24,2.00,-1.03,.14,1.30,.11);
+pair(body,'dark',1.317,1.98,-1.03,.014,1.20,.035);
 add(body,'whiteDark',0,1.30,-2.19,2.38,.12,.16);
+// Continuous cowl closes the opening between hood and windscreen sill.
+add(body,'white',0,1.225,-2.29,2.38,.10,.30);
 pair(body,'dark',1.41,1.96,-2.18,.34,.06,.07);
 pair(body,'dark',1.57,1.96,-2.18,.13,.38,.17);
 pair(body,'silver',1.644,1.96,-2.18,.015,.28,.11);
@@ -115,3 +124,15 @@ for(const x of [-.90,-.65,-.40]){
 }
 export const frontWheels=[[-1.35,.53,-1.66,1.18],[1.35,.53,-1.66,1.18]];
 export const steeringPosition=[-.62,1.48,-1.68];
+
+// Toolbox mounted directly below the deck with visible brackets and a rear face.
+export const underbed=[];
+add(underbed,'chassis',-1.02,.49,2.08,.44,.40,.88);
+add(underbed,'steel',-1.247,.49,2.08,.025,.35,.82);
+add(underbed,'dark',-1.264,.49,2.08,.012,.27,.73);
+add(underbed,'steel',-1.273,.49,2.08,.008,.22,.68);
+add(underbed,'black',-1.280,.52,2.08,.008,.04,.13);
+for(const z of [1.73,2.43]){
+ add(underbed,'chassis',-1.00,.71,z,.38,.09,.09);
+ add(underbed,'steel',-1.24,.695,z,.06,.11,.09);
+}
