@@ -73,6 +73,12 @@ public final class LiveRecoveryRoute {
         if(!motion.startTestDrive()) {carrier.rig().setRecoveryRampProgress(1);return false;}
         state=State.TEST_DRIVING;return true;
     }
+    boolean canMoveCarrier(Location proposed) {
+        return state!=State.TEST_DRIVING || motion.canFollowPose(proposed);
+    }
+    void syncMovedCarrier(Location pose) {
+        if(state==State.TEST_DRIVING)motion.syncCarrierPose(pose);
+    }
     public boolean tickTestDrive() {
         if(!Bukkit.isPrimaryThread()||state!=State.TEST_DRIVING)return false;
         if(!motion.followTestDrive()){pause();return false;}

@@ -23,6 +23,15 @@ public final class RecoveryTowCommands {
             true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,false,false,false);
     public RecoveryTowCommands(VehiclePlugin plugin,VehicleManager manager){this.plugin=plugin;this.manager=manager;}
 
+    boolean canMoveCarrier(LandVehicle carrier,Location proposed) {
+        Operation operation=operations.get(carrier.id());
+        return operation==null || operation.route.canMoveCarrier(proposed);
+    }
+    void syncMovedCarrier(LandVehicle carrier) {
+        Operation operation=operations.get(carrier.id());
+        if(operation!=null)operation.route.syncMovedCarrier(carrier.location());
+    }
+
     /** Invisible stop line at the foot of the ramps, only for compatible cars approaching from behind. */
     org.bukkit.util.Vector limitApproach(LandVehicle target, Location start, org.bukkit.util.Vector movement) {
         if (!RecoveryTargetPolicy.supports(target.spec()) || target.recoveryLocked() || start.getWorld()==null)

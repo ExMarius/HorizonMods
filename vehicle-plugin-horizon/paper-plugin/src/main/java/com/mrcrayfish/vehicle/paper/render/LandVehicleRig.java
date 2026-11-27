@@ -426,7 +426,7 @@ public final class LandVehicleRig {
         }
 
         if (daciaWheels != null) daciaWheels.update(renderAnchor, driverSeat, chassisRotation,
-                point(spec.wheeliePivot()), renderSteeringAngle, frontWheelRotation, rearWheelRotation,
+                recoveryRootPivot ? new Vector3f() : point(spec.wheeliePivot()), renderSteeringAngle, frontWheelRotation, rearWheelRotation,
                 wheelieAngle, bodyRoll);
 
         float steeringRotation = renderSteeringAngle / spec.maxSteeringAngle()

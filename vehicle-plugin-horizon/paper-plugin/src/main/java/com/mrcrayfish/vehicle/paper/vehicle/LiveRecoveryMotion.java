@@ -112,23 +112,19 @@ public final class LiveRecoveryMotion {
                 ||carrier.rig().recoveryRampProgress()!=0D)return false;
         carrier.startRecoveryTestDrive(token);testDriving=true;return true;
     }
-    boolean followTestDrive() {
+    /** Check the entire cargo movement before the carrier commits its movement. */
+    boolean canFollowPose(Location carrierPose) {
         if(!Bukkit.isPrimaryThread()||closed||halted||!testDriving || !operator.isOnline()
                 ||!carrier.recoveryMotionLockedBy(token)||!target.recoveryMotionLockedBy(token)
                 ||!carrier.rig().valid()||!target.rig().valid()||target.recoveryHasPassengers()
                 ||manager.byId(carrier.id()).orElse(null)!=carrier || manager.byId(target.id()).orElse(null)!=target
                 ||manager.trailers().referencesVehicle(carrier.id())||manager.trailers().referencesVehicle(target.id())
-                ||carrier.location().getWorld()==null || !carrier.location().getWorld().equals(target.location().getWorld()))return false;
-        Location carrierPose=carrier.location(), start=target.location();
+                ||carrierPose.getWorld()==null || !carrierPose.getWorld().equals(target.location().getWorld()))return false;
+        Location start=target.location();
         double yaw=Math.toRadians(carrierPose.getYaw());
         Location end=carrierPose.clone().add(-2.64*Math.sin(yaw),.86,2.64*Math.cos(yaw));
         Vector delta=end.toVector().subtract(start.toVector());
-        // Standing next to a stationary loaded carrier must not prevent mounting.
-        // The swept collision checks remain mandatory once the cargo actually moves.
-        if (delta.lengthSquared()<=1e-12) {
-            target.followRecoveryCarrier(token,carrierPose,cargoYawOffset);
-            return true;
-        }
+        if (delta.lengthSquared()<=1e-12) return true;
         double width=Math.max(5D,target.spec().entityWidth()),height=Math.max(2.5D,target.spec().entityHeight()),half=width/2;
         BoundingBox swept=new BoundingBox(start.getX()-half,start.getY(),start.getZ()-half,
                 start.getX()+half,start.getY()+height,start.getZ()+half);
@@ -141,9 +137,16 @@ public final class LiveRecoveryMotion {
         carrier.rig().entities().forEach(e -> {ignored.add(e.getUniqueId());e.getPassengers().forEach(p -> ignored.add(p.getUniqueId()));});
         target.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
         for(Entity entity:world.getNearbyEntities(swept))if(entity.isValid()&&!ignored.contains(entity.getUniqueId()))return false;
-        if(delta.lengthSquared()>1e-12 && VehicleCollisionMover.move(world,start,delta,false,width,height,0D,false)
-                .movement().distanceSquared(delta)>1e-10)return false;
-        target.followRecoveryCarrier(token,carrierPose,cargoYawOffset);return true;
+        return VehicleCollisionMover.move(world,start,delta,false,width,height,0D,false)
+                .movement().distanceSquared(delta)<=1e-10;
+    }
+    void syncCarrierPose(Location carrierPose) {
+        target.followRecoveryCarrier(token,carrierPose,cargoYawOffset);
+    }
+    boolean followTestDrive() {
+        Location carrierPose=carrier.location();
+        if(!canFollowPose(carrierPose))return false;
+        syncCarrierPose(carrierPose);return true;
     }
     void pause() {
         if (testDriving && carrier.recoveryMotionLockedBy(token) && !carrier.transported())

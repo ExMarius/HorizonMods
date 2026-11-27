@@ -292,6 +292,7 @@ public final class LandVehicle {
         if (!stationaryWithIdleInput(driver)) {
             updateWheelPositions();
         }
+        float yawBeforeMovement=location.getYaw();
         updateVehicleMotion(globalSpeedLimit, enginePowered);
         trackRealTravel(motion);
 
@@ -315,7 +316,15 @@ public final class LandVehicle {
         if (allowed.getX()!=collision.movement().getX() || allowed.getZ()!=collision.movement().getZ()) {
             velocity.setX(0).setZ(0); motion.setX(0).setZ(0);
         }
+        Location proposed=location.clone().add(allowed);
+        boolean cargoCanFollow=plugin.vehicles().recoveryTowCommands().canMoveCarrier(this,proposed);
+        if (!cargoCanFollow) {
+            location.setYaw(yawBeforeMovement);
+            allowed.zero();
+            velocity.setX(0).setZ(0);motion.setX(0).setZ(0);verticalVelocity=0D;
+        }
         location.add(allowed);
+        if(cargoCanFollow)plugin.vehicles().recoveryTowCommands().syncMovedCarrier(this);
         onGround = collision.onGround();
         if (collision.verticalCollision()) {
             verticalVelocity = 0.0D;
