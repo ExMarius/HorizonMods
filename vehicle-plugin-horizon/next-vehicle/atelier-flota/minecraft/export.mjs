@@ -45,18 +45,19 @@ const steering=[
 // Steering column is fixed to the dashboard, not part of the spinning rim.
 cab.push(['dark',-.62,1.40,cabZ(-2.08),.08,.25,.08]);
 // Wheel model is centred at its axle for an independent display spin.
-const wheel=[
- ['rubber',0,0,0,.33,.90,.34],['rubber',0,0,0,.33,.34,.90],
- ['rubber',0,0,0,.33,.90,.34,Math.PI/4],['rubber',0,0,0,.33,.90,.34,-Math.PI/4],
- ['dark',-.172,0,0,.02,.61,.25],['dark',.172,0,0,.02,.61,.25],
- ['dark',-.172,0,0,.02,.25,.61],['dark',.172,0,0,.02,.25,.61],
- ['rim',-.185,0,0,.025,.51,.22],['rim',.185,0,0,.025,.51,.22],
- ['rim',-.185,0,0,.025,.22,.51],['rim',.185,0,0,.025,.22,.51],
- ['rim',-.185,0,0,.025,.48,.20,Math.PI/4],['rim',.185,0,0,.025,.48,.20,Math.PI/4],
- ['rim',-.185,0,0,.025,.48,.20,-Math.PI/4],['rim',.185,0,0,.025,.48,.20,-Math.PI/4],
- ['steel',-.205,0,0,.02,.34,.20],['steel',.205,0,0,.02,.34,.20],
- ['silver',-.22,0,0,.03,.14,.14],['silver',.22,0,0,.03,.14,.14]
-];
+// Build a stepped round tyre from non-overlapping bands. Each layer touches
+// the next rather than sharing coplanar intersecting faces during rotation.
+const wheel=[];
+for (const [y,h,d] of [[-.385,.13,.46],[-.255,.13,.70],[-.125,.13,.84],[0,.12,.90],[.125,.13,.84],[.255,.13,.70],[.385,.13,.46]]) {
+ wheel.push(['rubber',0,y,0,.33,h,d]);
+}
+for (const side of [-1,1]) {
+ // Separate stepped hub layers sit entirely outside the tyre sidewall.
+ for(const [y,h,d] of [[-.225,.10,.28],[-.125,.10,.42],[-.025,.10,.50],[.075,.10,.46],[.175,.10,.36],[.25,.05,.20]])
+  wheel.push(['rim',side*.174,y,0,.018,h,d]);
+ wheel.push(['dark',side*.188,0,0,.01,.24,.24]);
+ wheel.push(['silver',side*.199,0,0,.012,.14,.14]);
+}
 // Unit-length cable at the item origin; the Paper rig stretches it along local Y.
 const cable=[['silver',0,0,0,.036,1,.036]];
 const models={horizon_service_cab:cab,horizon_service_flatbed:compactFlatbed,horizon_service_workshop:atelier,horizon_service_steering:steering,horizon_service_wheel:wheel,horizon_service_ramp:ramp,horizon_service_cable:cable};

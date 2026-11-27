@@ -76,6 +76,13 @@ export const cabinaNoua = [
  ['seat',-.62,1.87,-.82,.36,.23,.14],['seat',.62,1.87,-.82,.36,.23,.14],
  ['chassis',0,1.03,-1.43,.26,.36,.85],['black',.12,1.31,-1.36,.05,.30,.05,-.25],
  ['black',.12,1.48,-1.40,.10,.10,.10],
+ // Inner wheel housings isolate the tyres from the footwells. Panels stop
+ // above the tyre and sit inboard, leaving the wheels free to rotate.
+ ['dashboard',-1.10,.98,-2.05,.07,.56,1.08],['dashboard',1.10,.98,-2.05,.07,.56,1.08],
+ ['dashboard',-.99,1.25,-2.05,.22,.07,1.08],['dashboard',.99,1.25,-2.05,.22,.07,1.08],
+ // Three pedals on the driver's side, rising from the floor below the dash.
+ ['dark',-.88,.87,-2.02,.06,.22,.06],['dark',-.62,.87,-2.02,.06,.22,.06],['dark',-.36,.87,-2.02,.06,.22,.06],
+ ['steel',-.88,.99,-1.99,.15,.06,.13],['steel',-.62,.99,-1.99,.15,.06,.13],['steel',-.36,.99,-1.99,.13,.06,.13],
  // Front axle and short arch caps, kept above/outside the wheel envelope.
  ['chassis',0,.53,-2.05,2.55,.12,.13],
  ['white',-1.31,1.13,-2.05,.15,.10,1.19],['white',1.31,1.13,-2.05,.15,.10,1.19],

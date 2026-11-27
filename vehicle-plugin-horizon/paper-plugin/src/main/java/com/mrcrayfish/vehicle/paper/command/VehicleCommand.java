@@ -182,7 +182,12 @@ public final class VehicleCommand implements CommandExecutor, TabCompleter {
             return;
         }
         if (vehicleSpec != null) {
-            LandVehicle vehicle = vehicles.spawn(vehicleSpec, player.getLocation());
+            Location spawnLocation = player.getLocation().clone();
+            if ("horizon_recovery_prototype".equals(vehicleSpec.id())) {
+                // The recovery model faces opposite to the player's view by default.
+                spawnLocation.setYaw(spawnLocation.getYaw() + 180.0F);
+            }
+            LandVehicle vehicle = vehicles.spawn(vehicleSpec, spawnLocation);
             vehicle.setOwner(player.getUniqueId());
             vehicles.save();
             player.sendRichMessage("<green>" + vehicleSpec.displayName() + " creat.</green> <gray>ID: "

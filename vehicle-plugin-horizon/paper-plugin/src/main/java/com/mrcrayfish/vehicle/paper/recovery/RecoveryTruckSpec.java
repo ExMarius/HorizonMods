@@ -30,7 +30,7 @@ public final class RecoveryTruckSpec {
                 false,p(0,0,0),null,null,null,null,
                 List.of(
                         part("horizon_service_flatbed",0,0,0,0),
-                        part("horizon_service_steering",-1.24F,0,0,0),
+                        part("horizon_service_steering",0,0,0,0),
                         // Closed position, pivoted at the independently authored hinges.
                         part("horizon_service_ramp",-1.05F,.86F,5.35F,-90F),
                         part("horizon_service_ramp",1.05F,.86F,5.35F,-90F)),
@@ -39,8 +39,8 @@ public final class RecoveryTruckSpec {
                         wheel(1,true,1.35F,.53F,-1.8025F,MODEL_SCALE*1.18F),
                         wheel(-1,false,-1.20F,.35F,3.22F,MODEL_SCALE*.35F/.45F),
                         wheel(1,false,1.20F,.35F,3.22F,MODEL_SCALE*.35F/.45F)),
-                List.of(new LandVehicleSpec.Seat(true,p(-.62F,.73F,-1.08F),180F),
-                        new LandVehicleSpec.Seat(false,p(.62F,.73F,-1.08F),180F)),
+                List.of(new LandVehicleSpec.Seat(true,p(-.62F,.08F,-1.08F),180F),
+                        new LandVehicleSpec.Seat(false,p(.62F,.08F,-1.08F),180F)),
                 false,"tow_bar",p(0,0,0),p(0,0,0),null,null,List.of(),false);
     }
 }

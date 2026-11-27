@@ -142,7 +142,7 @@ jobs:
           ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean jar
           mkdir -p /tmp/recovery-base /tmp/recovery-old /tmp/recovery-new
           gh release download horizon-offroader-45724921999 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/recovery-base
-          gh release download horizon-offroader-46015454177 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/recovery-old
+          gh release download horizon-offroader-46037847103 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/recovery-old
           python3 vehicle-plugin-horizon/next-vehicle/atelier-flota/minecraft/build_pack.py /tmp/recovery-base/HorizonOffRoader-1.21.4.zip /tmp/recovery-new/HorizonOffRoader-1.21.4.zip --expected-sha1 136f003f9c56ee849881d41fb6697876353b5681
       - name: Back up current JAR, pack and configuration
         run: |
