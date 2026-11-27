@@ -8,7 +8,7 @@ props={e['key']:str(e.get('value','')) for e in api.api('/properties') if isinst
 f.notice('Resource pack status',repr({k:props.get(k) for k in ('resource-pack','resource-pack-sha1','resource-pack-id','require-resource-pack')}))
 config=api.download('/plugins/MrCrayfishVehiclePlugin/config.yml').decode('utf-8','replace')
 m=re.search(r'(?ms)^resource-pack:[^\n]*\n((?:[ \t]+[^\n]*\n|\s*\n|\s*\#.*\n)*)',config)
-f.notice('Plugin pack configuration',m.group(0).replace('%','%25') if m else 'not found')
+f.notice('Plugin pack configuration',repr(m.group(0)).replace('%','%25') if m else 'not found')
 
 for directory in ('/logs',):
     try:
