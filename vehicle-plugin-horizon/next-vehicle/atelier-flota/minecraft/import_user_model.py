@@ -58,6 +58,28 @@ for title,modelname in [('Cabina si interior','cab'),('Platforma si cutie','flat
         elements.append(piece)
     (out/'models/item'/f'horizon_service_{modelname}.json').write_text(json.dumps({'textures':texture_map,'elements':elements},indent=2)+'\n')
     print(title, len(elements),'angle approximations',approximated)
+# Reconstruct the two folded ramps in their hinge-local coordinates. They
+# share one animated game model, so reject asymmetric edits instead of losing one.
+def unfold_ramp(title):
+    group=names[title];pivot=groups[group['uuid']]['origin'];pieces=[]
+    for k in group['children']:
+        e=cubes[k];a=e['from'];b=e['to']
+        lo=[8+a[0]-pivot[0],8+a[2]-pivot[2],8-(b[1]-pivot[1])]
+        hi=[8+b[0]-pivot[0],8+b[2]-pivot[2],8-(a[1]-pivot[1])]
+        faces={}
+        inverse={'north':'up','south':'down','up':'south','down':'north','east':'east','west':'west'}
+        for side,f in e['faces'].items():
+            if f.get('texture') is None:continue
+            face={'uv':f.get('uv',[0,0,16,16]),'texture':'#t'+str(f['texture'])}
+            if f.get('rotation',0):face['rotation']=f['rotation']
+            faces[inverse[side]]=face
+        if any(e.get('rotation',[0,0,0])):raise ValueError('Edited ramp cube rotation requires conversion')
+        pieces.append({'name':e['name'],'from':[round(v,5) for v in lo], 'to':[round(v,5) for v in hi], 'faces':faces})
+    return pieces
+ramp=unfold_ramp('Rampa stanga')
+if ramp!=unfold_ramp('Rampa dreapta'):raise ValueError('Ramp edits differ; cannot use a shared ramp model')
+(out/'models/item/horizon_service_ramp.json').write_text(json.dumps({'textures':texture_map,'elements':ramp},indent=2)+'\n')
+
 # Front wheel group origins are the wheel pivots, in the same four-units-per-block space.
 for side in ['stanga','dreapta']:
     group=groups[names['Roata fata '+side]['uuid']];print('front wheel',side,[(v-8)/4 for v in group['origin']])
