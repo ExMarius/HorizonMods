@@ -108,7 +108,7 @@ public final class VehicleManager {
         cleanupOrphanedEntities();
         load();
         trailers.start();
-        recoverOwnedVehiclesOnBoot();
+        scheduleOwnedVehiclesOnBoot();
         tickTask = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 1L, 1L);
         long autosave = Math.max(30L, plugin.getConfig().getLong("persistence.autosave-seconds", 300L));
         saveTask = Bukkit.getScheduler().runTaskTimer(plugin, this::save, autosave * 20L, autosave * 20L);
@@ -291,17 +291,20 @@ public final class VehicleManager {
     /** Start the offline grace period after quit has detached the player.
      * An authorized driver may finish their trip; their dismount starts the timer. */
     public void scheduleOwnedVehiclesAfterQuit(UUID playerId) {
-        for (LandVehicle vehicle : new ArrayList<>(vehicles.values())) {
-            if (!vehicle.owner().filter(playerId::equals).isPresent()
-                    || vehicle.showcase() || vehicle.onJack() || vehicle.recoveryLocked()) continue;
-            Player driver = vehicle.driver().orElse(null);
-            if (driver != null && !driver.getUniqueId().equals(playerId) && vehicle.canDrive(driver)) {
-                driver.sendMessage("Proprietarul este offline; poți termina cursa. După coborâre începe perioada de 5 minute.");
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            for (LandVehicle vehicle : new ArrayList<>(vehicles.values())) {
+                if (!vehicle.owner().filter(playerId::equals).isPresent()
+                        || vehicle.showcase() || vehicle.onJack() || vehicle.recoveryLocked()) continue;
+                Player driver = vehicle.driver().orElse(null);
+                if (driver != null && !driver.getUniqueId().equals(playerId) && vehicle.canDrive(driver)) {
+                    driver.sendMessage("Proprietarul este offline; poți termina cursa. După coborâre începe perioada de 5 minute.");
+                }
+                startOfflineOwnerTimer(vehicle);
             }
-            // A driver still at the wheel prevents the timer from starting; the
-            // dismount listener will start it later. Owner reconnect cancels it.
-            Bukkit.getScheduler().runTask(plugin, () -> startOfflineOwnerTimer(vehicle));
-        }
+            for (StoredVehicle stored : new ArrayList<>(pendingWorlds.values())) {
+                if (playerId.toString().equals(stored.owner())) startPendingOfflineTimer(stored);
+            }
+        });
     }
 
     /** A trusted driver may disconnect without removing the owner's car under
@@ -324,28 +327,49 @@ public final class VehicleManager {
     void startOfflineOwnerTimer(LandVehicle vehicle, long delayTicks) {
         if (!Bukkit.isPrimaryThread() || vehicle == null || vehicles.get(vehicle.id()) != vehicle
                 || vehicle.recoveryLocked() || vehicle.owner().isEmpty() || vehicle.driver().isPresent()) return;
-        UUID owner = vehicle.owner().orElseThrow();
+        scheduleOfflineOwnerTimer(vehicle.id(), vehicle.owner().orElseThrow(), delayTicks);
+    }
+    private void startPendingOfflineTimer(StoredVehicle stored) {
+        if (pendingWorlds.get(stored.id()) != stored || stored.owner() == null) return;
+        try { scheduleOfflineOwnerTimer(stored.id(), UUID.fromString(stored.owner()), 5L * 60L * 20L); }
+        catch (IllegalArgumentException ignored) { /* Invalid owner is never automatically garaged. */ }
+    }
+    private void scheduleOfflineOwnerTimer(UUID vehicleId, UUID owner, long delayTicks) {
         Player online = Bukkit.getPlayer(owner);
         if (online != null && online.isOnline()) return;
-        cancelOfflineOwnerTimer(vehicle.id());
+        cancelOfflineOwnerTimer(vehicleId);
         BukkitTask task = new org.bukkit.scheduler.BukkitRunnable() {
             @Override public void run() {
-                if (vehicles.get(vehicle.id()) != vehicle || vehicle.owner().filter(owner::equals).isEmpty()) {
-                    cancelOfflineOwnerTimer(vehicle.id()); return;
-                }
                 Player present = Bukkit.getPlayer(owner);
-                if (present != null && present.isOnline()) { cancelOfflineOwnerTimer(vehicle.id()); return; }
-                // Never despawn riders, moving vehicles, linked trailers or active recovery cargo.
-                if (vehicle.occupied() || vehicle.horizontalSpeed() > .01D || vehicle.recoveryLocked()
-                        || vehicle.transported() || vehicle.showcase() || vehicle.onJack() || vehicle.jackId() != null
-                        || vehicle.recoveryHasStorageViewers() || corruptLocation(vehicle.location())
-                        || !trailers.recoveryLinksKnown() || trailers.referencesVehicle(vehicle.id())) return;
-                if (storeVehicleNow(vehicle, null)) {
-                    cancelOfflineOwnerTimer(vehicle.id()); save();
+                if (present != null && present.isOnline()) { cancelOfflineOwnerTimer(vehicleId); return; }
+                if (garage.containsKey(vehicleId)) { cancelOfflineOwnerTimer(vehicleId); return; }
+                LandVehicle vehicle = vehicles.get(vehicleId);
+                StoredVehicle pending = pendingWorlds.get(vehicleId);
+                if (vehicle == null && pending == null) { cancelOfflineOwnerTimer(vehicleId); return; }
+                if (!trailers.recoveryLinksKnown() || trailers.referencesVehicle(vehicleId)) return;
+                if (vehicle != null) {
+                    if (vehicle.owner().filter(owner::equals).isEmpty()) { cancelOfflineOwnerTimer(vehicleId); return; }
+                    if (vehicle.occupied() || vehicle.horizontalSpeed() > .01D || vehicle.recoveryLocked()
+                            || vehicle.transported() || vehicle.showcase() || vehicle.onJack() || vehicle.jackId() != null
+                            || vehicle.recoveryHasStorageViewers() || corruptLocation(vehicle.location())) return;
+                    if (storeVehicleNow(vehicle, null)) save();
+                    return;
                 }
+                if (!owner.toString().equals(pending.owner())) { cancelOfflineOwnerTimer(vehicleId); return; }
+                if (pending.jackId() != null || (pending.jackState() != null && !"NONE".equals(pending.jackState()))) return;
+                // A hibernated vehicle can be garaged without loading its chunk.
+                // Persist before making its garage entry available to players.
+                pendingWorlds.remove(vehicleId);
+                garage.put(vehicleId, pending);
+                if (!saveNow()) {
+                    garage.remove(vehicleId);
+                    pendingWorlds.put(vehicleId, pending);
+                    return; // retry without exposing an unpersisted garage entry
+                }
+                cancelOfflineOwnerTimer(vehicleId);
             }
         }.runTaskTimer(plugin, delayTicks, 20L);
-        offlineOwnerTimers.put(vehicle.id(), task);
+        offlineOwnerTimers.put(vehicleId, task);
     }
     public void cancelOfflineOwnerTimer(UUID vehicleId) {
         BukkitTask task = offlineOwnerTimers.remove(vehicleId);
@@ -354,6 +378,8 @@ public final class VehicleManager {
     public void cancelOfflineOwnerTimersFor(UUID ownerId) {
         for (LandVehicle vehicle : vehicles.values())
             if (vehicle.owner().filter(ownerId::equals).isPresent()) cancelOfflineOwnerTimer(vehicle.id());
+        for (StoredVehicle stored : pendingWorlds.values())
+            if (ownerId.toString().equals(stored.owner())) cancelOfflineOwnerTimer(stored.id());
     }
 
     /** CICLUL AF: nimeni nu e in niciun scaun/carrier al rig-ului. Scanner complet
@@ -1538,33 +1564,12 @@ public final class VehicleManager {
                 + pendingWorlds.size() + " deferred, " + garage.size() + " stored in garages.");
     }
 
-    /** Move eligible saved vehicles to the owner's garage before they can spawn.
-     * Unknown trailer state, live trailer links, and workshop vehicles remain
-     * untouched: silently breaking a linkage is worse than leaving a vehicle out. */
-    private void recoverOwnedVehiclesOnBoot() {
-        if (!trailers.recoveryLinksKnown()) {
-            plugin.getLogger().warning("[Garaj] Startup recovery deferred: trailer links are not fully known.");
-            return;
-        }
-        int recovered = 0;
+    /** After a restart ordinary saved vehicles remain available for a new
+     * five-minute grace period. Recovery-transit snapshots already in the
+     * garage retain their separate crash-safety policy. */
+    private void scheduleOwnedVehiclesOnBoot() {
         for (StoredVehicle stored : new ArrayList<>(pendingWorlds.values())) {
-            if (stored.owner() == null || garage.containsKey(stored.id())
-                    || stored.jackId() != null || (stored.jackState() != null && !"NONE".equals(stored.jackState()))
-                    || trailers.referencesVehicle(stored.id())) continue;
-            try { UUID.fromString(stored.owner()); }
-            catch (IllegalArgumentException error) { continue; }
-            pendingWorlds.remove(stored.id());
-            garage.put(stored.id(), stored);
-            recovered++;
-        }
-        if (recovered > 0) {
-            // Persist before players can retrieve anything; recovery is idempotent
-            // because each UUID exists in only one YAML section in this snapshot.
-            if (!saveNow()) {
-                recoveryPersistenceHalted = true;
-                throw new IllegalStateException("Cannot safely persist startup garage recovery");
-            }
-            plugin.getLogger().info("[Garaj] Startup recovery: " + recovered + " vehicles returned to their owners.");
+            if (!garage.containsKey(stored.id())) startPendingOfflineTimer(stored);
         }
     }
 
