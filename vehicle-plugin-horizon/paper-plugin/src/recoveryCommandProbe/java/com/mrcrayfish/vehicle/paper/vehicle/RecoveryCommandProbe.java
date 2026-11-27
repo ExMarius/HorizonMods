@@ -47,7 +47,9 @@ public final class RecoveryCommandProbe extends JavaPlugin implements Listener {
                     && v.owner().filter(driver.getUniqueId()::equals).isPresent()).findFirst()
                     .orElseThrow(()->new IllegalStateException("public platform missing or not owned"));
             driver.removeAttachment(admin);
-            target=manager.spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,base.clone().add(-9.5*Math.sin(yaw),0,9.5*Math.cos(yaw)));
+            var targetSpec=LandVehicleSpec.byId(System.getProperty("horizon.recovery.testmodel","dacia_logan_police"));
+            if(targetSpec==null)throw new IllegalStateException("unknown test model");
+            target=manager.spawn(targetSpec,base.clone().add(-9.5*Math.sin(yaw),0,9.5*Math.cos(yaw)));
             target.setOwner(owner.getUniqueId());target.trust(driver.getUniqueId());
             driver.teleport(base.clone().add(10*Math.cos(yaw),0,10*Math.sin(yaw)));
             if(!driver.performCommand("vehicle tractare incarca"))throw new IllegalStateException("loading command failed");

@@ -37,18 +37,18 @@ public final class LiveRecoveryRoute {
         groundOffset=actual.getY()-origin.getY()-RecoveryLoadingPath.pose(startZ,WHEELBASE).height();
         cargoYaw=actual.getYaw();
     }
-    /** Only the Dacia example geometry on a level approach is modelled. The
-     * caller is responsible for proving those dimensions and all permissions. */
+    /** Common centred route for approved small/medium vehicles on level ground.
+     * The shared wheelbase and tow-eye geometry are approximate for other models. */
     public static LiveRecoveryRoute begin(VehicleManager manager, LandVehicle carrier, LandVehicle target,
                                                 org.bukkit.entity.Player player, LiveRecoveryMotion.Authority authority,
                                                 RecoveryInterlock.Safety safety) {
         if(!Bukkit.isPrimaryThread()||manager==null||carrier==null||target==null
-                || !"dacia_logan_police".equals(target.spec().id())) return null;
+                || !com.mrcrayfish.vehicle.paper.recovery.RecoveryTargetPolicy.supports(target.spec())) return null;
         Location base=carrier.location(), start=target.location();
         if(base.getWorld()==null || !base.getWorld().equals(start.getWorld()))return null;
         var approach=RecoveryRearApproach.offset(start.getX()-base.getX(),start.getY()-base.getY(),
                 start.getZ()-base.getZ(),base.getYaw());
-        if(!RecoveryRearApproach.daciaAligned(approach,start.getY()-base.getY(),
+        if(!RecoveryRearApproach.aligned(approach,start.getY()-base.getY(),
                 start.getYaw()-base.getYaw())) return null;
         LiveRecoveryMotion motion=LiveRecoveryMotion.begin(manager,carrier,target,player,authority,safety);
         if(motion==null)return null;

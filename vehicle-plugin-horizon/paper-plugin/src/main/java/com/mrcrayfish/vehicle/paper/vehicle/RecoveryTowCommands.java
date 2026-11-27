@@ -3,6 +3,7 @@ package com.mrcrayfish.vehicle.paper.vehicle;
 import com.mrcrayfish.vehicle.paper.VehiclePlugin;
 import com.mrcrayfish.vehicle.paper.recovery.RecoveryInterlock;
 import com.mrcrayfish.vehicle.paper.recovery.RecoveryRearApproach;
+import com.mrcrayfish.vehicle.paper.recovery.RecoveryTargetPolicy;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -39,7 +40,7 @@ public final class RecoveryTowCommands {
             player.sendMessage("Oprește platforma, coboară și încheie transportul anterior.");return;
         }
         Location base=carrier.location();
-        LandVehicle target=manager.vehicles().stream().filter(v -> v!=carrier)
+        LandVehicle target=manager.vehicles().stream().filter(v -> v!=carrier && RecoveryTargetPolicy.supports(v.spec()))
                 .filter(v -> v.location().getWorld()!=null && v.location().getWorld().equals(base.getWorld()))
                 .filter(v -> {
                     Location at=v.location();
@@ -47,12 +48,9 @@ public final class RecoveryTowCommands {
                             at.getX()-base.getX(),at.getY()-base.getY(),at.getZ()-base.getZ(),base.getYaw()));
                 })
                 .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(base))).orElse(null);
-        if(target==null){player.sendMessage("Nu există niciun vehicul în spatele platformei la maximum 10 blocuri.");return;}
+        if(target==null){player.sendMessage("Nu există niciun vehicul mic sau mediu compatibil în spatele platformei la maximum 10 blocuri.");return;}
         if(target.owner().isEmpty() || !target.canDrive(player)) {
             player.sendMessage("Nu ai drepturi asupra celui mai apropiat vehicul sau acesta nu are proprietar.");return;
-        }
-        if(!"dacia_logan_police".equals(target.spec().id())) {
-            player.sendMessage("Traseul pentru acest model nu este încă verificat; momentan este acceptată doar Dacia Poliție.");return;
         }
         carrier.rig().setRecoveryRampProgress(1);carrier.forceVisualSync();
         var route=LiveRecoveryRoute.begin(manager,carrier,target,player,(actor,world,box)->actor.isOnline(),SAFETY);

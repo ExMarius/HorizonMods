@@ -1,0 +1,42 @@
+name: Test recovery of small and medium vehicles
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths:
+      - '.github/workflows/recovery-multi-vehicle-check.yml'
+      - 'vehicle-plugin-horizon/paper-plugin/**'
+      - 'vehicle-plugin-horizon/tools/smoke_recovery_pair.*'
+permissions:
+  contents: read
+jobs:
+  recovery:
+    strategy:
+      fail-fast: false
+      matrix:
+        vehicle: [go_kart, horizon_off_roader, atv]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build plugin and test probe
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build recoveryCommandProbeJar
+      - name: Install offline test client
+        run: npm install --prefix /tmp/recovery-test mineflayer@4.39.0
+      - name: Verify loading, unloading and garage restoration
+        env:
+          NODE_PATH: /tmp/recovery-test/node_modules
+          RECOVERY_COMMAND_TEST: '1'
+          RECOVERY_TARGET_MODEL: ${{ matrix.vehicle }}
+        run: |
+          set -o pipefail
+          python3 vehicle-plugin-horizon/tools/smoke_recovery_pair.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-command-probe/RecoveryProbe.jar 2>&1 | tee /tmp/test.log || {
+            python3 -c "from pathlib import Path; s=Path('/tmp/test.log').read_text().splitlines(); print('::error::'+' | '.join(s[-35:]).replace('%','%25')[:10000])"
+            exit 1
+          }

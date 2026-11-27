@@ -403,7 +403,7 @@ public final class VehicleManager {
         if (!Bukkit.isPrimaryThread() || recoveryPersistenceHalted || carrier == null || target == null
                 || operator == null || !operator.isOnline() || carrier == target
                 || !"horizon_recovery_prototype".equals(carrier.spec().id())
-                || !"dacia_logan_police".equals(target.spec().id())
+                || !com.mrcrayfish.vehicle.paper.recovery.RecoveryTargetPolicy.supports(target.spec())
                 || !trailers.recoveryLinksKnown()) return false;
         for (LandVehicle vehicle : List.of(carrier, target)) {
             if (vehicles.get(vehicle.id()) != vehicle || !vehicle.recoveryMotionLockedBy(token)

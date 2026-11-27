@@ -10,7 +10,7 @@ class RecoveryRearApproachTest {
             var rear=RecoveryRearApproach.offset(-9.6*Math.sin(r),0,9.6*Math.cos(r),yaw);
             var front=RecoveryRearApproach.offset(9.6*Math.sin(r),0,-9.6*Math.cos(r),yaw);
             assertTrue(RecoveryRearApproach.selectable(rear));
-            assertTrue(RecoveryRearApproach.daciaAligned(rear,0,0));
+            assertTrue(RecoveryRearApproach.aligned(rear,0,0));
             assertFalse(RecoveryRearApproach.selectable(front));
         }
     }
@@ -18,10 +18,10 @@ class RecoveryRearApproachTest {
         assertTrue(RecoveryRearApproach.selectable(RecoveryRearApproach.offset(0,0,10,0)));
         assertFalse(RecoveryRearApproach.selectable(RecoveryRearApproach.offset(0,0,10.001,0)));
         assertFalse(RecoveryRearApproach.selectable(RecoveryRearApproach.offset(0,1,10,0)));
-        assertFalse(RecoveryRearApproach.daciaAligned(RecoveryRearApproach.offset(0,0,8,0),0,0));
-        assertFalse(RecoveryRearApproach.daciaAligned(RecoveryRearApproach.offset(.2,0,9.6,0),0,0));
-        assertFalse(RecoveryRearApproach.daciaAligned(RecoveryRearApproach.offset(0,0,9.6,0),.2,0));
-        assertFalse(RecoveryRearApproach.daciaAligned(RecoveryRearApproach.offset(0,0,9.6,0),0,30));
+        assertFalse(RecoveryRearApproach.aligned(RecoveryRearApproach.offset(0,0,8,0),0,0));
+        assertFalse(RecoveryRearApproach.aligned(RecoveryRearApproach.offset(.2,0,9.6,0),0,0));
+        assertFalse(RecoveryRearApproach.aligned(RecoveryRearApproach.offset(0,0,9.6,0),.2,0));
+        assertFalse(RecoveryRearApproach.aligned(RecoveryRearApproach.offset(0,0,9.6,0),0,30));
         assertThrows(IllegalArgumentException.class,()->RecoveryRearApproach.offset(Double.NaN,0,0,0));
     }
 }

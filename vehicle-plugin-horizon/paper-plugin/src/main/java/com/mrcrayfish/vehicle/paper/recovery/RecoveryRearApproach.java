@@ -21,8 +21,8 @@ public final class RecoveryRearApproach {
                 && offset.distanceSquared() <= MAX_DISTANCE*MAX_DISTANCE;
     }
 
-    /** Straight, level, centred approach for the existing Dacia geometry. */
-    public static boolean daciaAligned(Offset offset, double yDifference, double yawDifference) {
+    /** Straight, level approach using the common approximate wheelbase. */
+    public static boolean aligned(Offset offset, double yDifference, double yawDifference) {
         if (!selectable(offset) || !Double.isFinite(yDifference) || !Double.isFinite(yawDifference)) return false;
         double z=offset.longitudinal();
         // Both axles start on ground, not suspended halfway up a ramp.
