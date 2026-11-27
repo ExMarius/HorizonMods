@@ -254,7 +254,7 @@ public final class VehicleListener implements Listener {
         vehicles.trailers().hideWaterPlacementTargetsFrom(event.getPlayer());
         if (!vehicles.garagedOf(event.getPlayer()).isEmpty()) {
             event.getPlayer().sendRichMessage("<gray>🚗 Mai ai vehicule in garaj: "
-                    + "<gold>/vehicle garaj</gold>. La iesire de pe server intra singure inapoi.</gray>");
+                    + "<gold>/vehicle garaj</gold>. Vehiculele nefolosite revin dupa 5 minute offline.</gray>");
         }
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             // Default OFF: the login-time pack from server.properties is synced on
@@ -298,16 +298,10 @@ public final class VehicleListener implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         vehicles.recoveryOwnerQuit(event.getPlayer().getUniqueId());
         vehicles.trailers().onPlayerQuit(event.getPlayer());
-        // Bukkit removes the player from the seat. Vehicle tick resets its input on the next tick.
-        // Unoccupied owned vehicles are garaged; occupied vehicles and uncertain
-        // trailer links wait until they can be stored safely.
-        int stored = vehicles.parkAllOwnedBy(event.getPlayer().getUniqueId());
-        // A trusted driver's departure never removes an occupied car instantly.
-        stored += vehicles.parkDrivenByNonOwner(event.getPlayer().getUniqueId());
-        if (stored > 0) {
-            plugin.getLogger().info("[Garaj] " + event.getPlayer().getName() + " a iesit - "
-                    + stored + " vehicule au intrat in garajul global (zero consum).");
-        }
+        // Paper detaches the quitting player after this event; timers begin on
+        // the next tick, or when a trusted driver eventually leaves the vehicle.
+        vehicles.scheduleOwnedVehiclesAfterQuit(event.getPlayer().getUniqueId());
+        vehicles.scheduleDrivenVehicleAfterQuit(event.getPlayer().getUniqueId());
     }
 
     /** Stepping out inside a marked circle = parked: the car stays on the asphalt and

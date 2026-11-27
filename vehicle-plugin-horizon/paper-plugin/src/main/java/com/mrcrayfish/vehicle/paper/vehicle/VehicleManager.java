@@ -288,59 +288,25 @@ public final class VehicleManager {
         return Math.max(0.0D, plugin.getConfig().getDouble("economy.public-garage-retrieval-fee", 500.0D));
     }
 
-    /**
-     * Quit flow of the global garage. Vehicles already driven by an authorized
-     * non-owner remain available until that driver leaves and the grace period
-     * expires. Other ordinary owned vehicles follow the existing immediate rule.
-     */
-    public int parkAllOwnedBy(java.util.UUID playerId) {
-        int storedCount = 0;
-        for (LandVehicle vehicle : new java.util.ArrayList<>(vehicles.values())) {
-            if (!vehicle.owner().map(playerId::equals).orElse(false)) {
-                continue;
+    /** Start the offline grace period after quit has detached the player.
+     * An authorized driver may finish their trip; their dismount starts the timer. */
+    public void scheduleOwnedVehiclesAfterQuit(UUID playerId) {
+        for (LandVehicle vehicle : new ArrayList<>(vehicles.values())) {
+            if (!vehicle.owner().filter(playerId::equals).isPresent()
+                    || vehicle.showcase() || vehicle.onJack() || vehicle.recoveryLocked()) continue;
+            Player driver = vehicle.driver().orElse(null);
+            if (driver != null && !driver.getUniqueId().equals(playerId) && vehicle.canDrive(driver)) {
+                driver.sendMessage("Proprietarul este offline; poți termina cursa. După coborâre începe perioada de 5 minute.");
             }
-            if (vehicle.showcase() || vehicle.onJack() || vehicle.recoveryLocked()) {
-                // showcase = al podiumului; PE CRIC = in service: ramane in lume
-                // peste restart (garajul nu ia masini ridicate la mecanic).
-                continue;
-            }
-            // Do not remove a vehicle from under an authorized non-owner driver.
-            // Their eventual dismount starts the offline-owner grace period.
-            Player currentDriver = vehicle.driver().orElse(null);
-            if (currentDriver != null && !currentDriver.getUniqueId().equals(playerId)
-                    && vehicle.canDrive(currentDriver)) {
-                currentDriver.sendMessage("Proprietarul este offline; poți termina cursa. După coborâre începe perioada de 5 minute.");
-                continue;
-            }
-            // Do not remove passengers, break an uncertain trailer linkage, or
-            // interrupt an open inventory. Start the safe wait after quit detaches.
-            if (vehicle.occupied() || vehicle.recoveryHasStorageViewers()
-                    || !trailers.recoveryLinksKnown() || trailers.referencesVehicle(vehicle.id())) {
-                Bukkit.getScheduler().runTask(plugin, () -> startOfflineOwnerTimer(vehicle));
-                continue;
-            }
-            StoredVehicle stored = StoredVehicle.from(vehicle);
-            unindex(vehicle);
-            releaseChunkTicket(vehicle);
-            trailers.onVehicleRemoved(vehicle.id());
-            vehicles.remove(vehicle.id());
-            pendingWorlds.remove(vehicle.id());
-            vehicle.remove();
-            garage.put(stored.id(), stored);
-            storedCount++;
+            // A driver still at the wheel prevents the timer from starting; the
+            // dismount listener will start it later. Owner reconnect cancels it.
+            Bukkit.getScheduler().runTask(plugin, () -> startOfflineOwnerTimer(vehicle));
         }
-        if (storedCount > 0) {
-            save();
-            plugin.getLogger().info("[Garaj] Quit: " + storedCount
-                    + " vehicule au intrat in garajul global (acasa = gratuit, public = "
-                    + impoundFee() + "$).");
-        }
-        return storedCount;
     }
 
     /** A trusted driver may disconnect without removing the owner's car under
      * other passengers. Start the grace period only when the owner is offline. */
-    public int parkDrivenByNonOwner(UUID quitterId) {
+    public void scheduleDrivenVehicleAfterQuit(UUID quitterId) {
         for (LandVehicle vehicle : new ArrayList<>(vehicles.values())) {
             if (vehicle.showcase() || vehicle.onJack() || vehicle.recoveryLocked()
                     || vehicle.owner().isEmpty() || vehicle.owner().filter(quitterId::equals).isPresent()) continue;
@@ -348,7 +314,6 @@ public final class VehicleManager {
                 Bukkit.getScheduler().runTask(plugin, () -> startOfflineOwnerTimer(vehicle));
             }
         }
-        return 0;
     }
 
     /** Begin five minutes after a trusted driver leaves an ordinary vehicle.
