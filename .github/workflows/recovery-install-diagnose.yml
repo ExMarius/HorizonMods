@@ -31,5 +31,10 @@ jobs:
           f.notice('JAR SHA256',f.sha(a.download('/plugins/'+f.NAME)))
           props={x['key']:str(x.get('value','')) for x in a.api('/properties') if 'key' in x}
           f.notice('Pack SHA1',props.get('resource-pack-sha1','missing'))
+          keys=('resource-pack','resource-pack-sha1','resource-pack-id','require-resource-pack')
+          f.notice('Pack properties first',repr({k:props.get(k) for k in keys}).replace('%','%25'))
+          second={x['key']:str(x.get('value','')) for x in a.api('/properties') if 'key' in x}
+          f.notice('Pack properties second',repr({k:second.get(k) for k in keys}).replace('%','%25'))
           PY
 # Include the final non-sensitive failure context.
+# Compare pack metadata independently.
