@@ -312,7 +312,13 @@ public final class LandVehicle {
                 world, location, requestedMovement, onGround,
                 spec.entityWidth(), spec.entityHeight(), spec.stepHeight(),
                 !spec.climbsStationSlabs());
-        Vector allowed = plugin.vehicles().recoveryTowCommands().limitApproach(this, location, collision.movement());
+        Vector resolved=collision.movement().clone();
+        boolean bedSupported=false;
+        if ("horizon_recovery_prototype".equals(spec.id()) && resolved.getY()<0D) {
+            double supportedY=recoverySupportMovement(world, location, resolved);
+            if(supportedY>resolved.getY()+1e-7D) {resolved.setY(supportedY);bedSupported=true;}
+        }
+        Vector allowed = plugin.vehicles().recoveryTowCommands().limitApproach(this, location, resolved);
         if (allowed.getX()!=collision.movement().getX() || allowed.getZ()!=collision.movement().getZ()) {
             velocity.setX(0).setZ(0); motion.setX(0).setZ(0);
         }
@@ -325,8 +331,8 @@ public final class LandVehicle {
         }
         location.add(allowed);
         if(cargoCanFollow)plugin.vehicles().recoveryTowCommands().syncMovedCarrier(this);
-        onGround = collision.onGround();
-        if (collision.verticalCollision()) {
+        onGround = collision.onGround() || bedSupported;
+        if (collision.verticalCollision() || bedSupported) {
             verticalVelocity = 0.0D;
         }
         // Daune la impact: mersul blocat orizontal la viteza avariaza proportional si
@@ -995,6 +1001,34 @@ public final class LandVehicle {
         float turnValue = clamp(input.steeringDirection(), -1.0F, 1.0F);
         float strengthModifier = turnValue != 0.0F ? 0.05F : 0.2F;
         steeringAngle += (spec.maxSteeringAngle() * turnValue - steeringAngle) * strengthModifier;
+    }
+
+    /** Preserve support while any part of the long recovery truck still spans a ledge.
+     * The normal square entity hitbox is centred near the cab and otherwise loses
+     * ground support before the rear deck has crossed the edge. */
+    private static double recoverySupportMovement(World world,Location root,Vector movement) {
+        double startY=root.getY(), endY=startY+movement.getY(), best=movement.getY();
+        Location at=root.clone().add(movement.getX(),0D,movement.getZ());
+        for(double z=-2D;z<=5.51D;z+=.5D) for(double x:new double[]{-1D,0D,1D}) {
+            Vector offset=rotateLocal(x,0D,z,root.getYaw());
+            double px=at.getX()+offset.getX(),pz=at.getZ()+offset.getZ();
+            int bx=(int)Math.floor(px),bz=(int)Math.floor(pz);
+            if(!world.isChunkLoaded(bx>>4,bz>>4))continue;
+            int minY=Math.max(world.getMinHeight(),(int)Math.floor(endY)-1);
+            int maxY=Math.min(world.getMaxHeight()-1,(int)Math.floor(startY));
+            for(int y=minY;y<=maxY;y++) {
+                var block=world.getBlockAt(bx,y,bz);
+                if(block.getType().isAir())continue;
+                for(var box:block.getCollisionShape().getBoundingBoxes()) {
+                    double top=y+box.getMaxY();
+                    if(px>=bx+box.getMinX()-1e-7D && px<=bx+box.getMaxX()+1e-7D
+                            && pz>=bz+box.getMinZ()-1e-7D && pz<=bz+box.getMaxZ()+1e-7D
+                            && top>=endY-1e-7D && top<=startY+1e-7D)
+                        best=Math.max(best,Math.min(0D,top-startY));
+                }
+            }
+        }
+        return best;
     }
 
     private void updateCharging(boolean enginePowered) {
