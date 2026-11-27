@@ -43,6 +43,7 @@ final class CameraYawExperiment {
     }
 
     CameraYawExperiment(JavaPlugin plugin) { this.plugin = plugin; }
+    boolean active() { return session != null; }
 
     boolean start(Player player, LandVehicle vehicle) {
         if (!Bukkit.isPrimaryThread() || !player.isOp() || !"1.21.4".equals(Bukkit.getMinecraftVersion())

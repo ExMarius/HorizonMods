@@ -57,6 +57,7 @@ public final class VehicleManager {
     private final TrailerManager trailers;
     private final RecoveryTowCommands recoveryTowCommands;
     private final CameraYawExperiment cameraYawExperiment;
+    private final BodySeatExperiment bodySeatExperiment;
     private final com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal recoveryJournal;
     private BukkitTask tickTask;
     private BukkitTask saveTask;
@@ -107,6 +108,7 @@ public final class VehicleManager {
         this.trailers = new TrailerManager(plugin, this);
         this.recoveryTowCommands = new RecoveryTowCommands(plugin, this);
         this.cameraYawExperiment = new CameraYawExperiment(plugin);
+        this.bodySeatExperiment = new BodySeatExperiment();
         try {
             var journal = new com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal(
                     plugin.getDataFolder().toPath().resolve("recovery-live.journal"));
@@ -177,6 +179,7 @@ public final class VehicleManager {
 
     public void stop() {
         cameraYawExperiment.clear();
+        bodySeatExperiment.clear();
         if (tickTask != null) {
             tickTask.cancel();
         }
@@ -1194,9 +1197,20 @@ public final class VehicleManager {
     public void cameraTest(Player player, boolean enable) {
         if (!player.isOp()) { player.sendMessage("[CameraTest] Doar administratorii pot folosi experimentul."); return; }
         if (!enable) { cameraYawExperiment.stop(player); return; }
+        if (bodySeatExperiment.active()) { player.sendMessage("Oprește mai întâi /vehicle corptest oprit."); return; }
         LandVehicle driven = vehicles.values().stream()
                 .filter(v -> v.driver().filter(player::equals).isPresent()).findFirst().orElse(null);
         cameraYawExperiment.start(player, driven);
+    }
+
+    /** Compare seat orientation separately from the packet-based camera experiment. */
+    public void bodySeatTest(Player player, boolean enable) {
+        if (!player.isOp()) { player.sendMessage("[CorpTest] Doar administratorii pot folosi experimentul."); return; }
+        if (!enable) { bodySeatExperiment.stop(player); return; }
+        if (cameraYawExperiment.active()) { player.sendMessage("Oprește mai întâi /vehicle cameratest oprit."); return; }
+        LandVehicle driven = vehicles.values().stream()
+                .filter(v -> v.driver().filter(player::equals).isPresent()).findFirst().orElse(null);
+        bodySeatExperiment.start(player, driven);
     }
 
     public Optional<LandVehicle> nearest(Location origin, double maximumDistance) {
@@ -1805,6 +1819,7 @@ public final class VehicleManager {
             }
         }
         cameraYawExperiment.tick(this);
+        bodySeatExperiment.tick(this);
         recoveryTowCommands.updateApproachRamps();
         trailers.tick();
         handleBumperCarCollisions();

@@ -38,6 +38,9 @@ public final class LandVehicleRig {
      *  (A/D): serverul forteaza scaunul sa urmeze vehiculul. In repaus,
      *  campul ramane false si clientul detine rotatia (rider vanilla). */
     private boolean carryBody = false;
+    // Opt-in single-rider experiment; never persisted or enabled for ordinary vehicles.
+    private UUID experimentalDriverYaw;
+    public void setExperimentalDriverYaw(UUID rider) { experimentalDriverYaw = rider; }
 
     public void setSeatBodyCarry(boolean carryBody) {
         this.carryBody = carryBody;
@@ -706,7 +709,7 @@ public final class LandVehicleRig {
          * corpul pe scaun si lasa capul liber). In timpul virajelor/mersului
          * serverul tine scaunul la yaw-ul vehiculului => corpul calatorul
          * se misca o data cu masina. */
-        if (carryBody) {
+        if (carryBody || (carrier.properties.driver() && rider.getUniqueId().equals(experimentalDriverYaw))) {
             seat.setRotation(seatYaw, 0.0F);
         }
     }
