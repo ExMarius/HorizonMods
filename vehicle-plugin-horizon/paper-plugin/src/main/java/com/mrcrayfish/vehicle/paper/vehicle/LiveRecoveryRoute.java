@@ -4,6 +4,7 @@ import com.mrcrayfish.vehicle.paper.recovery.RecoveryCable;
 import com.mrcrayfish.vehicle.paper.recovery.RecoveryCableWorldCheck;
 import com.mrcrayfish.vehicle.paper.recovery.RecoveryInterlock;
 import com.mrcrayfish.vehicle.paper.recovery.RecoveryLoadingPath;
+import com.mrcrayfish.vehicle.paper.recovery.RecoveryRearApproach;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 
@@ -18,7 +19,7 @@ import java.util.UUID;
 public final class LiveRecoveryRoute {
     public enum State { LOADING, AT_DECK, TEST_DRIVING, PENDING_EVACUATION, UNLOADING, ON_GROUND, STOPPED, FINISHED, TEST_PARKED }
     private static final int STEPS=180;
-    private static final double START=9.8, DECK=2.64, WHEELBASE=3.3;
+    private static final double DECK=2.64, WHEELBASE=3.3;
     private final LiveRecoveryMotion motion;
     private final VehicleManager manager;
     private final LandVehicle carrier,target;
@@ -45,12 +46,10 @@ public final class LiveRecoveryRoute {
                 || !"dacia_logan_police".equals(target.spec().id())) return null;
         Location base=carrier.location(), start=target.location();
         if(base.getWorld()==null || !base.getWorld().equals(start.getWorld()))return null;
-        double yaw=Math.toRadians(base.getYaw()),sin=Math.sin(yaw),cos=Math.cos(yaw);
-        double dx=start.getX()-base.getX(),dz=start.getZ()-base.getZ();
-        double z=-dx*sin+dz*cos,lateral=-dx*cos-dz*sin;
-        if(Math.abs(z-START)>.25 || Math.abs(lateral)>.05
-                || Math.abs(start.getY()-base.getY()-RecoveryLoadingPath.pose(z,WHEELBASE).height())>.05
-                || Math.abs(Math.IEEEremainder(start.getYaw()-base.getYaw(),360D))>2F) return null;
+        var approach=RecoveryRearApproach.offset(start.getX()-base.getX(),start.getY()-base.getY(),
+                start.getZ()-base.getZ(),base.getYaw());
+        if(!RecoveryRearApproach.daciaAligned(approach,start.getY()-base.getY(),
+                start.getYaw()-base.getYaw())) return null;
         LiveRecoveryMotion motion=LiveRecoveryMotion.begin(manager,carrier,target,player,authority,safety);
         if(motion==null)return null;
         return new LiveRecoveryRoute(manager,motion,carrier,target);

@@ -47,7 +47,7 @@ public final class RecoveryCommandProbe extends JavaPlugin implements Listener {
                     && v.owner().filter(driver.getUniqueId()::equals).isPresent()).findFirst()
                     .orElseThrow(()->new IllegalStateException("public platform missing or not owned"));
             driver.removeAttachment(admin);
-            target=manager.spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,base.clone().add(-9.8*Math.sin(yaw),0,9.8*Math.cos(yaw)));
+            target=manager.spawn(LandVehicleSpec.DACIA_LOGAN_POLICE,base.clone().add(-9.5*Math.sin(yaw),0,9.5*Math.cos(yaw)));
             target.setOwner(owner.getUniqueId());target.trust(driver.getUniqueId());
             driver.teleport(base.clone().add(10*Math.cos(yaw),0,10*Math.sin(yaw)));
             if(!driver.performCommand("vehicle tractare incarca"))throw new IllegalStateException("loading command failed");
@@ -59,7 +59,7 @@ public final class RecoveryCommandProbe extends JavaPlugin implements Listener {
     private void crashReady(org.bukkit.Location base) {
         try {
             double yaw=Math.toRadians(base.getYaw());
-            var initial=base.clone().add(-9.8*Math.sin(yaw),0,9.8*Math.cos(yaw));
+            var initial=base.clone().add(-9.5*Math.sin(yaw),0,9.5*Math.cos(yaw));
             if(!carrier.recoveryLocked() || !target.recoveryLocked() || target.location().distanceSquared(initial)<.1)
                 throw new IllegalStateException("live command did not reach mid-loading");
             Files.createDirectories(getDataFolder().toPath());

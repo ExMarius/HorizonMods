@@ -2,6 +2,7 @@ package com.mrcrayfish.vehicle.paper.vehicle;
 
 import com.mrcrayfish.vehicle.paper.VehiclePlugin;
 import com.mrcrayfish.vehicle.paper.recovery.RecoveryInterlock;
+import com.mrcrayfish.vehicle.paper.recovery.RecoveryRearApproach;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -40,9 +41,13 @@ public final class RecoveryTowCommands {
         Location base=carrier.location();
         LandVehicle target=manager.vehicles().stream().filter(v -> v!=carrier)
                 .filter(v -> v.location().getWorld()!=null && v.location().getWorld().equals(base.getWorld()))
-                .filter(v -> v.location().distanceSquared(base)<=100D)
+                .filter(v -> {
+                    Location at=v.location();
+                    return RecoveryRearApproach.selectable(RecoveryRearApproach.offset(
+                            at.getX()-base.getX(),at.getY()-base.getY(),at.getZ()-base.getZ(),base.getYaw()));
+                })
                 .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(base))).orElse(null);
-        if(target==null){player.sendMessage("Nu există niciun vehicul la maximum 10 blocuri de platformă.");return;}
+        if(target==null){player.sendMessage("Nu există niciun vehicul în spatele platformei la maximum 10 blocuri.");return;}
         if(target.owner().isEmpty() || !target.canDrive(player)) {
             player.sendMessage("Nu ai drepturi asupra celui mai apropiat vehicul sau acesta nu are proprietar.");return;
         }
@@ -51,7 +56,7 @@ public final class RecoveryTowCommands {
         }
         carrier.rig().setRecoveryRampProgress(1);carrier.forceVisualSync();
         var route=LiveRecoveryRoute.begin(manager,carrier,target,player,(actor,world,box)->actor.isOnline(),SAFETY);
-        if(route==null) {carrier.rig().setRecoveryRampProgress(0);carrier.forceVisualSync();player.sendMessage("Vehicul găsit, dar traseul sigur este momentan doar drept, aliniat la circa 9,8 blocuri în spatele platformei. Verifică și ocupanții/cuplajele.");return;}
+        if(route==null) {carrier.rig().setRecoveryRampProgress(0);carrier.forceVisualSync();player.sendMessage("Vehicul găsit, dar traseul verificat cere aliniere dreaptă pe sol în spatele rampelor, aproape de limita de 10 blocuri. Verifică și ocupanții/cuplajele.");return;}
         try {
             if(!manager.reserveGarageTransit(carrier,target,player,route.lockToken())) {
                 route.abortUnmoved();carrier.rig().setRecoveryRampProgress(0);carrier.forceVisualSync();
