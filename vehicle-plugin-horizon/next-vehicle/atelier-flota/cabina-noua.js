@@ -56,6 +56,9 @@ export const cabinaNoua = [
  ['white',0,2.87,-1.41,2.68,.16,2.20],
  ['whiteDark',0,2.76,-2.39,2.43,.08,.16],['white',0,2.73,-.40,2.41,.10,.14],
  ['white',0,1.36,-.40,2.41,.10,.14],['whiteDark',0,1.29,-2.39,2.42,.10,.15],
+ // Closed rear wall with a single narrow, wide high window aperture.
+ ['white',0,1.90,-.40,2.41,.98,.12],
+ ['white',-.98,2.53,-.40,.45,.28,.12],['white',.98,2.53,-.40,.45,.28,.12],
  // All four window apertures deliberately contain no blue glass or infill.
  // Visor, mirrors, amber markers and steps.
  ['whiteDark',0,2.80,-2.53,2.52,.08,.27],['white',0,2.86,-2.54,2.68,.07,.32],
@@ -76,6 +79,18 @@ export const cabinaNoua = [
  ['seat',-.62,1.87,-.82,.36,.23,.14],['seat',.62,1.87,-.82,.36,.23,.14],
  ['chassis',0,1.03,-1.43,.26,.36,.85],['black',.12,1.31,-1.36,.05,.30,.05,-.25],
  ['black',.12,1.48,-1.40,.10,.10,.10],
+ // Instrument panel and passenger glovebox; radio buttons sit proud of its face.
+ ['black',-.62,1.49,-1.91,.48,.08,.035],
+ ['silver',-.78,1.50,-1.888,.07,.035,.01],['silver',-.62,1.50,-1.888,.07,.035,.01],['silver',-.46,1.50,-1.888,.07,.035,.01],
+ ['dark',.28,1.40,-1.964,.45,.15,.035],['black',.28,1.40,-1.942,.38,.10,.01],
+ ['silver',.22,1.41,-1.934,.19,.035,.008],['silver',.42,1.40,-1.934,.045,.045,.008],
+ ['dark',.87,1.31,-1.964,.49,.12,.025],['silver',.87,1.34,-1.946,.15,.018,.01],
+ // Handbrake alongside the driver's seat; gaiter, lever and grip.
+ ['dark',-.20,1.15,-.99,.12,.12,.25],
+ ['black',-.20,1.30,-.99,.055,.23,.055,-.32],
+ ['silver',-.20,1.43,-1.025,.09,.08,.11],
+ // Floor mats set just above the floor without overlapping the pedals.
+ ['dark',-.62,.795,-1.42,.72,.012,.68],['dark',.62,.795,-1.42,.72,.012,.68],
  // Inner wheel housings isolate the tyres from the footwells. Panels stop
  // above the tyre and sit inboard, leaving the wheels free to rotate.
  ['dashboard',-1.10,.98,-2.05,.07,.56,1.08],['dashboard',1.10,.98,-2.05,.07,.56,1.08],
