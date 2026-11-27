@@ -2,6 +2,7 @@
 """Disposable Paper paired-garage quit and restart probe."""
 import hashlib,json,os,shutil,subprocess,sys,tempfile,time,urllib.request
 from pathlib import Path
+from recovery_log_check import assert_clean
 API='https://fill.papermc.io/v3/projects/paper/versions/1.21.4/builds'
 HEADERS={'User-Agent':'Horizon-recovery-probe/1.0 (https://github.com/ExMarius/HorizonMods)'}
 def get(url):
@@ -37,6 +38,7 @@ def main(jar,probe):
                 else:
                     proc.stdin.write('stop\n');proc.stdin.flush();proc.wait(timeout=90)
                     if proc.returncode != 0:raise RuntimeError('controlled stop failed: '+str(proc.returncode))
+                out.flush(); assert_clean(log)  # Include shutdown or SIGKILL output.
                 restartlog=root/'server-restart.log'
                 with restartlog.open('w+') as restarted:
                     proc=subprocess.Popen(['java','-Dhorizon.recovery.pairtest=true','-Dhorizon.recovery.drivetest='+str(os.getenv('RECOVERY_PAIR_DRIVE')=='1' or os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Dhorizon.recovery.restarttest='+str(os.getenv('RECOVERY_MID_RESTART')=='1').lower(),'-Xms512M','-Xmx1G','-jar','paper.jar','--nogui'],cwd=root,stdin=subprocess.PIPE,stdout=restarted,stderr=subprocess.STDOUT,text=True)
@@ -53,6 +55,7 @@ def main(jar,probe):
                     if bot.returncode or any('RECOVERY_PAIR_RESTART_OK '+n not in restarttext for n in ('RecoveryOwnerBot','RecoveryProbeBot')) or 'RECOVERY_PROBE_FAIL' in restarttext:
                         raise RuntimeError('restart garage verification failed: '+(restarttext+bot.stdout+bot.stderr)[-5000:])
                     proc.stdin.write('stop\n');proc.stdin.flush();proc.wait(timeout=90)
+                    restarted.flush(); assert_clean(restartlog)
                 scenario = 'prepared mid-transport journal' if os.getenv('RECOVERY_MID_RESTART')=='1' else 'owner quit'
                 stop = 'SIGKILL' if crashed else 'controlled stop'
                 print(f'Disposable probe: {scenario}, {stop}, both owners recovered vehicles after restart. This is not a live persistence test.')

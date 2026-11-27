@@ -6,6 +6,8 @@ on:
       - 'vehicle-plugin-horizon/paper-plugin/**'
       - 'vehicle-plugin-horizon/tools/smoke_recovery_probe.*'
       - 'vehicle-plugin-horizon/tools/smoke_recovery_pair.*'
+      - 'vehicle-plugin-horizon/tools/recovery_log_check.py'
+      - 'vehicle-plugin-horizon/tools/test_recovery_log_check.py'
       - '.github/workflows/recovery-prototype-check.yml'
 permissions:
   contents: read
@@ -29,6 +31,8 @@ jobs:
             python3 -c "from pathlib import Path; lines=Path('/tmp/recovery-build.log').read_text().splitlines(); print('::error::'+' | '.join(lines[-50:]).replace('%','%25')[:12000])"
             exit 1
           }
+      - name: Test Paper log error detection
+        run: python3 -m unittest discover -s vehicle-plugin-horizon/tools -p test_recovery_log_check.py -v
       - name: Install offline test client
         run: npm install --prefix /tmp/recovery-test mineflayer@4.39.0
       - name: Spawn and inspect rig on disposable Paper server
