@@ -1,8 +1,8 @@
 import * as T from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {palette,platforma,ramp,platformWheels} from './design.js';
-import {cabinaNoua,frontWheels,steeringPosition} from './cabina-noua.js';
-import {cabZ,compactCabPart,revisedRearPart,rearShift} from './cabina-geometry.js';
+import {body as cabBody,roof as cabRoof,interior as cabInterior,frontWheels,steeringPosition} from './cabina-concept-detaliat.js';
+import {revisedRearPart,rearShift} from './cabina-geometry.js';
 import {loadDacia} from './loading-demo.js';
 
 const holder=document.querySelector('#scene'), status=document.querySelector('#status');
@@ -20,21 +20,23 @@ function box(part,parent){const [kind,x,y,z,w,h,d,rx=0]=part;const mesh=new T.Me
 function cylinder(parent,material,radius,depth,x,y,z){const mesh=new T.Mesh(new T.CylinderGeometry(radius,radius,depth,24),mats[material]);mesh.rotation.z=Math.PI/2;mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh)}
 function wheel(parent,x,y,z,scale){const group=new T.Group();group.position.set(x,y,z);group.scale.setScalar(scale);parent.add(group);cylinder(group,'rubber',.45,.33,0,0,0);for(const side of [-1,1]){cylinder(group,'dark',.315,.018,side*.171,0,0);cylinder(group,'rim',.265,.025,side*.186,0,0);cylinder(group,'steel',.18,.018,side*.205,0,0);cylinder(group,'silver',.075,.03,side*.22,0,0);for(let i=0;i<6;i++){const a=i*Math.PI/3;cylinder(group,'black',.022,.018,side*.22,Math.cos(a)*.135,Math.sin(a)*.135)}}}
 const truck=new T.Group();scene.add(truck);
-// Shared with the Minecraft exporter so the approved preview and pack use the same pieces.
-cabinaNoua.forEach(part=>box(compactCabPart(part),truck));
-platforma.forEach(part=>box(revisedRearPart(part),truck));
+// Concept only: separate groups expose the detailed cabin without changing game assets.
+const shell=new T.Group(),roof=new T.Group(),interior=new T.Group();truck.add(shell,roof,interior);
+cabBody.forEach(part=>box(part,shell));cabRoof.forEach(part=>box(part,roof));cabInterior.forEach(part=>box(part,interior));
+// The previous cab's roof lights came from the deck model; the new roof has its own.
+platforma.filter(([kind,x,y,z])=>!(kind==='amber'&&y===2.73&&z===-1.30)).forEach(part=>box(revisedRearPart(part),truck));
 const rearWheels=platformWheels.slice(2).map(([x,y,z,scale])=>[x,y,z-rearShift,scale]);
-const compactFrontWheels=frontWheels.map(([x,y,z,scale])=>[x,y,cabZ(z),scale]);
+const compactFrontWheels=frontWheels;
 for(const [x,y,z,scale] of [...compactFrontWheels,...rearWheels])wheel(truck,x,y,z,scale);
 for(const side of [-1,1]){const hinge=new T.Group();hinge.position.set(side*1.05,.86,5.35);hinge.rotation.x=Math.PI/2;ramp.forEach(part=>box(part,hinge));truck.add(hinge)}
 // Steering rim and spokes are separate geometry; placement is illustrative, not game animation.
-const steering=new T.Group();steering.position.set(steeringPosition[0],steeringPosition[1],cabZ(steeringPosition[2]));steering.rotation.x=-.37;truck.add(steering);
+const steering=new T.Group();steering.position.set(steeringPosition[0],steeringPosition[1],steeringPosition[2]);steering.rotation.x=-.37;truck.add(steering);
 const rim=new T.Mesh(new T.TorusGeometry(.22,.026,8,24),mats.black);steering.add(rim);
 box(['dark',0,0,0,.045,.37,.035],steering);box(['dark',0,0,0,.37,.045,.035],steering);
 const hub=new T.Mesh(new T.CylinderGeometry(.062,.062,.05,12),mats.silver);hub.rotation.x=Math.PI/2;steering.add(hub);
-const column=new T.Mesh(new T.CylinderGeometry(.045,.045,.38,10),mats.dark);column.position.set(-.62,1.40,cabZ(-2.08));column.rotation.x=.78;truck.add(column);
+const column=new T.Mesh(new T.CylinderGeometry(.045,.045,.38,10),mats.dark);column.position.set(-.62,1.40,-1.84);column.rotation.x=.78;truck.add(column);
 // Blocky seated occupant: a scale cue only, not a captured in-game player model.
-const occupant=new T.Group();occupant.position.set(-.62,1.11,cabZ(-1.22));truck.add(occupant);
+const occupant=new T.Group();occupant.position.set(-.62,1.07,-.78);truck.add(occupant);occupant.visible=false;
 const coat=new T.MeshStandardMaterial({color:'#52727a',roughness:.9}),skin=new T.MeshStandardMaterial({color:'#c89870',roughness:1}),pants=new T.MeshStandardMaterial({color:'#2c3945',roughness:1});
 function personPart(w,h,d,x,y,z,material){const mesh=new T.Mesh(new T.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);mesh.castShadow=true;occupant.add(mesh)}
 personPart(.48,.68,.26,0,.37,0,coat);personPart(.48,.48,.48,0,.95,0,skin);personPart(.19,.50,.21,-.33,.38,-.12,coat);personPart(.19,.50,.21,.33,.38,-.12,coat);personPart(.20,.20,.45,-.13,-.03,-.20,pants);personPart(.20,.20,.45,.13,-.03,-.20,pants);
@@ -46,7 +48,9 @@ let cargo=null;const cargoToggle=document.querySelector('#show-car');cargoToggle
  finally{cargoToggle.disabled=false}
 });
 document.querySelector('#show-player').addEventListener('change',e=>occupant.visible=e.target.checked);
-const views={exterior:{p:[9,5.7,-10.5],t:[0,1.25,1.0]},front:{p:[.05,3.8,-12],t:[0,1.5,-.2]},side:{p:[12,4,1],t:[0,1.25,1]},cab:{p:[-5.2,3.5,-5.6],t:[-.3,1.55,-1.6]}};
+document.querySelector('#show-roof').addEventListener('change',e=>roof.visible=e.target.checked);
+document.querySelector('#show-shell').addEventListener('change',e=>shell.visible=e.target.checked);
+const views={exterior:{p:[9,5.7,-10.5],t:[0,1.25,1.0]},front:{p:[.05,3.8,-12],t:[0,1.5,-.2]},side:{p:[12,4,1],t:[0,1.25,1]},cab:{p:[-4.0,3.7,1.6],t:[-.3,1.15,-1.10]},inside:{p:[-.62,1.85,-.12],t:[-.40,1.22,-1.8]},detail:{p:[-3.2,2.4,-.1],t:[-.5,1.02,-1.4]}};
 function setView(name){const view=views[name];camera.position.set(...view.p);orbit.target.set(...view.t);orbit.update();document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name))}
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));setView('exterior');
 new ResizeObserver(()=>{const w=holder.clientWidth,h=holder.clientHeight;if(w&&h){camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}}).observe(holder);
