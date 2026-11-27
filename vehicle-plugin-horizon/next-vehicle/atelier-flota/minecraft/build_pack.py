@@ -12,6 +12,9 @@ def build(base: bytes, expected_sha1: str) -> bytes:
         if len(names)!=len(set(names)) or src.testzip(): raise ValueError('invalid or duplicate zip entries')
         files={name:src.read(name) for name in names}
     if json.loads(files['pack.mcmeta'])['pack']['pack_format']!=46: raise ValueError('unsupported pack format')
+    for texture in ('kart_seat','kart_chrome','kart_frame','kart_tire','wheel_sports'):
+        if f'assets/horizonvehicles/textures/item/{texture}.png' not in files:
+            raise ValueError('missing shared Horizon texture: '+texture)
     with tempfile.TemporaryDirectory() as tmp:
         output=Path(tmp)
         subprocess.run(['node',str(HERE/'export.mjs'),str(output)],check=True,stdout=subprocess.DEVNULL)

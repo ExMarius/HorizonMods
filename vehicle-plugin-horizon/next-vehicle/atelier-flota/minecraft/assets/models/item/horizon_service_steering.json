@@ -1,508 +1,995 @@
 {
   "textures": {
-    "white": "vehicle:item/horizon_service_white",
-    "whitedark": "vehicle:item/horizon_service_whitedark",
-    "red": "vehicle:item/horizon_service_red",
-    "reddark": "vehicle:item/horizon_service_reddark",
-    "yellow": "vehicle:item/horizon_service_yellow",
-    "chassis": "vehicle:item/horizon_service_chassis",
-    "dark": "vehicle:item/horizon_service_dark",
-    "steel": "vehicle:item/horizon_service_steel",
-    "silver": "vehicle:item/horizon_service_silver",
-    "black": "vehicle:item/horizon_service_black",
-    "rubber": "vehicle:item/horizon_service_rubber",
-    "rim": "vehicle:item/horizon_service_rim",
-    "glass": "vehicle:item/horizon_service_glass",
-    "glassedge": "vehicle:item/horizon_service_glassedge",
-    "seat": "vehicle:item/horizon_service_seat",
-    "dashboard": "vehicle:item/horizon_service_dashboard",
-    "light": "vehicle:item/horizon_service_light",
-    "tail": "vehicle:item/horizon_service_tail",
-    "amber": "vehicle:item/horizon_service_amber",
-    "wood": "vehicle:item/horizon_service_wood",
-    "blue": "vehicle:item/horizon_service_blue"
+    "seat": "horizonvehicles:item/kart_seat",
+    "chrome": "horizonvehicles:item/kart_chrome",
+    "frame": "horizonvehicles:item/kart_frame"
   },
   "elements": [
     {
-      "name": "horizon_service_steering_0",
       "from": [
-        4.72,
-        14.78,
-        1.864
+        5.2127,
+        13.6127,
+        2.28051
       ],
       "to": [
-        6.32,
-        14.98,
-        2.064
+        5.8273,
+        14.2273,
+        2.75543
       ],
       "faces": {
-        "north": {
+        "down": {
+          "texture": "#chrome",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
+            6.9,
+            7.15,
+            9.1,
+            8.85
+          ]
         },
         "up": {
+          "texture": "#chrome",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
+            6.9,
+            7.15,
+            9.1,
+            8.85
+          ]
         },
-        "down": {
+        "north": {
+          "texture": "#chrome",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
+            6.9,
+            6.9,
+            9.1,
+            9.1
+          ]
+        },
+        "south": {
+          "texture": "#chrome",
+          "uv": [
+            6.9,
+            6.9,
+            9.1,
+            9.1
+          ]
+        },
+        "west": {
+          "texture": "#chrome",
+          "uv": [
+            7.15,
+            6.9,
+            8.85,
+            9.1
+          ]
+        },
+        "east": {
+          "texture": "#chrome",
+          "uv": [
+            7.15,
+            6.9,
+            8.85,
+            9.1
+          ]
         }
       }
     },
     {
-      "name": "horizon_service_steering_1",
       "from": [
-        4.72,
-        13.18,
-        1.864
+        5.35238,
+        13.75238,
+        2.21067
       ],
       "to": [
-        6.32,
-        13.38,
-        2.064
+        5.68762,
+        14.08762,
+        2.29448
       ],
       "faces": {
-        "north": {
+        "down": {
+          "texture": "#frame",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
+            7.4,
+            7.75,
+            8.6,
+            8.25
+          ]
         },
         "up": {
+          "texture": "#frame",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
+            7.4,
+            7.75,
+            8.6,
+            8.25
+          ]
         },
-        "down": {
+        "north": {
+          "texture": "#frame",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
+            7.4,
+            7.4,
+            8.6,
+            8.6
+          ]
+        },
+        "south": {
+          "texture": "#frame",
+          "uv": [
+            7.4,
+            7.4,
+            8.6,
+            8.6
+          ]
+        },
+        "west": {
+          "texture": "#frame",
+          "uv": [
+            7.75,
+            7.4,
+            8.25,
+            8.6
+          ]
+        },
+        "east": {
+          "texture": "#frame",
+          "uv": [
+            7.75,
+            7.4,
+            8.25,
+            8.6
+          ]
         }
       }
     },
     {
-      "name": "horizon_service_steering_2",
       "from": [
-        4.7,
-        13.28,
-        1.864
+        5.12889,
+        14.5346,
+        2.35035
       ],
       "to": [
-        4.9,
-        14.88,
-        2.064
+        5.91111,
+        14.8,
+        2.65765
       ],
       "faces": {
-        "north": {
+        "down": {
+          "texture": "#seat",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
+            6.6,
+            7.45,
+            9.4,
+            8.55
+          ]
         },
         "up": {
+          "texture": "#seat",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
+            6.6,
+            7.45,
+            9.4,
+            8.55
+          ]
         },
-        "down": {
+        "north": {
+          "texture": "#seat",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
+            6.6,
+            7.52,
+            9.4,
+            8.47
+          ]
+        },
+        "south": {
+          "texture": "#seat",
+          "uv": [
+            6.6,
+            7.52,
+            9.4,
+            8.47
+          ]
+        },
+        "west": {
+          "texture": "#seat",
+          "uv": [
+            7.45,
+            7.52,
+            8.55,
+            8.47
+          ]
+        },
+        "east": {
+          "texture": "#seat",
+          "uv": [
+            7.45,
+            7.52,
+            8.55,
+            8.47
+          ]
         }
       }
     },
     {
-      "name": "horizon_service_steering_3",
       "from": [
-        6.14,
-        13.28,
-        1.864
+        5.42222,
+        14.54857,
+        2.33638
       ],
       "to": [
-        6.34,
-        14.88,
-        2.064
+        5.61778,
+        14.81397,
+        2.67162
       ],
       "faces": {
-        "north": {
+        "down": {
+          "texture": "#chrome",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
+            7.65,
+            7.4,
+            8.35,
+            8.6
+          ]
         },
         "up": {
+          "texture": "#chrome",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
+            7.65,
+            7.4,
+            8.35,
+            8.6
+          ]
         },
-        "down": {
+        "north": {
+          "texture": "#chrome",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#black"
+            7.65,
+            7.53,
+            8.35,
+            8.48
+          ]
+        },
+        "south": {
+          "texture": "#chrome",
+          "uv": [
+            7.65,
+            7.53,
+            8.35,
+            8.48
+          ]
+        },
+        "west": {
+          "texture": "#chrome",
+          "uv": [
+            7.4,
+            7.53,
+            8.6,
+            8.48
+          ]
+        },
+        "east": {
+          "texture": "#chrome",
+          "uv": [
+            7.4,
+            7.53,
+            8.6,
+            8.48
+          ]
         }
       }
     },
     {
-      "name": "horizon_service_steering_4",
       "from": [
-        5.42,
-        13.42,
-        1.884
+        5.12889,
+        13.04,
+        2.35035
       ],
       "to": [
-        5.62,
-        14.74,
-        2.044
+        5.91111,
+        13.3054,
+        2.65765
       ],
       "faces": {
-        "north": {
+        "down": {
+          "texture": "#seat",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
+            6.6,
+            7.45,
+            9.4,
+            8.55
+          ]
         },
         "up": {
+          "texture": "#seat",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
+            6.6,
+            7.45,
+            9.4,
+            8.55
+          ]
         },
-        "down": {
+        "north": {
+          "texture": "#seat",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
+            6.6,
+            7.53,
+            9.4,
+            8.48
+          ]
+        },
+        "south": {
+          "texture": "#seat",
+          "uv": [
+            6.6,
+            7.53,
+            9.4,
+            8.48
+          ]
+        },
+        "west": {
+          "texture": "#seat",
+          "uv": [
+            7.45,
+            7.53,
+            8.55,
+            8.48
+          ]
+        },
+        "east": {
+          "texture": "#seat",
+          "uv": [
+            7.45,
+            7.53,
+            8.55,
+            8.48
+          ]
         }
       }
     },
     {
-      "name": "horizon_service_steering_5",
       "from": [
-        4.86,
-        13.98,
-        1.884
+        4.64,
+        13.52889,
+        2.35035
       ],
       "to": [
-        6.18,
-        14.18,
-        2.044
+        4.9054,
+        14.31111,
+        2.65765
       ],
       "faces": {
-        "north": {
+        "down": {
+          "texture": "#seat",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
+            7.53,
+            7.45,
+            8.48,
+            8.55
+          ]
         },
         "up": {
+          "texture": "#seat",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
+            7.53,
+            7.45,
+            8.48,
+            8.55
+          ]
         },
-        "down": {
+        "north": {
+          "texture": "#seat",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#dark"
+            7.53,
+            6.6,
+            8.48,
+            9.4
+          ]
+        },
+        "south": {
+          "texture": "#seat",
+          "uv": [
+            7.53,
+            6.6,
+            8.48,
+            9.4
+          ]
+        },
+        "west": {
+          "texture": "#seat",
+          "uv": [
+            7.45,
+            6.6,
+            8.55,
+            9.4
+          ]
+        },
+        "east": {
+          "texture": "#seat",
+          "uv": [
+            7.45,
+            6.6,
+            8.55,
+            9.4
+          ]
         }
       }
     },
     {
-      "name": "horizon_service_steering_6",
       "from": [
-        5.32,
-        13.88,
-        1.864
+        6.1346,
+        13.52889,
+        2.35035
       ],
       "to": [
-        5.72,
-        14.28,
-        2.064
+        6.4,
+        14.31111,
+        2.65765
       ],
       "faces": {
-        "north": {
+        "down": {
+          "texture": "#seat",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#silver"
-        },
-        "south": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#silver"
-        },
-        "east": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#silver"
-        },
-        "west": {
-          "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#silver"
+            7.52,
+            7.45,
+            8.47,
+            8.55
+          ]
         },
         "up": {
+          "texture": "#seat",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#silver"
+            7.52,
+            7.45,
+            8.47,
+            8.55
+          ]
         },
-        "down": {
+        "north": {
+          "texture": "#seat",
           "uv": [
-            0,
-            0,
-            16,
-            16
-          ],
-          "texture": "#silver"
+            7.52,
+            6.6,
+            8.47,
+            9.4
+          ]
+        },
+        "south": {
+          "texture": "#seat",
+          "uv": [
+            7.52,
+            6.6,
+            8.47,
+            9.4
+          ]
+        },
+        "west": {
+          "texture": "#seat",
+          "uv": [
+            7.45,
+            6.6,
+            8.55,
+            9.4
+          ]
+        },
+        "east": {
+          "texture": "#seat",
+          "uv": [
+            7.45,
+            6.6,
+            8.55,
+            9.4
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        5.12889,
+        14.5346,
+        2.35873
+      ],
+      "to": [
+        5.91111,
+        14.79162,
+        2.64927
+      ],
+      "faces": {
+        "down": {
+          "texture": "#seat",
+          "uv": [
+            6.6,
+            7.48,
+            9.4,
+            8.52
+          ]
+        },
+        "up": {
+          "texture": "#seat",
+          "uv": [
+            6.6,
+            7.48,
+            9.4,
+            8.52
+          ]
+        },
+        "north": {
+          "texture": "#seat",
+          "uv": [
+            6.6,
+            7.54,
+            9.4,
+            8.46
+          ]
+        },
+        "south": {
+          "texture": "#seat",
+          "uv": [
+            6.6,
+            7.54,
+            9.4,
+            8.46
+          ]
+        },
+        "west": {
+          "texture": "#seat",
+          "uv": [
+            7.48,
+            7.54,
+            8.52,
+            8.46
+          ]
+        },
+        "east": {
+          "texture": "#seat",
+          "uv": [
+            7.48,
+            7.54,
+            8.52,
+            8.46
+          ]
+        }
+      },
+      "rotation": {
+        "origin": [
+          5.52,
+          13.92,
+          2.504
+        ],
+        "axis": "z",
+        "angle": 45
+      }
+    },
+    {
+      "from": [
+        5.12889,
+        13.04838,
+        2.35873
+      ],
+      "to": [
+        5.91111,
+        13.3054,
+        2.64927
+      ],
+      "faces": {
+        "down": {
+          "texture": "#seat",
+          "uv": [
+            6.6,
+            7.48,
+            9.4,
+            8.52
+          ]
+        },
+        "up": {
+          "texture": "#seat",
+          "uv": [
+            6.6,
+            7.48,
+            9.4,
+            8.52
+          ]
+        },
+        "north": {
+          "texture": "#seat",
+          "uv": [
+            6.6,
+            7.54,
+            9.4,
+            8.46
+          ]
+        },
+        "south": {
+          "texture": "#seat",
+          "uv": [
+            6.6,
+            7.54,
+            9.4,
+            8.46
+          ]
+        },
+        "west": {
+          "texture": "#seat",
+          "uv": [
+            7.48,
+            7.54,
+            8.52,
+            8.46
+          ]
+        },
+        "east": {
+          "texture": "#seat",
+          "uv": [
+            7.48,
+            7.54,
+            8.52,
+            8.46
+          ]
+        }
+      },
+      "rotation": {
+        "origin": [
+          5.52,
+          13.92,
+          2.504
+        ],
+        "axis": "z",
+        "angle": 45
+      }
+    },
+    {
+      "from": [
+        4.64838,
+        13.52889,
+        2.35873
+      ],
+      "to": [
+        4.9054,
+        14.31111,
+        2.64927
+      ],
+      "faces": {
+        "down": {
+          "texture": "#seat",
+          "uv": [
+            7.54,
+            7.48,
+            8.46,
+            8.52
+          ]
+        },
+        "up": {
+          "texture": "#seat",
+          "uv": [
+            7.54,
+            7.48,
+            8.46,
+            8.52
+          ]
+        },
+        "north": {
+          "texture": "#seat",
+          "uv": [
+            7.54,
+            6.6,
+            8.46,
+            9.4
+          ]
+        },
+        "south": {
+          "texture": "#seat",
+          "uv": [
+            7.54,
+            6.6,
+            8.46,
+            9.4
+          ]
+        },
+        "west": {
+          "texture": "#seat",
+          "uv": [
+            7.48,
+            6.6,
+            8.52,
+            9.4
+          ]
+        },
+        "east": {
+          "texture": "#seat",
+          "uv": [
+            7.48,
+            6.6,
+            8.52,
+            9.4
+          ]
+        }
+      },
+      "rotation": {
+        "origin": [
+          5.52,
+          13.92,
+          2.504
+        ],
+        "axis": "z",
+        "angle": 45
+      }
+    },
+    {
+      "from": [
+        6.1346,
+        13.52889,
+        2.35873
+      ],
+      "to": [
+        6.39162,
+        14.31111,
+        2.64927
+      ],
+      "faces": {
+        "down": {
+          "texture": "#seat",
+          "uv": [
+            7.54,
+            7.48,
+            8.46,
+            8.52
+          ]
+        },
+        "up": {
+          "texture": "#seat",
+          "uv": [
+            7.54,
+            7.48,
+            8.46,
+            8.52
+          ]
+        },
+        "north": {
+          "texture": "#seat",
+          "uv": [
+            7.54,
+            6.6,
+            8.46,
+            9.4
+          ]
+        },
+        "south": {
+          "texture": "#seat",
+          "uv": [
+            7.54,
+            6.6,
+            8.46,
+            9.4
+          ]
+        },
+        "west": {
+          "texture": "#seat",
+          "uv": [
+            7.48,
+            6.6,
+            8.52,
+            9.4
+          ]
+        },
+        "east": {
+          "texture": "#seat",
+          "uv": [
+            7.48,
+            6.6,
+            8.52,
+            9.4
+          ]
+        }
+      },
+      "rotation": {
+        "origin": [
+          5.52,
+          13.92,
+          2.504
+        ],
+        "axis": "z",
+        "angle": 45
+      }
+    },
+    {
+      "from": [
+        4.84952,
+        13.79429,
+        2.40622
+      ],
+      "to": [
+        5.26857,
+        14.04571,
+        2.60178
+      ],
+      "faces": {
+        "down": {
+          "texture": "#chrome",
+          "uv": [
+            7.25,
+            7.65,
+            8.75,
+            8.35
+          ]
+        },
+        "up": {
+          "texture": "#chrome",
+          "uv": [
+            7.25,
+            7.65,
+            8.75,
+            8.35
+          ]
+        },
+        "north": {
+          "texture": "#chrome",
+          "uv": [
+            7.25,
+            7.55,
+            8.75,
+            8.45
+          ]
+        },
+        "south": {
+          "texture": "#chrome",
+          "uv": [
+            7.25,
+            7.55,
+            8.75,
+            8.45
+          ]
+        },
+        "west": {
+          "texture": "#chrome",
+          "uv": [
+            7.65,
+            7.55,
+            8.35,
+            8.45
+          ]
+        },
+        "east": {
+          "texture": "#chrome",
+          "uv": [
+            7.65,
+            7.55,
+            8.35,
+            8.45
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        5.77143,
+        13.79429,
+        2.40622
+      ],
+      "to": [
+        6.19048,
+        14.04571,
+        2.60178
+      ],
+      "faces": {
+        "down": {
+          "texture": "#chrome",
+          "uv": [
+            7.25,
+            7.65,
+            8.75,
+            8.35
+          ]
+        },
+        "up": {
+          "texture": "#chrome",
+          "uv": [
+            7.25,
+            7.65,
+            8.75,
+            8.35
+          ]
+        },
+        "north": {
+          "texture": "#chrome",
+          "uv": [
+            7.25,
+            7.55,
+            8.75,
+            8.45
+          ]
+        },
+        "south": {
+          "texture": "#chrome",
+          "uv": [
+            7.25,
+            7.55,
+            8.75,
+            8.45
+          ]
+        },
+        "west": {
+          "texture": "#chrome",
+          "uv": [
+            7.65,
+            7.55,
+            8.35,
+            8.45
+          ]
+        },
+        "east": {
+          "texture": "#chrome",
+          "uv": [
+            7.65,
+            7.55,
+            8.35,
+            8.45
+          ]
+        }
+      }
+    },
+    {
+      "from": [
+        5.39429,
+        13.24952,
+        2.40622
+      ],
+      "to": [
+        5.64571,
+        13.66857,
+        2.60178
+      ],
+      "faces": {
+        "down": {
+          "texture": "#chrome",
+          "uv": [
+            7.55,
+            7.65,
+            8.45,
+            8.35
+          ]
+        },
+        "up": {
+          "texture": "#chrome",
+          "uv": [
+            7.55,
+            7.65,
+            8.45,
+            8.35
+          ]
+        },
+        "north": {
+          "texture": "#chrome",
+          "uv": [
+            7.55,
+            7.25,
+            8.45,
+            8.75
+          ]
+        },
+        "south": {
+          "texture": "#chrome",
+          "uv": [
+            7.55,
+            7.25,
+            8.45,
+            8.75
+          ]
+        },
+        "west": {
+          "texture": "#chrome",
+          "uv": [
+            7.65,
+            7.25,
+            8.35,
+            8.75
+          ]
+        },
+        "east": {
+          "texture": "#chrome",
+          "uv": [
+            7.65,
+            7.25,
+            8.35,
+            8.75
+          ]
         }
       }
     }

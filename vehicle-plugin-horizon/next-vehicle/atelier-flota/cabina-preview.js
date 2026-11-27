@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {palette,platforma,ramp,platformWheels} from './design.js';
-import {body as cabBody,roof as cabRoof,interior as cabInterior,underbed,frontWheels,steeringPosition,compactCabZ,compactCabPiece} from './cabina-concept-detaliat.js';
+import {body as cabBody,roof as cabRoof,interior as cabInterior,underbed,frontWheels,steeringPosition,steeringZ,compactCabZ,compactCabPiece} from './cabina-concept-detaliat.js';
 import {revisedRearPart,rearShift} from './cabina-geometry.js';
 import {loadDacia} from './loading-demo.js';
 
@@ -36,11 +36,11 @@ const compactFrontWheels=frontWheels.map(([x,y,z,scale])=>[x,y,compactCabZ(z),sc
 for(const [x,y,z,scale] of [...compactFrontWheels,...rearWheels])wheel(truck,x,y,z,scale);
 for(const side of [-1,1]){const hinge=new T.Group();hinge.position.set(side*1.05,.86,5.35);hinge.rotation.x=Math.PI/2;ramp.forEach(part=>box(part,hinge));truck.add(hinge)}
 // Steering rim and spokes are separate geometry; placement is illustrative, not game animation.
-const steering=new T.Group();steering.position.set(steeringPosition[0],steeringPosition[1],compactCabZ(steeringPosition[2]));steering.rotation.x=-.37;truck.add(steering);
+const steering=new T.Group();steering.position.set(steeringPosition[0],steeringPosition[1],steeringZ);steering.rotation.x=-.37;truck.add(steering);
 const rim=new T.Mesh(new T.TorusGeometry(.22,.026,8,24),mats.black);steering.add(rim);
 box(['dark',0,0,0,.045,.37,.035],steering);box(['dark',0,0,0,.37,.045,.035],steering);
 const hub=new T.Mesh(new T.CylinderGeometry(.062,.062,.05,12),mats.silver);hub.rotation.x=Math.PI/2;steering.add(hub);
-const column=new T.Mesh(new T.CylinderGeometry(.045,.045,.38,10),mats.dark);column.position.set(-.62,1.40,compactCabZ(-1.84));column.rotation.x=.78;truck.add(column);
+const column=new T.Mesh(new T.CylinderGeometry(.045,.045,.38,10),mats.dark);column.position.set(-.62,1.40,(steeringZ+compactCabZ(-1.94))/2);column.rotation.x=.78;truck.add(column);
 // Blocky seated occupant: a scale cue only, not a captured in-game player model.
 const occupant=new T.Group();occupant.position.set(-.62,1.07,-.78);truck.add(occupant);occupant.visible=false;
 const coat=new T.MeshStandardMaterial({color:'#52727a',roughness:.9}),skin=new T.MeshStandardMaterial({color:'#c89870',roughness:1}),pants=new T.MeshStandardMaterial({color:'#2c3945',roughness:1});

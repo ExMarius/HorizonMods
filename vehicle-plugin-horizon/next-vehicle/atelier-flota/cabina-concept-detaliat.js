@@ -124,6 +124,8 @@ for(const x of [-.90,-.65,-.40]){
 }
 export const frontWheels=[[-1.35,.53,-1.66,1.18],[1.35,.53,-1.66,1.18]];
 export const steeringPosition=[-.62,1.48,-1.68];
+// Clearance behind the dashboard; moves the rim toward the fixed driver seat.
+
 
 // Toolbox mounted directly below the deck with visible brackets and a rear face.
 export const underbed=[];
@@ -140,6 +142,7 @@ for(const z of [1.73,2.43]){
 // Shorten only ahead of the fixed seat reference; width and seat geometry stay unchanged.
 const seatZ=-.80, frontCompression=.80;
 export function compactCabZ(z){return z < seatZ ? seatZ+(z-seatZ)*frontCompression : z;}
+export const steeringZ=compactCabZ(-1.68)+.13;
 export function compactCabPiece(part, group){
  const [kind,x,y,z,w,h,d]=part;
  // Keep both seats, their bases, bolsters and headrests exactly where they were.

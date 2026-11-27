@@ -1,42 +1,47 @@
 {
   "itemDisplayScale": 4,
   "models": {
-    "horizon_service_cab": 144,
-    "horizon_service_flatbed": 65,
+    "horizon_service_cab": 173,
+    "horizon_service_flatbed": 69,
     "horizon_service_workshop": 67,
-    "horizon_service_steering": 7,
     "horizon_service_ramp": 10,
     "horizon_service_cable": 1
   },
   "rotationApproximations": [
     {
       "part": "horizon_service_cab",
-      "index": 104,
-      "originalDegrees": -4.5837,
+      "index": 134,
+      "originalDegrees": -8.5944,
       "vanillaDegrees": 0
     },
     {
       "part": "horizon_service_cab",
-      "index": 105,
-      "originalDegrees": -4.5837,
+      "index": 137,
+      "originalDegrees": -17.1887,
+      "vanillaDegrees": -22.5
+    },
+    {
+      "part": "horizon_service_cab",
+      "index": 157,
+      "originalDegrees": -8.5944,
       "vanillaDegrees": 0
     },
     {
       "part": "horizon_service_cab",
-      "index": 109,
-      "originalDegrees": -14.3239,
-      "vanillaDegrees": -22.5
+      "index": 162,
+      "originalDegrees": -8.5944,
+      "vanillaDegrees": 0
     },
     {
       "part": "horizon_service_cab",
-      "index": 122,
-      "originalDegrees": -18.3346,
-      "vanillaDegrees": -22.5
+      "index": 167,
+      "originalDegrees": -8.5944,
+      "vanillaDegrees": 0
     }
   ],
   "notes": [
-    "Wheel uses the existing Horizon sports wheel model; steering uses vanilla cuboids.",
+    "Wheel uses the existing Horizon sports wheel model; steering uses the Horizon steering model.",
     "Glass alpha must be verified in the target Minecraft client.",
-    "Pieces require explicit placement in a future vehicle rig; not installed."
+    "Placement requires in-game validation."
   ]
 }

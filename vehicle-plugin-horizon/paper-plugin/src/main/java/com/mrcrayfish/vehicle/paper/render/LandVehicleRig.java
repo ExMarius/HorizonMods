@@ -581,7 +581,7 @@ public final class LandVehicleRig {
         Quaternionf rotation = new Quaternionf(chassisRotation);
         if ("horizon_recovery_prototype".equals(spec.id()) && "horizon_service_steering".equals(part.model())) {
             // Existing item has geometry baked off-centre; compensate around the rim's centre.
-            Vector3f pivot=new Vector3f(-.62F,1.52F,-1.509F);
+            Vector3f pivot=new Vector3f(-.62F,1.48F,-1.374F);
             Quaternionf turn=new Quaternionf().rotateZ(radians(renderSteeringAngle*2F));
             point.add(new Vector3f(pivot).sub(turn.transform(new Vector3f(pivot))));
             rotation.mul(turn);

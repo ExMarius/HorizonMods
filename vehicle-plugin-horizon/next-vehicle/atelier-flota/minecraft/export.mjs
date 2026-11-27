@@ -6,10 +6,10 @@ import {deflateSync} from 'node:zlib';
 import {resolve,join,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {platforma,atelier,ramp,palette} from '../design.js';
-import {cabinaNoua,steeringPosition} from '../cabina-noua.js';
-import {cabZ,compactCabPart,revisedRearPart} from '../cabina-geometry.js';
-const cab=cabinaNoua.map(compactCabPart);
-const compactFlatbed=platforma.map(revisedRearPart);
+import {body,roof,interior,underbed,steeringPosition,steeringZ,compactCabPiece} from '../cabina-concept-detaliat.js';
+import {revisedRearPart} from '../cabina-geometry.js';
+const cab=[...body.map(p=>compactCabPiece(p,'body')),...roof.map(p=>compactCabPiece(p,'roof')),...interior.map(p=>compactCabPiece(p,'interior'))];
+const compactFlatbed=platforma.filter(([kind,x,y,z])=>!(kind==='amber'&&y===2.73&&z===-1.30) && !(z===2.08 && ((kind==='chassis'&&x===-1.04)||(kind==='steel'&&x===-1.24)||(kind==='dark'&&x===-1.263)))).map(revisedRearPart).concat(underbed);
 const here=dirname(fileURLToPath(import.meta.url));
 const out=resolve(process.argv[2]||join(here,'assets'));
 const scale=4, unit=16/scale;
@@ -32,18 +32,22 @@ function cuboid(p,index,part){
  }
  return e;
 }
-// Four-sided steering rim, steering column and a cuboid octagonal tire are
-// independent displays. These are explicit replacement pieces for preview
-// torus/cylinder meshes, which vanilla item cuboids cannot represent.
-const [sx,sy,szOriginal]=steeringPosition,sz=cabZ(szOriginal);
-const steering=[
- ['black',sx,sy+.20,sz,.40,.05,.05],['black',sx,sy-.20,sz,.40,.05,.05],
- ['black',sx-.18,sy,sz,.05,.40,.05],['black',sx+.18,sy,sz,.05,.40,.05],
- ['dark',sx,sy,sz,.05,.33,.04],['dark',sx,sy,sz,.33,.05,.04],
- ['silver',sx,sy,sz,.10,.10,.05]
-];
-// Steering column is fixed to the dashboard, not part of the spinning rim.
-cab.push(['dark',-.62,1.40,cabZ(-2.08),.08,.25,.08]);
+// Same detailed steering wheel used by the existing Horizon vehicles, in the
+// original X/Y plane. Translate its origin to the driver's wheel position.
+const [sx,sy]=steeringPosition,sz=steeringZ;
+const steeringSource=JSON.parse(readFileSync(resolve(here,'../../../../content/assets/gokart/models/block/go_kart_steering_wheel.json'),'utf8'));
+const steeringModel=structuredClone(steeringSource), rimScale=1.76/6.3, steeringCenter=vec(sx,sy,sz);
+for(const part of steeringModel.elements){
+ for(const key of ['from','to'])part[key]=part[key].map((v,i)=>+(steeringCenter[i]+(v-8)*rimScale).toFixed(5));
+ if(part.rotation){
+  part.rotation.origin=part.rotation.origin.map((v,i)=>+(steeringCenter[i]+(v-8)*rimScale).toFixed(5));
+  // Small 12 degree details cannot be represented as vanilla item rotations.
+  if(Math.abs(part.rotation.angle)===12)delete part.rotation;
+ }
+}
+steeringModel.textures=Object.fromEntries(Object.entries(steeringModel.textures).map(([k,v])=>[k,v.replace('gokart:block/','horizonvehicles:item/')]));
+// Fixed shaft joins the rim to the dashboard without entering the driver's seat.
+cab.push(['dark',sx,1.43,(sz-1.68)/2,.075,.075,sz+1.68]);
 // Wheel model is centred at its axle for an independent display spin.
 // Use the same complete Horizon sports wheel used by the Logan. Convert its
 // two 67.5 degree pieces to the equivalent vanilla-compatible -22.5 boxes,
@@ -62,12 +66,14 @@ for(const part of sportsWheel.elements){
 sportsWheel.textures=Object.fromEntries(Object.entries(sportsWheel.textures).map(([k,v])=>[k,v.replace('gokart:block/','horizonvehicles:item/')]));
 // Unit-length cable at the item origin; the Paper rig stretches it along local Y.
 const cable=[['silver',0,0,0,.036,1,.036]];
-const models={horizon_service_cab:cab,horizon_service_flatbed:compactFlatbed,horizon_service_workshop:atelier,horizon_service_steering:steering,horizon_service_ramp:ramp,horizon_service_cable:cable};
+const models={horizon_service_cab:cab,horizon_service_flatbed:compactFlatbed,horizon_service_workshop:atelier,horizon_service_ramp:ramp,horizon_service_cable:cable};
 for(const [name,pieces] of Object.entries(models)){
  const body={textures,elements:pieces.map((p,i)=>cuboid(p,i,name))};
  writeFileSync(join(modelDir,name+'.json'),JSON.stringify(body,null,2)+'\n');
  writeFileSync(join(itemDir,name+'.json'),JSON.stringify({model:{type:'minecraft:model',model:'vehicle:item/'+name}},null,2)+'\n');
 }
+writeFileSync(join(modelDir,'horizon_service_steering.json'),JSON.stringify(steeringModel,null,2)+'\n');
+writeFileSync(join(itemDir,'horizon_service_steering.json'),JSON.stringify({model:{type:'minecraft:model',model:'vehicle:item/horizon_service_steering'}},null,2)+'\n');
 writeFileSync(join(modelDir,'horizon_service_wheel.json'),JSON.stringify(sportsWheel,null,2)+'\n');
 writeFileSync(join(itemDir,'horizon_service_wheel.json'),JSON.stringify({model:{type:'minecraft:model',model:'vehicle:item/horizon_service_wheel'}},null,2)+'\n');
 // Minimal RGBA PNG, retaining an actual alpha channel for the glass texture.
@@ -75,5 +81,5 @@ function crc32(buf){let c=0xffffffff;for(const x of buf){c^=x;for(let i=0;i<8;i+
 function chunk(type,data){const t=Buffer.from(type),len=Buffer.alloc(4),crc=Buffer.alloc(4);len.writeUInt32BE(data.length);crc.writeUInt32BE(crc32(Buffer.concat([t,data])));return Buffer.concat([len,t,data,crc])}
 function png(hex,alpha=255){const ihdr=Buffer.alloc(13);ihdr.writeUInt32BE(1,0);ihdr.writeUInt32BE(1,4);ihdr[8]=8;ihdr[9]=6;const rgba=Buffer.from(hex.slice(1),'hex');return Buffer.concat([Buffer.from('89504e470d0a1a0a','hex'),chunk('IHDR',ihdr),chunk('IDAT',deflateSync(Buffer.from([0,...rgba,alpha]))),chunk('IEND',Buffer.alloc(0))])}
 for(const [name,color] of Object.entries(palette))writeFileSync(join(textureDir,'horizon_service_'+name.toLowerCase()+'.png'),png(color,name==='glass'?90:255));
-writeFileSync(join(out,'conversion-report.json'),JSON.stringify({itemDisplayScale:scale,models:Object.fromEntries(Object.entries(models).map(([name,p])=>[name,p.length])),rotationApproximations:report,notes:['Wheel uses the existing Horizon sports wheel model; steering uses vanilla cuboids.','Glass alpha must be verified in the target Minecraft client.','Pieces require explicit placement in a future vehicle rig; not installed.']},null,2)+'\n');
+writeFileSync(join(out,'conversion-report.json'),JSON.stringify({itemDisplayScale:scale,models:Object.fromEntries(Object.entries(models).map(([name,p])=>[name,p.length])),rotationApproximations:report,notes:['Wheel uses the existing Horizon sports wheel model; steering uses the Horizon steering model.','Glass alpha must be verified in the target Minecraft client.','Placement requires in-game validation.']},null,2)+'\n');
 console.log('Converted',Object.keys(models).length,'separate model assets to',out);
