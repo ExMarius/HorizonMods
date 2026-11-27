@@ -23,24 +23,24 @@ public final class RecoveryTruckSpec {
     public static LandVehicleSpec create() {
         return new LandVehicleSpec(
                 ID,"Platformă auto (prototip)","horizon_service_cab",
-                2.9F,2.8F,1.0F,
+                2.9F,3.1F,1.0F,
                 MODEL_SCALE,0F,0F,
-                8F,28F,1.56F,-3.92F,3F,
+                8F,28F,1.8025F,-3.22F,3F,
                 15_000F,.3F,.7F,1.4F,"vehicle:entity.tractor.engine",
                 false,p(0,0,0),null,null,null,null,
                 List.of(
                         part("horizon_service_flatbed",0,0,0,0),
-                        part("horizon_service_steering",-.86F,0,0,0),
+                        part("horizon_service_steering",-1.24F,0,0,0),
                         // Closed position, pivoted at the independently authored hinges.
                         part("horizon_service_ramp",-1.05F,.86F,5.35F,-90F),
                         part("horizon_service_ramp",1.05F,.86F,5.35F,-90F)),
                 List.of(
-                        wheel(-1,true,-1.02F,.45F,-1.56F,MODEL_SCALE),
-                        wheel(1,true,1.02F,.45F,-1.56F,MODEL_SCALE),
-                        wheel(-1,false,-1.20F,.35F,3.92F,MODEL_SCALE*.35F/.45F),
-                        wheel(1,false,1.20F,.35F,3.92F,MODEL_SCALE*.35F/.45F)),
-                List.of(new LandVehicleSpec.Seat(true,p(-.43F,.70F,-.94F),180F),
-                        new LandVehicleSpec.Seat(false,p(.43F,.70F,-.94F),180F)),
+                        wheel(-1,true,-1.35F,.53F,-1.8025F,MODEL_SCALE*1.18F),
+                        wheel(1,true,1.35F,.53F,-1.8025F,MODEL_SCALE*1.18F),
+                        wheel(-1,false,-1.20F,.35F,3.22F,MODEL_SCALE*.35F/.45F),
+                        wheel(1,false,1.20F,.35F,3.22F,MODEL_SCALE*.35F/.45F)),
+                List.of(new LandVehicleSpec.Seat(true,p(-.62F,.73F,-1.08F),180F),
+                        new LandVehicleSpec.Seat(false,p(.62F,.73F,-1.08F),180F)),
                 false,"tow_bar",p(0,0,0),p(0,0,0),null,null,List.of(),false);
     }
 }

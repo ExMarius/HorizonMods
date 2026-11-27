@@ -5,7 +5,11 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import {deflateSync} from 'node:zlib';
 import {resolve,join,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {cab,platforma,atelier,ramp,palette} from '../design.js';
+import {platforma,atelier,ramp,palette} from '../design.js';
+import {cabinaNoua,steeringPosition} from '../cabina-noua.js';
+import {cabZ,compactCabPart,revisedRearPart} from '../cabina-geometry.js';
+const cab=cabinaNoua.map(compactCabPart);
+const compactFlatbed=platforma.map(revisedRearPart);
 const here=dirname(fileURLToPath(import.meta.url));
 const out=resolve(process.argv[2]||join(here,'assets'));
 const scale=4, unit=16/scale;
@@ -31,11 +35,15 @@ function cuboid(p,index,part){
 // Four-sided steering rim, steering column and a cuboid octagonal tire are
 // independent displays. These are explicit replacement pieces for preview
 // torus/cylinder meshes, which vanilla item cuboids cannot represent.
+const [sx,sy,szOriginal]=steeringPosition,sz=cabZ(szOriginal);
 const steering=[
- ['black',-.43,1.49,-1.49,.34,.045,.045],['black',-.43,1.15,-1.49,.34,.045,.045],
- ['black',-.59,1.32,-1.49,.045,.34,.045],['black',-.27,1.32,-1.49,.045,.34,.045],
- ['black',-.43,1.20,-1.57,.05,.25,.05]
+ ['black',sx,sy+.20,sz,.40,.05,.05],['black',sx,sy-.20,sz,.40,.05,.05],
+ ['black',sx-.18,sy,sz,.05,.40,.05],['black',sx+.18,sy,sz,.05,.40,.05],
+ ['dark',sx,sy,sz,.05,.33,.04],['dark',sx,sy,sz,.33,.05,.04],
+ ['silver',sx,sy,sz,.10,.10,.05]
 ];
+// Steering column is fixed to the dashboard, not part of the spinning rim.
+cab.push(['dark',-.62,1.40,cabZ(-2.08),.08,.25,.08]);
 // Wheel model is centred at its axle for an independent display spin.
 const wheel=[
  ['rubber',0,0,0,.33,.90,.34],['rubber',0,0,0,.33,.34,.90],
@@ -51,7 +59,7 @@ const wheel=[
 ];
 // Unit-length cable at the item origin; the Paper rig stretches it along local Y.
 const cable=[['silver',0,0,0,.036,1,.036]];
-const models={horizon_service_cab:cab,horizon_service_flatbed:platforma,horizon_service_workshop:atelier,horizon_service_steering:steering,horizon_service_wheel:wheel,horizon_service_ramp:ramp,horizon_service_cable:cable};
+const models={horizon_service_cab:cab,horizon_service_flatbed:compactFlatbed,horizon_service_workshop:atelier,horizon_service_steering:steering,horizon_service_wheel:wheel,horizon_service_ramp:ramp,horizon_service_cable:cable};
 for(const [name,pieces] of Object.entries(models)){
  const body={textures,elements:pieces.map((p,i)=>cuboid(p,i,name))};
  writeFileSync(join(modelDir,name+'.json'),JSON.stringify(body,null,2)+'\n');

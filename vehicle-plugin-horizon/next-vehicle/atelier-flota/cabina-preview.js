@@ -2,6 +2,7 @@ import * as T from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {palette,platforma,ramp,platformWheels} from './design.js';
 import {cabinaNoua,frontWheels,steeringPosition} from './cabina-noua.js';
+import {cabZ,compactCabPart,revisedRearPart,rearShift} from './cabina-geometry.js';
 import {loadDacia} from './loading-demo.js';
 
 const holder=document.querySelector('#scene'), status=document.querySelector('#status');
@@ -19,46 +20,8 @@ function box(part,parent){const [kind,x,y,z,w,h,d,rx=0]=part;const mesh=new T.Me
 function cylinder(parent,material,radius,depth,x,y,z){const mesh=new T.Mesh(new T.CylinderGeometry(radius,radius,depth,24),mats[material]);mesh.rotation.z=Math.PI/2;mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh)}
 function wheel(parent,x,y,z,scale){const group=new T.Group();group.position.set(x,y,z);group.scale.setScalar(scale);parent.add(group);cylinder(group,'rubber',.45,.33,0,0,0);for(const side of [-1,1]){cylinder(group,'dark',.315,.018,side*.171,0,0);cylinder(group,'rim',.265,.025,side*.186,0,0);cylinder(group,'steel',.18,.018,side*.205,0,0);cylinder(group,'silver',.075,.03,side*.22,0,0);for(let i=0;i<6;i++){const a=i*Math.PI/3;cylinder(group,'black',.022,.018,side*.22,Math.cos(a)*.135,Math.sin(a)*.135)}}}
 const truck=new T.Group();scene.add(truck);
-// Shorten front-to-back only, keeping the cabin's rear wall attached to the bed.
-// Width and height stay unchanged; wheel radii and arch clearances stay intact.
-const cabLength=.85, cabRear=-.40;
-const cabZ=z=>cabRear+(z-cabRear)*cabLength;
-const frontAxleZ=cabZ(frontWheels[0][2]);
-function compactCabPart(part){
- const [kind,x,y,z]=part, compact=[...part];
- compact[3]=cabZ(z);compact[6]*=cabLength;
- if(kind==='white' && Math.abs(x)===1.31 && y===1.13 && z===-2.05) {
-  compact[3]=frontAxleZ;compact[6]=part[6];
- }
- if(kind==='white' && Math.abs(x)===1.31 && y===.84 && z===-2.65) {
-  compact[3]=frontAxleZ-.60;compact[6]=part[6];
- }
- if(kind==='white' && Math.abs(x)===1.31 && y===.84 && z===-1.44) {
-  compact[3]=frontAxleZ+.61;compact[6]=part[6];
- }
- // Keep door bottoms and steps behind the front wheel, rather than shrinking
- // the circular wheel or letting the sill intersect it.
- const door=kind==='white' && Math.abs(x)===1.30 && y===1.00 && z===-.925;
- const step=Math.abs(x)>=1.20 && y<=.52 && z===-.95;
- if(door||step){
-  const back=compact[3]+compact[6]/2;
-  const front=Math.max(compact[3]-compact[6]/2,frontAxleZ+.56);
-  compact[3]=(front+back)/2;compact[6]=back-front;
- }
- return compact;
-}
+// Shared with the Minecraft exporter so the approved preview and pack use the same pieces.
 cabinaNoua.forEach(part=>box(compactCabPart(part),truck));
-// In this concept only, move the complete rear axle assembly forward by one
-// wheel diameter (2 × .35 blocks), leaving the loading deck and ramps intact.
-const rearShift=.70;
-function revisedRearPart(part){
- const [kind,x,y,z]=part;
- const axle=kind==='chassis' && x===0 && y===.35 && z===3.92;
- const trim=kind==='dark' && Math.abs(x)===1.39 && [3.92,3.43,4.41].includes(z);
- const mudflap=kind==='dark' && Math.abs(x)===1.20 && y===.35 && z===4.49;
- if(!axle&&!trim&&!mudflap)return part;
- const revised=[...part];revised[3]-=rearShift;return revised;
-}
 platforma.forEach(part=>box(revisedRearPart(part),truck));
 const rearWheels=platformWheels.slice(2).map(([x,y,z,scale])=>[x,y,z-rearShift,scale]);
 const compactFrontWheels=frontWheels.map(([x,y,z,scale])=>[x,y,cabZ(z),scale]);

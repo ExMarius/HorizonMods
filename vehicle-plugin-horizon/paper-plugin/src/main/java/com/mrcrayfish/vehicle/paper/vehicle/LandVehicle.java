@@ -1009,7 +1009,7 @@ public final class LandVehicle {
     private static double recoverySupportMovement(World world,Location root,Vector movement) {
         double startY=root.getY(), endY=startY+movement.getY(), best=movement.getY();
         Location at=root.clone().add(movement.getX(),0D,movement.getZ());
-        for(double z=-2D;z<=5.51D;z+=.5D) for(double x:new double[]{-1D,0D,1D}) {
+        for(double z=-2.9D;z<=5.61D;z+=.5D) for(double x:new double[]{-1D,0D,1D}) {
             Vector offset=rotateLocal(x,0D,z,root.getYaw());
             double px=at.getX()+offset.getX(),pz=at.getZ()+offset.getZ();
             int bx=(int)Math.floor(px),bz=(int)Math.floor(pz);

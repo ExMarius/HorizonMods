@@ -26,14 +26,14 @@
     {
       "name": "horizon_service_steering_0",
       "from": [
-        5.6,
-        13.87,
-        1.95
+        4.72,
+        14.78,
+        1.03
       ],
       "to": [
-        6.96,
-        14.05,
-        2.13
+        6.32,
+        14.98,
+        1.23
       ],
       "faces": {
         "north": {
@@ -95,14 +95,14 @@
     {
       "name": "horizon_service_steering_1",
       "from": [
-        5.6,
-        12.51,
-        1.95
+        4.72,
+        13.18,
+        1.03
       ],
       "to": [
-        6.96,
-        12.69,
-        2.13
+        6.32,
+        13.38,
+        1.23
       ],
       "faces": {
         "north": {
@@ -164,14 +164,14 @@
     {
       "name": "horizon_service_steering_2",
       "from": [
-        5.55,
-        12.6,
-        1.95
+        4.7,
+        13.28,
+        1.03
       ],
       "to": [
-        5.73,
-        13.96,
-        2.13
+        4.9,
+        14.88,
+        1.23
       ],
       "faces": {
         "north": {
@@ -233,14 +233,14 @@
     {
       "name": "horizon_service_steering_3",
       "from": [
-        6.83,
-        12.6,
-        1.95
+        6.14,
+        13.28,
+        1.03
       ],
       "to": [
-        7.01,
-        13.96,
-        2.13
+        6.34,
+        14.88,
+        1.23
       ],
       "faces": {
         "north": {
@@ -302,14 +302,14 @@
     {
       "name": "horizon_service_steering_4",
       "from": [
-        6.18,
-        12.3,
-        1.62
+        5.42,
+        13.42,
+        1.05
       ],
       "to": [
-        6.38,
-        13.3,
-        1.82
+        5.62,
+        14.74,
+        1.21
       ],
       "faces": {
         "north": {
@@ -319,7 +319,7 @@
             16,
             16
           ],
-          "texture": "#black"
+          "texture": "#dark"
         },
         "south": {
           "uv": [
@@ -328,7 +328,7 @@
             16,
             16
           ],
-          "texture": "#black"
+          "texture": "#dark"
         },
         "east": {
           "uv": [
@@ -337,7 +337,7 @@
             16,
             16
           ],
-          "texture": "#black"
+          "texture": "#dark"
         },
         "west": {
           "uv": [
@@ -346,7 +346,7 @@
             16,
             16
           ],
-          "texture": "#black"
+          "texture": "#dark"
         },
         "up": {
           "uv": [
@@ -355,7 +355,7 @@
             16,
             16
           ],
-          "texture": "#black"
+          "texture": "#dark"
         },
         "down": {
           "uv": [
@@ -364,7 +364,145 @@
             16,
             16
           ],
-          "texture": "#black"
+          "texture": "#dark"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_steering_5",
+      "from": [
+        4.86,
+        13.98,
+        1.05
+      ],
+      "to": [
+        6.18,
+        14.18,
+        1.21
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#dark"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_steering_6",
+      "from": [
+        5.32,
+        13.88,
+        1.03
+      ],
+      "to": [
+        5.72,
+        14.28,
+        1.23
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#silver"
         }
       }
     }

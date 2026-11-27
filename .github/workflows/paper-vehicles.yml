@@ -15,6 +15,10 @@ on:
       - '.github/workflows/paper-vehicles.yml'
   workflow_dispatch:
     inputs:
+      install_new_cab:
+        description: Back up and install the approved recovery cab
+        type: boolean
+        default: false
       diagnose_recovery:
         description: Read crash diagnostics without changing the server
         type: boolean
@@ -60,7 +64,7 @@ jobs:
           retention-days: 14
 
   recovery-package:
-    if: github.event_name == 'workflow_dispatch' && !inputs.deploy_recovery && !inputs.diagnose_recovery
+    if: github.event_name == 'workflow_dispatch' && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -89,7 +93,7 @@ jobs:
           retention-days: 14
 
   recovery-install:
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy_recovery && !inputs.diagnose_recovery
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab
     runs-on: ubuntu-latest
     timeout-minutes: 12
     concurrency:
@@ -107,9 +111,47 @@ jobs:
         run: python3 paper-vehicles/deploy/falix_recovery_live_jar.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
 
   recovery-diagnostic:
-    if: github.event_name == 'workflow_dispatch' && inputs.diagnose_recovery
+    if: github.event_name == 'workflow_dispatch' && inputs.diagnose_recovery && !inputs.install_new_cab
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Read recent crash and server log diagnostics
         run: python3 paper-vehicles/deploy/falix_recovery_crash_diagnostic.py
+
+  install-recovery-cab:
+    if: github.event_name == 'workflow_dispatch' && inputs.install_new_cab
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: falix-vehicle-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Compile JAR and build resource pack without synthetic tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean jar
+          mkdir -p /tmp/recovery-base /tmp/recovery-old /tmp/recovery-new
+          gh release download horizon-offroader-45724921999 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/recovery-base
+          gh release download horizon-offroader-46015454177 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/recovery-old
+          python3 vehicle-plugin-horizon/next-vehicle/atelier-flota/minecraft/build_pack.py /tmp/recovery-base/HorizonOffRoader-1.21.4.zip /tmp/recovery-new/HorizonOffRoader-1.21.4.zip --expected-sha1 136f003f9c56ee849881d41fb6697876353b5681
+      - name: Back up current JAR, pack and configuration
+        run: python3 paper-vehicles/deploy/falix_recovery_cab_install.py backup /tmp/recovery-old/HorizonOffRoader-1.21.4.zip
+      - name: Publish approved resource pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="horizon-offroader-${GITHUB_RUN_ID}"
+          gh release create "$tag" /tmp/recovery-new/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Recovery cab resource pack' --notes 'Approved cab concept adapted for in-game testing.'
+          echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
+      - name: Install matching JAR and resource pack
+        run: python3 paper-vehicles/deploy/falix_recovery_cab_install.py install vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/recovery-new/HorizonOffRoader-1.21.4.zip "$PACK_URL"

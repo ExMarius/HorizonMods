@@ -1,10 +1,10 @@
 {
   "itemDisplayScale": 4,
   "models": {
-    "horizon_service_cab": 107,
+    "horizon_service_cab": 116,
     "horizon_service_flatbed": 65,
     "horizon_service_workshop": 67,
-    "horizon_service_steering": 5,
+    "horizon_service_steering": 7,
     "horizon_service_wheel": 20,
     "horizon_service_ramp": 10,
     "horizon_service_cable": 1
@@ -12,50 +12,20 @@
   "rotationApproximations": [
     {
       "part": "horizon_service_cab",
-      "index": 37,
-      "originalDegrees": 11.4592,
-      "vanillaDegrees": 22.5
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 38,
-      "originalDegrees": 11.4592,
-      "vanillaDegrees": 22.5
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 45,
-      "originalDegrees": 11.4592,
-      "vanillaDegrees": 22.5
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 49,
-      "originalDegrees": -6.8755,
+      "index": 101,
+      "originalDegrees": -4.5837,
       "vanillaDegrees": 0
     },
     {
       "part": "horizon_service_cab",
-      "index": 50,
-      "originalDegrees": -6.8755,
+      "index": 102,
+      "originalDegrees": -4.5837,
       "vanillaDegrees": 0
     },
     {
       "part": "horizon_service_cab",
-      "index": 55,
-      "originalDegrees": -5.7296,
-      "vanillaDegrees": 0
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 56,
-      "originalDegrees": -5.7296,
-      "vanillaDegrees": 0
-    },
-    {
-      "part": "horizon_service_cab",
-      "index": 60,
-      "originalDegrees": -13.751,
+      "index": 106,
+      "originalDegrees": -14.3239,
       "vanillaDegrees": -22.5
     },
     {
