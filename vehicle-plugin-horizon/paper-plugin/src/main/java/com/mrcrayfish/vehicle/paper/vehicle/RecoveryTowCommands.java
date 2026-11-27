@@ -37,16 +37,21 @@ public final class RecoveryTowCommands {
         if(operations.containsKey(carrier.id()) || carrier.occupied() || carrier.horizontalSpeed()>.01) {
             player.sendMessage("Oprește platforma, coboară și încheie transportul anterior.");return;
         }
-        Location base=carrier.location();double yaw=Math.toRadians(base.getYaw());
-        Location expected=base.clone().add(9.8*Math.sin(yaw),0,-9.8*Math.cos(yaw));
-        LandVehicle target=manager.vehicles().stream().filter(v -> v!=carrier && "dacia_logan_police".equals(v.spec().id()))
-                .filter(v -> v.owner().isPresent() && v.canDrive(player) && v.location().getWorld()!=null && v.location().getWorld().equals(base.getWorld()))
-                .filter(v -> v.location().distanceSquared(expected)<.3*.3)
-                .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(expected))).orElse(null);
-        if(target==null){player.sendMessage("Aliniază Dacia autorizată în spatele platformei, la aproximativ 9,8 blocuri.");return;}
+        Location base=carrier.location();
+        LandVehicle target=manager.vehicles().stream().filter(v -> v!=carrier)
+                .filter(v -> v.location().getWorld()!=null && v.location().getWorld().equals(base.getWorld()))
+                .filter(v -> v.location().distanceSquared(base)<=100D)
+                .min(java.util.Comparator.comparingDouble(v -> v.location().distanceSquared(base))).orElse(null);
+        if(target==null){player.sendMessage("Nu există niciun vehicul la maximum 10 blocuri de platformă.");return;}
+        if(target.owner().isEmpty() || !target.canDrive(player)) {
+            player.sendMessage("Nu ai drepturi asupra celui mai apropiat vehicul sau acesta nu are proprietar.");return;
+        }
+        if(!"dacia_logan_police".equals(target.spec().id())) {
+            player.sendMessage("Traseul pentru acest model nu este încă verificat; momentan este acceptată doar Dacia Poliție.");return;
+        }
         carrier.rig().setRecoveryRampProgress(1);carrier.forceVisualSync();
         var route=LiveRecoveryRoute.begin(manager,carrier,target,player,(actor,world,box)->actor.isOnline(),SAFETY);
-        if(route==null) {carrier.rig().setRecoveryRampProgress(0);carrier.forceVisualSync();player.sendMessage("Încărcare refuzată: verifică alinierea, ocupanții și cuplajele.");return;}
+        if(route==null) {carrier.rig().setRecoveryRampProgress(0);carrier.forceVisualSync();player.sendMessage("Vehicul găsit, dar traseul sigur este momentan doar drept, aliniat la circa 9,8 blocuri în spatele platformei. Verifică și ocupanții/cuplajele.");return;}
         try {
             if(!manager.reserveGarageTransit(carrier,target,player,route.lockToken())) {
                 route.abortUnmoved();carrier.rig().setRecoveryRampProgress(0);carrier.forceVisualSync();

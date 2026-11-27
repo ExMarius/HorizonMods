@@ -119,7 +119,7 @@ public final class LiveRecoveryMotion {
                 ||carrier.location().getWorld()==null || !carrier.location().getWorld().equals(target.location().getWorld()))return false;
         Location carrierPose=carrier.location(), start=target.location();
         double yaw=Math.toRadians(carrierPose.getYaw());
-        Location end=carrierPose.clone().add(2.64*Math.sin(yaw),.86,-2.64*Math.cos(yaw));
+        Location end=carrierPose.clone().add(-2.64*Math.sin(yaw),.86,2.64*Math.cos(yaw));
         Vector delta=end.toVector().subtract(start.toVector());
         double width=Math.max(5D,target.spec().entityWidth()),height=Math.max(2.5D,target.spec().entityHeight()),half=width/2;
         BoundingBox swept=new BoundingBox(start.getX()-half,start.getY(),start.getZ()-half,
@@ -135,7 +135,7 @@ public final class LiveRecoveryMotion {
         for(Entity entity:world.getNearbyEntities(swept))if(entity.isValid()&&!ignored.contains(entity.getUniqueId()))return false;
         if(delta.lengthSquared()>1e-12 && VehicleCollisionMover.move(world,start,delta,false,width,height,0D,false)
                 .movement().distanceSquared(delta)>1e-10)return false;
-        target.followRecoveryTestCarrier(token,carrierPose);return true;
+        target.followRecoveryCarrier(token,carrierPose);return true;
     }
     boolean endTestDrive() {
         if(!Bukkit.isPrimaryThread()||!testDriving||carrier.recoveryHasPassengers()||!followTestDrive())return false;

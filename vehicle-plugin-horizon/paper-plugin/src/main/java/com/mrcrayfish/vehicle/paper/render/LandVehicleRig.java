@@ -548,9 +548,9 @@ public final class LandVehicleRig {
             if (display.isVisibleByDefault()!=visible) display.setVisibleByDefault(visible);
             if (!visible) continue;
             var a=recoveryCable.get(i);var b=recoveryCable.get(i+1);
-            // Preview -Z front -> Paper item-space +Z front.
-            Vector3f from=chassis(new Vector3f((float)-a.x(),(float)a.y(),(float)-a.z()),wheelie,roll);
-            Vector3f to=chassis(new Vector3f((float)-b.x(),(float)b.y(),(float)-b.z()),wheelie,roll);
+            // The recovery path's longitudinal coordinates use the rig's rearward axis.
+            Vector3f from=chassis(new Vector3f((float)-a.x(),(float)a.y(),(float)a.z()),wheelie,roll);
+            Vector3f to=chassis(new Vector3f((float)-b.x(),(float)b.y(),(float)b.z()),wheelie,roll);
             Vector3f delta=new Vector3f(to).sub(from);float length=delta.length();
             if (length<1.0e-5F) {display.setVisibleByDefault(false);continue;}
             Vector3f center=new Vector3f(from).add(to).mul(.5F);

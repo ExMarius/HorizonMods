@@ -32,7 +32,7 @@ public final class LiveRecoveryRoute {
         this.manager=manager;this.motion=motion;this.carrier=carrier;this.target=target;origin=carrier.location().clone();
         double yaw=Math.toRadians(origin.getYaw());sin=Math.sin(yaw);cos=Math.cos(yaw);
         Location actual=target.location();double dx=actual.getX()-origin.getX(),dz=actual.getZ()-origin.getZ();
-        startZ=dx*sin-dz*cos;lateral=-dx*cos-dz*sin;
+        startZ=-dx*sin+dz*cos;lateral=-dx*cos-dz*sin;
         groundOffset=actual.getY()-origin.getY()-RecoveryLoadingPath.pose(startZ,WHEELBASE).height();
         cargoYaw=actual.getYaw();
     }
@@ -47,7 +47,7 @@ public final class LiveRecoveryRoute {
         if(base.getWorld()==null || !base.getWorld().equals(start.getWorld()))return null;
         double yaw=Math.toRadians(base.getYaw()),sin=Math.sin(yaw),cos=Math.cos(yaw);
         double dx=start.getX()-base.getX(),dz=start.getZ()-base.getZ();
-        double z=dx*sin-dz*cos,lateral=-dx*cos-dz*sin;
+        double z=-dx*sin+dz*cos,lateral=-dx*cos-dz*sin;
         if(Math.abs(z-START)>.25 || Math.abs(lateral)>.05
                 || Math.abs(start.getY()-base.getY()-RecoveryLoadingPath.pose(z,WHEELBASE).height())>.05
                 || Math.abs(Math.IEEEremainder(start.getYaw()-base.getYaw(),360D))>2F) return null;
@@ -105,7 +105,7 @@ public final class LiveRecoveryRoute {
             carrier.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
             target.rig().entities().forEach(e -> ignored.add(e.getUniqueId()));
             var worldCable=cable.stream().map(p -> new RecoveryCable.Point(
-                    origin.getX()-p.x()*cos+p.z()*sin,origin.getY()+p.y(),origin.getZ()-p.x()*sin-p.z()*cos)).toList();
+                    origin.getX()-p.x()*cos-p.z()*sin,origin.getY()+p.y(),origin.getZ()-p.x()*sin+p.z()*cos)).toList();
             if(!RecoveryCableWorldCheck.clear(origin.getWorld(),worldCable,.018,ignored))return stop();
             var delta=destination(next).toVector().subtract(target.location().toVector());
             if(!motion.step(delta,safety,next.pitch()))return stop();
@@ -140,7 +140,7 @@ public final class LiveRecoveryRoute {
                 && Math.abs(Math.IEEEremainder(now.getYaw()-origin.getYaw(),360D))<.01F;
     }
     private Location destination(RecoveryLoadingPath.Pose pose){
-        return origin.clone().add(-lateral*cos+pose.centerZ()*sin,pose.height()+groundOffset,-lateral*sin-pose.centerZ()*cos);
+        return origin.clone().add(-lateral*cos-pose.centerZ()*sin,pose.height()+groundOffset,-lateral*sin+pose.centerZ()*cos);
     }
     private static List<RecoveryCable.Point> cable(RecoveryLoadingPath.Pose pose,double lateral,double groundOffset){
         double c=Math.cos(pose.pitch()),s=Math.sin(pose.pitch());

@@ -1773,6 +1773,13 @@ public final class LandVehicle {
         velocity.zero();motion.zero();verticalVelocity=0;waterSpeed=0;recoveryPitchDegrees=0;
         rig.updateRecoveryPose(location,frontWheelRotation,rearWheelRotation,0F,age);
     }
+    /** Live recovery deck offset; kept separate from the legacy prototype path. */
+    void followRecoveryCarrier(UUID token, Location carrier) {
+        if(!recoveryMotionLockedBy(token) || !transported)throw new IllegalStateException("Recovery lock lost");
+        location=local(carrier,0,.86,2.64);location.setYaw(carrier.getYaw());
+        velocity.zero();motion.zero();verticalVelocity=0;waterSpeed=0;recoveryPitchDegrees=0;
+        rig.updateRecoveryPose(location,frontWheelRotation,rearWheelRotation,0F,age);
+    }
     void endRecoveryMotion(UUID token) {
         if (!recoveryMotionLockedBy(token)) throw new IllegalStateException("Recovery lock lost");
         recoveryMotionToken=null;transported=false;onGround=false;recoveryPitchDegrees=0F;

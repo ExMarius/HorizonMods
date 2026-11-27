@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class RecoveryTruckPrototypeTest {
     @Test void registeredPrototypeHasCorrectModelsAndPivots() {
         var spec=RecoveryTruckPrototype.create();
-        assertEquals(spec, LandVehicleSpec.byId(spec.id()), "platform must be resolvable from the vehicle catalog");
+        assertEquals(com.mrcrayfish.vehicle.paper.recovery.RecoveryTruckSpec.create(), LandVehicleSpec.byId(spec.id()), "live platform must be resolvable from the vehicle catalog");
         assertEquals("horizon_service_cab",spec.bodyModel());
         assertEquals(4F,spec.bodyScale());
         assertEquals(new LandVehicleSpec.Point(0,0,0),spec.bodyOrigin());
