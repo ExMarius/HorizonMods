@@ -15,6 +15,7 @@ public final class VehiclePlugin extends JavaPlugin {
     private com.mrcrayfish.vehicle.paper.shop.ShopGui shopGui;
     private com.mrcrayfish.vehicle.paper.shop.DealerStationManager dealerStations;
     private VehicleManager vehicleManager;
+    private com.mrcrayfish.vehicle.paper.recovery.RecoveredEntityGuard recoveredEntityGuard;
     private GasPumpManager gasPumpManager;
     private com.mrcrayfish.vehicle.paper.mechanic.MechanicManager mechanicManager;
     private com.mrcrayfish.vehicle.paper.garage.GarageStationManager garageStationManager;
@@ -162,9 +163,9 @@ public final class VehiclePlugin extends JavaPlugin {
         // Read the exact old entity IDs before registering gameplay listeners or
         // loading vehicles. A corrupt registry must not silently disable cleanup.
         try {
-            var guard = com.mrcrayfish.vehicle.paper.recovery.RecoveredEntityGuard.load(getDataFolder().toPath());
-            getServer().getPluginManager().registerEvents(guard, this);
-            guard.sweepLoaded();
+            recoveredEntityGuard = com.mrcrayfish.vehicle.paper.recovery.RecoveredEntityGuard.load(getDataFolder().toPath());
+            getServer().getPluginManager().registerEvents(recoveredEntityGuard, this);
+            recoveredEntityGuard.sweepLoaded();
         } catch (java.io.IOException e) {
             throw new IllegalStateException("Recovery entity registry invalid; refusing vehicle startup", e);
         }
@@ -273,6 +274,14 @@ public final class VehiclePlugin extends JavaPlugin {
         if (vehicleManager != null) {
             vehicleManager.stop();
         }
+        if (recoveredEntityGuard != null) {
+            try { recoveredEntityGuard.close(); }
+            catch (java.io.IOException e) { getLogger().log(java.util.logging.Level.SEVERE, "Recovery session writer did not stop safely", e); }
+        }
+    }
+
+    public com.mrcrayfish.vehicle.paper.recovery.RecoveredEntityGuard recoveredEntityGuard() {
+        return recoveredEntityGuard;
     }
 
     public VehicleManager vehicles() {
