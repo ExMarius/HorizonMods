@@ -15,6 +15,10 @@ on:
       - '.github/workflows/paper-vehicles.yml'
   workflow_dispatch:
     inputs:
+      diagnose_recovery:
+        description: Read crash diagnostics without changing the server
+        type: boolean
+        default: false
       deploy_recovery:
         description: Install the prebuilt recovery candidate on the test server
         type: boolean
@@ -56,7 +60,7 @@ jobs:
           retention-days: 14
 
   recovery-package:
-    if: github.event_name == 'workflow_dispatch' && !inputs.deploy_recovery
+    if: github.event_name == 'workflow_dispatch' && !inputs.deploy_recovery && !inputs.diagnose_recovery
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -85,7 +89,7 @@ jobs:
           retention-days: 14
 
   recovery-install:
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy_recovery
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_recovery && !inputs.diagnose_recovery
     runs-on: ubuntu-latest
     timeout-minutes: 12
     concurrency:
@@ -101,3 +105,11 @@ jobs:
         run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean jar
       - name: Install JAR on test server
         run: python3 paper-vehicles/deploy/falix_recovery_live_jar.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
+
+  recovery-diagnostic:
+    if: github.event_name == 'workflow_dispatch' && inputs.diagnose_recovery
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read recent crash and server log diagnostics
+        run: python3 paper-vehicles/deploy/falix_recovery_crash_diagnostic.py
