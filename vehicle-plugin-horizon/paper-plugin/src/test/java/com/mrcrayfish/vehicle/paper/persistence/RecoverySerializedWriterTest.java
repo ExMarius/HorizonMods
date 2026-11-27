@@ -50,6 +50,17 @@ class RecoverySerializedWriterTest {
             assertEquals(List.of("first"), calls);
         }
     }
+    @Test void persistsIncreasingTombstoneSnapshotsInOrder() throws Exception {
+        var first = java.util.UUID.randomUUID(); var second = java.util.UUID.randomUUID();
+        Path file = dir.resolve("entity-tombstones");
+        try (var writer = new RecoverySerializedWriter(file)) {
+            var firstSave = writer.submit(com.mrcrayfish.vehicle.paper.recovery.RecoveryEntityTombstones.encode(java.util.Set.of(first)));
+            var secondSave = writer.submit(com.mrcrayfish.vehicle.paper.recovery.RecoveryEntityTombstones.encode(java.util.Set.of(first, second)));
+            firstSave.get(5, TimeUnit.SECONDS); secondSave.get(5, TimeUnit.SECONDS);
+        }
+        assertEquals(java.util.Set.of(first, second),
+                com.mrcrayfish.vehicle.paper.recovery.RecoveryEntityTombstones.decode(Files.readAllBytes(file)));
+    }
     @Test void atomicFileWriteAndOwnerEnforcement() throws Exception {
         Path file = dir.resolve("journal");
         try (var writer = new RecoverySerializedWriter(file)) {

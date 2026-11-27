@@ -47,7 +47,25 @@ de vehicul nu identifică direct entitățile Minecraft; o listă doar cu UUID-u
 de entități trebuie să includă *toate* piesele, să fie durabilă și să nu
 șteargă un rig nou legitim. Pasagerii nu trebuie șterși. Persistența și
 momentul colectării acelor identificatori trebuie demonstrate înaintea
-ștergerii jurnalului.
+ștergerii jurnalului. `RecoveryEntityTombstones` definește acum un format
+experimental determinist, cu UUID-uri de entitate, limită de 100.000 de intrări
+și checksum. Nu este încă un registru live sau listener. Nici ștergerea la
+`EntitiesLoadEvent` nu dovedește singură că regiunea a fost salvată: un crash
+între `entity.remove()` și salvarea lumii poate readuce entitatea. Prin urmare
+nu eliminăm tombstone-ul la simpla primire a evenimentului și nici după un TTL;
+este necesară dovada durabilă a salvării corecte a lumii sau păstrarea lui.
+
+Un breadcrumb pentru evacuare este doar un candidat, nu o garanție: blocurile,
+entitățile, lumea și chunk-ul se pot schimba între capturare și teleportare.
+Trebuie reverificat în momentul utilizării, inclusiv teleportarea și pasagerii;
+în lipsa unui loc sigur, rezervarea rămâne activă.
+
+`RecoverySerializedWriter` este un experiment separat, nu writer-ul folosit de
+`VehicleManager`. Salvarea curentă a garajului are încă o cale sincronă
+`saveNow()` separată de coada asincronă; pentru o tranzacție nouă nu se poate
+presupune că ordinea celor două este garantată. Viitoarea integrare trebuie să
+centralizeze *toți* writerii relevanți, iar confirmările asincrone să revină pe
+threadul principal înainte de a modifica starea Paper.
 
 ## Rust și Paper
 
