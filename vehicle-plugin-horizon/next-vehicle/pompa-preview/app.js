@@ -33,35 +33,32 @@ box([.54,.23,.025],redDark,[0,.60,.379],pump);
 box([.48,.17,.014],red,[0,.60,.398],pump);
 box([.63,.025,.026],cream,[0,.86,.382],pump);
 for(const [x,m] of [[-.23,green],[0,amber],[.23,green]]){box([.13,.075,.025],black,[x,1.22,.410],pump);box([.10,.046,.012],m,[x,1.22,.43],pump)}
-// Integrated nozzle cradle on the right side; hose exits above it.
-// Open cradle: a backplate and two shallow lips, leaving the nozzle visible.
-box([.05,.49,.32],redDark,[.50,1.31,.04],pump);
-box([.07,.37,.24],black,[.555,1.31,.04],pump);
-box([.24,.035,.035],steel,[.68,1.08,-.075],pump);
-box([.24,.035,.035],steel,[.68,1.08,.155],pump);
-box([.04,.14,.035],redDark,[.79,1.14,-.075],pump);
-box([.04,.14,.035],redDark,[.79,1.14,.155],pump);
-box([.05,.16,.19],black,[.49,1.61,.02],pump);
+// Slim, open bracket behind the docked nozzle; it does not cover the grip.
+box([.035,.40,.22],redDark,[.492,1.37,.16],pump);
+box([.035,.30,.13],black,[.528,1.38,.16],pump);
+box([.14,.035,.035],steel,[.60,1.18,.10],pump);
+box([.14,.035,.035],steel,[.60,1.18,.22],pump);
+box([.05,.16,.19],black,[.49,1.61,-.27],pump);
 // A hand-authored label is preview artwork, not a resource-pack texture.
 function label(text,sub){const c=document.createElement('canvas');c.width=512;c.height=192;const q=c.getContext('2d');q.fillStyle='#b7d1c0';q.fillRect(0,0,512,192);q.fillStyle='#20342e';q.font='bold 54px monospace';q.fillText(text,22,78);q.font='bold 25px sans-serif';q.fillText(sub,25,137);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const plane=new THREE.Mesh(new THREE.PlaneGeometry(.57,.215),new THREE.MeshBasicMaterial({map:tex}));plane.position.set(0,1.49,.436);pump.add(plane)}
 label('00.00 L','HORIZON   /   COMBUSTIBIL');
 const nameCanvas=document.createElement('canvas');nameCanvas.width=512;nameCanvas.height=100;const nc=nameCanvas.getContext('2d');nc.fillStyle='#8f2024';nc.fillRect(0,0,512,100);nc.font='bold 48px sans-serif';nc.fillStyle='#fff1de';nc.textAlign='center';nc.fillText('HORIZON',256,65);const nt=new THREE.CanvasTexture(nameCanvas);nt.colorSpace=THREE.SRGBColorSpace;const nameplate=new THREE.Mesh(new THREE.PlaneGeometry(.62,.11),new THREE.MeshBasicMaterial({map:nt}));nameplate.position.set(0,1.72,.375);pump.add(nameplate);
-// Original nozzle: element 6 is the angled rear grip and element 7 is the
-// long spout. Positions below include the -22.5 degree element rotation and
-// the inner model's 180 degree Y rotation. Units are Minecraft blocks.
+// In the original GasPumpRenderer the model centre is at y=0.5 and the
+// docked hose ends at y=0.1; its 90-degree rotation and 0.8 scale put model
+// Z=16 there. Thus the long straight element is the rear handle/connection.
 const nozzlePivot=new THREE.Group();scene.add(nozzlePivot);
-const nozzleGrip=new THREE.Vector3(0,-.047,.27);
-const socketAxis=new THREE.Vector3(0,-Math.sin(Math.PI/8),Math.cos(Math.PI/8));
-const socketBase=new THREE.Vector3(0,-.104,.413);
-const nozzleHosePoint=socketBase.clone().addScaledVector(socketAxis,.17);
-function cylinder(radius,length,mat,pos,parent,axis=new THREE.Vector3(0,1,0),radius2=radius){
- const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius2,length,12),mat);
+const nozzleGrip=new THREE.Vector3(0,(6.8-4.5)/16,-(12-8)/16);
+const socketAxis=new THREE.Vector3(0,0,-1);
+const socketBase=new THREE.Vector3(0,(6.8-4.5)/16,-.5);
+const nozzleHosePoint=socketBase.clone().addScaledVector(socketAxis,.105);
+function cylinder(radius,length,mat,pos,parent,axis=new THREE.Vector3(0,1,0)){
+ const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,length,12),mat);
  mesh.position.copy(pos);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),axis.clone().normalize());mesh.castShadow=true;parent.add(mesh);return mesh;
 }
-// Connect at the back of the angled grip, never at the long spout.
-for(const [radius,length,offset,material] of [[.055,.035,.015,redDark],[.052,.045,.055,steel],[.041,.105,.13,black]])
+// Compact coupling behind the grip, leaving the original shape visible.
+for(const [radius,length,offset,material] of [[.056,.025,.01,redDark],[.049,.032,.035,steel],[.038,.06,.078,black]])
  cylinder(radius,length,material,socketBase.clone().addScaledVector(socketAxis,offset),nozzlePivot,socketAxis);
-for(const offset of [.092,.115,.138,.161])cylinder(.045,.008,redDark,socketBase.clone().addScaledVector(socketAxis,offset),nozzlePivot,socketAxis);
+for(const offset of [.056,.075,.094])cylinder(.041,.006,redDark,socketBase.clone().addScaledVector(socketAxis,offset),nozzlePivot,socketAxis);
 const hiddenFace=new THREE.MeshBasicMaterial({visible:false});
 const nozzleTexture=new THREE.TextureLoader().load('/assets/nozzle-red.png');
 nozzleTexture.colorSpace=THREE.SRGBColorSpace;nozzleTexture.magFilter=THREE.NearestFilter;nozzleTexture.minFilter=THREE.NearestFilter;
@@ -86,18 +83,18 @@ const heldArm=new THREE.Group();player.add(heldArm);const armMesh=box([.21,1,.21
 const localHand=new THREE.Vector3(-.35,.82,.16),shoulder=new THREE.Vector3(-.36,1.33,0);
 function connectArm(){const v=localHand.clone().sub(shoulder), mid=shoulder.clone().add(localHand).multiplyScalar(.5);heldArm.position.copy(mid);heldArm.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.clone().normalize());armMesh.scale.y=v.length();}
 connectArm();
-const hose=new THREE.Group();scene.add(hose);const hoseMat=soft('#202426'), hoseGeometry=new THREE.CylinderGeometry(.034,.034,1,10);const hoseParts=[];for(let i=0;i<16;i++){let m=new THREE.Mesh(hoseGeometry,hoseMat);m.castShadow=true;hose.add(m);hoseParts.push(m)}
+const hose=new THREE.Group();scene.add(hose);const hoseMat=soft('#202426'), hoseGeometry=new THREE.CylinderGeometry(.034,.034,1,10);const hoseParts=[];for(let i=0;i<32;i++){let m=new THREE.Mesh(hoseGeometry,hoseMat);m.castShadow=true;hose.add(m);hoseParts.push(m)}
 // Endpoints are explicit: the fixed outlet and the nozzle connector follow
 // their own transforms. Sag is an illustrative curve, not a physics solver.
 // Downward-facing pump outlet, as in the original hose rendering. The
 // outlet is moved to the exposed side of this new pump, not copied blindly.
-const start=new THREE.Vector3(.65,1.43,.02), rest=new THREE.Vector3(.76,1.32,.04);
+const start=new THREE.Vector3(.64,1.43,-.27), rest=new THREE.Vector3(.68,1.38,.16);
 const outletAxis=new THREE.Vector3(1,0,0), down=new THREE.Vector3(0,-1,0);
-cylinder(.105,.035,redDark,new THREE.Vector3(.52,1.61,.02),pump,outletAxis);
-cylinder(.078,.09,steel,new THREE.Vector3(.59,1.61,.02),pump,outletAxis);
-const elbow=new THREE.Mesh(new THREE.SphereGeometry(.065,12,8),steel);elbow.position.set(.65,1.61,.02);pump.add(elbow);
-cylinder(.052,.16,black,new THREE.Vector3(.65,1.51,.02),pump,down);
-for(const y of [1.46,1.49,1.52,1.55])cylinder(.057,.009,redDark,new THREE.Vector3(.65,y,.02),pump,down);
+cylinder(.105,.035,redDark,new THREE.Vector3(.52,1.61,-.27),pump,outletAxis);
+cylinder(.078,.09,steel,new THREE.Vector3(.59,1.61,-.27),pump,outletAxis);
+const elbow=new THREE.Mesh(new THREE.SphereGeometry(.065,12,8),steel);elbow.position.set(.64,1.61,-.27);pump.add(elbow);
+cylinder(.052,.16,black,new THREE.Vector3(.64,1.51,-.27),pump,down);
+for(const y of [1.46,1.49,1.52,1.55])cylinder(.057,.009,redDark,new THREE.Vector3(.64,y,-.27),pump,down);
 let held=true, first=false;const distance=document.querySelector('#distance'),angle=document.querySelector('#angle');
 // Cubic Hermite spline, matching the original renderer's downward outlet
 // tangent and tangent entering the nozzle, scaled for this new layout.
@@ -116,7 +113,7 @@ function update(){
  const length=start.distanceTo(end), m0=new THREE.Vector3(0,-Math.min(2.3,Math.max(1.1,length*.8)),0);
  const endOut=socketAxis.clone().applyQuaternion(nozzlePivot.quaternion).normalize();
  const m1=endOut.multiplyScalar(-Math.min(1.6,Math.max(.7,length*.6)));
- let prev=start;for(let i=0;i<16;i++){const p=hosePoint(start,end,(i+1)/16,m0,m1),delta=p.clone().sub(prev),m=hoseParts[i];m.position.copy(prev).add(p).multiplyScalar(.5);m.scale.set(1,delta.length(),1);if(delta.lengthSq()>1e-9)m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());m.visible=true;prev=p;}
+ let prev=start;for(let i=0;i<32;i++){const p=hosePoint(start,end,(i+1)/32,m0,m1),delta=p.clone().sub(prev),m=hoseParts[i];m.position.copy(prev).add(p).multiplyScalar(.5);m.scale.set(1,delta.length(),1);if(delta.lengthSq()>1e-9)m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());m.visible=true;prev=p;}
  heldArm.visible=held;handMesh.visible=held;document.querySelector('#mode').textContent=held?'PISTOL ÎN MÂNĂ':'PISTOL LA POMPĂ';
  document.querySelector('#held').classList.toggle('active',held);document.querySelector('#docked').classList.toggle('active',!held);
  document.querySelector('#orbit').classList.toggle('active',!first);document.querySelector('#first').classList.toggle('active',first);
