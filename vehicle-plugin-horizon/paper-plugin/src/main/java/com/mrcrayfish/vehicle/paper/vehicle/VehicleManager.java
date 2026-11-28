@@ -56,6 +56,9 @@ public final class VehicleManager {
     private final File storageFile;
     private final TrailerManager trailers;
     private final RecoveryTowCommands recoveryTowCommands;
+    private LandVehicle pigProbeVehicle;
+    private UUID pigProbeOperator;
+    private long pigProbeExpiry;
     private final com.mrcrayfish.vehicle.paper.persistence.RecoveryOrderedJournal recoveryJournal;
     private BukkitTask tickTask;
     private BukkitTask saveTask;
@@ -174,6 +177,7 @@ public final class VehicleManager {
     }
 
     public void stop() {
+        clearPigProbe();
         if (tickTask != null) {
             tickTask.cancel();
         }
@@ -1187,6 +1191,51 @@ public final class VehicleManager {
 
     public RecoveryTowCommands recoveryTowCommands() { return recoveryTowCommands; }
 
+    /** One-shot, operator-only test on a stopped, empty normal Go Kart. */
+    public void pigSeatProbe(Player player, boolean enable) {
+        if (!player.isOp()) { player.sendMessage("[PorcTest] Doar operatorii pot folosi testul."); return; }
+        if (!enable) {
+            if (pigProbeVehicle == null) { player.sendMessage("[PorcTest] Nu există test armat."); return; }
+            clearPigProbe();
+            player.sendMessage("[PorcTest] Test dezarmat. Dacă ești pe scaunul test, coboară normal; nu te demontez automat.");
+            return;
+        }
+        if (pigProbeVehicle != null || player.isInsideVehicle() || !player.isOnGround()) {
+            player.sendMessage("[PorcTest] Necesită un singur test și să fii pe sol, în afara vehiculului."); return;
+        }
+        LandVehicle target = nearest(player.getLocation(), 5D, false).orElse(null);
+        if (target == null || !"go_kart".equals(target.spec().id()) || !target.canDrive(player)
+                || target.showcase() || target.occupied() || !target.resting() || target.recoveryLocked()
+                || target.transported() || target.onJack() || target.jackId() != null
+                || trailers.referencesVehicle(target.id())) {
+            player.sendMessage("[PorcTest] Alege un Go Kart obișnuit, liber, oprit, fără remorcă, cric sau tractare, la maximum 5 blocuri."); return;
+        }
+        pigProbeVehicle = target;
+        pigProbeOperator = player.getUniqueId();
+        pigProbeExpiry = System.nanoTime() + 120_000_000_000L;
+        target.rig().armPigDriverProbe(pigProbeOperator, pigProbeExpiry);
+        player.sendMessage("[PorcTest] Armat doar pentru tine și acest Go Kart; urcă la volan în următoarele 2 minute.");
+        player.sendMessage("[PorcTest] Scaun unic de probă, necalibrat; coboară cu Shift și oprește cu /vehicle testporc oprit.");
+    }
+
+    private void clearPigProbe() {
+        if (pigProbeVehicle != null) pigProbeVehicle.rig().disarmPigDriverProbe();
+        pigProbeVehicle = null; pigProbeOperator = null; pigProbeExpiry = 0L;
+    }
+
+    private void tickPigProbe() {
+        if (pigProbeVehicle == null) return;
+        Player player = Bukkit.getPlayer(pigProbeOperator);
+        if (player == null || !player.isOnline() || !player.isOp() || player.isDead()
+                || byId(pigProbeVehicle.id()).orElse(null) != pigProbeVehicle
+                || pigProbeVehicle.recoveryLocked() || pigProbeVehicle.transported()
+                || pigProbeVehicle.onJack() || trailers.referencesVehicle(pigProbeVehicle.id())
+                || System.nanoTime() - pigProbeExpiry >= 0L) {
+            clearPigProbe();
+            if (player != null && player.isOnline()) player.sendMessage("[PorcTest] Test dezarmat; dacă ești pe scaun, coboară normal cu Shift.");
+        }
+    }
+
     public Optional<LandVehicle> nearest(Location origin, double maximumDistance) {
         return nearest(origin, maximumDistance, true);
     }
@@ -1792,6 +1841,7 @@ public final class VehicleManager {
                 hibernate(vehicle);
             }
         }
+        tickPigProbe();
         recoveryTowCommands.updateApproachRamps();
         trailers.tick();
         handleBumperCarCollisions();

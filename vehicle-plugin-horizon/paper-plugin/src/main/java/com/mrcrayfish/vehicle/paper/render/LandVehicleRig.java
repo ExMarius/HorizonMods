@@ -15,6 +15,8 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Horse;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Pig;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
@@ -38,6 +40,19 @@ public final class LandVehicleRig {
      *  (A/D): serverul forteaza scaunul sa urmeze vehiculul. In repaus,
      *  campul ramane false si clientul detine rotatia (rider vanilla). */
     private boolean carryBody = false;
+    // Armed only for a single operator and one mounting attempt; never persisted.
+    private UUID pigProbeOperator;
+    private long pigProbeDeadline;
+
+    public void armPigDriverProbe(UUID operator, long deadlineNanos) {
+        pigProbeOperator = operator;
+        pigProbeDeadline = deadlineNanos;
+    }
+
+    public void disarmPigDriverProbe() {
+        pigProbeOperator = null;
+        pigProbeDeadline = 0L;
+    }
 
     public void setSeatBodyCarry(boolean carryBody) {
         this.carryBody = carryBody;
@@ -313,25 +328,46 @@ public final class LandVehicleRig {
         return seat;
     }
 
-    private Horse createSeatMount(SeatCarrier carrier) {
+    private LivingEntity createSeatMount(SeatCarrier carrier, boolean usePig) {
         if (removed || !carrier.anchor.isValid()) {
             return null;
         }
         Location location = carrier.anchor.getLocation();
-        Horse seat = seatCarrier(location.getWorld(), location, vehicleId, seatCarrierScale());
+        LivingEntity seat;
+        if (usePig) {
+            // Full-size carrier avoids the tiny-mount dismount hazards seen previously.
+            Pig pig = location.getWorld().spawn(location, Pig.class, carrierPig -> {
+                carrierPig.setAI(false);
+                carrierPig.setGravity(false);
+                carrierPig.setCollidable(false);
+                carrierPig.setInvisible(true);
+                carrierPig.setInvulnerable(true);
+                carrierPig.setSilent(true);
+                carrierPig.setPersistent(false);
+                carrierPig.setRemoveWhenFarAway(false);
+                AttributeInstance health = carrierPig.getAttribute(Attribute.MAX_HEALTH);
+                if (health != null) health.setBaseValue(SEAT_GAUGE_MAX_HEALTH);
+                carrierPig.setHealth(SEAT_GAUGE_MAX_HEALTH);
+            });
+            mark(pig, vehicleId);
+            seat = pig;
+        } else {
+            seat = seatCarrier(location.getWorld(), location, vehicleId, seatCarrierScale());
+        }
         markSpawnSession(seat);
         if (!carrier.anchor.addPassenger(seat)) {
             seat.remove();
             return null;
         }
         carrier.mount = seat;
+        carrier.pigProbe = usePig;
         entities.add(seat);
         applySeatGauge(seat);
         return seat;
     }
 
     private void discardSeat(SeatCarrier carrier) {
-        Horse seat = carrier.mount;
+        LivingEntity seat = carrier.mount;
         carrier.mount = null;
         if (seat != null) {
             entities.remove(seat);
@@ -667,7 +703,7 @@ public final class LandVehicleRig {
 
     private void maintainSeat(SeatCarrier carrier, float yaw) {
         float seatYaw = yaw + carrier.properties.yawOffset();
-        Horse seat = carrier.mount;
+        LivingEntity seat = carrier.mount;
         if (seat == null) {
             return;
         }
@@ -678,7 +714,7 @@ public final class LandVehicleRig {
             if (!removed && riderId != null) {
                 Player rider = Bukkit.getPlayer(riderId);
                 if (rider != null && rider.isOnline() && !rider.isDead()) {
-                    Horse replacement = createSeatMount(carrier);
+                    LivingEntity replacement = createSeatMount(carrier, carrier.pigProbe);
                     if (replacement != null && replacement.addPassenger(rider)) {
                         carrier.rider = riderId;
                         replacement.setRotation(seatYaw, 0.0F);
@@ -706,8 +742,9 @@ public final class LandVehicleRig {
          * corpul pe scaun si lasa capul liber). In timpul virajelor/mersului
          * serverul tine scaunul la yaw-ul vehiculului => corpul calatorul
          * se misca o data cu masina. */
-        if (carryBody) {
+        if (carryBody || carrier.pigProbe) {
             seat.setRotation(seatYaw, 0.0F);
+            if (carrier.pigProbe) seat.setBodyYaw(seatYaw);
         }
     }
 
@@ -799,7 +836,7 @@ public final class LandVehicleRig {
         }
     }
 
-    private void applySeatGauge(Horse seat) {
+    private void applySeatGauge(LivingEntity seat) {
         double health = FuelGauge.mountHealth(seatGauge);
         if (Math.abs(seat.getHealth() - health) > 0.01D) {
             seat.setHealth(health);
@@ -829,7 +866,7 @@ public final class LandVehicleRig {
         double playerHalfHeight = player.getBoundingBox().getHeight() * 0.5D;
         Location playerLocation = player.getLocation();
         for (SeatCarrier carrier : seats) {
-            Horse seat = carrier.mount;
+            LivingEntity seat = carrier.mount;
             if (seat != null && seat.isValid() && !seat.getPassengers().isEmpty()) {
                 continue;
             }
@@ -860,7 +897,10 @@ public final class LandVehicleRig {
         if (closest.mount != null) {
             discardSeat(closest);
         }
-        Horse seat = createSeatMount(closest);
+        boolean usePig = closest.properties.driver() && player.getUniqueId().equals(pigProbeOperator)
+                && System.nanoTime() - pigProbeDeadline < 0L;
+        if (usePig) disarmPigDriverProbe(); // One-shot: later mounts use the normal horse.
+        LivingEntity seat = createSeatMount(closest, usePig);
         if (seat != null && seat.addPassenger(player)) {
             closest.rider = player.getUniqueId();
             return true;
@@ -1001,7 +1041,7 @@ public final class LandVehicleRig {
          * Restoring an ordinary bounding box also keeps the fallback dismount
          * location independent of the carrier's minimum render scale. */
         for (SeatCarrier carrier : seats) {
-            Horse seat = carrier.mount;
+            LivingEntity seat = carrier.mount;
             if (seat == null || !seat.isValid() || seat.getPassengers().isEmpty()) {
                 continue;
             }
@@ -1199,7 +1239,8 @@ public final class LandVehicleRig {
     private static final class SeatCarrier {
         private final ItemDisplay anchor;
         private final LandVehicleSpec.Seat properties;
-        private Horse mount;
+        private LivingEntity mount;
+        private boolean pigProbe;
         private UUID rider;
 
         private SeatCarrier(ItemDisplay anchor, LandVehicleSpec.Seat properties) {
@@ -1207,7 +1248,7 @@ public final class LandVehicleRig {
             this.properties = properties;
         }
 
-        private Horse seat() {
+        private LivingEntity seat() {
             return mount;
         }
     }
