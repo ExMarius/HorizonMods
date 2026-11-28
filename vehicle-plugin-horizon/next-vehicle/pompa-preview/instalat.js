@@ -24,11 +24,11 @@ const hoseBars=[new THREE.BoxGeometry(.0625,.03125,1),new THREE.BoxGeometry(.047
 function section(){const part=new THREE.Group();for(let i=0;i<3;i++){const m=new THREE.Mesh(hoseBars[i],rubber);if(i===1)m.position.y=.0234375;if(i===2)m.position.y=-.0234375;part.add(m)}return part}
 const hoseParts=Array.from({length:24},()=>{const p=section();hose.add(p);return p});
 // The outlet and cradle share the same (negative X) side. Front is +Z.
-const start=new THREE.Vector3(-.64,1.49,-.27);
+const start=new THREE.Vector3(-.595,1.49,-.27);
 function fitting(radius,length,mat,position,parent,rotationX=0){const m=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,length,8),mat);m.position.copy(position);m.rotation.x=rotationX;parent.add(m);return m}
-fitting(.063,.055,metal,new THREE.Vector3(-.64,1.64,-.27),scene);
-fitting(.044,.12,rubber,new THREE.Vector3(-.64,1.55,-.27),scene);
-for(const y of [1.505,1.53,1.555,1.58])fitting(.048,.009,rubber,new THREE.Vector3(-.64,y,-.27),scene);
+fitting(.063,.055,metal,new THREE.Vector3(-.595,1.64,-.27),scene);
+fitting(.044,.12,rubber,new THREE.Vector3(-.595,1.55,-.27),scene);
+for(const y of [1.505,1.53,1.555,1.58])fitting(.048,.009,rubber,new THREE.Vector3(-.595,y,-.27),scene);
 function addNozzleFitting(parent){
  // Model Z=16 is the hose end. Sleeves travel with the editable nozzle.
  fitting(.055,.035,metal,new THREE.Vector3(0,-.075,.515),parent,Math.PI/2);
@@ -40,7 +40,7 @@ function renderHose(){
  const end=nozzle.localToWorld(new THREE.Vector3(0,-.075,.622));
  const out=new THREE.Vector3(0,0,1).applyQuaternion(nozzle.quaternion).normalize();
  // A hanging U-shaped loop, clear of the ground and outboard of the pump.
- const outer=Math.min(-.74,end.x-.09),bottom=Math.max(.14,Math.min(.38,end.y-.18));
+ const outer=Math.min(-.65,end.x-.06),bottom=Math.max(.14,Math.min(.38,end.y-.18));
  const middle=new THREE.Vector3(outer,bottom,(start.z+end.z)/2);
  const first=new THREE.CubicBezierCurve3(start,start.clone().add(new THREE.Vector3(0,-.52,0)),middle.clone().add(new THREE.Vector3(0,0,-.25)),middle);
  const second=new THREE.CubicBezierCurve3(middle,middle.clone().add(new THREE.Vector3(0,0,.25)),end.clone().addScaledVector(out,.25),end);
@@ -62,12 +62,12 @@ const deg=THREE.MathUtils.radToDeg,rad=THREE.MathUtils.degToRad;
 function sync(){if(!nozzle)return;const p=nozzle.position,r=nozzle.rotation;const values={px:p.x,py:p.y,pz:p.z,rx:deg(r.x),ry:deg(r.y),rz:deg(r.z)};for(const [k,v] of Object.entries(values))fields[k].value=Number(v.toFixed(3));document.querySelector('#values').value=`Poziție X=${fields.px.value} Y=${fields.py.value} Z=${fields.pz.value} blocuri; rotație X=${fields.rx.value} Y=${fields.ry.value} Z=${fields.rz.value} grade (ordine YXZ; pompă orientată ca în preview).`;renderHose()}
 gizmo.addEventListener('objectChange',sync);
 for(const field of Object.values(fields))field.addEventListener('change',()=>{if(!nozzle)return;const values=Object.fromEntries(Object.entries(fields).map(([k,e])=>[k,Number(e.value)]));if(Object.values(values).some(v=>!Number.isFinite(v)))return;nozzle.position.set(values.px,values.py,values.pz);nozzle.rotation.set(rad(values.rx),rad(values.ry),rad(values.rz),'YXZ');sync()});
-function initial(){if(!nozzle)return;nozzle.position.set(-.65,1.45,.21);nozzle.rotation.set(Math.PI/2,Math.PI,0,'YXZ');sync()}
+function initial(){if(!nozzle)return;nozzle.position.set(-.575,1.45,.21);nozzle.rotation.set(Math.PI/2,Math.PI,0,'YXZ');sync()}
 function mode(value){gizmo.enabled=true;gizmo.getHelper().visible=true;gizmo.setMode(value);for(const id of ['move','rotate','hide'])document.querySelector('#'+id).classList.toggle('active',id===(value==='translate'?'move':'rotate'));document.querySelector('#status').textContent=value==='translate'?'MOD MUTARE':'MOD ROTIRE'}
 document.querySelector('#move').onclick=()=>mode('translate');document.querySelector('#rotate').onclick=()=>mode('rotate');document.querySelector('#hide').onclick=()=>{gizmo.enabled=false;gizmo.getHelper().visible=false;for(const id of ['move','rotate','hide'])document.querySelector('#'+id).classList.toggle('active',id==='hide');document.querySelector('#status').textContent='AXE ASCUNSE'};
-document.querySelector('#original').onclick=()=>{if(!nozzle)return;nozzle.position.set(-.65,1.45,.21);nozzle.rotation.set(0,Math.PI,0,'YXZ');sync()};
+document.querySelector('#original').onclick=()=>{if(!nozzle)return;nozzle.position.set(-.575,1.45,.21);nozzle.rotation.set(0,Math.PI,0,'YXZ');sync()};
 document.querySelector('#copy').onclick=async()=>{const output=document.querySelector('#values');try{await navigator.clipboard.writeText(output.value);document.querySelector('#copy-status').textContent='Copiat! Trimite-mi valorile în conversație.'}catch{output.focus();output.select();document.querySelector('#copy-status').textContent='Selectează și copiază textul de mai sus, apoi trimite-mi-l.'}};
-function reset(){camera.position.set(-2.8,2.3,3.4);controls.target.set(-.32,1.25,0);controls.update()}document.querySelector('#reset').onclick=reset;
+function reset(){camera.position.set(-3.5,2.2,2.1);controls.target.set(-.40,1.15,0);controls.update()}document.querySelector('#reset').onclick=reset;
 new ResizeObserver(()=>{const w=host.clientWidth,h=host.clientHeight;if(w&&h){camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}}).observe(host);
 Promise.all(['/minecraft/gas_pump_bottom.json','/minecraft/gas_pump_top.json','/assets/nozzle.json'].map(async url=>{const r=await fetch(url);if(!r.ok)throw Error(url);return r.json()})).then(([bottom,top,n])=>{// Move the authored cradle toward the front (+Z) and the outlet toward
  // the back (-Z) only in this candidate; the installed pack stays untouched.
