@@ -312,6 +312,14 @@ public final class VehicleListener implements Listener {
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }
+        // Paper fires this during stopRiding, before the living passenger's
+        // vanilla dismount-location search. Enlarge only our tagged pig trial.
+        // This reduces the tiny-hitbox risk; it does not guarantee a safe exit.
+        if (event.getDismounted() instanceof org.bukkit.entity.Pig pig
+                && pig.getScoreboardTags().contains("mcv_pig_probe_seat")) {
+            org.bukkit.attribute.AttributeInstance scale = pig.getAttribute(org.bukkit.attribute.Attribute.SCALE);
+            if (scale != null) scale.setBaseValue(1.0D);
+        }
         // Dynamic seat mounts are not necessarily present in the original rig
         // entity index. Match the actual seat, never a nearby unrelated vehicle.
         vehicles.vehicles().stream()

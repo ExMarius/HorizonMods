@@ -335,9 +335,12 @@ public final class LandVehicleRig {
         Location location = carrier.anchor.getLocation();
         LivingEntity seat;
         if (usePig) {
-            // Moderate scale lowers the rider without using the tiny horse scale.
-            // Pig dismount safety and visual position still require in-game validation.
+            // Classic Paper 1.21.4 pig seat uses 1/16 scale and zero movement.
+            // The dismount listener enlarges this tagged test mount before vanilla
+            // searches for a safe position; in-game verification is still required.
             Pig pig = location.getWorld().spawn(location, Pig.class, carrierPig -> {
+                carrierPig.setSaddle(true);
+                carrierPig.addScoreboardTag("mcv_pig_probe_seat");
                 carrierPig.setAI(false);
                 carrierPig.setGravity(false);
                 carrierPig.setCollidable(false);
@@ -347,7 +350,9 @@ public final class LandVehicleRig {
                 carrierPig.setPersistent(false);
                 carrierPig.setRemoveWhenFarAway(false);
                 AttributeInstance pigScale = carrierPig.getAttribute(Attribute.SCALE);
-                if (pigScale != null) pigScale.setBaseValue(0.5D);
+                if (pigScale != null) pigScale.setBaseValue(SEAT_CARRIER_SCALE);
+                AttributeInstance speed = carrierPig.getAttribute(Attribute.MOVEMENT_SPEED);
+                if (speed != null) speed.setBaseValue(0.0D);
                 AttributeInstance health = carrierPig.getAttribute(Attribute.MAX_HEALTH);
                 if (health != null) health.setBaseValue(SEAT_GAUGE_MAX_HEALTH);
                 carrierPig.setHealth(SEAT_GAUGE_MAX_HEALTH);
@@ -740,6 +745,13 @@ public final class LandVehicleRig {
             return;
         }
         carrier.rider = rider.getUniqueId();
+        if (carrier.pigProbe) {
+            // If dismount was cancelled after our safety handler, restore the
+            // probe scale only after confirming that the rider is still mounted.
+            AttributeInstance scale = seat.getAttribute(Attribute.SCALE);
+            if (scale != null && Math.abs(scale.getBaseValue() - SEAT_CARRIER_SCALE) > 1.0E-6D)
+                scale.setBaseValue(SEAT_CARRIER_SCALE);
+        }
         /* BM: scaunul are rider; cat timp vehiculul NU vireaza/se misca,
          * rotatia ramane la client (clampa vanilla de riding blocheaza
          * corpul pe scaun si lasa capul liber). In timpul virajelor/mersului
