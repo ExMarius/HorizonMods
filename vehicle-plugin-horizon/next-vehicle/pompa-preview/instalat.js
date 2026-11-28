@@ -23,12 +23,12 @@ const metal=new THREE.MeshStandardMaterial({color:'#9faeb0',metalness:.65,roughn
 const hoseBars=[new THREE.BoxGeometry(.0625,.03125,1),new THREE.BoxGeometry(.047,.015625,1),new THREE.BoxGeometry(.047,.015625,1)];
 function section(){const part=new THREE.Group();for(let i=0;i<3;i++){const m=new THREE.Mesh(hoseBars[i],rubber);if(i===1)m.position.y=.0234375;if(i===2)m.position.y=-.0234375;part.add(m)}return part}
 const hoseParts=Array.from({length:24},()=>{const p=section();hose.add(p);return p});
-// The outlet and cradle share the same (negative X) side. Front is +Z.
-const start=new THREE.Vector3(-.595,1.49,-.27);
+// Pump front is +Z; the right-hand side in the front-facing view is +X.
+const start=new THREE.Vector3(.54,1.49,-.27);
 function fitting(radius,length,mat,position,parent,rotationX=0){const m=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,length,8),mat);m.position.copy(position);m.rotation.x=rotationX;parent.add(m);return m}
-fitting(.063,.055,metal,new THREE.Vector3(-.595,1.64,-.27),scene);
-fitting(.044,.12,rubber,new THREE.Vector3(-.595,1.55,-.27),scene);
-for(const y of [1.505,1.53,1.555,1.58])fitting(.048,.009,rubber,new THREE.Vector3(-.595,y,-.27),scene);
+fitting(.063,.055,metal,new THREE.Vector3(.54,1.64,-.27),scene);
+fitting(.044,.12,rubber,new THREE.Vector3(.54,1.55,-.27),scene);
+for(const y of [1.505,1.53,1.555,1.58])fitting(.048,.009,rubber,new THREE.Vector3(.54,y,-.27),scene);
 function addNozzleFitting(parent){
  // Model Z=16 is the hose end. Sleeves travel with the editable nozzle.
  fitting(.055,.035,metal,new THREE.Vector3(0,-.075,.515),parent,Math.PI/2);
@@ -40,7 +40,7 @@ function renderHose(){
  const end=nozzle.localToWorld(new THREE.Vector3(0,-.075,.622));
  const out=new THREE.Vector3(0,0,1).applyQuaternion(nozzle.quaternion).normalize();
  // A hanging U-shaped loop, clear of the ground and outboard of the pump.
- const outer=Math.min(-.65,end.x-.06),bottom=Math.max(.14,Math.min(.38,end.y-.18));
+ const outer=Math.max(.62,end.x+.06),bottom=Math.max(.14,Math.min(.38,end.y-.18));
  const middle=new THREE.Vector3(outer,bottom,(start.z+end.z)/2);
  const first=new THREE.CubicBezierCurve3(start,start.clone().add(new THREE.Vector3(0,-.52,0)),middle.clone().add(new THREE.Vector3(0,0,-.25)),middle);
  const second=new THREE.CubicBezierCurve3(middle,middle.clone().add(new THREE.Vector3(0,0,.25)),end.clone().addScaledVector(out,.25),end);
@@ -62,16 +62,30 @@ const deg=THREE.MathUtils.radToDeg,rad=THREE.MathUtils.degToRad;
 function sync(){if(!nozzle)return;const p=nozzle.position,r=nozzle.rotation;const values={px:p.x,py:p.y,pz:p.z,rx:deg(r.x),ry:deg(r.y),rz:deg(r.z)};for(const [k,v] of Object.entries(values))fields[k].value=Number(v.toFixed(3));document.querySelector('#values').value=`Poziție X=${fields.px.value} Y=${fields.py.value} Z=${fields.pz.value} blocuri; rotație X=${fields.rx.value} Y=${fields.ry.value} Z=${fields.rz.value} grade (ordine YXZ; pompă orientată ca în preview).`;renderHose()}
 gizmo.addEventListener('objectChange',sync);
 for(const field of Object.values(fields))field.addEventListener('change',()=>{if(!nozzle)return;const values=Object.fromEntries(Object.entries(fields).map(([k,e])=>[k,Number(e.value)]));if(Object.values(values).some(v=>!Number.isFinite(v)))return;nozzle.position.set(values.px,values.py,values.pz);nozzle.rotation.set(rad(values.rx),rad(values.ry),rad(values.rz),'YXZ');sync()});
-function initial(){if(!nozzle)return;nozzle.position.set(-.552,1.45,.288);nozzle.rotation.set(rad(90),rad(-2.112),0,'YXZ');sync()}
+function initial(){if(!nozzle)return;nozzle.position.set(.55,1.45,.288);nozzle.rotation.set(rad(90),rad(-2.112),0,'YXZ');sync()}
 function mode(value){gizmo.enabled=true;gizmo.getHelper().visible=true;gizmo.setMode(value);for(const id of ['move','rotate','hide'])document.querySelector('#'+id).classList.toggle('active',id===(value==='translate'?'move':'rotate'));document.querySelector('#status').textContent=value==='translate'?'MOD MUTARE':'MOD ROTIRE'}
 document.querySelector('#move').onclick=()=>mode('translate');document.querySelector('#rotate').onclick=()=>mode('rotate');document.querySelector('#hide').onclick=()=>{gizmo.enabled=false;gizmo.getHelper().visible=false;for(const id of ['move','rotate','hide'])document.querySelector('#'+id).classList.toggle('active',id==='hide');document.querySelector('#status').textContent='AXE ASCUNSE'};
 document.querySelector('#original').onclick=initial;
 document.querySelector('#copy').onclick=async()=>{const output=document.querySelector('#values');try{await navigator.clipboard.writeText(output.value);document.querySelector('#copy-status').textContent='Copiat! Trimite-mi valorile în conversație.'}catch{output.focus();output.select();document.querySelector('#copy-status').textContent='Selectează și copiază textul de mai sus, apoi trimite-mi-l.'}};
-function reset(){camera.position.set(-3.5,2.2,2.1);controls.target.set(-.40,1.15,0);controls.update()}document.querySelector('#reset').onclick=reset;
+function reset(){camera.position.set(3.1,2.25,3.5);controls.target.set(.34,1.15,0);controls.update()}document.querySelector('#reset').onclick=reset;
 new ResizeObserver(()=>{const w=host.clientWidth,h=host.clientHeight;if(w&&h){camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}}).observe(host);
-Promise.all(['/minecraft/gas_pump_bottom.json','/minecraft/gas_pump_top.json','/assets/nozzle.json'].map(async url=>{const r=await fetch(url);if(!r.ok)throw Error(url);return r.json()})).then(([bottom,top,n])=>{// Move the authored cradle toward the front (+Z) and the outlet toward
- // the back (-Z) only in this candidate; the installed pack stays untouched.
- for(const i of [8,9,10,11]){top.elements[i].from[2]+=7.488;top.elements[i].to[2]+=7.488}
- for(const i of [12,13]){top.elements[i].from[2]-=6.12;top.elements[i].to[2]-=6.12}
- const b=makeModel(bottom,pumpTexture),t=makeModel(top,pumpTexture);b.position.y=.5;t.position.y=1.5;scene.add(b,t);nozzle=new THREE.Group();nozzle.add(makeModel(n,nozzleTexture));addNozzleFitting(nozzle);scene.add(nozzle);gizmo.attach(nozzle);initial();mode('translate');reset();document.querySelector('#loading').hidden=true}).catch(e=>{console.error(e);document.querySelector('#loading').textContent='Nu am putut încărca modelele. Reîncarcă pagina.'});
+Promise.all(['/minecraft/gas_pump_bottom.json','/minecraft/gas_pump_top.json','/assets/nozzle.json'].map(async url=>{const r=await fetch(url);if(!r.ok)throw Error(url);return r.json()})).then(([bottom,top,n])=>{// Discard the old opposite-side pieces. Add a new, joined right-side
+ // holder and outlet, with no detached backplates or supports.
+ top.elements=top.elements.filter((_,i)=>i<8||i>13);
+ const b=makeModel(bottom,pumpTexture),t=makeModel(top,pumpTexture);b.position.y=.5;t.position.y=1.5;scene.add(b,t);
+ function pumpBox(size,pos,color,metalness=0){const o=new THREE.Mesh(new THREE.BoxGeometry(...size),new THREE.MeshStandardMaterial({color,roughness:.65,metalness}));o.position.set(...pos);scene.add(o);return o}
+ // Backplate overlaps the body; layered cradle reaches the nozzle itself.
+ pumpBox([.045,.44,.24],[.486,1.40,.288],'#8f2024');
+ pumpBox([.04,.32,.16],[.523,1.41,.288],'#20282a');
+ pumpBox([.105,.035,.035],[.53,1.18,.225],'#9faeb0',.5);
+ pumpBox([.105,.035,.035],[.53,1.18,.351],'#9faeb0',.5);
+ // Outlet base and shoulder touch the body, collar and strain relief.
+ pumpBox([.08,.17,.19],[.485,1.64,-.27],'#8f2024');
+ pumpBox([.055,.11,.115],[.52,1.64,-.27],'#9faeb0',.5);
+ // Framed display, fine body trim and foot details, block-built for Minecraft.
+ for(const x of [-.35,.35])pumpBox([.025,1.43,.025],[x,.96,.379],'#8f2024');
+ pumpBox([.81,.025,.03],[0,1.12,.388],'#9faeb0',.4);
+ pumpBox([.82,.035,.025],[0,.32,.388],'#8f2024');
+ for(const x of [-.35,.35])pumpBox([.12,.035,.05],[x,.19,.405],'#9faeb0',.4);
+ nozzle=new THREE.Group();nozzle.add(makeModel(n,nozzleTexture));addNozzleFitting(nozzle);scene.add(nozzle);gizmo.attach(nozzle);initial();mode('translate');reset();document.querySelector('#loading').hidden=true}).catch(e=>{console.error(e);document.querySelector('#loading').textContent='Nu am putut încărca modelele. Reîncarcă pagina.'});
 function frame(){requestAnimationFrame(frame);controls.update();renderer.render(scene,camera)}frame();
