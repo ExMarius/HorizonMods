@@ -11,3 +11,7 @@ Export experimental al pieselor cu `minecraft/build_parts.py` produce părți It
 ## Reconstrucție de cereale după imaginile furnizate
 
 `python3 vehicle-plugin-horizon/next-vehicle/combina-moderna/low-poly/build_grain.py` produce `downloads/horizon-combina-glb-cereale-lowpoly.bbmodel`, cu 299 cuburi. Heder lat 72 unități, două capace laterale roșii, rabator negru cu șase bare și câte zece gheare, melc gri și panou spate negru. `reel` și `intake_auger` sunt copii ai `header_assembly`; hederul are pivot [0,20,-18]. Roțile, tubul și scaunul au grupuri independente. Se poate compara cu imaginile utilizatorului în preview; nu este o copie certificată 1:1 și nu a fost verificat vizual împreună cu utilizatorul. Exportul preliminar este 32 părți ItemDisplay, fără rig, joc sau validare în Minecraft.
+
+## Revizie cu scară peste roată
+
+`build_grain_detail.py` generează `horizon-combina-cereale-detaliata.bbmodel`, o variantă de 299 cuburi pornită din reconstrucția de cereale. Scara este mutată în exteriorul roții frontale stânga; platforma se întinde deasupra roții până la pragul cabinei. Parbrizul și stâlpii frontali sunt înclinați 22,5°, geamurile fumurii păstrează alfa. Pozițiile calculate nu înlocuiesc verificarea vizuală a spațiului de acces și a cabinei în Minecraft. Exportul experimental are 33 părți, fără rig sau gameplay.
