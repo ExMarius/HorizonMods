@@ -6,7 +6,7 @@ http.createServer((req,res)=>{
  const u=new URL(req.url,'http://preview').pathname;let file;
  if(pages[u])file=path.join(root,pages[u]);
  else if(/^\/three\/(build|examples\/jsm)\/[\w./-]+\.js$/.test(u)&&!u.includes('..'))file=path.join(root,'node_modules/three',u.slice(7));
- else if(u==='/assets/nozzle.json'||u==='/assets/nozzle-red.png')file=path.join(root,u.slice(1));
+ else if(u==='/assets/nozzle.json'||u==='/assets/nozzle-red.png'||u==='/assets/nozzle-green.png'||u==='/assets/nozzle-diesel.png')file=path.join(root,u.slice(1));
  else if(['/minecraft/pump.png','/minecraft/gas_pump_bottom.json','/minecraft/gas_pump_top.json'].includes(u))file=path.join(root,u.slice(1));
  else {res.writeHead(404).end();return}
  fs.readFile(file,(err,data)=>{if(err){res.writeHead(404).end();return}const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png'};res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-store'});res.end(req.method==='HEAD'?undefined:data)});
