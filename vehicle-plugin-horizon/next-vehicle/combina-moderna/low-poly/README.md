@@ -7,3 +7,7 @@
 `header_assembly` este copil al `body`, pivot [0,20,−18]; `intake_auger` este copil al hederului cu pivot [0,8,−39]. `unloading_auger`, roțile și scaunul sunt copii ai corpului. Pivoții roților sunt la centrele lor geometrice. `reel` este un grup gol de compatibilitate pentru preview, nu un rabator pe hederul de porumb. Animațiile preview sunt demonstrative; scaunul nu este încă o poziție de jucător calibrată.
 
 Export experimental al pieselor cu `minecraft/build_parts.py` produce părți ItemDisplay din cele 267 cuburi. Pack-ul și manifestul nu conțin rig, logică Minecraft sau gameplay și nu se instalează peste pack-ul existent. Nu s-a validat în client Minecraft 1.21.4; integrarea, pivoti, transparența, performanța și scara se verifică ulterior împreună cu utilizatorul.
+
+## Reconstrucție de cereale după imaginile furnizate
+
+`python3 vehicle-plugin-horizon/next-vehicle/combina-moderna/low-poly/build_grain.py` produce `downloads/horizon-combina-glb-cereale-lowpoly.bbmodel`, cu 299 cuburi. Heder lat 72 unități, două capace laterale roșii, rabator negru cu șase bare și câte zece gheare, melc gri și panou spate negru. `reel` și `intake_auger` sunt copii ai `header_assembly`; hederul are pivot [0,20,-18]. Roțile, tubul și scaunul au grupuri independente. Se poate compara cu imaginile utilizatorului în preview; nu este o copie certificată 1:1 și nu a fost verificat vizual împreună cu utilizatorul. Exportul preliminar este 32 părți ItemDisplay, fără rig, joc sau validare în Minecraft.
