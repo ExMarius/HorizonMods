@@ -5,7 +5,7 @@ http.createServer((req,res)=>{if(!['GET','HEAD'].includes(req.method))return res
  if(u==='/model.bbmodel')file=path.join(workspace,'downloads/glb-imports/cb7869cfffcd6e70/model.bbmodel');
  else if(/^\/vehicle-model\/(utb_650_body|utb_650_wheel_front|utb_650_wheel_rear|tractor_trailer_body|tractor_trailer_modern_body|tractor_trailer_modern_axle|tractor_trailer_modern_drawbar)\.json$/.test(u))file=path.join(workspace,'vehicle-plugin-horizon/next-vehicle/utb/assets',u.split('/').pop());
  else if(/^\/utb-textures\/(red|cream|roof|black|frame|metal|silver|lamp|tail|seat|logo|amber|gauges|plate_blue|plate_tractor|plate_trailer|rm_green|rm_dark|rm_hose_blue)\.png$/.test(u))file=path.join(workspace,'vehicle-plugin-horizon/next-vehicle/utb/assets/textures',u.split('/').pop());
- else if(/^\/minecraft-textures\/(wheat|wheat_seeds|wheat_stage7|wheat_stage3)\.png$/.test(u))file=path.join(workspace,'downloads/minecraft-preview-textures',u.split('/').pop());
+ else if(/^\/minecraft-textures\/(wheat|wheat_seeds|wheat_stage7|wheat_stage3|hay_block_side|hay_block_top)\.png$/.test(u))file=path.join(workspace,'downloads/minecraft-preview-textures',u.split('/').pop());
  else if(u==='/bbmodel.js')file=path.join(viewer,'bbmodel.js');
  else if(files[u])file=path.join(root,files[u]);
  else if(/^\/three\/(build|examples\/jsm)\/[\w./-]+\.js$/.test(u)&&!u.includes('..'))file=path.join(viewer,'node_modules/three',u.slice(7));

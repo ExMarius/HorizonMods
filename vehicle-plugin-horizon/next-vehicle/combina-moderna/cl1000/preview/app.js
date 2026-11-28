@@ -17,6 +17,15 @@ const trailerPromises=new Map(),trailerStocks={small:{wheat:0,seeds:0},large:{wh
 function getTrailer(kind){if(!trailerPromises.has(kind))trailerPromises.set(kind,createServerVehiclePreview(kind).catch(e=>{trailerPromises.delete(kind);throw e}));return trailerPromises.get(kind)}
 const textureLoader=new THREE.TextureLoader();function minecraftTexture(name){const t=textureLoader.load('/minecraft-textures/'+name+'.png',undefined,undefined,()=>notice('Nu s-a putut încărca textura Minecraft '+name+'.'));t.colorSpace=THREE.SRGBColorSpace;t.magFilter=THREE.NearestFilter;t.minFilter=THREE.NearestFilter;return t}
 const wheatTexture=minecraftTexture('wheat'),seedTexture=minecraftTexture('wheat_seeds'),ripeTexture=minecraftTexture('wheat_stage7'),youngTexture=minecraftTexture('wheat_stage3');
+// Static examples attached to the combine for comparison, not a harvesting simulation.
+const strawExamples=new THREE.Group(),windrow=new THREE.Group(),baleExample=new THREE.Group();machine.add(strawExamples);strawExamples.add(windrow,baleExample);windrow.visible=baleExample.visible=false;
+// A low, loose windrow: individual flat straw strands, not a vanilla Minecraft block.
+const strawMaterials=['#d7b663','#c4a355','#ead18a','#b99a50'].map(color=>new THREE.MeshStandardMaterial({color,roughness:1}));
+const strandGeometry=new THREE.BoxGeometry(.08,.025,.55);
+for(let row=0;row<15;row++)for(let col=0;col<9;col++){const strand=new THREE.Mesh(strandGeometry,strawMaterials[(row*7+col*3)%strawMaterials.length]);strand.position.set((col-4)*.12+Math.sin(row*3+col)*.04,.05+((row+col)%3)*.012,4.7+row*.24);strand.rotation.y=Math.sin(row*1.7+col*2)*.3;windrow.add(strand)}
+const haySide=minecraftTexture('hay_block_side'),hayTop=minecraftTexture('hay_block_top'),hayMaterial=map=>new THREE.MeshStandardMaterial({map,roughness:1});const hay=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),[hayMaterial(haySide),hayMaterial(haySide),hayMaterial(hayTop),hayMaterial(hayTop),hayMaterial(haySide),hayMaterial(haySide)]);hay.position.set(0,.5,6.3);baleExample.add(hay);
+function showStrawExample(){const mode=$('#straw-example').value;windrow.visible=mode==='windrow'||mode==='both';baleExample.visible=mode==='bale'||mode==='both';windrow.position.x=mode==='both'?-1.15:0;baleExample.position.x=mode==='both'?1.15:0;if(mode!=='none'&&loaded)view('rear');notice(mode==='none'?'Exemplele decorative sunt ascunse.':'Exemplu static: urmărește combina doar pentru vizualizare, nu reprezintă paie produse în joc.')}
+$('#straw-example').onchange=showStrawExample;$('#straw-rear').onclick=()=>{if(loaded)view('rear')};
 const crops=[];for(let z=6;z>=-42;z-=1.15)for(let col=-2;col<=2;col++){const mature=(crops.length%7)!==0;crops.push({x:col*.85,z,mature,alive:true})}
 // Minecraft wheat crops, using the actual stage 7 and stage 3 textures.
 const cropGeometry=new THREE.PlaneGeometry(.95,.95),cropMaterial=map=>new THREE.MeshStandardMaterial({map,side:THREE.DoubleSide,alphaTest:.1,roughness:1});

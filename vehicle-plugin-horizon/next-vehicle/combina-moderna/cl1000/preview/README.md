@@ -11,3 +11,6 @@ Preview-ul actual simulează separat grâul și semințele (o unitate din fiecar
 Texturile pentru grâu, semințe și stadiile 3/7 ale culturii sunt copii locale din asset-urile Minecraft 1.21.4, folosite numai de preview, în `downloads/minecraft-preview-textures/`. Nu sunt incluse în Git; dacă lipsesc, se pot descărca din nou prin GitHub API din `InventivetalentDev/minecraft-assets` ref `1.21.4`, sub `assets/minecraft/textures/item/` și `assets/minecraft/textures/block/`. Simularea folosește randare 2D a itemelor, nu iteme/entity Minecraft reale.
 
 În preview, alegerea altei remorci oprește transferul și păstrează separat conținutul fiecăreia. Capacitatea de 300 este doar demonstrativă, nu capacitatea inventarului de pe server.
+
+## Exemple decorative de paie
+Panoul „Exemple în spatele combinei” afișează o brazdă propusă din fire 3D sau un cub cu texturile Minecraft 1.21.4 `hay_block_side` / `hay_block_top`, ori ambele. Sunt mostre statice atașate de combină, nu urme persistente și nici producție sau presă de balotat. Brazda este doar o propunere, nu un bloc vanilla; HAY_BLOCK este balot de fân în Minecraft, folosit aici doar ca exemplu vizual. Descărcați texturile de balot în `downloads/minecraft-preview-textures/` din `InventivetalentDev/minecraft-assets`, ref `1.21.4`, `assets/minecraft/textures/block/`, dacă lipsesc.
