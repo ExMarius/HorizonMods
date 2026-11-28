@@ -104,8 +104,9 @@ function update(){
  player.position.set(Math.cos(a)*d,0,Math.sin(a)*d);const dir=new THREE.Vector3(-player.position.x,0,-player.position.z).normalize();player.rotation.y=Math.atan2(dir.x,dir.z);player.updateMatrixWorld(true);const hand=player.localToWorld(localHand.clone());
  // Source: GasPumpRenderer uses Y 180° then X 90° for docking;
  // buildNozzle already applies Y 180°, so the outer X is -90°.
- // FuelingHandler uses X 180° then Y 180° relative to the hand.
- nozzlePivot.rotation.set(held?Math.PI:-Math.PI/2,held?player.rotation.y:0,0,'YXZ');
+ // The original hand matrix is itself rotated by Minecraft; our schematic
+ // hand is not, so apply yaw only in held mode to keep the trigger underneath.
+ nozzlePivot.rotation.set(held?0:-Math.PI/2,held?player.rotation.y:0,0,'YXZ');
  // Hand centre lies over the actual handle, not the body or hose socket.
  nozzlePivot.position.copy(held?hand:rest).sub(nozzleGrip.clone().applyEuler(nozzlePivot.rotation));
  nozzlePivot.updateMatrixWorld(true);
