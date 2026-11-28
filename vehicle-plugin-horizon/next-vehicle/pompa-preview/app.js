@@ -34,9 +34,13 @@ box([.48,.17,.014],red,[0,.60,.398],pump);
 box([.63,.025,.026],cream,[0,.86,.382],pump);
 for(const [x,m] of [[-.23,green],[0,amber],[.23,green]]){box([.13,.075,.025],black,[x,1.22,.410],pump);box([.10,.046,.012],m,[x,1.22,.43],pump)}
 // Integrated nozzle cradle on the right side; hose exits above it.
-box([.08,.50,.34],redDark,[.51,1.31,.04],pump);
-box([.10,.32,.25],black,[.57,1.29,.04],pump);
-box([.12,.05,.29],steel,[.58,1.08,.04],pump);
+// Open cradle: a backplate and two shallow lips, leaving the nozzle visible.
+box([.05,.49,.32],redDark,[.50,1.31,.04],pump);
+box([.07,.37,.24],black,[.555,1.31,.04],pump);
+box([.24,.035,.035],steel,[.68,1.08,-.075],pump);
+box([.24,.035,.035],steel,[.68,1.08,.155],pump);
+box([.04,.14,.035],redDark,[.79,1.14,-.075],pump);
+box([.04,.14,.035],redDark,[.79,1.14,.155],pump);
 box([.05,.16,.19],black,[.49,1.61,.02],pump);
 // A hand-authored label is preview artwork, not a resource-pack texture.
 function label(text,sub){const c=document.createElement('canvas');c.width=512;c.height=192;const q=c.getContext('2d');q.fillStyle='#b7d1c0';q.fillRect(0,0,512,192);q.fillStyle='#20342e';q.font='bold 54px monospace';q.fillText(text,22,78);q.font='bold 25px sans-serif';q.fillText(sub,25,137);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const plane=new THREE.Mesh(new THREE.PlaneGeometry(.57,.215),new THREE.MeshBasicMaterial({map:tex}));plane.position.set(0,1.49,.436);pump.add(plane)}
@@ -90,7 +94,7 @@ const hose=new THREE.Group();scene.add(hose);const hoseMat=soft('#202426'), hose
 // their own transforms. Sag is an illustrative curve, not a physics solver.
 // Pump socket is mounted through the side panel; the hose begins at the
 // end of its strain relief, rather than at the body surface.
-const start=new THREE.Vector3(.83,1.61,.02), rest=new THREE.Vector3(.73,1.21,.10);
+const start=new THREE.Vector3(.83,1.61,.02), rest=new THREE.Vector3(.82,1.28,.04);
 const outletAxis=new THREE.Vector3(1,0,0);
 cylinder(.105,.035,redDark,new THREE.Vector3(.52,1.61,.02),pump,outletAxis);
 cylinder(.078,.09,steel,new THREE.Vector3(.61,1.61,.02),pump,outletAxis);
@@ -101,7 +105,9 @@ function hosePoint(a,b,t,sag){const point=a.clone().lerp(b,t);point.y=Math.max(.
 function update(){
  const d=+distance.value, a=THREE.MathUtils.degToRad(+angle.value);document.querySelector('#distance-value').textContent=d.toFixed(1).replace('.',',')+' blocuri';document.querySelector('#angle-value').textContent=angle.value+'°';
  player.position.set(Math.cos(a)*d,0,Math.sin(a)*d);const dir=new THREE.Vector3(-player.position.x,0,-player.position.z).normalize();player.rotation.y=Math.atan2(dir.x,dir.z);player.updateMatrixWorld(true);const hand=player.localToWorld(localHand.clone());
- nozzlePivot.rotation.y=held?player.rotation.y:0;
+ // Dock vertically outside the pump: spout up, hose fitting down.
+ // Held mode returns to the player's hand orientation.
+ nozzlePivot.rotation.set(held?0:-Math.PI/2,held?player.rotation.y:0,0);
  // Hand centre lies over the actual handle, not the body or hose socket.
  nozzlePivot.position.copy(held?hand:rest).sub(nozzleGrip.clone().applyEuler(nozzlePivot.rotation));
  nozzlePivot.updateMatrixWorld(true);
