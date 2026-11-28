@@ -38,6 +38,18 @@ for side in (-1,1):
  box(body,'umăr caroserie',x-.6,36,2,x+.6,40,32,'rosu_lumina',[0,0,side*22.5])
  for y in (26,28,30,32):box(body,'fanta ventilatie',min(x,x+side*.8),y,22,max(x,x+side*.8),y+.5,35,'negru')
  box(body,'treapta acces',-23 if side<0 else 21,17,-19,-21 if side<0 else 23,18,-10,'otel')
+# Layered service panels and subtle red edge accents, in the style of UTB.
+for side in (-1,1):
+ x=side*21.5;lo,hi=sorted((x,x+side*.2))
+ for z in (-12,7,19,31):box(body,'rost caroserie',lo,23,z,hi,36,z+.25,'rosu_umbra')
+ for z in (-10,17):box(body,'maner capac',lo,25,z,hi,25.6,z+3,'negru_adanc')
+ box(body,'prag lateral',min(x,x+side*.35),19,-16,max(x,x+side*.35),20,34,'negru')
+ box(body,'aparatoare roata fata',min(side*20,side*26.4),22,-20,max(side*20,side*26.4),23,-1,'rosu_umbra')
+ box(body,'aparatoare roata spate',min(side*18,side*22.8),14,17,max(side*18,side*22.8),15,31,'rosu_umbra')
+# Ladder with individual rungs and handrail, outside the cab.
+for z in (-18,-9):box(body,'montant scara',-23,5,z,-22.4,28,z+.55,'otel')
+for y in (7,11,15,19,23,27):box(body,'treapta scara',-23.15,y,-18,-22.2,y+.45,-8.45,'gri')
+box(body,'mana curenta',-23,28,-18,-22.4,36,-17.4,'negru')
 # Open-top hopper, connected walls, clear dark outline as the GLB.
 box(body,'buncar fund',-15,43,1,15,44,30,'negru_adanc')
 for x in (-17,15):box(body,'buncar lateral',x,44,1,x+2,51,30,'negru')
@@ -61,6 +73,19 @@ box(body,'volan sus',-2,34,-20,2,34.5,-19.4,'negru')
 box(body,'volan jos',-2,32,-20,2,32.5,-19.4,'negru')
 for x in (-2,1.5):box(body,'volan lateral',x,32,-20,x+.5,34.5,-19.4,'negru')
 box(body,'bord',-8,30,-22.8,8,32,-21,'negru')
+# Interior/dashboard and exterior mirrors, avoiding a solid cab wall.
+box(body,'panou bord',-5,32,-22.7,5,34.2,-22.35,'negru_adanc')
+for x in (-3,0,3):box(body,'indicator bord',x-.55,32.6,-22.78,x+.55,33.6,-22.7,'far')
+for side in (-1,1):
+ x=side*12;outer=side*16
+ box(body,'brat oglinda',min(x,outer),43,-23,max(x,outer),43.5,-22.5,'otel')
+ box(body,'oglinda carcasa',outer-1.3,41,-23.7,outer+1.3,46,-22.4,'negru_adanc')
+ box(body,'oglinda sticla',outer-1,41.4,-23.85,outer+1,45.6,-23.7,'gri')
+box(body,'stergator',-7,31,-24.15,3,31.3,-23.9,'negru_adanc')
+# Exhaust at the rear of the machine and bumper finishing.
+box(body,'esapament baza',13,40,24,15.4,49,26.4,'otel')
+box(body,'esapament varf',13.4,49,24.4,15,53,26,'negru_adanc')
+box(body,'bara protectie spate',-19,15,38.5,19,17,40,'negru')
 # Projector clusters on the front, dark housings with yellow lenses.
 for side in (-1,1):
  x=side*15
@@ -78,15 +103,28 @@ box(unload,'gura descarcare',-18,44.8,32,-14,49.2,35,'negru_adanc')
 # Four independently rotating wheels; front radius 11, rear radius 7.
 def wheel(name,x,y,z,r,width):
  g=group(name,[x,y,z],body);h=width/2
- box(g,'anvelopa miez',x-h,y-r*.72,z-r,x+h,y+r*.72,z+r,'negru_adanc')
- box(g,'anvelopa miez',x-h,y-r,z-r*.72,x+h,y+r,z+r*.72,'negru_adanc')
- for a in (-45,45):box(g,'anvelopa tesire',x-h,y-r*.68,z-r*.68,x+h,y+r*.68,z+r*.68,'negru_adanc',[a,0,0],[x,y,z])
+ # Octagonal cross-section: two central cores plus bevels on all four corners.
+ box(g,'anvelopa miez vertical',x-h,y-r,z-r*.62,x+h,y+r,z+r*.62,'negru_adanc')
+ box(g,'anvelopa miez transversal',x-h,y-r*.62,z-r,x+h,y+r*.62,z+r,'negru_adanc')
+ for sy in (-1,1):
+  for sz in (-1,1):
+   cy=y+sy*r*.65;cz=z+sz*r*.65
+   box(g,'umăr rotunjit anvelopa',x-h,cy-r*.13,cz-r*.34,x+h,cy+r*.13,cz+r*.34,'negru_adanc',[sy*sz*45,0,0],[x,cy,cz])
+ # Readable heavy-duty tread bands with legal element rotations.
+ for sy in (-1,1):
+  for strip in (-1,1):
+   xx=x+strip*width*.22
+   box(g,'crampon profil',xx-width*.17,y+sy*(r*.8-.4)-.32,z-r*.47,xx+width*.17,y+sy*(r*.8-.4)+.32,z+r*.47,'negru',[sy*strip*22.5,0,0],[xx,y+sy*(r*.8-.4),z])
+ for sz in (-1,1):
+  box(g,'crampon lateral',x-h+.1,y-r*.43,z+sz*(r-.35)-.28,x+h-.1,y+r*.43,z+sz*(r-.35)+.28,'negru')
  for side in (-1,1):
   l,u=sorted([x+side*h,x+side*(h+.25)])
-  box(g,'janta centrala',l,y-r*.49,z-r*.49,u,y+r*.49,z+r*.49,'janta')
-  box(g,'janta diagonala',l,y-r*.35,z-r*.35,u,y+r*.35,z+r*.35,'janta',[45,0,0],[x,y,z])
+  box(g,'janta centrala',l,y-r*.43,z-r*.43,u,y+r*.43,z+r*.43,'janta')
+  box(g,'janta diagonala',l,y-r*.31,z-r*.31,u,y+r*.31,z+r*.31,'janta',[45,0,0],[x,y,z])
   l,u=sorted([x+side*(h+.25),x+side*(h+.55)])
   box(g,'butuc',l,y-r*.16,z-r*.16,u,y+r*.16,z+r*.16,'negru')
+  for dy,dz in ((.29,0),(-.29,0),(0,.29),(0,-.29)):
+   box(g,'prezon roata',l,y+dy*r-.23,z+dz*r-.23,u,y+dy*r+.23,z+dz*r+.23,'otel')
  return g
 wheel('wheel_fl',-23,11,-10,11,7);wheel('wheel_fr',23,11,-10,11,7)
 wheel('wheel_rl',-20,7,24,7,4.5);wheel('wheel_rr',20,7,24,7,4.5)
