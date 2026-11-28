@@ -335,7 +335,8 @@ public final class LandVehicleRig {
         Location location = carrier.anchor.getLocation();
         LivingEntity seat;
         if (usePig) {
-            // Full-size carrier avoids the tiny-mount dismount hazards seen previously.
+            // Moderate scale lowers the rider without using the tiny horse scale.
+            // Pig dismount safety and visual position still require in-game validation.
             Pig pig = location.getWorld().spawn(location, Pig.class, carrierPig -> {
                 carrierPig.setAI(false);
                 carrierPig.setGravity(false);
@@ -345,6 +346,8 @@ public final class LandVehicleRig {
                 carrierPig.setSilent(true);
                 carrierPig.setPersistent(false);
                 carrierPig.setRemoveWhenFarAway(false);
+                AttributeInstance pigScale = carrierPig.getAttribute(Attribute.SCALE);
+                if (pigScale != null) pigScale.setBaseValue(0.5D);
                 AttributeInstance health = carrierPig.getAttribute(Attribute.MAX_HEALTH);
                 if (health != null) health.setBaseValue(SEAT_GAUGE_MAX_HEALTH);
                 carrierPig.setHealth(SEAT_GAUGE_MAX_HEALTH);
