@@ -30,3 +30,10 @@ send.onclick=async()=>{if(!file||!model)return;send.disabled=true;showInfo('Se t
  }catch(e){console.error(e);showError('Trimiterea nu a reușit: '+e.message)}finally{camera.position.copy(savedPos);controls.target.copy(savedTarget);controls.update();if(mixer)mixer.timeScale=animWas;send.disabled=false}};
 document.querySelector('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(result.value);showInfo('Copiat! Trimite mesajul în conversație.')}catch{result.focus();result.select();showInfo('Copiază textul selectat și trimite-l în conversație.')}};
 function frame(){requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());if(mixer)mixer.update(dt);controls.update();renderer.render(scene,camera)}frame();
+
+// Reopen a previously shared model without asking for a second upload.
+const importedId=new URLSearchParams(location.search).get('model');
+if(importedId&&/^[a-f0-9]{16}$/.test(importedId)){
+ showInfo('Se redeschide modelul trimis…');
+ fetch('/api/model/'+importedId).then(r=>{if(!r.ok)throw Error('Modelul salvat nu este disponibil');return r.blob()}).then(blob=>load(new File([blob],'model-trimis.glb',{type:'model/gltf-binary'}))).catch(e=>showError(e.message));
+}

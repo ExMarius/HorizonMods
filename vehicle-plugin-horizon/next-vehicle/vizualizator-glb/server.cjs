@@ -21,6 +21,7 @@ http.createServer((req,res)=>{const url=new URL(req.url,'http://preview'),u=url.
   return fail(res,404,'Rută necunoscută');
  }
  if(!['GET','HEAD'].includes(req.method))return fail(res,405,'Metodă nepermisă');let file;
- if(files[u])file=path.join(root,files[u]);else if(/^\/three\/(build|examples\/jsm)\/[\w./-]+\.js$/.test(u)&&!u.includes('..'))file=path.join(root,'node_modules/three',u.slice(7));else return fail(res,404,'Nu există');
+ const imported=u.match(/^\/api\/model\/([a-f0-9]{16})$/);
+ if(imported)file=path.join(dir,imported[1],'model.glb');else if(files[u])file=path.join(root,files[u]);else if(/^\/three\/(build|examples\/jsm)\/[\w./-]+\.js$/.test(u)&&!u.includes('..'))file=path.join(root,'node_modules/three',u.slice(7));else return fail(res,404,'Nu există');
  fs.readFile(file,(err,data)=>{if(err)return fail(res,404,'Fișier negăsit');const type={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8'}[path.extname(file)]||'application/octet-stream';res.writeHead(200,{'Content-Type':type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}).end(req.method==='HEAD'?undefined:data)})
 }).listen(port,'0.0.0.0',()=>console.log(`Vizualizator GLB disponibil pe portul ${port}`));
