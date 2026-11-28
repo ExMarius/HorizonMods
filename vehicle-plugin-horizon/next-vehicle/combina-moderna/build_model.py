@@ -214,40 +214,38 @@ for side in (-1,1):
   box(header,'despartitor conic',x-w,1.2,z1,x+w,1.8+1.5*(k+1)/8,z2,'rosu')
  beam_yz(header,'protectie cromata',x,.4,1.75,-69,3,-64,.4,'metal')
  # Pivot bracket and two fixed support/hydraulic arms terminate at the axle.
- beam_yz(header,'brat rabator',x-side*1.8,1.25,9,-40,12,-57.5,1.2,'rosu')
+ beam_yz(header,'brat rabator',x-side*1.8,1.25,9,-40,11,-57.5,1.2,'rosu')
  beam_yz(header,'cilindru rabator corp',x-side*1.8,1.0,5.5,-41,8.0,-50,1.0,'negru')
- beam_yz(header,'cilindru rabator tija',x-side*1.8,.55,8,-50,12,-57.5,.55,'metal')
- box(header,'lagar rabator',x-side*1.8-.8,11.2,-58.3,x-side*1.8+.8,12.8,-56.7,'negru')
+ beam_yz(header,'cilindru rabator tija',x-side*1.8,.55,8,-50,11,-57.5,.55,'metal')
+ box(header,'lagar rabator',x-side*1.8-.8,10.2,-58.3,x-side*1.8+.8,11.8,-56.7,'negru')
 cutter=group('cutter_bar',[0,1.2,-64],header);box(cutter,'bara taiere',-37.5,0,-64.5,37.5,.8,-63.6,'metal')
 for i in range(38):
  x=-37+i*2;box(cutter,'dinte taiere',x,0,-65.7,x+1.1,.5,-64,'crem')
-# Compact octagonal-like drum from three overlapped straight profiles.
-# Eight helical turns total: four per side, six segments per turn.
+# Polygonal auger drum plus continuous helical flighting from both ends.
+# Left and right spirals have opposite handedness to lead toward the centre.
 intake=group('intake_auger',[0,6.5,-47.5],header)
-box(intake,'tambur snec miez',-36.9,5.2,-49.15,36.9,7.8,-45.85,'metal')
-box(intake,'tambur snec miez',-36.9,4.8,-48.65,36.9,8.2,-46.35,'metal')
+box(intake,'tambur snec miez',-36.9,5.2,-49.0,36.9,7.8,-46.0,'metal')
+box(intake,'tambur snec miez',-36.9,4.9,-48.65,36.9,8.1,-46.35,'metal')
+for j in range(12):
+ angle=j*30;cube(intake,'tambur octogonal',[-36.9,8.0,-47.95],[36.9,8.35,-47.05],'metal',[angle,0,0],[0,6.5,-47.5])
 for side in (-1,1):
- for i in range(24):
-  u1=i/24;u2=(i+1)/24
+ for i in range(68):
+  u1=i/68;u2=(i+1)/68
   def helix(u):
    x=side*(35.8-u*32.8);angle=side*u*math.pi*8
    return [x,6.5+2.25*math.cos(angle),-47.5+2.25*math.sin(angle)]
-  beam_xyz(intake,'spira snec',helix(u1),helix(u2),.38,'otel')
-for x in (-4.5,-2.5,-.5,1.5,3.5):box(intake,'deget alimentare snec',x,8.1,-47.8,x+.45,10,-47.2,'negru')
+  beam_xyz(intake,'spirala continua snec',helix(u1),helix(u2),.42,'otel')
+for x in (-4.5,-2.5,-.5,1.5,3.5):
+ box(intake,'deget alimentare snec',x,8.1,-47.8,x+.45,10,-47.2,'negru')
 for x in (-37,36.5):box(intake,'flansa snec',x,4.4,-49.6,x+.5,8.6,-45.4,'sasiu')
-# Six bars at explicit polar positions, each with exactly ten vertical tines.
-# No arbitrary-angle cube rotations on the reel itself.
-reel=group('reel',[0,12,-57.5],header)
-box(reel,'ax rabator',-37,11.6,-57.9,37,12.4,-57.1,'otel')
+# Lower and advance the reel to just behind the cutter, in front of the auger.
+reel=group('reel',[0,11,-57.5],header);box(reel,'ax rabator',-37,10.6,-57.9,37,11.4,-57.1,'otel')
 for j in range(6):
- angle=math.radians(j*60);y=12+9.0*math.cos(angle);z=-57.5+9.0*math.sin(angle)
- box(reel,'bara rabator',-37,y-.3,z-.3,37,y+.3,z+.3,'sasiu')
- for x in (-33,-26,-19,-12,-5,5,12,19,26,33):box(reel,'gheara rabator',x-.13,y-2.1,z-.13,x+.13,y-.25,z+.13,'metal')
- # Three short axis-aligned links per support make a non-floating radial star.
- for x in (-34,-11,11,34):
-  py,pz=12,-57.5
-  for k in range(1,4):
-   ny=12+(y-12)*k/3;nz=-57.5+(z+57.5)*k/3
-   box(reel,'suport stea',x-.25,min(py,ny)-.2,min(pz,nz)-.2,x+.25,max(py,ny)+.2,max(pz,nz)+.2,'metal');py,pz=ny,nz
+ angle=j*60
+ for x in (-34,-11,11,34):cube(reel,'stea rabator',[x-.35,11,-57.85],[x+.35,20.3,-57.15],'metal',[angle,0,0],[x,11,-57.5])
+ cube(reel,'bara rabator',[-37,19.9,-57.8],[37,20.5,-57.2],'sasiu',[angle,0,0],[0,11,-57.5])
+ for x in range(-36,37,3):
+  cube(reel,'gheara rabator',[x-.12,18.0,-57.65],[x+.12,20.1,-57.35],'metal',[angle,0,0],[0,11,-57.5])
+  cube(reel,'varf gheara',[x-.14,17.7,-57.95],[x+.14,18.15,-57.35],'metal',[angle,0,0],[0,11,-57.5])
 project={'meta':{'format_version':'5.0','model_format':'free','box_uv':False},'name':'Horizon Combina Moderna 1-1','model_identifier':'horizon_combina_moderna','visible_box':[8,8,0],'resolution':{'width':16,'height':16},'elements':elements,'groups':groups,'outliner':roots,'textures':textures}
 OUT.parent.mkdir(exist_ok=True);OUT.write_text(json.dumps(project,separators=(',',':'))+'\n');print('Wrote',OUT,'elements',len(elements),'groups',len(groups))
