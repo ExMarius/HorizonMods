@@ -7,3 +7,8 @@ __pycache__/
 # Paper plugin local builds
 paper-vehicles/.gradle/
 paper-vehicles/build/
+
+# Forge client local builds
+vehicle-plugin-horizon/forge-client/.gradle/
+vehicle-plugin-horizon/forge-client/build/
+vehicle-plugin-horizon/forge-client/run/

@@ -1,0 +1,32 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle' version '[7.0.23,8.0)'
+}
+
+group = 'ro.horizon'
+version = '0.1.0'
+base.archivesName = 'horizon-vehicle-pose-forge-1.21.4'
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+minecraft {
+    mappings channel: 'official', version: '1.21.4'
+    runs {
+        configureEach {
+            workingDir = layout.projectDirectory.dir('run')
+            args '--mixin.config=horizonvehiclepose.mixins.json'
+        }
+        register('client')
+    }
+}
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+dependencies {
+    implementation minecraft.dependency('net.minecraftforge:forge:1.21.4-54.1.0')
+    annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
+}
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 21 }
+tasks.named('jar', Jar) { manifest { attributes['MixinConfigs'] = 'horizonvehiclepose.mixins.json' } }

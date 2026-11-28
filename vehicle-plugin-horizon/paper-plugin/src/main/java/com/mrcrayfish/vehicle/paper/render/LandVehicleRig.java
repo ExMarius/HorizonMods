@@ -261,6 +261,10 @@ public final class LandVehicleRig {
         Location location = carrier.anchor.getLocation();
         Pig seat = location.getWorld().spawn(location, Pig.class, pig -> {
             pig.setSaddle(true);
+            // Cosmetic metadata is synchronized to vanilla clients; hidden name
+            // lets the optional Forge client identify this seat and its role.
+            pig.customName(net.kyori.adventure.text.Component.text(seatMarker(carrier, 0)));
+            pig.setCustomNameVisible(false);
             pig.addScoreboardTag("mcv_pig_vehicle_seat");
             pig.setAI(false);
             pig.setGravity(false);
@@ -293,6 +297,7 @@ public final class LandVehicleRig {
     private void discardSeat(SeatCarrier carrier) {
         LivingEntity seat = carrier.mount;
         carrier.mount = null;
+        carrier.visualMarker = null;
         if (seat != null) {
             entities.remove(seat);
             seat.remove();
@@ -498,6 +503,24 @@ public final class LandVehicleRig {
                 carrier.anchor.setRotation(yaw + carrier.properties.yawOffset(), 0.0F);
             }
             maintainSeat(carrier, yaw);
+            updateSeatMarker(carrier, renderSteeringAngle);
+        }
+    }
+
+    private String seatMarker(SeatCarrier carrier, int steeringPercent) {
+        return "horizon-seat-v1|" + spec.id() + "|"
+                + (carrier.properties.driver() ? "d" : "p") + "|" + steeringPercent;
+    }
+
+    private void updateSeatMarker(SeatCarrier carrier, float steeringAngle) {
+        if (carrier.mount == null || !carrier.mount.isValid()) return;
+        float max = spec.maxSteeringAngle();
+        int percent = carrier.properties.driver() && max > 0F && Float.isFinite(steeringAngle)
+                ? Math.round(Math.max(-1F, Math.min(1F, steeringAngle / max)) * 100F) : 0;
+        String marker = seatMarker(carrier, percent);
+        if (!marker.equals(carrier.visualMarker)) {
+            carrier.mount.customName(net.kyori.adventure.text.Component.text(marker));
+            carrier.visualMarker = marker;
         }
     }
 
@@ -1159,6 +1182,7 @@ public final class LandVehicleRig {
         private final LandVehicleSpec.Seat properties;
         private LivingEntity mount;
         private UUID rider;
+        private String visualMarker;
 
         private SeatCarrier(ItemDisplay anchor, LandVehicleSpec.Seat properties) {
             this.anchor = anchor;

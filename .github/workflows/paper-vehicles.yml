@@ -23,6 +23,10 @@ on:
         description: Read crash diagnostics without changing the server
         type: boolean
         default: false
+      build_forge_client:
+        description: Compile the optional Forge client and compatible Paper plugin without tests
+        type: boolean
+        default: false
       deploy_recovery:
         description: Install the prebuilt recovery candidate on the test server
         type: boolean
@@ -64,7 +68,7 @@ jobs:
           retention-days: 14
 
   recovery-package:
-    if: github.event_name == 'workflow_dispatch' && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab
+    if: github.event_name == 'workflow_dispatch' && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab && !inputs.build_forge_client
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -165,3 +169,31 @@ jobs:
           echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
       - name: Install matching JAR and resource pack
         run: python3 paper-vehicles/deploy/falix_recovery_cab_install.py install vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/recovery-new/HorizonOffRoader-1.21.4.zip "$PACK_URL"
+
+  forge-client-build:
+    if: github.event_name == 'workflow_dispatch' && inputs.build_forge_client && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile Forge client without tests
+        run: |
+          set -o pipefail
+          ./vehicle-plugin-horizon/forge-client/gradlew -p vehicle-plugin-horizon/forge-client clean build -x test 2>&1 | tee /tmp/forge-client-build.log || {
+            python3 -c "from pathlib import Path; s=Path('/tmp/forge-client-build.log').read_text().splitlines(); print('::error::'+' | '.join(s[-55:]).replace('%','%25')[:12000])"
+            exit 1
+          }
+      - name: Compile matching Paper plugin without tests
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean jar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Horizon-vehicle-pose-preview
+          path: |
+            vehicle-plugin-horizon/forge-client/build/libs/*.jar
+            vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
+          if-no-files-found: error
+          retention-days: 14
