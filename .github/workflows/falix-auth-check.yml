@@ -1,0 +1,156 @@
+name: Verify Falix connection
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - arena/fb5f91ff-horizonmods
+    paths:
+      - .github/workflows/falix-auth-check.yml
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify OIDC token exchange (no server changes)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          def request_json(request, label):
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      return json.load(response)
+              except urllib.error.HTTPError as exc:
+                  # Never log response bodies: they may include credentials.
+                  sys.exit(f'{label}: HTTP {exc.code}')
+              except (urllib.error.URLError, ValueError, TimeoutError) as exc:
+                  sys.exit(f'{label}: request or response failed ({type(exc).__name__})')
+
+          audience = 'https://client.falixnodes.net/api/v2'
+          url = os.environ['ACTIONS_ID_TOKEN_REQUEST_URL'] + '&' + urllib.parse.urlencode({'audience': audience})
+          request = urllib.request.Request(url, headers={
+              'Authorization': 'bearer ' + os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN'],
+          })
+          id_token = request_json(request, 'GitHub OIDC').get('value')
+          if not isinstance(id_token, str) or not id_token:
+              sys.exit('GitHub OIDC: token missing')
+          print('::add-mask::' + id_token, flush=True)
+          body = urllib.parse.urlencode({
+              'grant_type': 'urn:ietf:params:oauth:grant-type:token-exchange',
+              'subject_token_type': 'urn:ietf:params:oauth:token-type:id_token',
+              'connection': 'reg_541k4oqt2cDg61pRuQcRzOQie7',
+              'subject_token': id_token,
+          }).encode()
+          request = urllib.request.Request(audience + '/oauth2/token', data=body, method='POST')
+          access_token = request_json(request, 'Falix token exchange').get('access_token')
+          if not isinstance(access_token, str) or not access_token:
+              sys.exit('Falix token exchange: access token missing')
+          print('::add-mask::' + access_token, flush=True)
+          print('Falix accepted the GitHub OIDC token.')
+          found = []
+          for offset in range(0, 2000, 100):
+              req = urllib.request.Request(
+                  audience + '/servers?' + urllib.parse.urlencode({'limit': 100, 'offset': offset}),
+                  headers={'Authorization': 'Bearer ' + access_token},
+              )
+              page = request_json(req, 'List servers')
+              servers = page.get('data')
+              if not isinstance(servers, list):
+                  sys.exit('List servers: unexpected response format')
+              for server in servers:
+                  identifier = server.get('id') if isinstance(server, dict) else None
+                  if isinstance(identifier, (str, int)):
+                      found.append(str(identifier))
+              if not page.get('pagination', {}).get('has_more', False):
+                  break
+          else:
+              sys.exit('List servers: pagination limit reached')
+          print('Accessible servers:', len(found))
+          # Only expose numeric IDs; avoid printing account details or server names.
+          for identifier in found:
+              if identifier.isdecimal():
+                  print('Server ID:', identifier)
+              else:
+                  print('::notice title=Falix server ID::Non-numeric ID; manual inspection required.')
+          if found == ['3500167']:
+              for label, endpoint in [
+                  ('Server', '/servers/3500167'),
+                  ('Server status', '/servers/3500167/console/status'),
+                  ('Root files', '/servers/3500167/files?directory=%2F&limit=100'),
+                  ('Plugins directory', '/servers/3500167/files?directory=%2Fplugins&limit=100'),
+                  ('Versions directory', '/servers/3500167/files?directory=%2Fversions&limit=100'),
+                  ('Version history', '/servers/3500167/files/content?path=%2Fversion_history.json'),
+              ]:
+                  try:
+                      req = urllib.request.Request(audience + endpoint, headers={'Authorization': 'Bearer ' + access_token})
+                      with urllib.request.urlopen(req, timeout=30) as response:
+                          payload = json.load(response).get('data')
+                      if isinstance(payload, list):
+                          names = [x.get('name') for x in payload if isinstance(x, dict) and isinstance(x.get('name'), str)]
+                          import re
+                          safe = [x for x in names if re.fullmatch(r'[A-Za-z0-9._-]{1,100}', x)]
+                          text = ', '.join(safe[:100]) or '(none)'
+                      elif isinstance(payload, dict):
+                          if label == 'Version history' and isinstance(payload.get('content'), str):
+                              import re
+                              matches = re.findall(r'(?<![0-9])1\.21\.[0-9]+(?![0-9])', payload['content'])
+                              print('Version history matches:', ', '.join(sorted(set(matches))))
+                          allowed = ('status', 'state', 'node_ready', 'name', 'identifier', 'version', 'software', 'application', 'lifecycle_status')
+                          text = ', '.join(f'{k}={payload[k]}' for k in allowed if isinstance(payload.get(k), (str, int, bool)))[:1000] or 'response OK'
+                      else:
+                          text = 'response OK'
+                      print(f'::notice title={label}::{text.replace(chr(10), " ").replace(chr(13), " ")}')
+                  except urllib.error.HTTPError as exc:
+                      print(f'::warning title={label}::HTTP {exc.code}')
+          doc = request_json(urllib.request.Request(audience + '/openapi.json'), 'Falix OpenAPI')
+          for path, method in [('/servers/{server_id}/properties', 'put')]:
+              op = doc.get('paths', {}).get(path, {}).get(method, {})
+              body_schema = op.get('requestBody', {}).get('content', {}).get('application/json', {}).get('schema', {})
+              responses = op.get('responses', {})
+              response_schema = responses.get('200', {}).get('content', {}).get('application/json', {}).get('schema', {})
+              schemas=doc.get('components', {}).get('schemas', {})
+              def resolve(x):
+                  ref=x.get('$ref','') if isinstance(x,dict) else ''
+                  return schemas.get(ref.rsplit('/',1)[-1],x) if ref else x
+              print(f'::notice title=API {method} {path}::request={json.dumps(resolve(body_schema))} response={json.dumps(resolve(response_schema))}')
+          log = request_json(urllib.request.Request(audience + '/servers/3500167/console/log?lines=40', headers={'Authorization':'Bearer '+access_token}), 'Console log').get('data', {})
+          lines = log.get('lines', []) if isinstance(log, dict) else []
+          enabled = any(isinstance(x, str) and ('Vehicle plugin enabled.' in x or 'Enabling MrCrayfishVehiclePlugin' in x) for x in lines)
+          print('::notice title=Plugin startup::' + ('startup message found' if enabled else 'startup message not in log tail'))
+          props = request_json(urllib.request.Request(audience + '/servers/3500167/properties', headers={'Authorization':'Bearer '+access_token}), 'Read properties').get('data')
+          if not isinstance(props, list): sys.exit('Unexpected properties response')
+          for x in props:
+              if isinstance(x,dict) and x.get('key') in ('resource-pack', 'resource-pack-sha1', 'require-resource-pack'):
+                  value=x.get('value')
+                  if x['key']=='resource-pack':
+                      value='empty' if not value else ('known r39 pack' if 'MrCrayfishVehiclePlugin-resource-pack-1.21.4-r39.zip' in str(value) else 'other URL configured')
+                  print(f'::notice title=Property {x["key"]}::{value}')
+          # Read back the installed JAR using Falix's short-lived download URL.
+          import hashlib
+          endpoint=audience+'/servers/3500167/files/download'
+          payload=json.dumps({'path':'/plugins/MrCrayfishVehiclePlugin.jar'}).encode()
+          req=urllib.request.Request(endpoint, data=payload, headers={'Authorization':'Bearer '+access_token,'Content-Type':'application/json'}, method='POST')
+          signed=request_json(req, 'File download URL').get('data', {}).get('url', '')
+          parsed=urllib.parse.urlsplit(signed)
+          if parsed.scheme != 'https' or not ((parsed.hostname or '').endswith('.falixserver.net') or (parsed.hostname or '').endswith('.falixnodes.net')):
+              sys.exit('Unexpected download URL host')
+          print('::add-mask::'+signed, flush=True)
+          with urllib.request.urlopen(signed, timeout=60) as response:
+              remote=response.read(20 * 1024 * 1024 + 1)
+          if len(remote) > 20 * 1024 * 1024: sys.exit('File exceeds safety limit')
+          print('::notice title=Remote plugin SHA-256::'+hashlib.sha256(remote).hexdigest())
+          print('No server operation was performed.')
+          PY

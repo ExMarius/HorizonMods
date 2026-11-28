@@ -1,0 +1,13 @@
+# Horizon Vehicle Pose — Forge 1.21.4 (prototip)
+
+Mod exclusiv client; necesită Minecraft 1.21.4, Java 21 și Forge 54.1.0 sau compatibil. Se instalează JAR-ul în `mods/` pe fiecare client care dorește să vadă efectul. Nu înlocuiește pluginul Paper sau resource pack-ul.
+
+Pluginul Paper compatibil pune pe porcii invizibili ai vehiculului un nume personalizat ascuns `horizon-seat-v1|<id>|<d/p>|<-100..100>` cu tipul vehiculului, rolul locului și direcția volanului. Este metadată vizuală publică, nu autentificare, iar numele nu este afișat permanent. Actualizarea este limitată la schimbarea procentului întreg de virare. Fără pluginul actualizat mod-ul rămâne inactiv. Alte animale și jucători pe jos nu sunt modificate; un porc numit intenționat cu același prefix poate declanșa efectul cosmetic.
+
+Pe scaun marcat, modifică local starea de randare a corpului după yaw-ul porcului, păstrând camera și orientarea reală a jucătorului nemodificate. Capul randat este limitat la ±85° față de corp; nu este o promisiune că în vanilla camera va urmări vehiculul. Pe locul șoferului, brațele au o postură de pornire inspirată din renderer-ele originale MrCrayfish pentru Go Kart, tractor și sports car; virarea animează brațele. Pasagerii nu primesc postura de condus. Efectul este vizibil în persoana a treia și la alți jucători pe clienți cu mod, nu este implementată o animație separată pentru mâinile first-person. Posturile nu sunt calibrate pe toate volanele; modelul, mișcarea, latența și modurile de cameră trebuie verificate în joc.
+
+Compilare: `./gradlew clean build -x test` cu Java 21 și acces la depozitele Forge/Mojang/Gradle. Nu există validare vizuală sau garanție de compatibilitate cu alte moduri care schimbă renderizarea jucătorului. Scoaterea modului readuce randarea clientului la vanilla; scoaterea pluginului compatibil elimină markerul după recrearea vehiculelor/restart. Mod-ul nu trimite pachete de control și nu schimbă fizica sau drepturile.
+
+## Crash la pornire al versiunii 0.1.0
+
+Jurnalul utilizatorului arată că mixinul a căutat `m_6973_`, dar Forge 1.21.4 folosește numele oficiale la runtime. JAR-ul 0.1.0 a fost reobfuscat greșit în nume SRG. Versiunea 0.1.1 folosește numele oficiale, fără remap și fără refmap SRG; injecția pentru brațe este opțională, astfel încât absența țintei să nu mai fie o eroare critică. Compilarea singură nu dovedește pornirea sau compatibilitatea cu OptiFine; verificați în joc.

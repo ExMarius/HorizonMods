@@ -1,0 +1,17 @@
+# Combină GLB, reconstrucție low-poly pentru heder de porumb
+
+`python3 vehicle-plugin-horizon/next-vehicle/combina-moderna/low-poly/build_corn.py` produce `downloads/horizon-combina-glb-porumb-lowpoly.bbmodel`: reconstrucție editabilă inspirată de GLB-ul utilizatorului, nu o copie exactă. Geometrie desenată ca 267 cuburi, fără voxelizare; șapte ciocuri a câte patru cuburi. Rotațiile elementelor sunt pe o singură axă și folosesc numai ±22,5° sau ±45°. Roșu #8B1E1E, antracit #1E2024, faruri galbene și melc gri; textura geamului este un PNG cu alfa 112/255. În Blockbench sau clientul Minecraft aspectul sticlei trebuie verificat, inclusiv sortarea transparenței.
+
+1 bloc = 16 unități, fața −Z, sol Y=0. Corpul are lățimea de 43 unități și hederul 72 unități; lungimea nominală de la vârful ciocurilor până la capota spate este 107 unități (~6,69 blocuri); înălțimea este 54 unități (~3,38 blocuri). Cabina are spațiu interior nominal Y29..52 (23 unități), cu scaun și volan. Roțile față au diametrul 22 și lățimea 7; cele din spate diametrul 14 și lățimea 4,5.
+
+`header_assembly` este copil al `body`, pivot [0,20,−18]; `intake_auger` este copil al hederului cu pivot [0,8,−39]. `unloading_auger`, roțile și scaunul sunt copii ai corpului. Pivoții roților sunt la centrele lor geometrice. `reel` este un grup gol de compatibilitate pentru preview, nu un rabator pe hederul de porumb. Animațiile preview sunt demonstrative; scaunul nu este încă o poziție de jucător calibrată.
+
+Export experimental al pieselor cu `minecraft/build_parts.py` produce părți ItemDisplay din cele 267 cuburi. Pack-ul și manifestul nu conțin rig, logică Minecraft sau gameplay și nu se instalează peste pack-ul existent. Nu s-a validat în client Minecraft 1.21.4; integrarea, pivoti, transparența, performanța și scara se verifică ulterior împreună cu utilizatorul.
+
+## Reconstrucție de cereale după imaginile furnizate
+
+`python3 vehicle-plugin-horizon/next-vehicle/combina-moderna/low-poly/build_grain.py` produce `downloads/horizon-combina-glb-cereale-lowpoly.bbmodel`, cu 299 cuburi. Heder lat 72 unități, două capace laterale roșii, rabator negru cu șase bare și câte zece gheare, melc gri și panou spate negru. `reel` și `intake_auger` sunt copii ai `header_assembly`; hederul are pivot [0,20,-18]. Roțile, tubul și scaunul au grupuri independente. Se poate compara cu imaginile utilizatorului în preview; nu este o copie certificată 1:1 și nu a fost verificat vizual împreună cu utilizatorul. Exportul preliminar este 32 părți ItemDisplay, fără rig, joc sau validare în Minecraft.
+
+## Revizie cu scară peste roată
+
+`build_grain_detail.py` generează `horizon-combina-cereale-detaliata.bbmodel`, o variantă de 299 cuburi pornită din reconstrucția de cereale. Scara este mutată în exteriorul roții frontale stânga; platforma se întinde deasupra roții până la pragul cabinei. Parbrizul și stâlpii frontali sunt înclinați 22,5°, geamurile fumurii păstrează alfa. Pozițiile calculate nu înlocuiesc verificarea vizuală a spațiului de acces și a cabinei în Minecraft. Exportul experimental are 33 părți, fără rig sau gameplay.

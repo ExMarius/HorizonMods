@@ -1,0 +1,66 @@
+name: Start Falix and verify vehicle plugin
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: [.github/workflows/falix-start-plugin.yml]
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  start:
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods' && startsWith(github.event.head_commit.message, 'Start Falix and verify installed plugin')
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Start offline server and inspect plugin startup
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, time, urllib.error, urllib.parse, urllib.request
+          def fail(message):
+              print('::error title=Falix start::'+str(message), flush=True)
+              raise SystemExit(1)
+          base='https://client.falixnodes.net/api/v2'
+          def req(url, data=None, headers=None):
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(url,data=data,headers=headers or {}),timeout=30) as r: return json.load(r)
+              except urllib.error.HTTPError as e:
+                  try: err=json.load(e).get('error',{}).get('code','unknown')
+                  except Exception: err='unknown'
+                  fail(f'Falix request failed: HTTP {e.code}, code={err}')
+              except (urllib.error.URLError, TimeoutError, ValueError) as e:
+                  fail('Falix request failed: '+type(e).__name__)
+          oidc=os.environ['ACTIONS_ID_TOKEN_REQUEST_URL']+'&'+urllib.parse.urlencode({'audience':base})
+          jwt=req(oidc,headers={'Authorization':'bearer '+os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']})['value']
+          print('::add-mask::'+jwt,flush=True)
+          data=urllib.parse.urlencode({'grant_type':'urn:ietf:params:oauth:grant-type:token-exchange','subject_token_type':'urn:ietf:params:oauth:token-type:id_token','connection':'reg_541k4oqt2cDg61pRuQcRzOQie7','subject_token':jwt}).encode()
+          token=req(base+'/oauth2/token',data=data)['access_token']
+          print('::add-mask::'+token,flush=True)
+          headers={'Authorization':'Bearer '+token}
+          prefix=base+'/servers/3500167'
+          listing=req(prefix+'/files?directory=%2Fplugins&limit=100',headers=headers)['data']
+          if not any(x.get('name')=='MrCrayfishVehiclePlugin.jar' for x in listing): fail('Plugin file missing; not starting server')
+          state=req(prefix+'/console/status',headers=headers)['data'].get('status')
+          if state=='offline':
+              h={**headers,'Content-Type':'application/json'}
+              req(prefix+'/power',data=json.dumps({'signal':'start'}).encode(),headers=h)
+              print('::notice title=Falix power::Start request accepted')
+          elif state in ('starting','running'):
+              print('::notice title=Falix power::Already starting or running')
+          else: fail('Unexpected server state; not sending power command')
+          for _ in range(30):
+              time.sleep(5)
+              state=req(prefix+'/console/status',headers=headers)['data'].get('status')
+              if state=='running': break
+          else: fail('Server did not reach running state within 150 seconds')
+          print('::notice title=Falix status::Server is running')
+          for _ in range(12):
+              obj=req(prefix+'/console/log?lines=40',headers=headers).get('data',{})
+              lines=obj.get('lines',[]) if isinstance(obj,dict) else []
+              text='\n'.join(x for x in lines if isinstance(x,str))
+              if 'Enabling MrCrayfishVehiclePlugin' in text:
+                  print('::notice title=Plugin verification::Console shows plugin enabling')
+                  break
+              time.sleep(5)
+          else: fail('Server is running but plugin enabling could not be confirmed in recent console log')
+          PY

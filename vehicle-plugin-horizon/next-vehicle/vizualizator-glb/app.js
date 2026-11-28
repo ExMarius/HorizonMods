@@ -1,0 +1,43 @@
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {loadBlockbench} from './bbmodel.js';
+const host=document.querySelector('#scene'),status=document.querySelector('#message'),send=document.querySelector('#send'),result=document.querySelector('#result');
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;host.appendChild(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#e8eee5');const camera=new THREE.PerspectiveCamera(42,1,.01,10000);const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;
+scene.add(new THREE.HemisphereLight(0xffffff,0x7c8f83,2.1));const sun=new THREE.DirectionalLight(0xffffff,2.1);sun.position.set(5,9,6);scene.add(sun);const fill=new THREE.DirectionalLight(0xffffff,.9);fill.position.set(-6,4,-6);scene.add(fill);
+let model=null,file=null,bounds=null,center=new THREE.Vector3(),radius=1,distance=4,grid=null,loadSerial=0;const clock=new THREE.Clock();let mixer=null;
+function showError(text){status.textContent=text;status.style.color='#a5342b'}function showInfo(text){status.textContent=text;status.style.color='#4f6856'}
+function view(name){if(!bounds)return;const dirs={front:[0,.16,-1],back:[0,.16,1],left:[-1,.16,0],right:[1,.16,0],overview:[1,.7,-1]};const v=new THREE.Vector3(...dirs[name]).normalize();camera.position.copy(center).addScaledVector(v,distance);camera.near=Math.max(.001,radius/1000);camera.far=Math.max(100,radius*100);camera.updateProjectionMatrix();controls.target.copy(center);controls.update()}
+function reset(){view('overview')};document.querySelector('#reset').onclick=reset;for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>view(b.dataset.view);
+new ResizeObserver(()=>{const w=host.clientWidth,h=host.clientHeight;if(w&&h){camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}}).observe(host);
+function dispose(root){root.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){for(const m of (Array.isArray(o.material)?o.material:[o.material])){for(const v of Object.values(m))if(v&&v.isTexture)v.dispose();m.dispose()}}})}
+async function load(selected){if(!selected)return;const serial=++loadSerial;send.disabled=true;document.querySelector('#copy').disabled=true;result.value='';file=null;showInfo('Se deschide modelul…');
+ const isBB=selected.name.toLowerCase().endsWith('.bbmodel');if(!isBB&&!selected.name.toLowerCase().endsWith('.glb'))return showError('Alege un fișier .glb sau .bbmodel.');if(selected.size>40*1024*1024)return showError('Fișierul depășește limita de 40 MB.');
+ try{const buffer=await selected.arrayBuffer();let gltf,missing=[];
+  if(isBB){let data;try{data=JSON.parse(new TextDecoder().decode(buffer))}catch{throw Error('Fișierul Blockbench nu este JSON valid')}gltf=await loadBlockbench(data);missing=gltf.missing}
+  else{if(buffer.byteLength<12)throw Error('Fișier prea scurt');const dv=new DataView(buffer);if(dv.getUint32(0,true)!==0x46546c67||dv.getUint32(4,true)!==2||dv.getUint32(8,true)!==buffer.byteLength)throw Error('Nu este un GLB 2.0 complet');
+   const manager=new THREE.LoadingManager();manager.onError=u=>missing.push(u);const loader=new GLTFLoader(manager);gltf=await new Promise((resolve,reject)=>loader.parse(buffer,'',resolve,reject));if(missing.length)throw Error('Modelul folosește resurse externe lipsă. Exportă un GLB cu texturile încorporate.')}
+  if(serial!==loadSerial){dispose(gltf.scene);return}
+  gltf.scene.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(gltf.scene);if(b.isEmpty())throw Error('Modelul nu conține geometrie vizibilă');const size=b.getSize(new THREE.Vector3());if(!Number.isFinite(size.length())||size.length()<1e-8)throw Error('Dimensiuni invalide');
+  if(model){scene.remove(model);dispose(model)}model=gltf.scene;scene.add(model);bounds=b;center=b.getCenter(new THREE.Vector3());radius=Math.max(.001,b.getBoundingSphere(new THREE.Sphere()).radius);const fov=THREE.MathUtils.degToRad(camera.fov);const hfov=2*Math.atan(Math.tan(fov/2)*Math.max(.1,camera.aspect));distance=radius/Math.sin(Math.min(fov,hfov)/2)*1.2;
+  if(grid){scene.remove(grid);grid.geometry.dispose();for(const m of Array.isArray(grid.material)?grid.material:[grid.material])m.dispose()}grid=new THREE.GridHelper(Math.max(radius*7,1),40,0xa6b7a4,0xd0dacd);grid.position.set(center.x,b.min.y-Math.max(.001,radius*.002),center.z);scene.add(grid);
+  mixer=gltf.animations.length?new THREE.AnimationMixer(model):null;if(mixer)mixer.clipAction(gltf.animations[0]).play();file=selected;document.querySelector('#empty').hidden=true;document.querySelector('#filename').textContent=selected.name+' · '+(selected.size/1024/1024).toFixed(2)+' MB';document.querySelector('#title').textContent=selected.name;document.querySelector('#modelstate').textContent='ÎNCĂRCAT LOCAL';send.disabled=false;reset();if(missing.length)showInfo('Model încărcat, dar '+missing.length+' texturi nu sunt încorporate; apar cu o culoare de înlocuire. Salvează-le în proiect pentru a le trimite.');else showInfo('Modelul este în browser. Apasă „Trimite” când vrei să îl analizez.');
+ }catch(err){if(serial!==loadSerial)return;console.error(err);showError('Nu am putut deschide modelul: '+(err.message||'eroare necunoscută')+'. Verifică dacă fișierul este complet și texturile sunt încorporate.');}}
+document.querySelector('#file').onchange=e=>load(e.target.files[0]);
+async function jsonResponse(r){const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'Transferul a eșuat');return d}
+function screenshot(){renderer.render(scene,camera);return new Promise((resolve,reject)=>renderer.domElement.toBlob(b=>b?resolve(b):reject(Error('Nu am putut crea imaginea')),'image/png'))}
+send.onclick=async()=>{if(!file||!model)return;send.disabled=true;showInfo('Se trimite modelul și se pregătesc vederile…');let upload,missing=[];const savedPos=camera.position.clone(),savedTarget=controls.target.clone();const animWas=mixer?.timeScale;if(mixer)mixer.timeScale=0;
+ try{upload=await jsonResponse(await fetch(file.name.toLowerCase().endsWith('.bbmodel')?'/api/upload-bbmodel':'/api/upload',{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:file}));
+  for(const name of ['overview','front','back','left','right']){try{if(name!=='overview')view(name);renderer.render(scene,camera);const image=await screenshot();await jsonResponse(await fetch(`/api/capture/${upload.id}/${name}`,{method:'POST',headers:{'Content-Type':'image/png'},body:image}))}catch(e){console.error(e);missing.push(name)}}
+  result.value=`Am trimis modelul: ${upload.path}. Te rog să-l analizezi.`+(missing.length?` Capturi nereușite: ${missing.join(', ')}.`:' Capturile din mai multe unghiuri sunt în același director.');document.querySelector('#copy').disabled=false;document.querySelector('#modelstate').textContent='TRIMIS';showInfo(missing.length?'Modelul a fost salvat, dar unele imagini nu au fost salvate. Trimite-mi mesajul de mai jos.':'Modelul și imaginile au fost salvate. Copiază mesajul de mai jos și trimite-mi-l în chat.');
+ }catch(e){console.error(e);showError('Trimiterea nu a reușit: '+e.message)}finally{camera.position.copy(savedPos);controls.target.copy(savedTarget);controls.update();if(mixer)mixer.timeScale=animWas;send.disabled=false}};
+document.querySelector('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(result.value);showInfo('Copiat! Trimite mesajul în conversație.')}catch{result.focus();result.select();showInfo('Copiază textul selectat și trimite-l în conversație.')}};
+function frame(){requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());if(mixer)mixer.update(dt);controls.update();renderer.render(scene,camera)}frame();
+
+// Reopen a previously shared model without asking for a second upload.
+const importedId=new URLSearchParams(location.search).get('model');
+if(importedId&&/^[a-f0-9]{16}$/.test(importedId)){
+ showInfo('Se redeschide modelul trimis…');
+ fetch('/api/model/'+importedId).then(async r=>{if(!r.ok)throw Error('Modelul salvat nu este disponibil');const type=r.headers.get('X-Model-Type');return new File([await r.blob()],type==='bbmodel'?'model-trimis.bbmodel':'model-trimis.glb',{type:type==='bbmodel'?'application/json':'model/gltf-binary'})}).then(load).catch(e=>showError(e.message));
+}

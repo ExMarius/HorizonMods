@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "pattern": [
+    "I I",
+    " I ",
+    " R "
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "R": "minecraft:red_dye"
+  },
+  "result": {
+    "id": "gokart:wrench",
+    "count": 1
+  }
+}

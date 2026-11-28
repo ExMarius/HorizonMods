@@ -1,0 +1,38 @@
+name: Fix Horizon Off-Roader boost wheels
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: [.github/workflows/falix-horizon-wheelie.yml, paper-vehicles/deploy/falix_fix_horizon_wheelie.py]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: falix-vehicle-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods' && startsWith(github.event.head_commit.message, 'Deploy Horizon turbo wheel fix')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build and test plugin
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build
+      - name: Test off-roader on disposable Paper
+        run: |
+          npm install --prefix /tmp/horizon-test mineflayer@4.39.0
+          export NODE_PATH=/tmp/horizon-test/node_modules
+          set -o pipefail
+          python3 vehicle-plugin-horizon/tools/smoke_off_roader.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar 2>&1 | tee /tmp/smoke.log || {
+            python3 -c "from pathlib import Path; print('::error::'+' | '.join(Path('/tmp/smoke.log').read_text().splitlines()[-20:]).replace('%','%25')[:8000])"
+            exit 1
+          }
+      - name: Back up and deploy, leaving pack unchanged
+        run: python3 paper-vehicles/deploy/falix_fix_horizon_wheelie.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar

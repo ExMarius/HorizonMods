@@ -1,0 +1,39 @@
+name: Compare Paper 1.21.4 baseline
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: [.github/workflows/paper-nov10-baseline.yml, 'vehicle-plugin-1.21.4/**']
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Build and test candidate source
+        working-directory: vehicle-plugin-1.21.4
+        run: ./paper-plugin/gradlew -p paper-plugin clean build
+      - name: Smoke test on a disposable Paper 1.21.4 server
+        run: MC_VERSION=1.21.4 bash vehicle-plugin-1.21.4/tools/test_fresh_paper_server.sh vehicle-plugin-1.21.4/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
+      - name: Compare class files with installed release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download vehicle-plugin-prototype-v0.1.0 --repo ExMarius/MrCrayfishVehicleMod --pattern 'MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar' --dir /tmp
+          python3 - <<'PY'
+          import hashlib,zipfile
+          release='/tmp/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar'
+          local='vehicle-plugin-1.21.4/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar'
+          assert hashlib.sha256(open(release,'rb').read()).hexdigest()=='cdc946652883d728ed5413d97cbcc968f4cce0486772087c9da89da683fd54b3'
+          with zipfile.ZipFile(release) as a, zipfile.ZipFile(local) as b:
+              aa={n:a.read(n) for n in a.namelist() if n.endswith('.class')}
+              bb={n:b.read(n) for n in b.namelist() if n.endswith('.class')}
+              both=set(aa)&set(bb); changed=[n for n in both if aa[n]!=bb[n]]
+              print(f'::notice title=Baseline bytecode::release classes={len(aa)}, built classes={len(bb)}, changed={len(changed)}, release-only={len(set(aa)-set(bb))}, source-only={len(set(bb)-set(aa))}')
+              for n in sorted(changed)[:8]: print('::notice title=Different class::'+n)
+          PY

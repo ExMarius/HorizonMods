@@ -1,0 +1,70 @@
+plugins {
+    id 'fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+repositories {
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    // Mojang official mappings: 1:1 cu jar-ul oficial, fara diferente de build.
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+    from("LICENSE") {
+    }
+}
+
+tasks.register('printCp') {
+    doLast {
+        configurations.compileClasspath.each { file ->
+            println "CP: ${file}"
+        }
+    }
+}
+
+tasks.register('printJar') {
+    doLast {
+        def jar = configurations.compileClasspath.files.find { it.name.contains('minecraft') && it.name.endsWith('.jar') }
+        println "JAR=${jar}"
+        if (jar != null) {
+            def zip = new java.util.zip.ZipFile(jar)
+            try {
+                def names = zip.entries().toList().collect { it.name }
+                println "ENTRIES=${names.size()}"
+                println "CLIENT_PKG=${names.count { it.startsWith('net/minecraft/client/') }}"
+                println "SERVER_PKG=${names.count { it.startsWith('net/minecraft/server/') }}"
+                println "HAS_LOCALPLAYER=${names.any { it.contains('LocalPlayer') }}"
+                println "SAMPLE_CLIENT=" + names.findAll { it.startsWith('net/minecraft/client/') }.take(8)
+                println "SAMPLE_ANY=" + names.take(8)
+            } finally {
+                zip.close()
+            }
+        }
+    }
+}

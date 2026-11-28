@@ -1,0 +1,38 @@
+name: Audit 1.21.4 vehicle resource pack
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: [.github/workflows/falix-pack-audit.yml]
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download existing 1.21.4 release and audit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download paper-plugin --repo ExMarius/MrCrayfishVehicleMod --pattern 'MrCrayfishVehiclePlugin-resource-pack-1.21.4-r39.zip' --dir /tmp
+          python3 - <<'PY'
+          import hashlib,json,zipfile,pathlib,re
+          p=pathlib.Path('/tmp/MrCrayfishVehiclePlugin-resource-pack-1.21.4-r39.zip')
+          data=p.read_bytes()
+          digest=hashlib.sha256(data).hexdigest()
+          if digest != 'f1d0b35cb54c8c8a0f6bfb323183d3448c528ada52919bfd94bcf2df7167f7ea': raise SystemExit('Release checksum mismatch')
+          print('::notice title=Resource pack SHA1::'+hashlib.sha1(data).hexdigest())
+          with zipfile.ZipFile(p) as z:
+              if z.testzip(): raise SystemExit('Damaged archive')
+              m=json.loads(z.read('pack.mcmeta'))
+              print('::notice title=Pack format::'+str(m.get('pack',{}).get('pack_format')))
+              found=[]
+              for name in z.namelist():
+                  if name.endswith('.json') and '/models/' in name:
+                      raw=z.read(name)
+                      if re.search(b'all rights reserved',raw,re.I): found.append(name)
+              print('::notice title=ARR model notices::'+str(len(found)))
+              print('::notice title=ARR model names::'+', '.join(found)[:10000])
+              for model in ['off_roader_body','go_kart_body','standard_wheel']:
+                  print('::notice title=Model '+model+'::'+str(any(n.endswith('/'+model+'.json') for n in z.namelist())))
+          PY

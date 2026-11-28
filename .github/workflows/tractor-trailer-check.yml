@@ -1,0 +1,44 @@
+name: Verify tractor farm trailer
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['.github/workflows/tractor-trailer-check.yml', 'vehicle-plugin-horizon/next-vehicle/utb/**', 'vehicle-plugin-horizon/paper-plugin/**', 'vehicle-plugin-horizon/tools/smoke_tractor_trailer.*']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test model and pack safety
+        run: python3 -m unittest discover -s vehicle-plugin-horizon/next-vehicle/utb -p 'test_*utb*.py' -v
+      - name: Build and test plugin
+        run: |
+          set -o pipefail
+          ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build 2>&1 | tee /tmp/plough-build.log || {
+            python3 -c "from pathlib import Path; s=Path('/tmp/plough-build.log').read_text(); print('::error::'+(' | '.join(s.splitlines()[-55:])).replace('%','%25')[:12000])"
+            exit 1
+          }
+      - name: Test trailer inventory and towing on a disposable server
+        run: |
+          npm install --prefix /tmp/horizon-test mineflayer@4.39.0
+          export NODE_PATH=/tmp/horizon-test/node_modules
+          set -o pipefail
+          python3 vehicle-plugin-horizon/tools/smoke_tractor_trailer.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar 2>&1 | tee /tmp/tractor-trailer.log || {
+            python3 -c "from pathlib import Path; s=Path('/tmp/tractor-trailer.log').read_text(); i=s.find('BOT DIAGNOSTIC:'); print('::error::'+(' | '.join(s[i:].splitlines()[:60] if i>=0 else s.splitlines()[-30:])).replace('%','%25')[:10000])"
+            exit 1
+          }
+
+      - name: Test modern four-wheel trailer on disposable server
+        run: |
+          npm install --prefix /tmp/horizon-test mineflayer@4.39.0
+          export NODE_PATH=/tmp/horizon-test/node_modules
+          FARM_TRAILER_ID=tractor_trailer_modern python3 vehicle-plugin-horizon/tools/smoke_tractor_trailer.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar

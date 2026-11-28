@@ -1,0 +1,88 @@
+name: Install requested recovery platform
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['.github/workflows/recovery-requested-install.yml']
+permissions:
+  contents: write
+  id-token: write
+concurrency:
+  group: falix-vehicle-deploy
+  cancel-in-progress: false
+jobs:
+  install:
+    if: startsWith(github.event.head_commit.message, 'Install recovery platform')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build and test Paper plugin
+        run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build recoveryCommandProbeJar
+      - name: Verify recovery geometry and pack
+        run: |
+          cd vehicle-plugin-horizon/next-vehicle/atelier-flota
+          node test-design.mjs
+          node test-loading.mjs
+          cd minecraft && python3 -m unittest -v test_minecraft
+      - name: Test live crash recovery on disposable Paper
+        env:
+          NODE_PATH: /tmp/recovery-test/node_modules
+        run: |
+          npm install --prefix /tmp/recovery-test mineflayer@4.39.0
+          set -o pipefail
+          python3 vehicle-plugin-horizon/tools/smoke_recovery_live_crash.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-command-probe/RecoveryProbe.jar 2>&1 | tee /tmp/live-crash.log || {
+            python3 -c "from pathlib import Path; print('::error::'+' | '.join(Path('/tmp/live-crash.log').read_text().splitlines()[-30:]).replace('%','%25')[:12000])"
+            exit 1
+          }
+      - name: Prepare candidate and verify old resource pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/recovery-base /tmp/recovery-new
+          gh release download horizon-offroader-45727535290 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/recovery-base
+          echo '136f003f9c56ee849881d41fb6697876353b5681  /tmp/recovery-base/HorizonOffRoader-1.21.4.zip' | sha1sum -c -
+          python3 vehicle-plugin-horizon/next-vehicle/atelier-flota/minecraft/build_pack.py /tmp/recovery-base/HorizonOffRoader-1.21.4.zip /tmp/recovery-new/HorizonOffRoader-1.21.4.zip --expected-sha1 136f003f9c56ee849881d41fb6697876353b5681
+          cp vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/recovery-new/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
+      - name: Back up all audited data, old JAR and old pack, then stop safely
+        run: python3 paper-vehicles/deploy/falix_recovery_backup.py /tmp/recovery-base/HorizonOffRoader-1.21.4.zip
+      - name: Publish candidate pack for server clients
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="horizon-offroader-${GITHUB_RUN_ID}"
+          gh release create "$tag" /tmp/recovery-new/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Recovery platform resource pack candidate' --notes 'Candidate for requested in-game recovery platform testing; visual and road-collision verification remain necessary.'
+          echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
+          curl -fsSL --retry 3 "https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" -o /tmp/public-recovery.zip
+          cmp /tmp/public-recovery.zip /tmp/recovery-new/HorizonOffRoader-1.21.4.zip
+      - name: Install verified matching JAR and pack settings
+        run: |
+          set -o pipefail
+          python3 paper-vehicles/deploy/falix_install_recovery.py /tmp/recovery-new/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/recovery-new/HorizonOffRoader-1.21.4.zip "$PACK_URL" 2>&1 | tee /tmp/recovery-install.log || {
+            python3 -c "from pathlib import Path; print('::error::'+' | '.join(Path('/tmp/recovery-install.log').read_text().splitlines()[-8:]).replace('%','%25')[:4000])"
+            exit 1
+          }
+      - name: Start server and verify startup
+        run: |
+          python3 - <<'PY'
+          import importlib.util,time
+          spec=importlib.util.spec_from_file_location('f','paper-vehicles/deploy/falix_auto_update.py')
+          f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
+          a=f.Falix(f.login())
+          if a.status()!='offline':raise ValueError('Server not offline; start request not sent')
+          a.api('/power',{'signal':'start'},'POST')
+          for _ in range(48):
+              time.sleep(5)
+              if a.status()=='running':break
+          else:raise ValueError('Start not confirmed; inspect panel')
+          text=a.download('/logs/latest.log').decode('utf-8','replace')
+          if 'Enabling MrCrayfishVehiclePlugin' not in text or 'Error occurred while enabling MrCrayfishVehiclePlugin' in text:
+              raise ValueError('Plugin startup not confirmed; inspect server console')
+          f.notice('Restart verified','Server running and plugin enabling found in latest log; visual verification remains')
+          PY

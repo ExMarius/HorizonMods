@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " K ",
+    "KIK",
+    " K "
+  ],
+  "key": {
+    "K": "minecraft:dried_kelp",
+    "I": "minecraft:iron_ingot"
+  },
+  "result": {
+    "id": "gokart:standard_wheel",
+    "count": 2
+  }
+}

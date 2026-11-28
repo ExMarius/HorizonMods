@@ -1,0 +1,60 @@
+name: Repair UTB missing textures
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['.github/workflows/utb-atlas-deploy.yml', 'paper-vehicles/deploy/falix_fix_utb_atlas.py']
+permissions:
+  contents: write
+  id-token: write
+concurrency:
+  group: falix-vehicle-deploy
+  cancel-in-progress: false
+jobs:
+  deliver:
+    if: startsWith(github.event.head_commit.message, 'Repair UTB atlas')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test atlas repair and backup installer
+        run: |
+          python3 -m unittest discover -s vehicle-plugin-horizon/next-vehicle/utb -p 'test_*utb*.py' -v
+          python3 -m unittest discover -s paper-vehicles/tests -p test_falix_install_horizon.py -v
+      - name: Download installed pair and patch textures only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/base
+          gh release download horizon-offroader-45549595389 --repo "$GITHUB_REPOSITORY" --pattern HorizonOffRoader-1.21.4.zip --pattern HorizonVehicles-1.21.4.jar --dir /tmp/base
+          echo '3d1e0d49517461a4116a6fa5560c65b8d769870a49d19c5e1cc45941f9db0504  /tmp/base/HorizonVehicles-1.21.4.jar' | sha256sum -c -
+          python3 vehicle-plugin-horizon/next-vehicle/utb/fix_utb_atlas.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/HorizonOffRoader-1.21.4.zip
+          PYTHONPATH=vehicle-plugin-horizon/next-vehicle/utb python3 - <<'PYCODE'
+          import json,zipfile,fix_utb_atlas as f,update_utb_body as u
+          with zipfile.ZipFile('/tmp/base/HorizonOffRoader-1.21.4.zip') as old,zipfile.ZipFile('/tmp/HorizonOffRoader-1.21.4.zip') as new:
+              assert new.testzip() is None and set(old.namelist()).issubset(new.namelist())
+              for name in old.namelist():
+                  if name not in f.MODELS: assert old.read(name)==new.read(name),name
+              for name in f.MODELS:
+                  a=json.loads(old.read(name));b=json.loads(new.read(name));a['textures']=b['textures'];assert a==b,name
+                  for ref in b['textures'].values():
+                      ns,path=ref.split(':');assert path.startswith('item/');assert f'assets/{ns}/textures/{path}.png' in new.namelist(),ref
+          PYCODE
+          cp /tmp/base/HorizonVehicles-1.21.4.jar /tmp/HorizonVehicles-1.21.4.jar
+      - name: Publish corrected pack and unchanged plugin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="horizon-offroader-${GITHUB_RUN_ID}"
+          gh release create "$tag" /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'UTB texture atlas fix' --notes 'Fix UTB textures not stitched in the Minecraft item atlas; all other existing pack assets and JAR preserved.'
+          echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
+      - name: Verify public pack
+        run: |
+          curl -fsSL --retry 3 "$PACK_URL" -o /tmp/public-pack.zip
+          cmp /tmp/public-pack.zip /tmp/HorizonOffRoader-1.21.4.zip
+      - name: Back up and install matching pair
+        run: |
+          set -o pipefail
+          python3 paper-vehicles/deploy/falix_fix_utb_atlas.py /tmp/HorizonVehicles-1.21.4.jar /tmp/HorizonOffRoader-1.21.4.zip "$PACK_URL" 2>&1 | tee /tmp/install.log || {
+            python3 -c "from pathlib import Path; print('::error::'+Path('/tmp/install.log').read_text().splitlines()[-1].replace('%','%25')[:500])"
+            exit 1
+          }

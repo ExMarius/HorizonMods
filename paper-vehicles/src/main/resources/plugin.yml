@@ -1,0 +1,16 @@
+name: HorizonVehiclesPaper
+version: '${version}'
+main: ro.exmarius.horizonvehicles.HorizonVehiclesPlugin
+api-version: '1.21.4'
+description: Experimental Horizon Vehicles Paper port.
+author: ExMarius
+softdepend: [fakeplayer]
+commands:
+  hvehicle:
+    description: Experimental Go-Kart commands.
+    aliases: [vehicle, vehicel]
+    usage: /hvehicle <list|spawn [go_kart|go_kart_raft|go_kart_fake|go_kart_follow]|remove|fuel|pack|input>
+    permission: horizonvehicles.admin
+permissions:
+  horizonvehicles.admin:
+    default: op

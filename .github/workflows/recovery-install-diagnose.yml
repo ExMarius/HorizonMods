@@ -1,0 +1,40 @@
+name: Diagnose recovery installation
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['.github/workflows/recovery-install-diagnose.yml']
+permissions:
+  contents: read
+  actions: read
+  id-token: write
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Report failure and current state without changing files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run view 46004502958 --log-failed > /tmp/recovery-failed.log || true
+          python3 - <<'PY'
+          import importlib.util
+          from pathlib import Path
+          lines=Path('/tmp/recovery-failed.log').read_text(errors='replace').splitlines()
+          selected=[s for s in lines if any(x in s for x in ('ValueError:', 'Traceback', 'RuntimeError:', 'HTTP ', 'Falix update', 'Rollback', 'Error:', 'error::'))]
+          print('::notice title=Failure detail::'+' | '.join(s[-1000:] for s in selected[-8:]).replace('%','%25')[:7000])
+          spec=importlib.util.spec_from_file_location('f','paper-vehicles/deploy/falix_auto_update.py')
+          f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f);a=f.Falix(f.login())
+          f.notice('Failure tail',' | '.join(s[-900:] for s in lines[-18:]).replace('%','%25')[:9000])
+          f.notice('Server state',str(a.status()))
+          f.notice('JAR SHA256',f.sha(a.download('/plugins/'+f.NAME)))
+          props={x['key']:str(x.get('value','')) for x in a.api('/properties') if 'key' in x}
+          f.notice('Pack SHA1',props.get('resource-pack-sha1','missing'))
+          keys=('resource-pack','resource-pack-sha1','resource-pack-id','require-resource-pack')
+          f.notice('Pack properties first',repr({k:props.get(k) for k in keys}).replace('%','%25'))
+          second={x['key']:str(x.get('value','')) for x in a.api('/properties') if 'key' in x}
+          f.notice('Pack properties second',repr({k:second.get(k) for k in keys}).replace('%','%25'))
+          PY
+# Include the final non-sensitive failure context.
+# Compare pack metadata independently.

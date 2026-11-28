@@ -1,0 +1,629 @@
+package com.mrcrayfish.vehicle.paper.runtime;
+
+import com.mrcrayfish.vehicle.paper.physics.VehicleCollisionMover;
+import com.mrcrayfish.vehicle.paper.render.TrailerRig;
+import com.mrcrayfish.vehicle.paper.vehicle.LandVehicleSpec;
+import com.mrcrayfish.vehicle.paper.vehicle.TrailerSpec;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
+import org.bukkit.World;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.util.Vector;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+
+/** Runtime state and source-derived behaviour for one towable trailer. */
+public final class PaperTrailer {
+    private static final double DETACH_THRESHOLD = 6.0D;
+    private static final int FLUID_CAPACITY = 100_000;
+
+    private final TrailerManager manager;
+    private final UUID id;
+    private final TrailerSpec spec;
+    private TrailerRig rig;
+    private final Inventory inventory;
+    private final Map<Integer, String> lastWorkedBlocks = new HashMap<>();
+    private Location location;
+    private double verticalVelocity;
+    private final Vector horizontalVelocity = new Vector();
+    private boolean onGround;
+    private float wheelRotation;
+    private float frontSteering;
+    private float drawbarPitch;
+    private int tickCount;
+    // Volatile safety state: raised after restart, detachment or driver leaving.
+    private boolean ploughLowered;
+    private final DiscHarrowState harrowState = new DiscHarrowState();
+    private float harrowDiscs;
+    private PullerType pullerType;
+    private UUID pullerId;
+    private UUID loadedVehicleId;
+    private Material fluidMaterial;
+    private int fluidAmount;
+
+    PaperTrailer(TrailerManager manager, UUID id, TrailerSpec spec, Location location,
+                 PullerType pullerType, UUID pullerId, UUID loadedVehicleId,
+                 Material fluidMaterial, int fluidAmount, ItemStack[] contents) {
+        this.manager = manager;
+        this.id = id;
+        this.spec = spec;
+        this.location = location.clone();
+        this.pullerType = pullerType == null ? PullerType.NONE : pullerType;
+        this.pullerId = pullerId;
+        if (spec.kind() == TrailerSpec.Kind.DISC_GD32 && this.pullerType == PullerType.VEHICLE)
+            harrowState.couple();
+        this.loadedVehicleId = loadedVehicleId;
+        this.fluidMaterial = fluidMaterial;
+        this.fluidAmount = Math.max(0, Math.min(FLUID_CAPACITY, fluidAmount));
+        this.inventory = hasInventory() ? Bukkit.createInventory(null, 27, Component.text(spec.displayName())) : null;
+        if (inventory != null && contents != null) {
+            inventory.setContents(normalizeContents(contents));
+        }
+        this.rig = TrailerRig.spawn(id, spec, this.location, inventoryContents());
+    }
+
+    public void tick() {
+        if (!rig.valid()) {
+            return;
+        }
+        tickCount++;
+        Location previous = location.clone();
+        PullTarget target = manager.resolvePullTarget(this);
+        if (target == null && pullerType != PullerType.NONE && !manager.pullerTemporarilyUnavailable(this)) {
+            detach(false);
+        }
+
+        if (target != null) {
+            double maximumDistance = DETACH_THRESHOLD + Math.abs(spec.hitchDistance());
+            if (!Objects.equals(target.root().getWorld(), location.getWorld())
+                    || target.root().distanceSquared(location) > maximumDistance * maximumDistance) {
+                detach(true);
+                target = null;
+            }
+        }
+
+        if (target != null) {
+            if (spec.kind() == TrailerSpec.Kind.DISC_GD32) {
+                var geometry = DiscHarrowKinematics.solve(location.getX(), location.getZ(), location.getYaw(),
+                        location.getY(), target.hitch().getX(), target.hitch().getY(), target.hitch().getZ(), harrowState.position());
+                if (!geometry.reachable()) {
+                    detach(true);
+                    target = null;
+                } else {
+                    move(new Vector(geometry.x()-location.getX(), verticalVelocity-0.08D, geometry.z()-location.getZ()));
+                    location.setYaw(geometry.yaw());
+                    var after = DiscHarrowKinematics.solve(location.getX(), location.getZ(), location.getYaw(),
+                            location.getY(), target.hitch().getX(), target.hitch().getY(), target.hitch().getZ(), harrowState.position());
+                    drawbarPitch = after.reachable() ? after.pitch() : 0;
+                }
+            } else if (spec.kind() == TrailerSpec.Kind.TRACTOR_TRAILER_MODERN) {
+                var pitch = pullerType == PullerType.VEHICLE
+                        ? DrawbarPitch.solve(location.getY(), target.hitch().getY())
+                        : DrawbarPitch.solve(location.getY(), location.getY() + DrawbarPitch.EYE_Y);
+                var geometry = FarmTrailerKinematics.solve(location.getX(), location.getZ(), location.getYaw(),
+                        target.hitch().getX(), target.hitch().getZ(), pitch.horizontal());
+                move(new Vector(geometry.x() - location.getX(), verticalVelocity - 0.08D,
+                        geometry.z() - location.getZ()));
+                location.setYaw(geometry.yaw());
+                frontSteering = geometry.steering();
+                drawbarPitch = pullerType == PullerType.VEHICLE
+                        ? DrawbarPitch.solve(location.getY(), target.hitch().getY()).pitchDegrees() : 0.0F;
+            } else {
+                float yaw = (float) Math.toDegrees(Math.atan2(
+                        target.hitch().getZ() - location.getZ(),
+                        target.hitch().getX() - location.getX()) - Math.toRadians(90.0D));
+                Location desired = local(target.hitch(), 0.0D, 0.0D, spec.hitchDistance(), yaw);
+                move(new Vector(desired.getX() - location.getX(), verticalVelocity - 0.08D,
+                        desired.getZ() - location.getZ()));
+                location.setYaw(yaw);
+            }
+        } else {
+            frontSteering = 0.0F;
+            drawbarPitch = 0.0F;
+            move(new Vector(horizontalVelocity.getX() * 0.75D, verticalVelocity - 0.08D,
+                    horizontalVelocity.getZ() * 0.75D));
+        }
+
+        double dx = location.getX() - previous.getX();
+        double dz = location.getZ() - previous.getZ();
+        horizontalVelocity.setX(dx).setZ(dz);
+        double distance = Math.sqrt(dx * dx + dz * dz);
+        if (distance > 1.0E-6D) {
+            double yawRadians = Math.toRadians(location.getYaw());
+            double forwardX = -Math.sin(yawRadians);
+            double forwardZ = Math.cos(yawRadians);
+            double direction = Math.signum(forwardX * dx + forwardZ * dz);
+            if (spec.kind() == TrailerSpec.Kind.DISC_GD32) {
+                wheelRotation -= (float) (distance * direction * 360.0D / (Math.PI * 11.0D / 16.0D));
+            } else {
+                double circumference = spec.isFarmTrailer() ? Math.PI * 13.8D : 24.0D * spec.bodyScale() * 1.25D;
+                wheelRotation -= (float) ((distance * 20.0D * direction * 16.0D / circumference) * 20.0D);
+            }
+        }
+        /* FertilizerTrailerEntity and SeederTrailerEntity evaluate their three
+         * source work points every vehicle tick, even when the trailer did not
+         * move. Fertilizer's last-position guard prevents duplicate work. */
+        runEquipment(previous);
+        if (spec.kind() == TrailerSpec.Kind.UTB_PLOUGH) plough(dx, dz);
+
+        TrailerRig.FluidVisual visual = fluidAmount > 0 && fluidMaterial != null
+                ? new TrailerRig.FluidVisual(fluidMaterial, fluidAmount / (float) FLUID_CAPACITY) : null;
+        rig.update(location, wheelRotation, visual, inventoryContents(), tickCount, frontSteering, drawbarPitch);
+        if (spec.kind() == TrailerSpec.Kind.DISC_GD32) {
+            Player driver=manager.ploughDriver(this);
+            boolean validDriver=target != null && driver != null && driver.isOnline() && driver.getWorld()==location.getWorld()
+                    && driver.getGameMode()!=org.bukkit.GameMode.ADVENTURE && driver.getGameMode()!=org.bukkit.GameMode.SPECTATOR;
+            harrowState.tick(validDriver);
+            // Resolve again after collision movement and after the lift animation.
+            // A visual pose derived before either operation would leave the eye
+            // drifting from the tractor pin whenever the ground height changes.
+            Location visualLocation = location;
+            boolean hitchAligned = false;
+            if (target != null) {
+                var aligned = DiscHarrowKinematics.solve(location.getX(), location.getZ(), location.getYaw(),
+                        location.getY(), target.hitch().getX(), target.hitch().getY(), target.hitch().getZ(), harrowState.position());
+                double correction = Math.hypot(aligned.x() - location.getX(), aligned.z() - location.getZ());
+                hitchAligned = aligned.reachable() && correction <= 0.5D;
+                if (hitchAligned) {
+                    visualLocation = location.clone();
+                    visualLocation.setX(aligned.x()); visualLocation.setZ(aligned.z());
+                    visualLocation.setYaw(aligned.yaw());
+                    drawbarPitch = aligned.pitch();
+                }
+            }
+            double angle=Math.toRadians(location.getYaw());
+            double forward=-Math.sin(angle)*dx+Math.cos(angle)*dz;
+            if (hitchAligned && harrowState.canWork(validDriver,onGround,forward)) {
+                harrowDiscs -= (float)(distance*360/(Math.PI*8.4/16));
+                discHarrowWork(driver, previous);
+            }
+            rig.updateHarrow(visualLocation,drawbarPitch,wheelRotation,harrowDiscs,harrowState.position(),target!=null);
+        }
+        if (loadedVehicleId != null) {
+            manager.positionLoadedVehicle(this, loadedVehicleId);
+        }
+    }
+
+    private void move(Vector requested) {
+        World world = location.getWorld();
+        if (world == null) {
+            return;
+        }
+        VehicleCollisionMover.Result result = VehicleCollisionMover.move(world, location, requested, onGround,
+                spec.entityWidth(), spec.entityHeight(), 1.0D, true);
+        location.add(result.movement());
+        onGround = result.onGround();
+        verticalVelocity = result.verticalCollision() ? 0.0D : result.movement().getY();
+    }
+
+    private void runEquipment(Location previous) {
+        switch (spec.kind()) {
+            case FERTILIZER -> fertilize(previous);
+            case SEEDER -> seed(previous);
+            default -> {
+            }
+        }
+    }
+
+    public boolean togglePlough() {
+        if (spec.kind() != TrailerSpec.Kind.UTB_PLOUGH) return false;
+        ploughLowered = !ploughLowered;
+        return ploughLowered;
+    }
+
+    public boolean toggleHarrow() {
+        boolean next = !harrowState.workRequested();
+        return harrowState.setWorking(next, manager.ploughDriver(this) != null) && next;
+    }
+
+    static boolean tillable(Material soil, Material above) {
+        return above == Material.AIR && (soil == Material.DIRT || soil == Material.GRASS_BLOCK
+                || soil == Material.DIRT_PATH);
+    }
+
+    private void plough(double dx, double dz) {
+        if (!ploughLowered) return;
+        Player driver = manager.ploughDriver(this);
+        if (driver == null || !driver.isOnline() || driver.getWorld() != location.getWorld()
+                || driver.getGameMode() == org.bukkit.GameMode.ADVENTURE
+                || driver.getGameMode() == org.bukkit.GameMode.SPECTATOR) {
+            ploughLowered = false;
+            return;
+        }
+        // Never work while stationary, airborne, or reversing.
+        double yaw = Math.toRadians(location.getYaw());
+        double forwardX = -Math.sin(yaw), forwardZ = Math.cos(yaw);
+        if (!onGround || forwardX * dx + forwardZ * dz < 0.025D) return;
+        World world = location.getWorld();
+        double rightX = Math.cos(yaw), rightZ = Math.sin(yaw);
+        for (int lane = -1; lane <= 1; lane++) {
+            int x = (int) Math.floor(location.getX() + rightX * lane * 0.7D);
+            int z = (int) Math.floor(location.getZ() + rightZ * lane * 0.7D);
+            tillCell(world, driver, x, (int) Math.floor(location.getY() - 0.05D), z);
+        }
+    }
+
+    private void discHarrowWork(Player driver, Location previous) {
+        World world=location.getWorld();
+        if (world == null || Math.abs(previous.getY()-location.getY()) > 0.1D) return;
+        int y=(int)Math.floor(location.getY()-0.05D);
+        for (DiscHarrowWorkPath.Cell cell : DiscHarrowWorkPath.sample(
+                previous.getX(), previous.getZ(), location.getX(), location.getZ(), location.getYaw())) {
+            tillCell(world, driver, cell.x(), y, cell.z());
+        }
+    }
+
+    /** Uses the same events as the existing plough; protection compatibility must
+     * be verified for the particular installed protection plugins before deploy. */
+    private void tillCell(World world, Player driver, int x, int y, int z) {
+            if (!world.isChunkLoaded(x >> 4, z >> 4) || y < world.getMinHeight()
+                    || y + 1 >= world.getMaxHeight()) return;
+            Block soil = world.getBlockAt(x, y, z);
+            if (!tillable(soil.getType(), soil.getRelative(BlockFace.UP).getType())) return;
+            // Do not bypass vanilla spawn protection for non-operators.
+            Location spawn = world.getSpawnLocation();
+            int radius = Bukkit.getSpawnRadius();
+            if (!driver.isOp() && radius > 0 && Math.max(Math.abs(x - spawn.getBlockX()),
+                    Math.abs(z - spawn.getBlockZ())) <= radius) return;
+            ItemStack tool = new ItemStack(Material.IRON_HOE);
+            org.bukkit.event.player.PlayerInteractEvent interact = new org.bukkit.event.player.PlayerInteractEvent(
+                    driver, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, tool, soil, BlockFace.UP,
+                    org.bukkit.inventory.EquipmentSlot.HAND);
+            Bukkit.getPluginManager().callEvent(interact);
+            if (interact.useInteractedBlock() == org.bukkit.event.Event.Result.DENY
+                    || interact.useItemInHand() == org.bukkit.event.Event.Result.DENY) return;
+            // Match Bukkit block-place event semantics: new state is visible during the event,
+            // and restore the original immediately if a protection plugin rejects it.
+            org.bukkit.block.BlockState before = soil.getState();
+            soil.setType(Material.FARMLAND, false);
+            try {
+                org.bukkit.event.block.BlockPlaceEvent event = new org.bukkit.event.block.BlockPlaceEvent(
+                        soil, before, soil.getRelative(BlockFace.DOWN), tool, driver, true,
+                        org.bukkit.inventory.EquipmentSlot.HAND);
+                Bukkit.getPluginManager().callEvent(event);
+                if (event.isCancelled() || !event.canBuild()) before.update(true, false);
+            } catch (RuntimeException failure) {
+                before.update(true, false);
+                throw failure;
+            }
+    }
+
+    private void fertilize(Location previous) {
+        ItemStack fertilizer = findSupply(Material.BONE_MEAL);
+        if (fertilizer == null) {
+            return;
+        }
+        double yaw = Math.toRadians(location.getYaw());
+        double forwardX = -Math.sin(yaw);
+        double forwardZ = Math.cos(yaw);
+        double rightX = Math.cos(yaw);
+        double rightZ = Math.sin(yaw);
+        boolean applied = false;
+        for (int lane = -1; lane <= 1; lane++) {
+            double x = previous.getX() - forwardX + rightX * lane;
+            double z = previous.getZ() - forwardZ + rightZ * lane;
+            Block block = previous.getWorld().getBlockAt((int) Math.floor(x),
+                    (int) Math.floor(previous.getY() + 0.25D), (int) Math.floor(z));
+            String key = block.getWorld().getUID() + ":" + block.getX() + ":" + block.getY() + ":" + block.getZ();
+            if (key.equals(lastWorkedBlocks.put(lane, key))) {
+                continue;
+            }
+            if (block.applyBoneMeal(BlockFace.UP)) {
+                applied = true;
+                block.getWorld().spawnParticle(Particle.HAPPY_VILLAGER,
+                        block.getLocation().add(0.5D, 0.5D, 0.5D), 8, 0.3D, 0.3D, 0.3D, 0.0D);
+            }
+        }
+        if (applied) {
+            fertilizer.setAmount(fertilizer.getAmount() - 1);
+        }
+    }
+
+    private void seed(Location previous) {
+        double yaw = Math.toRadians(location.getYaw());
+        double rightX = Math.cos(yaw);
+        double rightZ = Math.sin(yaw);
+        for (int lane = -1; lane <= 1; lane++) {
+            double x = previous.getX() + rightX * lane * 0.85D;
+            double z = previous.getZ() + rightZ * lane * 0.85D;
+            Block target = previous.getWorld().getBlockAt((int) Math.floor(x),
+                    (int) Math.floor(previous.getY() + 0.25D), (int) Math.floor(z));
+            if (target.getType() != Material.AIR || target.getRelative(BlockFace.DOWN).getType() != Material.FARMLAND) {
+                continue;
+            }
+            ItemStack seeds = findSeeds();
+            if (seeds == null) {
+                return;
+            }
+            Material crop = cropFor(seeds.getType());
+            if (crop != null) {
+                target.setType(crop, true);
+                seeds.setAmount(seeds.getAmount() - 1);
+            }
+        }
+    }
+
+    private ItemStack findSupply(Material material) {
+        ItemStack own = find(inventory, stack -> stack.getType() == material);
+        return own != null ? own : manager.findUpstreamSupply(this, stack -> stack.getType() == material);
+    }
+
+    private ItemStack findSeeds() {
+        ItemStack own = find(inventory, stack -> cropFor(stack.getType()) != null);
+        return own != null ? own : manager.findUpstreamSupply(this, stack -> cropFor(stack.getType()) != null);
+    }
+
+    private static ItemStack find(Inventory inventory, java.util.function.Predicate<ItemStack> predicate) {
+        if (inventory == null) {
+            return null;
+        }
+        for (ItemStack stack : inventory.getStorageContents()) {
+            if (stack != null && !stack.getType().isAir() && predicate.test(stack)) {
+                return stack;
+            }
+        }
+        return null;
+    }
+
+    static Material cropFor(Material seed) {
+        return switch (seed) {
+            case WHEAT_SEEDS -> Material.WHEAT;
+            case BEETROOT_SEEDS -> Material.BEETROOTS;
+            case CARROT -> Material.CARROTS;
+            case POTATO -> Material.POTATOES;
+            default -> null;
+        };
+    }
+
+    static boolean isSeederSupply(Material material) {
+        /* Forge's built-in seeds tag used by SeederTrailerEntity's inventory. */
+        return switch (material) {
+            case WHEAT_SEEDS, BEETROOT_SEEDS, MELON_SEEDS, PUMPKIN_SEEDS -> true;
+            default -> false;
+        };
+    }
+
+    public void interact(Player player) {
+        if (spec.kind() == TrailerSpec.Kind.FLUID && exchangeFluid(player)) {
+            return;
+        }
+        if (spec.kind() == TrailerSpec.Kind.VEHICLE) {
+            manager.toggleVehicleLoad(this, player);
+            return;
+        }
+        if (inventory != null) {
+            player.openInventory(inventory);
+        } else if (spec.kind() == TrailerSpec.Kind.FLUID) {
+            showFluid(player);
+        }
+    }
+
+    private boolean exchangeFluid(Player player) {
+        PlayerInventory playerInventory = player.getInventory();
+        ItemStack held = playerInventory.getItemInMainHand();
+        Material incoming = fluidFromBucket(held.getType());
+        if (incoming != null && fluidAmount <= FLUID_CAPACITY - 1_000
+                && (fluidAmount == 0 || incoming == fluidMaterial)) {
+            fluidMaterial = incoming;
+            fluidAmount += 1_000;
+            playerInventory.setItemInMainHand(new ItemStack(Material.BUCKET));
+            player.getWorld().playSound(location, Sound.ITEM_BUCKET_EMPTY, SoundCategory.PLAYERS, 1.0F, 1.0F);
+            showFluid(player);
+            return true;
+        }
+        if (held.getType() == Material.BUCKET && fluidAmount >= 1_000 && fluidMaterial != null) {
+            Material bucket = bucketForFluid(fluidMaterial);
+            if (bucket != null) {
+                fluidAmount -= 1_000;
+                if (fluidAmount == 0) {
+                    fluidMaterial = null;
+                }
+                ItemStack filled = new ItemStack(bucket);
+                if (held.getAmount() == 1) {
+                    playerInventory.setItemInMainHand(filled);
+                } else {
+                    held.setAmount(held.getAmount() - 1);
+                    playerInventory.addItem(filled).values()
+                            .forEach(stack -> player.getWorld().dropItemNaturally(player.getLocation(), stack));
+                }
+                player.getWorld().playSound(location, Sound.ITEM_BUCKET_FILL, SoundCategory.PLAYERS, 1.0F, 1.0F);
+                showFluid(player);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void showFluid(Player player) {
+        String type = fluidMaterial == null ? "empty" : fluidMaterial.name().toLowerCase();
+        player.sendActionBar(Component.text("Fluid Trailer: " + (fluidAmount / 1_000) + "/100 buckets (" + type + ")"));
+    }
+
+    private static Material fluidFromBucket(Material bucket) {
+        return switch (bucket) {
+            case WATER_BUCKET -> Material.WATER;
+            case LAVA_BUCKET -> Material.LAVA;
+            case POWDER_SNOW_BUCKET -> Material.POWDER_SNOW;
+            default -> null;
+        };
+    }
+
+    private static Material bucketForFluid(Material fluid) {
+        return switch (fluid) {
+            case WATER -> Material.WATER_BUCKET;
+            case LAVA -> Material.LAVA_BUCKET;
+            case POWDER_SNOW -> Material.POWDER_SNOW_BUCKET;
+            default -> null;
+        };
+    }
+
+    private static ItemStack[] normalizeContents(ItemStack[] source) {
+        ItemStack[] result = new ItemStack[27];
+        System.arraycopy(source, 0, result, 0, Math.min(source.length, result.length));
+        return result;
+    }
+
+    public boolean accepts(ItemStack stack) {
+        if (stack == null || stack.getType().isAir()) {
+            return true;
+        }
+        return switch (spec.kind()) {
+            case TRACTOR_TRAILER, TRACTOR_TRAILER_MODERN -> true;
+            case FERTILIZER, STORAGE -> stack.getType() == Material.BONE_MEAL;
+            case SEEDER -> isSeederSupply(stack.getType());
+            default -> false;
+        };
+    }
+
+    public void attach(PullerType type, UUID pullerId) {
+        this.pullerType = type;
+        this.pullerId = pullerId;
+        this.verticalVelocity = 0.0D;
+        if (spec.kind() == TrailerSpec.Kind.DISC_GD32 && type == PullerType.VEHICLE) harrowState.couple();
+        if (type == PullerType.VEHICLE) {
+            manager.onHitchChanged(pullerId);
+        }
+    }
+
+    public void detach(boolean sound) {
+        PullerType previousType = pullerType;
+        UUID previousPuller = pullerId;
+        if (sound && location.getWorld() != null) {
+            location.getWorld().playSound(location, Sound.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 1.0F, 1.0F);
+        }
+        this.pullerType = PullerType.NONE;
+        this.pullerId = null;
+        this.ploughLowered = false;
+        harrowState.detach();
+        if (previousType == PullerType.VEHICLE && previousPuller != null) {
+            manager.onHitchChanged(previousPuller);
+        }
+    }
+
+    /** True while the trailer's root chunk is still loaded. Parked trailers sitting in
+     * unloaded chunks are skipped by TrailerManager.tick - they cannot move anyway, so
+     * they must cost exactly zero CPU. */
+    public boolean isInLoadedChunk() {
+        org.bukkit.World world = location.getWorld();
+        return world != null
+                && world.isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4);
+    }
+
+    public Location towBarLocation() {
+        if (!spec.canTowTrailers()) {
+            return location.clone();
+        }
+        // Matches LandVehicleSpec.towBarPhysicsOffset(): AbstractLandVehicleRenderer
+        // explicitly re-multiplies the tow bar offset by bodyScale after cancelling
+        // the body's scale for the accessory model's own geometry, so the tow bar's
+        // ORIGIN position (unlike its fixed 1x rendered size) does scale with the body.
+        LandVehicleSpec.Point tow = spec.towBarOffset();
+        float bodyScale = spec.bodyScale();
+        return local(location,
+                tow.x() * bodyScale * LandVehicleSpec.MODEL_UNIT,
+                tow.y() * bodyScale * LandVehicleSpec.MODEL_UNIT,
+                tow.z() * bodyScale * LandVehicleSpec.MODEL_UNIT,
+                location.getYaw());
+    }
+
+    static Location local(Location root, double x, double y, double z, float yaw) {
+        double radians = Math.toRadians(yaw);
+        double sin = Math.sin(radians);
+        double cos = Math.cos(radians);
+        return root.clone().add(x * cos - z * sin, y, x * sin + z * cos);
+    }
+
+    public void remove() {
+        rig.remove();
+    }
+
+    private boolean hasInventory() {
+        return spec.isFarmTrailer()
+                || spec.kind() == TrailerSpec.Kind.FERTILIZER
+                || spec.kind() == TrailerSpec.Kind.SEEDER
+                || spec.kind() == TrailerSpec.Kind.STORAGE;
+    }
+
+    public UUID id() {
+        return id;
+    }
+
+    public TrailerSpec spec() {
+        return spec;
+    }
+
+    public Location location() {
+        return location.clone();
+    }
+
+    public PullerType pullerType() {
+        return pullerType;
+    }
+
+    public UUID pullerId() {
+        return pullerId;
+    }
+
+    public UUID loadedVehicleId() {
+        return loadedVehicleId;
+    }
+
+    public void setLoadedVehicleId(UUID loadedVehicleId) {
+        this.loadedVehicleId = loadedVehicleId;
+    }
+
+    public Material fluidMaterial() {
+        return fluidMaterial;
+    }
+
+    public int fluidAmount() {
+        return fluidAmount;
+    }
+
+    public Inventory inventory() {
+        return inventory;
+    }
+
+    public ItemStack[] inventoryContents() {
+        return inventory == null ? new ItemStack[0] : inventory.getContents();
+    }
+
+    public TrailerRig rig() {
+        return rig;
+    }
+
+    /** Ghost-proofing: trailer rig entities are non-persistent by design, so Minecraft
+     * deletes them silently when their chunk unloads. Vehicles recover through the
+     * hibernate/restore cycle; trailers never did, leaving an invisible, untickable
+     * ghost entry forever. TrailerManager rebuilds the display rig in place (same id,
+     * same inventory instance - the inventory lives on this object, not on the rig). */
+    void rebuildRig() {
+        // Chunk-boundary case: only SOME entities may have died with the unload.
+        // Despawn whatever survived before respawning or the trailer duplicates.
+        rig.remove();
+        rig = TrailerRig.spawn(id, spec, location.clone(), inventoryContents());
+    }
+
+    public enum PullerType {
+        NONE,
+        PLAYER,
+        VEHICLE,
+        TRAILER
+    }
+
+    public record PullTarget(Location hitch, Location root) {
+    }
+}

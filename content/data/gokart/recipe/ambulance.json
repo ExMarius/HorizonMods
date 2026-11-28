@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "transportation",
+  "pattern": [
+    "WRB",
+    "IGI",
+    "WEW"
+  ],
+  "key": {
+    "W": "gokart:standard_wheel",
+    "R": "minecraft:redstone",
+    "B": "minecraft:lapis_lazuli",
+    "I": "minecraft:iron_block",
+    "G": "minecraft:glass",
+    "E": "gokart:small_engine_gold"
+  },
+  "result": {
+    "id": "gokart:ambulance",
+    "count": 1
+  }
+}

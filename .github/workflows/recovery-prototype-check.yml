@@ -1,0 +1,96 @@
+name: Check recovery truck prototype
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths:
+      - 'vehicle-plugin-horizon/paper-plugin/**'
+      - 'vehicle-plugin-horizon/tools/smoke_recovery_probe.*'
+      - 'vehicle-plugin-horizon/tools/smoke_recovery_pair.*'
+      - 'vehicle-plugin-horizon/tools/recovery_log_check.py'
+      - 'vehicle-plugin-horizon/tools/test_recovery_log_check.py'
+      - '.github/workflows/recovery-prototype-check.yml'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build plugin, unit tests and disposable probe
+        run: |
+          set -o pipefail
+          ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean build recoverySmokeJar recoveryLiveProbeJar recoveryCommandProbeJar 2>&1 | tee /tmp/recovery-build.log || {
+            python3 -c "from pathlib import Path; lines=Path('/tmp/recovery-build.log').read_text().splitlines(); print('::error::'+' | '.join(lines[-50:]).replace('%','%25')[:12000])"
+            exit 1
+          }
+      - name: Test Paper log error detection
+        run: python3 -m unittest discover -s vehicle-plugin-horizon/tools -p test_recovery_log_check.py -v
+      - name: Install offline test client
+        run: npm install --prefix /tmp/recovery-test mineflayer@4.39.0
+      - name: Spawn and inspect rig on disposable Paper server
+        env:
+          NODE_PATH: /tmp/recovery-test/node_modules
+        run: |
+          set -o pipefail
+          python3 vehicle-plugin-horizon/tools/smoke_recovery_probe.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-smoke/RecoveryProbe.jar 2>&1 | tee /tmp/recovery-smoke.log || {
+            python3 -c "from pathlib import Path; lines=Path('/tmp/recovery-smoke.log').read_text().splitlines(); important=[s for s in lines if 'RECOVERY_PROBE_FAIL' in s or 'Exception' in s or 'Error' in s or ' at com.mrcrayfish' in s]; print('::error::'+' | '.join(important[-30:]).replace('%','%25')[:12000])"
+            exit 1
+          }
+      - name: Test owner disconnect and both garages on disposable Paper
+        env:
+          NODE_PATH: /tmp/recovery-test/node_modules
+        run: |
+          set -o pipefail
+          for mode in 0 1; do
+            RECOVERY_PAIR_DRIVE=$mode RECOVERY_RETRY_TEST=$mode python3 vehicle-plugin-horizon/tools/smoke_recovery_pair.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-smoke/RecoveryProbe.jar 2>&1 | tee /tmp/recovery-pair.log || {
+            python3 -c "from pathlib import Path; lines=Path('/tmp/recovery-pair.log').read_text().splitlines(); important=[s for s in lines if 'RECOVERY_PROBE_FAIL' in s or 'Exception' in s or 'Error' in s]; print('::error::'+' | '.join(important[-30:]).replace('%','%25')[:12000])"
+            exit 1
+          }
+          done
+      - name: Test live reservation and owner quit on disposable Paper
+        env:
+          NODE_PATH: /tmp/recovery-test/node_modules
+        run: |
+          set -o pipefail
+          for fallback in 0 1; do
+            RECOVERY_PAIR_DRIVE=1 RECOVERY_FALLBACK_TEST=$fallback python3 vehicle-plugin-horizon/tools/smoke_recovery_pair.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-live-probe/RecoveryProbe.jar 2>&1 | tee /tmp/recovery-live.log || {
+              python3 -c "from pathlib import Path; lines=Path('/tmp/recovery-live.log').read_text().splitlines(); important=[s for s in lines if 'RECOVERY_PROBE_FAIL' in s or 'Exception' in s or 'Error' in s]; print('::error::'+' | '.join(important[-30:]).replace('%','%25')[:12000])"
+              exit 1
+            }
+          done
+      - name: Test default-enabled recovery command loading and unloading on Paper
+        env:
+          NODE_PATH: /tmp/recovery-test/node_modules
+        run: |
+          set -o pipefail
+          RECOVERY_COMMAND_TEST=1 python3 vehicle-plugin-horizon/tools/smoke_recovery_pair.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-command-probe/RecoveryProbe.jar 2>&1 | tee /tmp/recovery-command.log || {
+            python3 -c "from pathlib import Path; lines=Path('/tmp/recovery-command.log').read_text().splitlines(); important=[s for s in lines if 'RECOVERY_PROBE_FAIL' in s or 'Exception' in s or 'Error' in s]; print('::error::'+' | '.join(important[-30:]).replace('%','%25')[:12000])"
+            exit 1
+          }
+      - name: Test controlled stop and SIGKILL with prepared recovery journal
+        env:
+          NODE_PATH: /tmp/recovery-test/node_modules
+          RECOVERY_MID_RESTART: '1'
+        run: |
+          set -o pipefail
+          for crash in 0 1; do
+            RECOVERY_CRASH_RESTART=$crash python3 vehicle-plugin-horizon/tools/smoke_recovery_pair.py vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar vehicle-plugin-horizon/paper-plugin/build/recovery-smoke/RecoveryProbe.jar 2>&1 | tee /tmp/recovery-restart.log || {
+            python3 -c "from pathlib import Path; lines=Path('/tmp/recovery-restart.log').read_text().splitlines(); important=[s for s in lines if 'RECOVERY_PROBE_FAIL' in s or 'Exception' in s or 'Error' in s]; print('::error::'+' | '.join(important[-30:]).replace('%','%25')[:12000])"
+            exit 1
+          }
+          done
+      - name: Upload tested Paper plugin jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: MrCrayfishVehiclePlugin-recovery
+          path: vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
+          if-no-files-found: error
+          retention-days: 14

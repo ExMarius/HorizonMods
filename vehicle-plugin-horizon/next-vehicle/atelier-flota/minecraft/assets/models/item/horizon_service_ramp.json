@@ -1,0 +1,714 @@
+{
+  "textures": {
+    "t0": "vehicle:item/horizon_recovery_edit_00",
+    "t1": "vehicle:item/horizon_recovery_edit_01",
+    "t2": "vehicle:item/horizon_recovery_edit_02",
+    "t3": "vehicle:item/horizon_recovery_edit_03",
+    "t4": "vehicle:item/horizon_recovery_edit_04",
+    "t5": "vehicle:item/horizon_recovery_edit_05",
+    "t6": "vehicle:item/horizon_recovery_edit_06",
+    "t7": "vehicle:item/horizon_recovery_edit_07",
+    "t8": "vehicle:item/horizon_recovery_edit_08",
+    "t9": "vehicle:item/horizon_recovery_edit_09",
+    "t10": "vehicle:item/horizon_recovery_edit_10",
+    "t11": "vehicle:item/horizon_recovery_edit_11",
+    "t12": "vehicle:item/horizon_recovery_edit_12",
+    "t13": "vehicle:item/horizon_recovery_edit_13",
+    "t14": "vehicle:item/horizon_recovery_edit_14",
+    "t15": "vehicle:item/horizon_recovery_edit_15",
+    "t16": "vehicle:item/horizon_recovery_edit_16",
+    "t17": "vehicle:item/horizon_recovery_edit_17"
+  },
+  "elements": [
+    {
+      "name": "horizon_service_ramp_0",
+      "from": [
+        6.56,
+        7.8,
+        8.0
+      ],
+      "to": [
+        9.44,
+        8.2,
+        17.92
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t1"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t1"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t1"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t1"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t1"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t1"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_ramp_1",
+      "from": [
+        6.72,
+        8.2,
+        8.84
+      ],
+      "to": [
+        9.28,
+        8.32,
+        9.08
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_ramp_2",
+      "from": [
+        6.72,
+        8.2,
+        10.48
+      ],
+      "to": [
+        9.28,
+        8.32,
+        10.72
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_ramp_3",
+      "from": [
+        6.72,
+        8.2,
+        12.12
+      ],
+      "to": [
+        9.28,
+        8.32,
+        12.36
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_ramp_4",
+      "from": [
+        6.72,
+        8.2,
+        13.76
+      ],
+      "to": [
+        9.28,
+        8.32,
+        14.0
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_ramp_5",
+      "from": [
+        6.72,
+        8.2,
+        15.4
+      ],
+      "to": [
+        9.28,
+        8.32,
+        15.64
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_ramp_6",
+      "from": [
+        6.72,
+        8.2,
+        17.0
+      ],
+      "to": [
+        9.28,
+        8.32,
+        17.24
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t7"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_ramp_7",
+      "from": [
+        6.57,
+        8.2,
+        8.16
+      ],
+      "to": [
+        6.71,
+        8.32,
+        17.76
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_ramp_8",
+      "from": [
+        9.29,
+        8.2,
+        8.16
+      ],
+      "to": [
+        9.43,
+        8.32,
+        17.76
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        }
+      }
+    },
+    {
+      "name": "horizon_service_ramp_9",
+      "from": [
+        6.56,
+        8.14,
+        8.0
+      ],
+      "to": [
+        9.44,
+        8.36,
+        8.48
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#t6"
+        }
+      }
+    }
+  ]
+}

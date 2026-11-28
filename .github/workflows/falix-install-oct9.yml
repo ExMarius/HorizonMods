@@ -1,0 +1,24 @@
+name: Restore October 9 vehicle checkpoint
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: [.github/workflows/falix-install-oct9.yml, paper-vehicles/deploy/falix_install_oct9.py]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: falix-vehicle-deploy
+  cancel-in-progress: false
+jobs:
+  install:
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods' && startsWith(github.event.head_commit.message, 'Restore October 9 vehicle checkpoint')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download October 9 Paper release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download v1.0.0 --repo ExMarius/MrCrayfishVehicleMod --pattern 'MrCrayfishVehiclePlugin-Paper-1.21.4-LandVehicles.jar' --dir /tmp
+      - name: Backup and install checkpoint
+        run: python3 paper-vehicles/deploy/falix_install_oct9.py /tmp/MrCrayfishVehiclePlugin-Paper-1.21.4-LandVehicles.jar

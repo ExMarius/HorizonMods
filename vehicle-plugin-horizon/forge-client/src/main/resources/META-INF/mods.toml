@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="[54,)"
+license="MIT"
+clientSideOnly=true
+
+[[mods]]
+modId="horizonvehiclepose"
+version="0.1.1"
+displayName="Horizon Vehicle Pose"
+authors="HorizonMods"
+description='''Client-side driver pose for Horizon Paper vehicles.'''
+
+[[dependencies.horizonvehiclepose]]
+modId="forge"
+mandatory=true
+versionRange="[54.1.0,)"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.horizonvehiclepose]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.21.4,1.21.5)"
+ordering="NONE"
+side="CLIENT"

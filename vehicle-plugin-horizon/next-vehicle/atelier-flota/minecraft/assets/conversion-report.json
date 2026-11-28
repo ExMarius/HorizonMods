@@ -1,0 +1,47 @@
+{
+  "itemDisplayScale": 4,
+  "models": {
+    "horizon_service_cab": 173,
+    "horizon_service_flatbed": 69,
+    "horizon_service_workshop": 67,
+    "horizon_service_ramp": 10,
+    "horizon_service_cable": 1
+  },
+  "rotationApproximations": [
+    {
+      "part": "horizon_service_cab",
+      "index": 134,
+      "originalDegrees": -8.5944,
+      "vanillaDegrees": 0
+    },
+    {
+      "part": "horizon_service_cab",
+      "index": 137,
+      "originalDegrees": -17.1887,
+      "vanillaDegrees": -22.5
+    },
+    {
+      "part": "horizon_service_cab",
+      "index": 157,
+      "originalDegrees": -8.5944,
+      "vanillaDegrees": 0
+    },
+    {
+      "part": "horizon_service_cab",
+      "index": 162,
+      "originalDegrees": -8.5944,
+      "vanillaDegrees": 0
+    },
+    {
+      "part": "horizon_service_cab",
+      "index": 167,
+      "originalDegrees": -8.5944,
+      "vanillaDegrees": 0
+    }
+  ],
+  "notes": [
+    "Wheel uses the existing Horizon sports wheel model; steering uses the Horizon steering model.",
+    "Glass alpha must be verified in the target Minecraft client.",
+    "Placement requires in-game validation."
+  ]
+}

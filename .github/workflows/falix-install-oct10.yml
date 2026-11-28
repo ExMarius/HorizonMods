@@ -1,0 +1,33 @@
+name: Install October 10 vehicle source
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: [.github/workflows/falix-install-oct10.yml, paper-vehicles/deploy/falix_install_oct10.py]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: falix-vehicle-deploy
+  cancel-in-progress: false
+jobs:
+  install:
+    if: github.ref == 'refs/heads/arena/fb5f91ff-horizonmods' && startsWith(github.event.head_commit.message, 'Install October 10 vehicle source')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Download exact October source revision
+        run: |
+          curl -fsSL https://codeload.github.com/ExMarius/MrCrayfishVehicleMod/tar.gz/aa0713d883df02cee281074908d39ab41327953e -o /tmp/source.tar.gz
+          mkdir /tmp/oct10
+          tar -xzf /tmp/source.tar.gz -C /tmp/oct10 --strip-components=1
+      - name: Build and test 1.21.4 plugin
+        run: /tmp/oct10/paper-plugin/gradlew -p /tmp/oct10/paper-plugin clean build
+      - name: Test startup and persistence on disposable Paper server
+        run: bash /tmp/oct10/tools/test_fresh_paper_server.sh /tmp/oct10/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar
+      - name: Back up server files and install verified build
+        run: python3 paper-vehicles/deploy/falix_install_oct10.py /tmp/oct10/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar

@@ -1,0 +1,48 @@
+name: Check service vehicle concepts
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths:
+      - '.github/workflows/service-concepts-check.yml'
+      - 'vehicle-plugin-horizon/next-vehicle/atelier-flota/**'
+  pull_request:
+    paths:
+      - '.github/workflows/service-concepts-check.yml'
+      - 'vehicle-plugin-horizon/next-vehicle/atelier-flota/**'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate authored geometry and viewer syntax
+        working-directory: vehicle-plugin-horizon/next-vehicle/atelier-flota
+        run: |
+          node --check server.cjs
+          node --check app.js
+          node --check minecraft-preview.js
+          node --check loading-demo.js
+          node --check loading-kinematics.js
+          node test-design.mjs
+          node test-loading.mjs
+      - name: Validate item export, texture references and pack safety
+        working-directory: vehicle-plugin-horizon/next-vehicle/atelier-flota/minecraft
+        run: python3 -m unittest -v test_minecraft
+      - name: Verify candidate against last installed pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download horizon-offroader-45727535290 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/base
+          python3 vehicle-plugin-horizon/next-vehicle/atelier-flota/minecraft/build_pack.py /tmp/base/HorizonOffRoader-1.21.4.zip /tmp/candidate.zip --expected-sha1 136f003f9c56ee849881d41fb6697876353b5681
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('/tmp/base/HorizonOffRoader-1.21.4.zip') as old, zipfile.ZipFile('/tmp/candidate.zip') as new:
+              assert new.testzip() is None
+              for name in old.namelist(): assert old.read(name)==new.read(name),name
+              print('Preserved',len(old.namelist()),'existing entries; added',len(set(new.namelist())-set(old.namelist())))
+          PY

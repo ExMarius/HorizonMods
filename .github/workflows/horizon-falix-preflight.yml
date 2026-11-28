@@ -1,0 +1,33 @@
+name: Horizon deployment preflight
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: [.github/workflows/horizon-falix-preflight.yml]
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check existing server state without changing it
+        run: |
+          python3 - <<'PY'
+          import importlib.util, re, urllib.parse
+          spec=importlib.util.spec_from_file_location('falix','paper-vehicles/deploy/falix_auto_update.py'); f=importlib.util.module_from_spec(spec); spec.loader.exec_module(f)
+          api=f.Falix(f.login()); jar=api.download('/plugins/'+f.NAME); print('::notice::Live JAR matches selected baseline: '+str(f.sha(jar)=='8d45843ea6664415e5027d5b957dead70ac1d290e5c8abd67bfb9d70acc5bf59'))
+          props={x['key']:str(x.get('value','')) for x in api.api('/properties') if isinstance(x,dict) and 'key' in x}
+          print('::notice::Server pack r39: '+str(props.get('resource-pack-sha1','').lower()=='d1b55da29e79f91f2299c40c3f7413656f349ff4'))
+          data=api.download('/plugins/MrCrayfishVehiclePlugin/config.yml').decode('utf-8')
+          section=re.search(r'(?ms)^resource-pack:[^\n]*\n((?:[ \t]+[^\n]*\n|\s*\n|\s*\#.*\n)*)',data)
+          print('::notice::Plugin pack section present: '+str(bool(section)))
+          if section:
+              for key in ['url','sha1','resend-on-join']:
+                  values=re.findall(r'(?m)^  '+key+r':\s*(.*)$',section.group(1)); print('::notice::Plugin pack '+key+' entries: '+str(len(values)))
+                  if key in ('url','sha1') and values:
+                      val=values[0].strip().strip('"\'')
+                      print('::notice::Plugin pack '+key+' is blank or selected r39: '+str(not val or ('r39.zip' in val if key=='url' else val.lower()=='d1b55da29e79f91f2299c40c3f7413656f349ff4')))
+          print('::notice::Current server status: '+api.status())
+          PY

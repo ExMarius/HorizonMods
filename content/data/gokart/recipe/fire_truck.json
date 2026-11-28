@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "transportation",
+  "pattern": [
+    "DRB",
+    "ICI",
+    "WEW"
+  ],
+  "key": {
+    "D": "minecraft:red_dye",
+    "R": "minecraft:redstone",
+    "B": "minecraft:lapis_lazuli",
+    "I": "minecraft:iron_block",
+    "C": "minecraft:water_bucket",
+    "E": "gokart:small_engine_diamond",
+    "W": "gokart:standard_wheel"
+  },
+  "result": {
+    "id": "gokart:fire_truck",
+    "count": 1
+  }
+}

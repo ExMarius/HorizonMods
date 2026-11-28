@@ -1,0 +1,12 @@
+{
+  "loader": "neoforge:obj",
+  "model": "gokart:models/block/quaternius_sport.obj",
+  "shade_quads": true,
+  "textures": {
+    "white": "gokart:block/sport_paint_06",
+    "windows": "gokart:block/sport_window",
+    "grey": "gokart:block/sport_trim",
+    "headlights": "gokart:block/sport_head",
+    "taillights": "gokart:block/sport_tail"
+  }
+}

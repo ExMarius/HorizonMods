@@ -1,0 +1,40 @@
+name: Validate recovery truck resource candidate
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths:
+      - '.github/workflows/recovery-resource-candidate.yml'
+      - 'vehicle-plugin-horizon/next-vehicle/atelier-flota/**'
+permissions:
+  contents: read
+jobs:
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify authored geometry and Minecraft assets
+        run: |
+          cd vehicle-plugin-horizon/next-vehicle/atelier-flota
+          node test-design.mjs
+          node test-loading.mjs
+          cd minecraft && python3 -m unittest -v test_minecraft
+      - name: Build candidate on verified last installed base
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/recovery-pack
+          gh release download horizon-offroader-45724921999 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/recovery-pack
+          echo '136f003f9c56ee849881d41fb6697876353b5681  /tmp/recovery-pack/HorizonOffRoader-1.21.4.zip' | sha1sum -c -
+          python3 vehicle-plugin-horizon/next-vehicle/atelier-flota/minecraft/build_pack.py /tmp/recovery-pack/HorizonOffRoader-1.21.4.zip /tmp/recovery-pack/HorizonRecovery-candidate.zip --expected-sha1 136f003f9c56ee849881d41fb6697876353b5681
+          sha256sum /tmp/recovery-pack/HorizonRecovery-candidate.zip
+      - name: Upload candidate resource pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: HorizonRecovery-resource-candidate
+          path: /tmp/recovery-pack/HorizonRecovery-candidate.zip
+          if-no-files-found: error
+          retention-days: 14

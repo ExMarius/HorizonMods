@@ -1,0 +1,32 @@
+name: Audit recovery installation target
+on:
+  push:
+    branches: [arena/fb5f91ff-horizonmods]
+    paths: ['.github/workflows/recovery-install-audit.yml']
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: falix-vehicle-deploy
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit server and plugin data without changes
+        run: |
+          python3 - <<'PY'
+          import importlib.util, json, urllib.parse
+          spec=importlib.util.spec_from_file_location('f','paper-vehicles/deploy/falix_auto_update.py')
+          f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
+          a=f.Falix(f.login())
+          f.notice('Server state',str(a.status()))
+          f.notice('Installed JAR SHA256',f.sha(a.download('/plugins/'+f.NAME)))
+          props={p['key']:str(p.get('value','')) for p in a.api('/properties') if 'key' in p}
+          f.notice('Installed pack', 'SHA1='+props.get('resource-pack-sha1','missing')+' URL='+props.get('resource-pack','missing'))
+          for folder in ['/plugins/MrCrayfishVehiclePlugin','/plugins']:
+              entries=a.api('/files?'+urllib.parse.urlencode({'directory':folder,'limit':100}))
+              f.notice('Directory '+folder,json.dumps(entries,ensure_ascii=True)[:10000].replace('%','%25'))
+          PY
