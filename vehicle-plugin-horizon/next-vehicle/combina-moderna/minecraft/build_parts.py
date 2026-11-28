@@ -13,6 +13,14 @@ FACES=('north','south','east','west','up','down')
 SCALE=8.0  # model coordinates / 8; display scale 8 restores authored size
 
 def compact(x):return json.dumps(x,separators=(',',':'),ensure_ascii=False).encode()
+
+def inverse_rotate(v, angles):
+    # Invert Blockbench/Three Euler ZYX: undo Z, then Y, then X.
+    x,y,z=v; a,b,c=(math.radians(-float(n)) for n in angles)
+    x,y=x*math.cos(c)-y*math.sin(c),x*math.sin(c)+y*math.cos(c)
+    x,z=x*math.cos(b)+z*math.sin(b),-x*math.sin(b)+z*math.cos(b)
+    y,z=y*math.cos(a)-z*math.sin(a),y*math.sin(a)+z*math.cos(a)
+    return (x,y,z)
 def export(source,variant):
     data=json.loads(source.read_text()); groups={x['uuid']:x for x in data['groups']};elements={x['uuid']:x for x in data['elements']}
     if len(groups)!=len(data['groups']) or len(elements)!=len(data['elements']):raise ValueError('Duplicate UUIDs')
@@ -36,11 +44,18 @@ def export(source,variant):
             if not e.get('export',True) or not e.get('visibility',True):continue
             if e.get('type','cube')!='cube':raise ValueError('Only cubes are supported')
             rot=e.get('rotation',[0,0,0]);pivot=e.get('origin',[(a+b)/2 for a,b in zip(e['from'],e['to'])]) if any(rot) else origin
-            key=(tuple(pivot),tuple(rot));batches[key].append(e)
-        for (pivot,rot),items in batches.items():
+            # Rebase each rotation pivot to the bone origin without altering the
+            # final geometry: q' = q + (R^-1 - I) * (pivot - origin).
+            # Cubes sharing a rotation can then share one ItemDisplay.
+            delta=[pivot[i]-origin[i] for i in range(3)]
+            inv=inverse_rotate(delta,rot)
+            shift=[inv[i]-delta[i] for i in range(3)]
+            batches[tuple(rot)].append((e,shift))
+        for rot,items in batches.items():
+            pivot=origin
             model_elements=[]
-            for e in items:
-                low=[8+(e['from'][i]-pivot[i])/SCALE for i in range(3)];high=[8+(e['to'][i]-pivot[i])/SCALE for i in range(3)]
+            for e,shift in items:
+                low=[8+(e['from'][i]+shift[i]-pivot[i])/SCALE for i in range(3)];high=[8+(e['to'][i]+shift[i]-pivot[i])/SCALE for i in range(3)]
                 if any(not math.isfinite(v) or v < -16 or v > 32 for v in low+high):raise ValueError('Coordinate outside vanilla model limits: '+e.get('name','?'))
                 if any(a>=b for a,b in zip(low,high)):raise ValueError('Empty cuboid')
                 faces={}
