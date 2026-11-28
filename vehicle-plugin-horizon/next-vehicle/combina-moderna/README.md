@@ -1,0 +1,11 @@
+# Combină modernă 1:1 — model separat
+
+Model editabil: `downloads/horizon-combina-moderna.bbmodel`. Preview: `cd vehicle-plugin-horizon/next-vehicle/combina-moderna/preview && npm install && npm start` (port 4188). Nu modifică modelul Gloria, pluginul, resource pack-ul sau serverul. Modelul este un concept cuboid inspirat de combine moderne, nu o reproducere certificată a unui model comercial.
+
+Scară 16 unități = 1 bloc/metru, fața −Z, solul Y=0. Solicitarea avea lungimea de 8,20 m (131,2 unități), dar intervalul Z −52..+32 măsoară doar 84 unități. Pentru lungimea dorită și păstrarea pivoților solicitați, am reproporționat geometria: limite statice Z −70..+61,2 = 131,2 unități, heder X ±38,4 = 4,80 m, înălțime Y 0..58,4 = 3,65 m. Poziția cuțitului și a roților spate a fost adaptată pentru proporții, deci nu corespunde numeric intervalelor inițiale contradictorii.
+
+Pivoți în unități Blockbench: `body` [0,0,0], `seat_driver` [0,26,-18], `header_assembly` [0,21,-20], `reel` [0,14,-44], `intake_auger` [0,6.5,-40], `unloading_auger` [-13,44,0], roți față [±18,14,-12], roți spate [±14,8.4,31]. `reel`, `intake_auger` și `cutter_bar` sunt copii direcți ai `header_assembly`. Markerul scaunului nu dovedește poziția jucătorului; aceasta trebuie calibrată ulterior în Minecraft.
+
+Preview-ul demonstrează pragul de oprire la −6° prin încetinirea rabatorului și snecului. Convenția afișată „−16° sus” este transformată în rotație geometrică +16° pe axa X pentru că fața este −Z; cuțitul se ridică aproximativ 0,6 m față de poziția jos, nu 0,85 m. Unghiul și înălțimea reală necesită calibrare. Cilindrii sunt decorativi și nu se telescopiează automat.
+
+Nu există recoltare, plată, detecție de culturi sau transfer în RM-2 în acest preview. Integrarea necesită dezvoltare separată și validare în Minecraft, inclusiv protecții pentru modificarea culturilor și siguranța inventarului. Desenele au cuburi rotite la unghiuri arbitrare și un număr mare de elemente; conversia pentru ItemDisplay trebuie făcută pe componente, nu presupusă ca export direct într-un singur model vanilla.
