@@ -44,8 +44,11 @@ public final class RecoveryTruckSpec {
                         wheel(1,true,1.225F,.53F,-1.488F,MODEL_SCALE*1.18F),
                         wheel(-1,false,-1.20F,.35F,3.22F,MODEL_SCALE*.35F/.45F),
                         wheel(1,false,1.20F,.35F,3.22F,MODEL_SCALE*.35F/.45F)),
-                List.of(new LandVehicleSpec.Seat(true,p(-.62F,.08F,-.80F),180F),
-                        new LandVehicleSpec.Seat(false,p(.62F,.08F,-.80F),180F)),
+                // Seat cushions: model cubes 140/149, top y=12.26,
+                // centres x=5.52/10.48, z=4.8, at 4 px/block.
+                // Estimate seated hip 0.75 above player origin; rig adds 0.25.
+                List.of(new LandVehicleSpec.Seat(true,p(-.62F,.065F,-.80F),180F),
+                        new LandVehicleSpec.Seat(false,p(.62F,.065F,-.80F),180F)),
                 false,"tow_bar",p(0,0,0),p(0,0,0),null,null,List.of(),false);
     }
 }
