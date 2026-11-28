@@ -15,21 +15,44 @@ const island=new THREE.Mesh(new THREE.BoxGeometry(2.55,.12,1.8),new THREE.MeshSt
 const border=new THREE.Mesh(new THREE.BoxGeometry(2.56,.025,1.81),new THREE.MeshStandardMaterial({color:'#a2bb83'}));border.position.y=-.058;scene.add(border);
 const grid=new THREE.GridHelper(24,48,0x9bad9d,0xc4d1c2);grid.position.y=-.049;grid.material.transparent=true;grid.material.opacity=.24;scene.add(grid);
 
-const invisible=new THREE.MeshBasicMaterial({visible:false});const loader=new THREE.TextureLoader();const mats={};
-function material(name){if(!name)return invisible;let key=name.split('/').pop();if(!['gas_pump','nozzle'].includes(key))return invisible;if(!mats[key]){const map=loader.load('/textures/'+key+'.png');map.colorSpace=THREE.SRGBColorSpace;map.magFilter=THREE.NearestFilter;map.minFilter=THREE.NearestFilter;mats[key]=new THREE.MeshStandardMaterial({map,roughness:.78,transparent:true,alphaTest:.1,side:THREE.DoubleSide})}return mats[key]}
-function model(data,yOffset=0){
- const group=new THREE.Group(),faces=['east','west','up','down','south','north'];
- for(const e of data.elements){
-  const size=e.to.map((v,i)=>v-e.from[i]),center=e.to.map((v,i)=>(v+e.from[i])/2-(i===1?yOffset:8));
-  const geo=new THREE.BoxGeometry(...size),uv=geo.attributes.uv;
-  const materials=faces.map((face,i)=>{const f=e.faces[face];if(!f)return invisible;const [u0,v0,u1,v1]=f.uv||[0,0,16,16];const pts=[[u0,16-v0],[u1,16-v0],[u0,16-v1],[u1,16-v1]];const turns=((f.rotation||0)/90)%4;for(let k=0;k<4;k++){let j=k;for(let n=0;n<turns;n++)j=[1,3,0,2][j];uv.setXY(i*4+k,pts[j][0]/16,pts[j][1]/16)}return material(data.textures[f.texture.slice(1)])});
-  uv.needsUpdate=true;const cube=new THREE.Mesh(geo,materials);cube.castShadow=true;cube.receiveShadow=true;
-  if(e.rotation&&e.rotation.angle){const p=e.rotation.origin.map((v,i)=>v-(i===1?yOffset:8)),pivot=new THREE.Group();pivot.position.set(...p);cube.position.set(...center.map((v,i)=>v-p[i]));pivot.rotation[e.rotation.axis]=THREE.MathUtils.degToRad(e.rotation.angle);pivot.add(cube);group.add(pivot)}else{cube.position.set(...center);group.add(cube)}
- }group.scale.setScalar(1/16);return group;
-}
-async function getModel(name){const r=await fetch('/models/'+name+'.json');if(!r.ok)throw Error('Model lipsă: '+name);return r.json()}
-const soft=(c)=>new THREE.MeshStandardMaterial({color:c,roughness:.85});
+// Original block-built concept: dimensions are in Minecraft blocks.
+const soft=(c,roughness=.78)=>new THREE.MeshStandardMaterial({color:c,roughness});
 function box(size,mat,pos,parent){const mesh=new THREE.Mesh(new THREE.BoxGeometry(...size),mat);mesh.position.set(...pos);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh}
+const red=soft('#c83132'),redDark=soft('#8f2024'),redLight=soft('#e04b43'),cream=soft('#f1eee0'),black=soft('#20282a'),steel=soft('#9faeb0',.45),green=soft('#60a770'),amber=soft('#edb552');
+const pump=new THREE.Group();scene.add(pump);
+// Body 0.94 × 1.84 × 0.72, raised on a short dark plinth.
+box([.99,.12,.77],black,[0,.12,0],pump);
+box([.94,1.53,.72],red,[0,.945,0],pump);
+box([.99,.10,.77],redDark,[0,1.76,0],pump);
+box([.93,.10,.72],redLight,[0,1.86,0],pump);
+// Front white fascia, display surround, readout, buttons and lower access door.
+box([.79,.56,.035],cream,[0,1.43,.377],pump);
+box([.68,.30,.024],black,[0,1.49,.409],pump);
+box([.63,.25,.012],soft('#b7d1c0'),[0,1.49,.427],pump);
+box([.54,.23,.025],redDark,[0,.60,.379],pump);
+box([.48,.17,.014],red,[0,.60,.398],pump);
+box([.63,.025,.026],cream,[0,.86,.382],pump);
+for(const [x,m] of [[-.23,green],[0,amber],[.23,green]]){box([.13,.075,.025],black,[x,1.22,.410],pump);box([.10,.046,.012],m,[x,1.22,.43],pump)}
+// Integrated nozzle cradle on the right side; hose exits above it.
+box([.08,.50,.34],redDark,[.51,1.31,.04],pump);
+box([.10,.32,.25],black,[.57,1.29,.04],pump);
+box([.12,.05,.29],steel,[.58,1.08,.04],pump);
+box([.15,.11,.16],black,[.55,1.61,.02],pump);
+// A hand-authored label is preview artwork, not a resource-pack texture.
+function label(text,sub){const c=document.createElement('canvas');c.width=512;c.height=192;const q=c.getContext('2d');q.fillStyle='#b7d1c0';q.fillRect(0,0,512,192);q.fillStyle='#20342e';q.font='bold 54px monospace';q.fillText(text,22,78);q.font='bold 25px sans-serif';q.fillText(sub,25,137);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const plane=new THREE.Mesh(new THREE.PlaneGeometry(.57,.215),new THREE.MeshBasicMaterial({map:tex}));plane.position.set(0,1.49,.436);pump.add(plane)}
+label('00.00 L','HORIZON   /   COMBUSTIBIL');
+const nameCanvas=document.createElement('canvas');nameCanvas.width=512;nameCanvas.height=100;const nc=nameCanvas.getContext('2d');nc.fillStyle='#8f2024';nc.fillRect(0,0,512,100);nc.font='bold 48px sans-serif';nc.fillStyle='#fff1de';nc.textAlign='center';nc.fillText('HORIZON',256,65);const nt=new THREE.CanvasTexture(nameCanvas);nt.colorSpace=THREE.SRGBColorSpace;const nameplate=new THREE.Mesh(new THREE.PlaneGeometry(.62,.11),new THREE.MeshBasicMaterial({map:nt}));nameplate.position.set(0,1.72,.375);pump.add(nameplate);
+// Pistol: grip, guard, trigger, body and metal spout are independently built.
+const nozzlePivot=new THREE.Group();scene.add(nozzlePivot);
+box([.13,.25,.13],redDark,[0,-.075,0],nozzlePivot);
+box([.15,.095,.27],red,[0,.065,.085],nozzlePivot);
+box([.12,.075,.18],black,[0,.075,-.095],nozzlePivot);
+box([.08,.075,.25],steel,[0,.085,.30],nozzlePivot);
+box([.09,.075,.045],steel,[0,.105,.445],nozzlePivot);
+box([.055,.025,.16],steel,[0,-.13,.105],nozzlePivot);
+box([.055,.14,.025],steel,[0,-.065,.18],nozzlePivot);
+box([.055,.08,.035],black,[0,-.02,.075],nozzlePivot);
+const nozzleHosePoint=new THREE.Vector3(0,-.205,-.035);
 // Schematic Minecraft-like figure; not the in-game skin or proof of an actual arm pose.
 const player=new THREE.Group(),skin=soft('#dba577'),shirt=soft('#4e8b81'),pants=soft('#38445a'),boots=soft('#303541'),hair=soft('#49382c');scene.add(player);
 box([.5,.68,.26],shirt,[0,1.04,0],player);box([.5,.5,.5],skin,[0,1.63,0],player);box([.51,.105,.51],hair,[0,1.835,0],player);
@@ -40,16 +63,19 @@ const heldArm=new THREE.Group();player.add(heldArm);const armMesh=box([.21,1,.21
 const localHand=new THREE.Vector3(-.30,1.22,.35),shoulder=new THREE.Vector3(-.36,1.33,0);
 function connectArm(){const v=localHand.clone().sub(shoulder), mid=shoulder.clone().add(localHand).multiplyScalar(.5);heldArm.position.copy(mid);heldArm.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.clone().normalize());armMesh.scale.y=v.length();}
 connectArm();
-const hose=new THREE.Group();scene.add(hose);const hoseMat=soft('#202b28'), hoseGeometry=new THREE.CylinderGeometry(.03125,.03125,1,10);const hoseParts=[];for(let i=0;i<8;i++){let m=new THREE.Mesh(hoseGeometry,hoseMat);m.castShadow=true;hose.add(m);hoseParts.push(m)}
-const nozzlePivot=new THREE.Group();scene.add(nozzlePivot);const start=new THREE.Vector3(-.575,1.64,.1125), rest=new THREE.Vector3(-.5525,1.5,-.18);
-let held=true, first=false;const distance=document.querySelector('#distance'),angle=document.querySelector('#angle');let nozzleModel;
-function hermite(a,t,b,u,s){const s2=s*s,s3=s2*s;return a.clone().multiplyScalar(2*s3-3*s2+1).addScaledVector(b,-2*s3+3*s2).addScaledVector(t,s3-2*s2+s).addScaledVector(u,s3-s2)}
+const hose=new THREE.Group();scene.add(hose);const hoseMat=soft('#202426'), hoseGeometry=new THREE.CylinderGeometry(.034,.034,1,10);const hoseParts=[];for(let i=0;i<16;i++){let m=new THREE.Mesh(hoseGeometry,hoseMat);m.castShadow=true;hose.add(m);hoseParts.push(m)}
+// Endpoints are explicit: the fixed outlet and the nozzle connector follow
+// their own transforms. Sag is an illustrative curve, not a physics solver.
+const start=new THREE.Vector3(.625,1.61,.02), rest=new THREE.Vector3(.65,1.31,.06);
+let held=true, first=false;const distance=document.querySelector('#distance'),angle=document.querySelector('#angle');
+function hosePoint(a,b,t,sag){const point=a.clone().lerp(b,t);point.y=Math.max(.09,point.y-4*sag*t*(1-t));return point}
 function update(){
  const d=+distance.value, a=THREE.MathUtils.degToRad(+angle.value);document.querySelector('#distance-value').textContent=d.toFixed(1).replace('.',',')+' blocuri';document.querySelector('#angle-value').textContent=angle.value+'°';
  player.position.set(Math.cos(a)*d,0,Math.sin(a)*d);const dir=new THREE.Vector3(-player.position.x,0,-player.position.z).normalize();player.rotation.y=Math.atan2(dir.x,dir.z);player.updateMatrixWorld(true);const hand=player.localToWorld(localHand.clone());
- nozzlePivot.position.copy(held?hand:rest);nozzlePivot.rotation.y=held?player.rotation.y:Math.PI;
- const end=(held?hand.clone().addScaledVector(dir,.22):rest.clone()),tan=held?dir.clone().multiplyScalar(3):new THREE.Vector3(0,3,0), startTan=new THREE.Vector3(0,-5,0);
- let prev=start;for(let i=0;i<8;i++){const p=hermite(start,startTan,end,tan,(i+1)/8),delta=p.clone().sub(prev),m=hoseParts[i];m.position.copy(prev).add(p).multiplyScalar(.5);m.scale.set(1,delta.length(),1);if(delta.lengthSq()>1e-9)m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());m.visible=!(first&&held&&i>=6);prev=p;}
+ nozzlePivot.position.copy(held?hand:rest);nozzlePivot.rotation.y=held?player.rotation.y:0;nozzlePivot.updateMatrixWorld(true);
+ const end=nozzlePivot.localToWorld(nozzleHosePoint.clone());
+ const sag=held?Math.max(.12,.7-start.distanceTo(end)*.10):.24;
+ let prev=start;for(let i=0;i<16;i++){const p=hosePoint(start,end,(i+1)/16,sag),delta=p.clone().sub(prev),m=hoseParts[i];m.position.copy(prev).add(p).multiplyScalar(.5);m.scale.set(1,delta.length(),1);if(delta.lengthSq()>1e-9)m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());m.visible=!(first&&held&&i>=14);prev=p;}
  heldArm.visible=held;handMesh.visible=held;document.querySelector('#mode').textContent=held?'PISTOL ÎN MÂNĂ':'PISTOL LA POMPĂ';
  document.querySelector('#held').classList.toggle('active',held);document.querySelector('#docked').classList.toggle('active',!held);
  document.querySelector('#orbit').classList.toggle('active',!first);document.querySelector('#first').classList.toggle('active',first);
@@ -58,5 +84,5 @@ function update(){
 function reset(){first=false;camera.position.set(5.8,3.5,6.2);controls.target.set(.45,1,0);controls.update();update()}
 distance.addEventListener('input',update);angle.addEventListener('input',update);document.querySelector('#held').onclick=()=>{held=true;update()};document.querySelector('#docked').onclick=()=>{held=false;update()};document.querySelector('#orbit').onclick=reset;document.querySelector('#first').onclick=()=>{first=true;update()};document.querySelector('#reset').onclick=reset;
 new ResizeObserver(()=>{const w=view.clientWidth,h=view.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}).observe(view);
-Promise.all([getModel('gas_pump_bottom'),getModel('gas_pump_top'),getModel('nozzle')]).then(([bottom,top,nozzle])=>{scene.add(model(bottom));const t=model(top);t.position.y=1;scene.add(t);nozzleModel=model(nozzle,8);nozzlePivot.add(nozzleModel);loading.hidden=true;reset()}).catch(err=>{console.error(err);loading.textContent='Nu s-au putut încărca modelele. Reîncarcă pagina.'});
+loading.hidden=true;reset();
 function frame(){requestAnimationFrame(frame);if(!first)controls.update();renderer.render(scene,camera)}frame();

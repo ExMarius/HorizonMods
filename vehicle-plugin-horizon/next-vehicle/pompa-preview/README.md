@@ -1,5 +1,7 @@
-# Preview interactiv: pompa și furtunul
+# Preview 3D: pompă roșie nouă
 
-`npm install && npm start` pornește preview-ul pe portul 4185, accesibil pe `0.0.0.0`. Folosește modelele și texturile pompei și ale duzei din `vehicle-plugin/src/main/resources/assets/vehicle`, curba Hermite și opt segmente inspirate de `GasPumpRig`. Jucătorul este doar un model schematic; poziția mâinii, perspectiva, rotațiile item display și execuția în Minecraft nu sunt reprezentate cu fidelitate garantată. Nu modifică pompa sau serverul.
+`npm install && npm start` pornește preview-ul pe portul 4185, accesibil pe `0.0.0.0`. Pompa, pistolul și furtunul sunt concepute de la zero în `app.js`; nu sunt modelele vechi din joc. Corpul are aproximativ 0,94 × 1,84 × 0,72 blocuri, afișaj, butoane, locaș lateral și pistol roșu cu țeavă metalică. Textul este desenat în browser, nu este încă un asset Minecraft.
 
-Modul actual Paper există deja: `/vehicle gaspump`, click pe partea de sus pentru a lua/depozita duza, alimentare gratuită a celui mai apropiat vehicul la 4 blocuri (în circa 15 secunde pentru gol-plin); distanța maximă implicită a furtunului este 10 blocuri. Nu are rezervor sau plată. Codul pompei este marcat în sursă ca înghețat și validat anterior, deci nu este modificat de acest preview. Cere confirmare pentru orice reproiectare a comportamentului sau modelului.
+Furtunul are 16 segmente; capătul de la pompă este fix, iar celălalt se calculează din transformarea conectorului pistolului. O curbă cu lăsare calculată aproximează greutatea furtunului. Aceasta este o demonstrație, nu un model fizic sau o implementare Paper. Jucătorul, mâna și perspectiva sunt schematice. Aspectul, punctele exacte de prindere, distanța și funcționarea trebuie confirmate de utilizator și apoi validate în Minecraft.
+
+Nu modifică serverul. Pompa veche există deja în plugin, iar codul ei este marcat ca validat și înghețat; acest concept este separat. Nu se înlocuiesc pompele existente, datele sau resource pack-ul înainte de confirmarea designului și stabilirea compatibilității.
