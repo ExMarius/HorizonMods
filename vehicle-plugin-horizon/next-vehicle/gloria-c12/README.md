@@ -9,3 +9,5 @@ Origini 1:1 (unități Blockbench): `body` [0,0,0], `wheel_fl` [-17,12.4,-16], `
 Preview-ul arată animații demonstrative, nu fizică sau interacțiuni live. Geometria completă și rotațiile arbitrare pot necesita împărțire în modele/item displays și adaptare la limitele Minecraft: `.bbmodel` nu este un resource pack direct instalabil. Nu s-a schimbat pompa, serverul sau pluginul.
 
 Referință vizuală: https://umas.ro/muzeu (fotografie Gloria CP12). Componente și culori conform cerinței utilizatorului; nu există documentație metrologică a exemplarului de referință în repository.
+
+Revizia exterioară: gâtul de alimentare este un cub continuu înclinat; buncărul deschis are pereți evazați crem, rama roșie și grâu; spatele are capotă în pantă, grile, eșapament și scară; două brațe fixe leagă hederul de axul rabatorului. Fuliile și apărătorile sunt geometrie în relief, iar laturile au bandă crem. Piesele conice și cilindrice sunt aproximări din cuburi, nu suprafețe perfect rotunde. Pistoanele hidraulice și suporturile sunt reprezentări vizuale: preview-ul nu rezolvă automat telescoparea și eventualele intersecții la toate unghiurile.

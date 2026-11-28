@@ -25,6 +25,13 @@ def cube(g,name,a,b,color,rot=None,origin=None):
  if rot:e['rotation']=rot
  elements.append(e);g['children'].append(id)
 def box(g,n,x1,y1,z1,x2,y2,z2,c):cube(g,n,[x1,y1,z1],[x2,y2,z2],c)
+def beam_yz(g,n,x,width,y1,z1,y2,z2,thickness,c):
+ # Rectangular beam aligned to endpoints in the YZ plane, one solid rotated cube.
+ y,z=(y1+y2)/2,(z1+z2)/2;length=math.hypot(y2-y1,z2-z1);angle=math.degrees(math.atan2(-(y2-y1),z2-z1))
+ cube(g,n,[x-width/2,y-thickness/2,z-length/2],[x+width/2,y+thickness/2,z+length/2],c,[angle,0,0],[x,y,z])
+def beam_xy(g,n,x1,y1,x2,y2,z1,z2,thickness,c):
+ x,y=(x1+x2)/2,(y1+y2)/2;length=math.hypot(x2-x1,y2-y1);angle=-math.degrees(math.atan2(x2-x1,y2-y1))
+ cube(g,n,[x-thickness/2,y-length/2,z1],[x+thickness/2,y+length/2,z2],c,[0,0,angle],[x,y,(z1+z2)/2])
 # Longitudinal coordinates: user's original Z scaled by 1.6; 121.6/16=7.60m.
 def Z(z):return z*1.6
 body=group('body',[0,0,0]);seat=group('seat_driver',[-3,26,Z(-15)],body)
@@ -38,12 +45,26 @@ for side in (-1,1):
  for z in (1,9,17):
   box(body,'capac vizitare',min(x,x+side*.32),20,Z(z),max(x,x+side*.32),25,Z(z+5),'rosu_inchis')
   box(body,'capac interior',min(x+side*.32,x+side*.44),20.5,Z(z+.3),max(x+side*.32,x+side*.44),24.5,Z(z+4.7),'rosu')
- # transmission discs, each an angular ring of raised bars
- for y,z,r in [(19,Z(2),3.1),(22,Z(11),4.0),(18,Z(20),2.3)]:
+ # Cream contrast strip interrupted only by raised mechanical covers.
+ box(body,'banda crem laterala',min(x+side*.48,x+side*.58),26,Z(-18),max(x+side*.48,x+side*.58),28,Z(28),'crem')
+ # Five thick raised pulleys per side, with metal faces and dark hubs.
+ pulley=[(19,Z(-2),2.7),(21,Z(4),3.6),(19.3,Z(10),2.25),(22.0,Z(16),3.0),(19,Z(23),2.4)]
+ px=x+side*1.0;lo,hi=sorted((x+side*.35,x+side*1.85))
+ for y,z,r in pulley:
+  box(body,'disc fulie',lo,y-r*.65,z-r*.46,hi,y+r*.65,z+r*.46,'otel')
+  box(body,'disc fulie',lo,y-r*.46,z-r*.65,hi,y+r*.46,z+r*.65,'otel')
   for j in range(12):
-   a=j*30;cube(body,'fulie segment', [x+min(0,side*.35),y+r-.45,z-.83],[x+max(0,side*.35),y+r+.35,z+.83], 'sasiu',[a,0,0],[x,y,z])
- # protective belt run
- box(body,'curea de transmisie',min(x+side*.5,x+side*.8),20.4,Z(2),max(x+side*.5,x+side*.8),21.25,Z(20),'negru')
+   angle=j*30;cube(body,'coroana fulie',[lo,y+r-.5,z-r*math.tan(math.pi/12)],[hi,y+r-.05,z+r*math.tan(math.pi/12)],'metal',[angle,0,0],[px,y,z])
+  box(body,'butuc fulie',lo,y-.65,z-.65,hi,y+.65,z+.65,'negru')
+ # Connecting upper and lower belt runs, physically separate from body panels.
+ belt_x=x+side*1.96
+ for (y1,z1,r1),(y2,z2,r2) in zip(pulley,pulley[1:]):
+  beam_yz(body,'curea sus',belt_x,.45,y1+r1,z1,y2+r2,z2,.38,'negru')
+  beam_yz(body,'curea jos',belt_x,.45,y1-r1,z1,y2-r2,z2,.38,'negru')
+ # Partial safety guard: a rail and two short anchored ends, not a solid cover.
+ gx=x+side*2.25
+ beam_yz(body,'aparatoare curea',gx,.3,26,Z(-3),27,Z(24),.45,'otel')
+ for z in (Z(-3),Z(24)):box(body,'suport aparatoare',min(x,gx),23,z-.3,max(x,gx),26,z+.3,'otel')
 # cab, structural frame only: actual openings (not opaque window blocks)
 for x in (-10,8.6):
  for z in (Z(-22),Z(-8)-.8):box(body,'stalp cabina',x,29,z,x+1,46,z+.8,'negru')
@@ -68,21 +89,42 @@ box(body,'maneta',2.8,30,Z(-15),3.1,34,Z(-15)+.3,'otel');box(body,'maneta cap',2
 box(body,'platforma acces',-17.4,23,Z(-19),-12.9,24,Z(-11),'sasiu')
 for z in (Z(-19),Z(-12)):box(body,'montant scara',-17.1,6,z,-16.45,24,z+.65,'otel')
 for y in (7,10.5,14,17.5,21):box(body,'treapta',-17.3,y,Z(-19),-16.2,y+.45,Z(-11.5),'metal')
-# open grain bin, hollow interior and grain surface
-box(body,'buncar podea',-12,29.5,Z(-6),12,30.5,Z(12),'rosu_inchis')
-for x in (-12,11):box(body,'buncar perete lateral',x,30,Z(-6),x+1,48,Z(12),'rosu')
-for z in (Z(-6),Z(12)-1):box(body,'buncar perete capat',-12,30,z,12,48,z+1,'rosu')
-box(body,'grau in buncar',-10.9,43.4,Z(-6)+1.1,10.9,43.8,Z(12)-1.1,'grau')
+# Large mirrors on long metal arms, black windscreen wiper and access rails.
+for side in (-1,1):
+ x=side*10; outer=side*15.5
+ box(body,'brat oglinda',min(x,outer),40,Z(-22)+.3,max(x,outer),40.55,Z(-22)+.8,'otel')
+ box(body,'oglinda cadru',min(outer-side*1.0,outer+side*1.0),38,Z(-22)-.35,max(outer-side*1.0,outer+side*1.0),43,Z(-22)+.35,'negru')
+ box(body,'oglinda sticla',min(outer-side*.75,outer+side*.75),38.3,Z(-22)-.42,max(outer-side*.75,outer+side*.75),42.7,Z(-22)-.34,'metal')
+beam_xy(body,'stergator',-6,31,4.5,38,Z(-22)-.17,Z(-22)+.15,.38,'negru')
+for z in (Z(-19),Z(-11.5)):
+ box(body,'montant balustrada acces',-17.2,24,z,-16.7,32,z+.5,'otel')
+box(body,'mana curenta acces',-17.2,31.5,Z(-19),-16.7,32,Z(-11),'metal')
+# Open-top cream grain hopper: slanted panels flare out from base to lip.
+box(body,'buncar podea',-8.5,29.5,Z(-6)+2,8.5,30.5,Z(12)-2,'rosu_inchis')
+for side in (-1,1):
+ beam_xy(body,'buncar perete evazat',side*8.5,30,side*12,48,Z(-6),Z(12),.9,'crem')
+ box(body,'bordura rosie buncar',min(side*11.5,side*12.5),47.5,Z(-6),max(side*11.5,side*12.5),48.3,Z(12),'rosu')
+# End panels tilt outward too, leaving an unobstructed top and gold surface.
+beam_yz(body,'buncar fata',0,24,30,Z(-6)+2,48,Z(-6),.85,'crem')
+beam_yz(body,'buncar spate',0,24,30,Z(12)-2,48,Z(12),.85,'crem')
+for z in (Z(-6)-.2,Z(12)-.5):box(body,'bordura rosie capat',-12.5,47.5,z,12.5,48.3,z+.7,'rosu')
+box(body,'grau in buncar',-10.8,43.4,Z(-6)+1.4,10.8,43.8,Z(12)-1.4,'grau')
 for x in (-8,-3,2,7):
  for z in (-3,1,5,9):box(body,'granule grau',x,43.8,Z(z),x+1.3,44.05,Z(z)+1.4,'grau_lumina')
-# rear engine enclosure and slatted intake
-box(body,'compartiment motor',-12,25,Z(12),12,44,Z(28),'rosu')
-for x in (-12.35,12):
- box(body,'rama grila motor',x,31,Z(17),x+.35,41,Z(26),'negru')
- for z in (17.5,19,20.5,22,23.5,25):box(body,'fanta ventilatie',x-.03,31.5,Z(z),x+.4,40.5,Z(z)+.6,'otel')
-box(body,'esapament',8,44,Z(23),9.8,50,Z(23)+1.8,'negru');box(body,'capac esapament',7.8,50,Z(23)-.2,10,50.5,Z(23)+2,'sasiu')
-for x in (-9,9):box(body,'bara scara spate',x,9,Z(28),x+.55,35,48,'otel')
-for y in (10,14,18,22,26,30,34):box(body,'treapta scara spate',-9,y,46.7,9.55,y+.4,48,'metal')
+# Engine and rear separators: horizontal lower body with a pitched rear hood.
+box(body,'motor baza',-12,25,Z(12),12,35,Z(25),'rosu')
+box(body,'capac motor central ridicat',-9,35,Z(12),9,43,Z(22),'rosu')
+beam_yz(body,'capota spate inclinata',0,24,40,Z(22),28,Z(28),1.2,'rosu')
+for side in (-1,1):
+ x=side*12
+ box(body,'rama grila motor',min(x,x+side*.35),29,Z(14),max(x,x+side*.35),35,Z(22),'negru')
+ for z in (14.5,16,17.5,19,20.5):box(body,'lamela radiator',min(x+side*.36,x+side*.5),29.5,Z(z),max(x+side*.36,x+side*.5),34.5,Z(z)+.55,'otel')
+box(body,'esapament vertical',8,43,Z(18),9.8,49,Z(18)+1.8,'negru')
+box(body,'cot esapament',8,49,Z(18)-1.2,9.8,50.5,Z(18)+1.8,'sasiu')
+for x in (-9,9):box(body,'bara scara spate',x,9,Z(28),x+.55,39,48,'otel')
+for y in (10,14,18,22,26,30,34,38):box(body,'treapta scara spate',-9,y,46.7,9.55,y+.4,48,'metal')
+for x in (-9,9):box(body,'balustrada spate',x,39,46.5,x+.55,46,47.1,'metal')
+box(body,'mana curenta spate',-9,45.5,46.5,9.55,46.05,47.1,'metal')
 box(body,'punte spate',-14,6,Z(21)-1.2,14,8,Z(21)+1.2,'sasiu')
 # wheels: polygon tread rings and smaller segmented cream rims; wheel group pivot is axle.
 def wheel(name,x,y,z,r,width,count):
@@ -118,23 +160,34 @@ box(auger,'tub descarcare',-13.6,36.4,Z(2),-10.4,39.6,Z(2)+38,'crem')
 box(auger,'manson de capat',-13.7,36.3,Z(2)+36,-10.3,39.7,Z(2)+38,'negru')
 # header: exact adjusted hinge; reel nested under header with its own axis
 header=group('header_assembly',[0,20,Z(-18)])
-# Inclined feeder as layered stepped plates, no multi-axis export claim.
-for i in range(8):
- t=i/8; z=Z(-18)+t*(Z(-32)-Z(-18));yn=20+t*(7-20)
- box(header,'transportor treapta',-7,yn-2,z-3,7,yn+2,z+.1,'rosu_inchis')
-for x in (-6,5):box(header,'cilindru hidraulic',x,8,Z(-29),x+1,15,Z(-22),'metal')
+# Continuous, solid feeder housing from hinge to header: no stepped slices.
+beam_yz(header,'gat transportor neted',0,14,7,Z(-32),20,Z(-18),5,'rosu_inchis')
+for x in (-7.3,7.3):
+ beam_yz(header,'sina laterala transportor',x,.6,7,Z(-32),20,Z(-18),.65,'metal')
+ # Thick black barrel and a silver piston rod, both inside the articulated header.
+ beam_yz(header,'cilindru hidraulic corp',x,1.6,6.0,Z(-30),10.5,Z(-25),1.6,'negru')
+ beam_yz(header,'cilindru hidraulic tija',x,.72,10.2,Z(-25.3),16,Z(-20),.72,'metal')
+ for y,z in [(6,Z(-30)),(16,Z(-20))]:box(header,'articulatie cilindru',x-.9,y-.9,z-.8,x+.9,y+.9,z+.8,'otel')
 # trough rear wall, solid floor and end dividers
 box(header,'podea heder',-33.6,1.5,Z(-42),33.6,2.4,Z(-32),'rosu_inchis')
 box(header,'perete spate heder',-33.6,2.4,Z(-32)-1,33.6,12,Z(-32),'rosu')
 for side in (-1,1):
- x=side*32;box(header,'cap lateral',x-1.4,2,Z(-42),x+1.4,10,Z(-32),'rosu')
- box(header,'despartitor lan',x-1.6,1.5,Z(-46),x+1.6,3,Z(-42),'rosu_lumina')
+ x=side*32;box(header,'cap lateral',x-1.4,2,Z(-42),x+1.4,10,Z(-32),'crem')
+ # Six progressively narrower sections approximate a tapered crop divider.
+ for k in range(6):
+  z1=Z(-46)+(Z(-42)-Z(-46))*k/6;z2=Z(-46)+(Z(-42)-Z(-46))*(k+1)/6
+  w=.25+1.35*(k+1)/6;box(header,'torpila conica',x-w,1.5,z1,x+w,2.4+1.1*(k+1)/6,z2,'crem')
 box(header,'bara taiere',-33,1,Z(-42)-.45,33,1.8,Z(-42)+.5,'metal')
 for i in range(33):
  x=-32+i*2;box(header,'dinte taiere',x,1,Z(-42)-1.6,x+1.1,1.55,Z(-42),'crem')
-box(header,'ax snec',-32,4.4,Z(-35)-1.4,32,6.6,Z(-35)+1.4,'otel')
+box(header,'snec miez',-32,3.8,Z(-35)-1.8,32,7.2,Z(-35)+1.8,'metal')
 for i in range(45):
  x=-31+i*1.4;a=i*33;cube(header,'spirala snec',[x,6.6,Z(-35)-.35],[x+.7,7.15,Z(-35)+.35],'metal',[a,0,0],[x,5.5,Z(-35)])
+# Fixed side arms belong to the header, not to the rotating reel.
+for x in (-30,30):
+ beam_yz(header,'brat rabator rosu',x,1.2,9,Z(-32),12,Z(-39),1.2,'rosu')
+ beam_yz(header,'sprijin rabator metalic',x,.65,5.5,Z(-32),12,Z(-39),.65,'metal')
+ box(header,'lagar ax rabator',x-.9,11.1,Z(-39)-.9,x+.9,12.9,Z(-39)+.9,'sasiu')
 reel=group('reel',[0,12,Z(-39)],header)
 box(reel,'ax rabator',-32.5,11.6,Z(-39)-.4,32.5,12.4,Z(-39)+.4,'sasiu')
 for j in range(6):
