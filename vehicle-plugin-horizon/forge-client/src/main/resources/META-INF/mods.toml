@@ -5,7 +5,7 @@ clientSideOnly=true
 
 [[mods]]
 modId="horizonvehiclepose"
-version="0.1.0"
+version="0.1.1"
 displayName="Horizon Vehicle Pose"
 authors="HorizonMods"
 description='''Client-side driver pose for Horizon Paper vehicles.'''

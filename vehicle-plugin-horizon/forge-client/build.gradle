@@ -1,22 +1,12 @@
 plugins {
     id 'java'
     id 'net.minecraftforge.gradle' version '7.0.29'
-    id 'net.minecraftforge.renamer' version '1.1.8'
 }
 
 group = 'ro.horizon'
-version = '0.1.0'
+version = '0.1.1'
 base.archivesName = 'horizon-vehicle-pose-forge-1.21.4'
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-
-renamer.enableMixinRefmaps {
-    config 'horizonvehiclepose.mixins.json'
-    refMap = 'horizonvehiclepose.refmap.json'
-}
-renamer.classes(tasks.named('jar', Jar)) {
-    archiveClassifier = 'srg'
-    mappings renamer.mixin.generatedMappings
-}
 
 minecraft {
     mappings channel: 'official', version: '1.21.4'
@@ -36,9 +26,6 @@ repositories {
 }
 dependencies {
     implementation minecraft.dependency('net.minecraftforge:forge:1.21.4-54.1.0')
-    annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
 }
-renamer.mappings(minecraft.dependency.toSrg)
-
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8'; options.release = 21 }
 tasks.named('jar', Jar) { manifest { attributes['MixinConfigs'] = 'horizonvehiclepose.mixins.json' } }

@@ -8,9 +8,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import ro.horizon.vehiclepose.SeatRendering;
 
-@Mixin(PlayerModel.class)
+@Mixin(value = PlayerModel.class, remap = false)
 public abstract class PlayerModelMixin {
-    @Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/PlayerRenderState;)V", at = @At("TAIL"))
+    @Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/PlayerRenderState;)V", at = @At("TAIL"), remap = false, require = 0)
     private void horizon$steeringPose(PlayerRenderState state, CallbackInfo ci) {
         SeatRendering.Seat seat = SeatRendering.seat(state);
         if (seat == null || !seat.driver() || state.isSpectator) return;
