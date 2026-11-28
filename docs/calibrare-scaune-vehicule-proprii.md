@@ -22,12 +22,12 @@ Situația după înlocuirea calului cu porcul: pozițiile pentru cele șase mode
 
 ## Prima poziționare din geometrie
 
-Pentru șezut s-a folosit ca aproximare poziția articulației șoldului modelului de jucător la 12 pixeli (0,75 blocuri) deasupra originii sale, nu poziția picioarelor. Din vârful pernei în coordonate de vehicul se scade 0,75, apoi cei 0,25 adăugați de `seatOffset`. Corecția 0,7 × scala porcului rămâne în rig. Aceasta este o estimare geometrică, nu dovedește poziția finală a jucătorului: atașamentul pasagerului, animația de călărie, poziția ancorei și randarea clientului trebuie confirmate în joc.
+Feedback în joc: scăderea suplimentară de 0,75 blocuri din prima încercare a pus personajul în podea; presupunerea privind poziția șoldului era greșită și a fost eliminată. Noul reper este suprafața pernei: din coordonata acesteia se scade doar 0,25, valoarea adăugată ulterior de `seatOffset`. Corecția 0,7 × scala porcului rămâne în rig, conform referinței clasice. Aceasta nu dovedește poziția finală a jucătorului: atașamentul pasagerului, animația și randarea clientului trebuie confirmate în joc.
 
-- Platformă: cuburile 140 și 149, vârf y=12,26, centre (5,52/10,48; 4,8), cu origine 8 și 4 pixeli/bloc: suprafața este la y=1,065; `sourceOffset.y=0,065`.
-- UTB: perna șoferului y=20,8 și bancheta y=19,2 pixeli după corecția de scară 2; `seat()` primește y=4,8 și respectiv 3,2 pixeli, după scăderea celor 12+4 pixeli.
-- Coupe: vârful pernelor y=12,3, centre x=5/11, z=4,2/-1,85 în modelul la scară 2; suprafața y=0,5375, `sourceOffset.y=-0,4625`.
-- Logan: pernele din modelul editat de utilizator au vârf y=2,85 față și 3,7 spate; transformarea este la scară 1,7 și `bodyOrigin.y=1,12625`. Centrele pe axa longitudinală sunt 7,725 și -1,2 pixeli. Rezultă înălțimile de suprafață 0,5790625/0,669375 și `sourceOffset.y=-0,4209375/-0,330625`.
+- Platformă: cuburile 140 și 149, vârf y=12,26, centre (5,52/10,48; 4,8), cu origine 8 și 4 pixeli/bloc: suprafața este la y=1,065; `sourceOffset.y=0,815`.
+- UTB: perna șoferului y=20,8 și bancheta y=19,2 pixeli după corecția de scară 2; `seat()` primește y=16,8 și respectiv 15,2 pixeli, după scăderea celor 4 pixeli.
+- Coupe: vârful pernelor y=12,3, centre x=5/11, z=4,2/-1,85 în modelul la scară 2; suprafața y=0,5375, `sourceOffset.y=0,2875`.
+- Logan: pernele din modelul editat de utilizator au vârf y=2,85 față și 3,7 spate; transformarea este la scară 1,7 și `bodyOrigin.y=1,12625`. Centrele pe axa longitudinală sunt 7,725 și -1,2 pixeli. Rezultă înălțimile de suprafață 0,5790625/0,669375 și `sourceOffset.y=0,3290625/0,419375`.
 - Horizon Go Kart: perna are centrul x=8, z=5,9 și vârful y=3,3, transformată cu centrul caroseriei y=0,57 și scara (1,18; 1,14; 1,18).
 - Horizon Off Roader: pernele față au centrul x=12,825/3,175, z=5,6 și vârf y=6,7; bancheta are centrul z=-6,55 și vârful y=8,8. Se folosesc centrul caroseriei y=0,69 și scara (1,42; 1,38; 1,42).
 

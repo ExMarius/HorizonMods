@@ -97,7 +97,7 @@ public record LandVehicleSpec(
             // User-edited cushion centre (8, 3.3, 5.9); BODY centre y=.57,
             // scale (1.18,1.14,1.18), model origin (8,8,8).
             List.of(new Seat(true, new Point(0F, .57F + (3.3F - 8F) * 1.14F / 16F
-                    - .75F - RIDER_HEIGHT_CORRECTION, (5.9F - 8F) * 1.18F / 16F), 0F)),
+                    - RIDER_HEIGHT_CORRECTION, (5.9F - 8F) * 1.18F / 16F), 0F)),
             false, "tow_bar", new Point(0, 0, 0), new Point(0, 0, 0), null, null, List.of(), false
     );
 
@@ -247,12 +247,12 @@ public record LandVehicleSpec(
                     new Wheel(1, false, 14.65F * MODEL_UNIT, 12.4F * MODEL_UNIT, -25.2F * MODEL_UNIT, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F)
             ),
             // Cushion tops are 20.8 and 19.2 source pixels after the model's
-            // 2x correction. Sitting hips are estimated 12 px above rider origin;
-            // seat() additionally receives the common 4 px rider correction.
+            // 2x correction. Subtract the common 4 px rider correction,
+            // which the rig adds back when positioning the seat.
             List.of(
-                    seat(true, 0.0F, 4.8F, -15.8F, 1.0F, 0.0F, 0.0F),
-                    seat(false, -4.8F, 3.2F, -26.5F, 1.0F, 0.0F, 0.0F),
-                    seat(false, 4.8F, 3.2F, -26.5F, 1.0F, 0.0F, 0.0F)
+                    seat(true, 0.0F, 16.8F, -15.8F, 1.0F, 0.0F, 0.0F),
+                    seat(false, -4.8F, 15.2F, -26.5F, 1.0F, 0.0F, 0.0F),
+                    seat(false, 4.8F, 15.2F, -26.5F, 1.0F, 0.0F, 0.0F)
             ),
             true, "tow_bar", new Point(0.0F, 5.0F, -37.45F), new Point(0.0F, 0.0F, 0.0F),
             null, null, List.of(), false
@@ -388,12 +388,12 @@ public record LandVehicleSpec(
                     new Wheel(-1, false, -14.74F / 16F, .390F, -14.5F * 1.42F / 16F, 0, 0, 1.55F, 1.56F, 1.56F)),
             // Cushion centres x=12.825/3.175, z=5.6; rear bench
             // z=-6.55. Tops 6.7/8.8; BODY centre y=.69, scale
-            // (1.42,1.38,1.42). Estimate seated hip 0.75 above rider origin.
+            // (1.42,1.38,1.42). Target the cushion surface.
             List.of(
-                    new Seat(true, new Point(4.825F * 1.42F / 16F, .69F + (6.7F - 8F) * 1.38F / 16F - .75F - RIDER_HEIGHT_CORRECTION, (5.6F - 8F) * 1.42F / 16F), 0),
-                    new Seat(false, new Point(-4.825F * 1.42F / 16F, .69F + (6.7F - 8F) * 1.38F / 16F - .75F - RIDER_HEIGHT_CORRECTION, (5.6F - 8F) * 1.42F / 16F), 0),
-                    new Seat(false, new Point(4.825F * 1.42F / 16F, .69F + (8.8F - 8F) * 1.38F / 16F - .75F - RIDER_HEIGHT_CORRECTION, (-6.55F - 8F) * 1.42F / 16F), 0),
-                    new Seat(false, new Point(-4.825F * 1.42F / 16F, .69F + (8.8F - 8F) * 1.38F / 16F - .75F - RIDER_HEIGHT_CORRECTION, (-6.55F - 8F) * 1.42F / 16F), 0)),
+                    new Seat(true, new Point(4.825F * 1.42F / 16F, .69F + (6.7F - 8F) * 1.38F / 16F - RIDER_HEIGHT_CORRECTION, (5.6F - 8F) * 1.42F / 16F), 0),
+                    new Seat(false, new Point(-4.825F * 1.42F / 16F, .69F + (6.7F - 8F) * 1.38F / 16F - RIDER_HEIGHT_CORRECTION, (5.6F - 8F) * 1.42F / 16F), 0),
+                    new Seat(false, new Point(4.825F * 1.42F / 16F, .69F + (8.8F - 8F) * 1.38F / 16F - RIDER_HEIGHT_CORRECTION, (-6.55F - 8F) * 1.42F / 16F), 0),
+                    new Seat(false, new Point(-4.825F * 1.42F / 16F, .69F + (8.8F - 8F) * 1.38F / 16F - RIDER_HEIGHT_CORRECTION, (-6.55F - 8F) * 1.42F / 16F), 0)),
             false, "tow_bar", new Point(0, 0, 0), new Point(0, 0, 0),
             null, null, List.of(), false
     );
@@ -412,12 +412,12 @@ public record LandVehicleSpec(
                     new Wheel(-1, false, -.875F, .35F, -1.25F, 0, 0.0F, 2.0F, 2.0F, 2.0F),
                     new Wheel(1, false, .875F, .35F, -1.25F, 0, 0.0F, 2.0F, 2.0F, 2.0F)),
             // build_model.py cushions: centre x=5/11, z=4.2/-1.85,
-            // top y=12.3; model origin 8 and scale 2. The rider origin is
-            // estimated 0.75 below the sitting hip; seatOffset adds 0.25.
-            List.of(new Seat(true, new Point(.375F, -.4625F, -.475F), 0),
-                    new Seat(false, new Point(-.375F, -.4625F, -.475F), 0),
-                    new Seat(false, new Point(.375F, -.4625F, -1.23125F), 0),
-                    new Seat(false, new Point(-.375F, -.4625F, -1.23125F), 0)),
+            // top y=12.3; model origin 8 and scale 2. seatOffset adds 0.25,
+            // so subtract it from the cushion height.
+            List.of(new Seat(true, new Point(.375F, .2875F, -.475F), 0),
+                    new Seat(false, new Point(-.375F, .2875F, -.475F), 0),
+                    new Seat(false, new Point(.375F, .2875F, -1.23125F), 0),
+                    new Seat(false, new Point(-.375F, .2875F, -1.23125F), 0)),
             false, "tow_bar", new Point(0, 0, 0), new Point(0, 0, 0),
             null, null, List.of(), false
     );
@@ -448,10 +448,10 @@ public record LandVehicleSpec(
             // model centre (8,8,8), body scale 1.7. These are initial
             // geometry-derived estimates, not in-game verified positions.
             List.of(
-                    new Seat(true, new Point(.425F, -.4209375F, -.02921875F), 0),
-                    new Seat(false, new Point(-.425F, -.4209375F, -.02921875F), 0),
-                    new Seat(false, new Point(-.425F, -.330625F, -.9775F), 0),
-                    new Seat(false, new Point(.425F, -.330625F, -.9775F), 0)),
+                    new Seat(true, new Point(.425F, .3290625F, -.02921875F), 0),
+                    new Seat(false, new Point(-.425F, .3290625F, -.02921875F), 0),
+                    new Seat(false, new Point(-.425F, .419375F, -.9775F), 0),
+                    new Seat(false, new Point(.425F, .419375F, -.9775F), 0)),
             false, "tow_bar", new Point(0, 0, 0), new Point(0, 0, 0),
             null, null, List.of(), false
     );
