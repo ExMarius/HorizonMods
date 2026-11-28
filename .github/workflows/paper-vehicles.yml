@@ -15,6 +15,10 @@ on:
       - '.github/workflows/paper-vehicles.yml'
   workflow_dispatch:
     inputs:
+      install_economy_plugins:
+        description: Install Vault and EssentialsX core if absent
+        type: boolean
+        default: false
       install_red_pump:
         description: Install red pump visual pack on test server
         type: boolean
@@ -72,7 +76,7 @@ jobs:
           retention-days: 14
 
   recovery-package:
-    if: github.event_name == 'workflow_dispatch' && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab && !inputs.build_forge_client && !inputs.install_red_pump
+    if: github.event_name == 'workflow_dispatch' && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab && !inputs.build_forge_client && !inputs.install_red_pump && !inputs.install_economy_plugins
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -173,6 +177,25 @@ jobs:
           echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
       - name: Install matching JAR and resource pack
         run: python3 paper-vehicles/deploy/falix_recovery_cab_install.py install vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/recovery-new/HorizonOffRoader-1.21.4.zip "$PACK_URL"
+
+  install-economy-plugins:
+    if: github.event_name == 'workflow_dispatch' && inputs.install_economy_plugins && !inputs.install_red_pump && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab && !inputs.build_forge_client
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: falix-vehicle-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download official releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/vault /tmp/essentials
+          gh release download 1.7.3 --repo MilkBowl/Vault --pattern Vault.jar --dir /tmp/vault
+          gh release download 2.22.0 --repo EssentialsX/Essentials --pattern EssentialsX-2.22.0.jar --dir /tmp/essentials
+      - name: Install missing plugins without overwriting
+        run: python3 paper-vehicles/deploy/falix_install_economy_plugins.py /tmp/essentials/EssentialsX-2.22.0.jar /tmp/vault/Vault.jar
 
   install-red-pump:
     if: github.event_name == 'workflow_dispatch' && inputs.install_red_pump && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab && !inputs.build_forge_client
