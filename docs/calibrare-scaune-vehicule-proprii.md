@@ -24,11 +24,11 @@ Situația după înlocuirea calului cu porcul: pozițiile pentru cele șase mode
 
 Feedback în joc: scăderea suplimentară de 0,75 blocuri din prima încercare a pus personajul în podea; presupunerea privind poziția șoldului era greșită și a fost eliminată. După încercarea la suprafața pernei, utilizatorul a cerut puțin mai jos. S-a coborât reperul cu 0,15 blocuri față de versiunea anterioară, pe toate cele șase modele; în plus se scade 0,25, valoarea adăugată ulterior de `seatOffset`. Corecția 0,7 × scala porcului rămâne în rig, conform referinței clasice. Aceasta nu dovedește poziția finală a jucătorului: atașamentul pasagerului, animația și randarea clientului trebuie confirmate în joc.
 
-- Platformă: cuburile 140 și 149, vârf y=12,26, centre (5,52/10,48; 4,8), cu origine 8 și 4 pixeli/bloc: suprafața este la y=1,065; `sourceOffset.y=0,665`.
+- Platformă: cuburile 140 și 149, vârf y=12,26, centre (5,52/10,48; 4,8), cu origine 8 și 4 pixeli/bloc: suprafața este la y=1,065; `sourceOffset.y=0,515`.
 - UTB: perna șoferului y=20,8 și bancheta y=19,2 pixeli după corecția de scară 2; `seat()` primește y=14,4 și respectiv 12,8 pixeli, după scăderea celor 4 pixeli și încă 2,4 pixeli (0,15 blocuri).
 - Coupe: vârful pernelor y=12,3, centre x=5/11, z=4,2/-1,85 în modelul la scară 2; suprafața y=0,5375, `sourceOffset.y=0,1375`.
 - Logan: pernele din modelul editat de utilizator au vârf y=2,85 față și 3,7 spate; transformarea este la scară 1,7 și `bodyOrigin.y=1,12625`. Centrele pe axa longitudinală sunt 7,725 și -1,2 pixeli. Rezultă înălțimile de suprafață 0,5790625/0,669375 și `sourceOffset.y=0,1790625/0,269375`.
-- Horizon Go Kart: perna are centrul x=8, z=5,9 și vârful y=3,3, transformată cu centrul caroseriei y=0,57 și scara (1,18; 1,14; 1,18).
+- Horizon Go Kart: perna are centrul x=8, z=5,9 și vârful y=3,3, transformată cu centrul caroseriei y=0,57 și scara (1,18; 1,14; 1,18). În urma feedbackului a fost ridicat cu 0,15 blocuri față de versiunea anterioară.
 - Horizon Off Roader: pernele față au centrul x=12,825/3,175, z=5,6 și vârf y=6,7; bancheta are centrul z=-6,55 și vârful y=8,8. Se folosesc centrul caroseriei y=0,69 și scara (1,42; 1,38; 1,42).
 
-Niciuna dintre pozițiile recalculate nu a fost validată în joc. Modul Forge 1.21.4 pentru corp/cameră/brațe este un proiect separat și încă nu este implementat.
+La cererea utilizatorului platforma a fost coborâtă cu încă 0,15 blocuri față de versiunea anterioară, deoarece șaua era vizibilă. Coborârea nu garantează că șaua va fi complet ascunsă sau că poziția corpului este perfectă; ambele necesită verificare în joc. Modul Forge 1.21.4 pentru corp/cameră/brațe este un proiect separat și încă nu este implementat.

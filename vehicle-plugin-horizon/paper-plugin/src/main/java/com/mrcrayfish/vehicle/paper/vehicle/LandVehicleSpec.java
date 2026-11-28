@@ -95,9 +95,9 @@ public record LandVehicleSpec(
                     new Wheel(1, false, 12.16F / 16F, .320F, -11.4F * 1.18F / 16F, 0F, 0F, 1.34F, 1.28F, 1.28F),
                     new Wheel(-1, false, -12.16F / 16F, .320F, -11.4F * 1.18F / 16F, 0F, 0F, 1.34F, 1.28F, 1.28F)),
             // User-edited cushion centre (8, 3.3, 5.9); BODY centre y=.57,
-            // scale (1.18,1.14,1.18), model origin (8,8,8); lower by 0.15.
+            // scale (1.18,1.14,1.18), model origin (8,8,8); raised 0.15 after feedback.
             List.of(new Seat(true, new Point(0F, .57F + (3.3F - 8F) * 1.14F / 16F
-                    - RIDER_HEIGHT_CORRECTION - .15F, (5.9F - 8F) * 1.18F / 16F), 0F)),
+                    - RIDER_HEIGHT_CORRECTION, (5.9F - 8F) * 1.18F / 16F), 0F)),
             false, "tow_bar", new Point(0, 0, 0), new Point(0, 0, 0), null, null, List.of(), false
     );
 
