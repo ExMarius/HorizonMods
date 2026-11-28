@@ -16,11 +16,37 @@ function makeModel(data,tex){
   const mesh=new THREE.Mesh(g,mats);if(e.rotation&&e.rotation.angle){const pivot=new THREE.Group(),origin=e.rotation.origin.map(x=>x-8);pivot.position.set(...origin);mesh.position.set(...center.map((x,i)=>x-origin[i]));pivot.rotation[e.rotation.axis]=THREE.MathUtils.degToRad(e.rotation.angle);pivot.add(mesh);group.add(pivot)}else{mesh.position.set(...center);group.add(mesh)}
  }group.scale.setScalar(1/16);return group;
 }
-// Minecraft-compatible hose concept: 16 straight box display segments, not
-// an unexportable smooth Three.js tube. Tangents orient both endpoints.
-const hose=new THREE.Group();scene.add(hose);const hoseMaterial=new THREE.MeshStandardMaterial({color:'#202426',roughness:1});const geometry=new THREE.BoxGeometry(.0625,.0625,1);
-const start=new THREE.Vector3(-.64,1.60,-.27);
-function renderHose(){if(!nozzle)return;nozzle.updateMatrixWorld(true);const end=nozzle.localToWorld(new THREE.Vector3(0,-.075,.5));const out=new THREE.Vector3(0,0,1).applyQuaternion(nozzle.quaternion).normalize();const m0=new THREE.Vector3(0,-2.1,0),m1=out.multiplyScalar(-1.05);function point(t){const q=t*t,r=q*t;return start.clone().multiplyScalar(2*r-3*q+1).addScaledVector(end,-2*r+3*q).addScaledVector(m0,r-2*q+t).addScaledVector(m1,r-q)}while(hose.children.length)hose.remove(hose.children[0]);let last=point(0);for(let i=1;i<=16;i++){const next=point(i/16),d=next.clone().sub(last),seg=new THREE.Mesh(geometry,hoseMaterial);seg.position.copy(last).add(next).multiplyScalar(.5);seg.scale.z=d.length();if(d.lengthSq()>1e-8)seg.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),d.normalize());hose.add(seg);last=next}}
+// A hose made of 24 straight, Minecraft-producible display sections. Each
+// section is a single octagonal-looking model built from three cuboids.
+const hose=new THREE.Group();scene.add(hose);const rubber=new THREE.MeshStandardMaterial({color:'#1b2021',roughness:.85});
+const metal=new THREE.MeshStandardMaterial({color:'#9faeb0',metalness:.65,roughness:.38});
+const hoseBars=[new THREE.BoxGeometry(.0625,.03125,1),new THREE.BoxGeometry(.047,.015625,1),new THREE.BoxGeometry(.047,.015625,1)];
+function section(){const part=new THREE.Group();for(let i=0;i<3;i++){const m=new THREE.Mesh(hoseBars[i],rubber);if(i===1)m.position.y=.0234375;if(i===2)m.position.y=-.0234375;part.add(m)}return part}
+const hoseParts=Array.from({length:24},()=>{const p=section();hose.add(p);return p});
+// The outlet and cradle share the same (negative X) side. Front is +Z.
+const start=new THREE.Vector3(-.64,1.49,-.27);
+function fitting(radius,length,mat,position,parent,rotationX=0){const m=new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,length,8),mat);m.position.copy(position);m.rotation.x=rotationX;parent.add(m);return m}
+fitting(.063,.055,metal,new THREE.Vector3(-.64,1.64,-.27),scene);
+fitting(.044,.12,rubber,new THREE.Vector3(-.64,1.55,-.27),scene);
+for(const y of [1.505,1.53,1.555,1.58])fitting(.048,.009,rubber,new THREE.Vector3(-.64,y,-.27),scene);
+function addNozzleFitting(parent){
+ // Model Z=16 is the hose end. Sleeves travel with the editable nozzle.
+ fitting(.055,.035,metal,new THREE.Vector3(0,-.075,.515),parent,Math.PI/2);
+ fitting(.041,.095,rubber,new THREE.Vector3(0,-.075,.575),parent,Math.PI/2);
+ for(const z of [.54,.56,.58,.60,.62])fitting(.045,.008,rubber,new THREE.Vector3(0,-.075,z),parent,Math.PI/2);
+}
+function renderHose(){
+ if(!nozzle)return;nozzle.updateMatrixWorld(true);
+ const end=nozzle.localToWorld(new THREE.Vector3(0,-.075,.622));
+ const out=new THREE.Vector3(0,0,1).applyQuaternion(nozzle.quaternion).normalize();
+ // A hanging U-shaped loop, clear of the ground and outboard of the pump.
+ const outer=Math.min(-.74,end.x-.09),bottom=Math.max(.14,Math.min(.38,end.y-.18));
+ const middle=new THREE.Vector3(outer,bottom,(start.z+end.z)/2);
+ const first=new THREE.CubicBezierCurve3(start,start.clone().add(new THREE.Vector3(0,-.52,0)),middle.clone().add(new THREE.Vector3(0,0,-.25)),middle);
+ const second=new THREE.CubicBezierCurve3(middle,middle.clone().add(new THREE.Vector3(0,0,.25)),end.clone().addScaledVector(out,.25),end);
+ function point(t){return t<=.5?first.getPoint(t*2):second.getPoint((t-.5)*2)}
+ let last=point(0);for(let i=0;i<hoseParts.length;i++){const next=point((i+1)/hoseParts.length),d=next.clone().sub(last),part=hoseParts[i];part.position.copy(last).add(next).multiplyScalar(.5);part.scale.z=d.length()+.003;if(d.lengthSq()>1e-8)part.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),d.normalize());last=next}
+}
 // Display uses a canvas purely to demonstrate changing litres and total price.
 const displayCanvas=document.createElement('canvas');displayCanvas.width=512;displayCanvas.height=192;const ctx=displayCanvas.getContext('2d');const displayTexture=new THREE.CanvasTexture(displayCanvas);displayTexture.colorSpace=THREE.SRGBColorSpace;const display=new THREE.Mesh(new THREE.PlaneGeometry(.57,.215),new THREE.MeshBasicMaterial({map:displayTexture}));display.position.set(0,1.49,.439);scene.add(display);
 function displayUpdate(){const l=Math.max(0,Number(document.querySelector('#litres').value)||0),p=Math.max(0,Number(document.querySelector('#price').value)||0);ctx.fillStyle='#b7d1c0';ctx.fillRect(0,0,512,192);ctx.fillStyle='#20342e';ctx.font='bold 48px monospace';ctx.fillText(l.toFixed(2)+' L',15,65);ctx.fillText((l*p).toFixed(2)+' $',15,125);ctx.font='20px sans-serif';ctx.fillText('PREȚ / L   '+p.toFixed(2),15,169);displayTexture.needsUpdate=true}document.querySelector('#litres').oninput=displayUpdate;document.querySelector('#price').oninput=displayUpdate;displayUpdate();
@@ -47,5 +73,5 @@ Promise.all(['/minecraft/gas_pump_bottom.json','/minecraft/gas_pump_top.json','/
  // the back (-Z) only in this candidate; the installed pack stays untouched.
  for(const i of [8,9,10,11]){top.elements[i].from[2]+=6.4;top.elements[i].to[2]+=6.4}
  for(const i of [12,13]){top.elements[i].from[2]-=6.12;top.elements[i].to[2]-=6.12}
- const b=makeModel(bottom,pumpTexture),t=makeModel(top,pumpTexture);b.position.y=.5;t.position.y=1.5;scene.add(b,t);nozzle=new THREE.Group();nozzle.add(makeModel(n,nozzleTexture));scene.add(nozzle);gizmo.attach(nozzle);initial();mode('translate');reset();document.querySelector('#loading').hidden=true}).catch(e=>{console.error(e);document.querySelector('#loading').textContent='Nu am putut încărca modelele. Reîncarcă pagina.'});
+ const b=makeModel(bottom,pumpTexture),t=makeModel(top,pumpTexture);b.position.y=.5;t.position.y=1.5;scene.add(b,t);nozzle=new THREE.Group();nozzle.add(makeModel(n,nozzleTexture));addNozzleFitting(nozzle);scene.add(nozzle);gizmo.attach(nozzle);initial();mode('translate');reset();document.querySelector('#loading').hidden=true}).catch(e=>{console.error(e);document.querySelector('#loading').textContent='Nu am putut încărca modelele. Reîncarcă pagina.'});
 function frame(){requestAnimationFrame(frame);controls.update();renderer.render(scene,camera)}frame();
