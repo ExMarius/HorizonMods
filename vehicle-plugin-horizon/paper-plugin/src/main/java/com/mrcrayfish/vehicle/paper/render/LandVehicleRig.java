@@ -14,7 +14,6 @@ import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Horse;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Interaction;
@@ -36,39 +35,10 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /** Multipart vanilla-display rig driven by a generated land-vehicle definition. */
 public final class LandVehicleRig {
-    /** BM: true numai pe durata in care vehiculul se roteste/se misca
-     *  (A/D): serverul forteaza scaunul sa urmeze vehiculul. In repaus,
-     *  campul ramane false si clientul detine rotatia (rider vanilla). */
-    private boolean carryBody = false;
-    // Armed only for a single operator and one mounting attempt; never persisted.
-    private UUID pigProbeOperator;
-    private long pigProbeDeadline;
-
-    public void armPigDriverProbe(UUID operator, long deadlineNanos) {
-        pigProbeOperator = operator;
-        pigProbeDeadline = deadlineNanos;
-    }
-
-    public void disarmPigDriverProbe() {
-        pigProbeOperator = null;
-        pigProbeDeadline = 0L;
-    }
-
-    public void setSeatBodyCarry(boolean carryBody) {
-        this.carryBody = carryBody;
-    }
-
     public static final String ENTITY_TAG = "mcv_plugin_vehicle";
     private static final int VANILLA_ENTITY_LERP_TICKS = 3;
-    /* Ciclul BL: scaunul este un cal la scara minima, invizibil, fara saua:
-     * acelasi rider pose + HUD de inimi, iar yaw-ul calareului este clamp-uit
-     * vanilla la yaw-ul vehiculului (corp blocat, cap liber). Entitatile sunt
-     * excluse din selectoarele /kill si sunt ejectate inainte de remove(), deci
-     * bucla din cautarea vanilla a locului de demontare nu apare. */
+    // Preserve each vehicle's existing seat geometry and its scale compensation.
     private static final double SEAT_CARRIER_SCALE = 0.0625D;
-    // A 1.21.4 horse-dismount search can loop forever for tiny bounding boxes at
-    // certain fractional Y coordinates. UTB has a different seat height, so keep
-    // its invisible carrier at least 0.4 blocks high (0.25 * 1.6).
     private static final double UTB_SEAT_CARRIER_SCALE = 0.25D;
     private static final double SEAT_GAUGE_MAX_HEALTH = FuelGauge.MAX_HALF_HEARTS;
 
@@ -286,89 +256,35 @@ public final class LandVehicleRig {
         });
     }
 
-    private static Horse seatCarrier(World world, Location location, UUID vehicleId, double carrierScale) {
-        /* Ciclul BL (feedback user): scaun = cal FARA saua. Calul are clampa
-         * vanilla de riding: yaw-ul calareului este legat de yaw-ul vehiculului,
-         * deci corpul ramane blocat pe scaun si doar capul se roteste liber
-         * (~45 grade), exact ca in mod. Fara saua entitatea NU este
-         * "controllable" de catre client (era problema cu porcul cu saua:
-         * clientul ii impunea rotatia dupa camera si se batea cap in cap cu
-         * setRotation-ul server-ului -> corpul se invartea/oscila). */
-        Horse seat = world.spawn(location, Horse.class, carrier -> {
-            /* Ciclul BM (seattest a confirmat: varianta C tine corpul fix):
-             * cal CU saua + tamed => vanilla activeaza clampa de riding
-             * (yaw-ul calareului legat de yaw-ul monturii -> corp blocat,
-             * cap liber stanga-dreapta). MOVEMENT_SPEED 0 => jucatorul nu
-             * poate plimba montura cu WASD; rotatia prin mouse ramane. */
-            carrier.setTamed(true);
-            carrier.getInventory().setSaddle(new ItemStack(org.bukkit.Material.SADDLE));
-            carrier.setAI(false);
-            carrier.setGravity(false);
-            carrier.setCollidable(false);
-            carrier.setInvisible(true);
-            carrier.setInvulnerable(true);
-            carrier.setSilent(true);
-            carrier.setPersistent(false);
-            carrier.setRemoveWhenFarAway(false);
-            AttributeInstance scale = carrier.getAttribute(Attribute.SCALE);
-            if (scale != null) {
-                scale.setBaseValue(carrierScale);
-            }
-            AttributeInstance speed = carrier.getAttribute(Attribute.MOVEMENT_SPEED);
-            if (speed != null) {
-                speed.setBaseValue(0.0D);
-            }
-            AttributeInstance maximumHealth = carrier.getAttribute(Attribute.MAX_HEALTH);
-            if (maximumHealth != null) {
-                maximumHealth.setBaseValue(SEAT_GAUGE_MAX_HEALTH);
-            }
-            carrier.setHealth(SEAT_GAUGE_MAX_HEALTH);
+    private LivingEntity createSeatMount(SeatCarrier carrier) {
+        if (removed || !carrier.anchor.isValid()) return null;
+        Location location = carrier.anchor.getLocation();
+        Pig seat = location.getWorld().spawn(location, Pig.class, pig -> {
+            pig.setSaddle(true);
+            pig.addScoreboardTag("mcv_pig_vehicle_seat");
+            pig.setAI(false);
+            pig.setGravity(false);
+            pig.setCollidable(false);
+            pig.setInvisible(true);
+            pig.setInvulnerable(true);
+            pig.setSilent(true);
+            pig.setPersistent(false);
+            pig.setRemoveWhenFarAway(false);
+            AttributeInstance scale = pig.getAttribute(Attribute.SCALE);
+            if (scale != null) scale.setBaseValue(seatCarrierScale());
+            AttributeInstance speed = pig.getAttribute(Attribute.MOVEMENT_SPEED);
+            if (speed != null) speed.setBaseValue(0.0D);
+            AttributeInstance health = pig.getAttribute(Attribute.MAX_HEALTH);
+            if (health != null) health.setBaseValue(SEAT_GAUGE_MAX_HEALTH);
+            pig.setHealth(SEAT_GAUGE_MAX_HEALTH);
         });
         mark(seat, vehicleId);
-        return seat;
-    }
-
-    private LivingEntity createSeatMount(SeatCarrier carrier, boolean usePig) {
-        if (removed || !carrier.anchor.isValid()) {
-            return null;
-        }
-        Location location = carrier.anchor.getLocation();
-        LivingEntity seat;
-        if (usePig) {
-            // Classic Paper 1.21.4 pig seat uses 1/16 scale and zero movement.
-            // The dismount listener enlarges this tagged test mount before vanilla
-            // searches for a safe position; in-game verification is still required.
-            Pig pig = location.getWorld().spawn(location, Pig.class, carrierPig -> {
-                carrierPig.setSaddle(true);
-                carrierPig.addScoreboardTag("mcv_pig_probe_seat");
-                carrierPig.setAI(false);
-                carrierPig.setGravity(false);
-                carrierPig.setCollidable(false);
-                carrierPig.setInvisible(true);
-                carrierPig.setInvulnerable(true);
-                carrierPig.setSilent(true);
-                carrierPig.setPersistent(false);
-                carrierPig.setRemoveWhenFarAway(false);
-                AttributeInstance pigScale = carrierPig.getAttribute(Attribute.SCALE);
-                if (pigScale != null) pigScale.setBaseValue(SEAT_CARRIER_SCALE);
-                AttributeInstance speed = carrierPig.getAttribute(Attribute.MOVEMENT_SPEED);
-                if (speed != null) speed.setBaseValue(0.0D);
-                AttributeInstance health = carrierPig.getAttribute(Attribute.MAX_HEALTH);
-                if (health != null) health.setBaseValue(SEAT_GAUGE_MAX_HEALTH);
-                carrierPig.setHealth(SEAT_GAUGE_MAX_HEALTH);
-            });
-            mark(pig, vehicleId);
-            seat = pig;
-        } else {
-            seat = seatCarrier(location.getWorld(), location, vehicleId, seatCarrierScale());
-        }
         markSpawnSession(seat);
         if (!carrier.anchor.addPassenger(seat)) {
             seat.remove();
             return null;
         }
         carrier.mount = seat;
-        carrier.pigProbe = usePig;
         entities.add(seat);
         applySeatGauge(seat);
         return seat;
@@ -722,7 +638,7 @@ public final class LandVehicleRig {
             if (!removed && riderId != null) {
                 Player rider = Bukkit.getPlayer(riderId);
                 if (rider != null && rider.isOnline() && !rider.isDead()) {
-                    LivingEntity replacement = createSeatMount(carrier, carrier.pigProbe);
+                    LivingEntity replacement = createSeatMount(carrier);
                     if (replacement != null && replacement.addPassenger(rider)) {
                         carrier.rider = riderId;
                         replacement.setRotation(seatYaw, 0.0F);
@@ -745,22 +661,13 @@ public final class LandVehicleRig {
             return;
         }
         carrier.rider = rider.getUniqueId();
-        if (carrier.pigProbe) {
-            // If dismount was cancelled after our safety handler, restore the
-            // probe scale only after confirming that the rider is still mounted.
-            AttributeInstance scale = seat.getAttribute(Attribute.SCALE);
-            if (scale != null && Math.abs(scale.getBaseValue() - SEAT_CARRIER_SCALE) > 1.0E-6D)
-                scale.setBaseValue(SEAT_CARRIER_SCALE);
-        }
-        /* BM: scaunul are rider; cat timp vehiculul NU vireaza/se misca,
-         * rotatia ramane la client (clampa vanilla de riding blocheaza
-         * corpul pe scaun si lasa capul liber). In timpul virajelor/mersului
-         * serverul tine scaunul la yaw-ul vehiculului => corpul calatorul
-         * se misca o data cu masina. */
-        if (carryBody || carrier.pigProbe) {
-            seat.setRotation(seatYaw, 0.0F);
-            if (carrier.pigProbe) seat.setBodyYaw(seatYaw);
-        }
+        // Restore the configured scale if another plugin cancelled dismount
+        // after the safety handler had enlarged the pig.
+        AttributeInstance scale = seat.getAttribute(Attribute.SCALE);
+        if (scale != null && Math.abs(scale.getBaseValue() - seatCarrierScale()) > 1.0E-6D)
+            scale.setBaseValue(seatCarrierScale());
+        seat.setRotation(seatYaw, 0.0F);
+        seat.setBodyYaw(seatYaw);
     }
 
     private void place(ItemDisplay display, Location renderAnchor, Vector3f translation, float yaw,
@@ -799,9 +706,8 @@ public final class LandVehicleRig {
     }
 
     private double seatCarrierScale() {
-        // Paper's horse dismount search can hang with tiny seat hitboxes near blocks.
-        // Use a normal-size invisible carrier for the recovery truck; pigAnchor()
-        // compensates the seat height so the rider stays in the authored cabin.
+        // Keep existing vehicle-specific scale/anchor choices; changing entity
+        // type can still alter passenger height and requires in-game calibration.
         if ("horizon_recovery_prototype".equals(spec.id())) return 1.0D;
         return "utb_650".equals(spec.id()) ? UTB_SEAT_CARRIER_SCALE : SEAT_CARRIER_SCALE;
     }
@@ -912,10 +818,7 @@ public final class LandVehicleRig {
         if (closest.mount != null) {
             discardSeat(closest);
         }
-        boolean usePig = closest.properties.driver() && player.getUniqueId().equals(pigProbeOperator)
-                && System.nanoTime() - pigProbeDeadline < 0L;
-        if (usePig) disarmPigDriverProbe(); // One-shot: later mounts use the normal horse.
-        LivingEntity seat = createSeatMount(closest, usePig);
+        LivingEntity seat = createSeatMount(closest);
         if (seat != null && seat.addPassenger(player)) {
             closest.rider = player.getUniqueId();
             return true;
@@ -1255,7 +1158,6 @@ public final class LandVehicleRig {
         private final ItemDisplay anchor;
         private final LandVehicleSpec.Seat properties;
         private LivingEntity mount;
-        private boolean pigProbe;
         private UUID rider;
 
         private SeatCarrier(ItemDisplay anchor, LandVehicleSpec.Seat properties) {

@@ -313,10 +313,10 @@ public final class VehicleListener implements Listener {
             return;
         }
         // Paper fires this during stopRiding, before the living passenger's
-        // vanilla dismount-location search. Enlarge only our tagged pig trial.
+        // vanilla dismount-location search. Enlarge only our tagged vehicle-seat pig.
         // This reduces the tiny-hitbox risk; it does not guarantee a safe exit.
         if (event.getDismounted() instanceof org.bukkit.entity.Pig pig
-                && pig.getScoreboardTags().contains("mcv_pig_probe_seat")) {
+                && pig.getScoreboardTags().contains("mcv_pig_vehicle_seat")) {
             org.bukkit.attribute.AttributeInstance scale = pig.getAttribute(org.bukkit.attribute.Attribute.SCALE);
             if (scale != null) scale.setBaseValue(1.0D);
         }
