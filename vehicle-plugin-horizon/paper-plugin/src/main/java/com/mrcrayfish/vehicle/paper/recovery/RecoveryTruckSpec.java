@@ -46,9 +46,9 @@ public final class RecoveryTruckSpec {
                         wheel(1,false,1.20F,.35F,3.22F,MODEL_SCALE*.35F/.45F)),
                 // Seat cushions: model cubes 140/149, top y=12.26,
                 // centres x=5.52/10.48, z=4.8, at 4 px/block.
-                // Cushion surface is y=1.065; rig adds 0.25 to sourceOffset.
-                List.of(new LandVehicleSpec.Seat(true,p(-.62F,.815F,-.80F),180F),
-                        new LandVehicleSpec.Seat(false,p(.62F,.815F,-.80F),180F)),
+                // Cushion surface y=1.065; rig adds 0.25. Lower by 0.15.
+                List.of(new LandVehicleSpec.Seat(true,p(-.62F,.665F,-.80F),180F),
+                        new LandVehicleSpec.Seat(false,p(.62F,.665F,-.80F),180F)),
                 false,"tow_bar",p(0,0,0),p(0,0,0),null,null,List.of(),false);
     }
 }
