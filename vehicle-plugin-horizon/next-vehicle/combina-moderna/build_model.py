@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Author an editable Gloria-inspired 1:1 Blockbench model, no plugin changes."""
-import base64, json, math, struct, uuid, zlib
+import base64, json, math, struct, uuid, zlib, sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
-OUT=ROOT/'downloads'/'horizon-combina-moderna.bbmodel'
+BASE=ROOT/'downloads'/'horizon-combina-moderna.bbmodel'
+CORN='--corn' in sys.argv
+OUT=ROOT/'downloads'/'horizon-combina-moderna-porumb.bbmodel' if CORN else BASE
 # Reuse every texture entry and the named bone UUIDs already in the project.
-previous=json.loads(OUT.read_text()) if OUT.exists() else None
+previous=json.loads(BASE.read_text()) if BASE.exists() else None
 old_named={g['name']:g['uuid'] for g in previous['groups'] if g['name'] in {'body','header_assembly','reel','intake_auger','unloading_auger','wheel_fl','wheel_fr','wheel_rl','wheel_rr','seat_driver','access_ladder','rear_steering_axle','cutter_bar'}} if previous else {}
 uid=lambda: str(uuid.uuid4())
 palette={'rosu':'d92b2b','rosu_inchis':'85221b','rosu_lumina':'e54b32','crem':'f2f4f7','sasiu':'22252a','cauciuc':'1e1e1e','cauciuc_lumina':'30302e','metal':'a9aaa4','otel':'6e7373','negru':'121516','chihlimbar':'ffa52a','sticla':'8bb5b5','grau':'cfae59','grau_lumina':'e2c675','far':'fff1bf','bord':'3c3e3b','verde':'d92b2b','verde_inchis':'35383c','gps':'d7d9d6'}
@@ -200,52 +202,84 @@ for x in (-7.6,7.6):
  beam_yz(header,'bara feeder',x,.65,8,-40,21,-20,.7,'metal')
  beam_yz(header,'cilindru hidraulic corp',x,1.8,7,-37,11,-30,1.8,'negru')
  beam_yz(header,'cilindru hidraulic tija',x,.7,11,-30,17,-23,.7,'metal')
-# Cutter and reel are on the FRONT (-Z), auger behind them toward +Z.
-# A continuous, deeper trough links the cutting bar to the feeder mouth.
-box(header,'jgheab fund',-38.4,1.2,-64,38.4,2.2,-39,'sasiu')
-box(header,'jgheab perete',-38.4,2.2,-40,38.4,11,-39,'rosu')
-box(header,'rama cuplare heder inferioara',-8,5.5,-40.4,8,7,-38.6,'otel')
-for x in (-8,7):box(header,'rama cuplare laterala',x,7,-40.4,x+1,12,-38.6,'sasiu')
-box(header,'rama cuplare heder superioara',-8,11,-40.4,8,12,-38.6,'otel')
-for side in (-1,1):
- x=side*36.8;box(header,'capac lateral heder',x-1.6,2,-64,x+1.6,10,-39,'rosu')
- for k in range(8):
-  z1=-70+6*k/8;z2=-70+6*(k+1)/8;w=.16+1.44*(k+1)/8
-  box(header,'despartitor conic',x-w,1.2,z1,x+w,1.8+1.5*(k+1)/8,z2,'rosu')
- beam_yz(header,'protectie cromata',x,.4,1.75,-69,3,-64,.4,'metal')
- # Pivot bracket and two fixed support/hydraulic arms terminate at the axle.
- beam_yz(header,'brat rabator',x-side*1.8,1.25,9,-40,11,-57.5,1.2,'rosu')
- beam_yz(header,'cilindru rabator corp',x-side*1.8,1.0,5.5,-41,8.0,-50,1.0,'negru')
- beam_yz(header,'cilindru rabator tija',x-side*1.8,.55,8,-50,11,-57.5,.55,'metal')
- box(header,'lagar rabator',x-side*1.8-.8,10.2,-58.3,x-side*1.8+.8,11.8,-56.7,'negru')
-cutter=group('cutter_bar',[0,1.2,-64],header);box(cutter,'bara taiere',-37.5,0,-64.5,37.5,.8,-63.6,'metal')
-for i in range(38):
- x=-37+i*2;box(cutter,'dinte taiere',x,0,-65.7,x+1.1,.5,-64,'crem')
-# Polygonal auger drum plus continuous helical flighting from both ends.
-# Left and right spirals have opposite handedness to lead toward the centre.
-intake=group('intake_auger',[0,6.5,-47.5],header)
-box(intake,'tambur snec miez',-36.9,5.2,-49.0,36.9,7.8,-46.0,'metal')
-box(intake,'tambur snec miez',-36.9,4.9,-48.65,36.9,8.1,-46.35,'metal')
-for j in range(12):
- angle=j*30;cube(intake,'tambur octogonal',[-36.9,8.0,-47.95],[36.9,8.35,-47.05],'metal',[angle,0,0],[0,6.5,-47.5])
-for side in (-1,1):
- for i in range(68):
-  u1=i/68;u2=(i+1)/68
-  def helix(u):
-   x=side*(35.8-u*32.8);angle=side*u*math.pi*8
-   return [x,6.5+2.25*math.cos(angle),-47.5+2.25*math.sin(angle)]
-  beam_xyz(intake,'spirala continua snec',helix(u1),helix(u2),.42,'otel')
-for x in (-4.5,-2.5,-.5,1.5,3.5):
- box(intake,'deget alimentare snec',x,8.1,-47.8,x+.45,10,-47.2,'negru')
-for x in (-37,36.5):box(intake,'flansa snec',x,4.4,-49.6,x+.5,8.6,-45.4,'sasiu')
-# Lower and advance the reel to just behind the cutter, in front of the auger.
-reel=group('reel',[0,11,-57.5],header);box(reel,'ax rabator',-37,10.6,-57.9,37,11.4,-57.1,'otel')
-for j in range(6):
- angle=j*60
- for x in (-34,-11,11,34):cube(reel,'stea rabator',[x-.35,11,-57.85],[x+.35,20.3,-57.15],'metal',[angle,0,0],[x,11,-57.5])
- cube(reel,'bara rabator',[-37,19.9,-57.8],[37,20.5,-57.2],'sasiu',[angle,0,0],[0,11,-57.5])
- for x in range(-36,37,3):
-  cube(reel,'gheara rabator',[x-.12,18.0,-57.65],[x+.12,20.1,-57.35],'metal',[angle,0,0],[0,11,-57.5])
-  cube(reel,'varf gheara',[x-.14,17.7,-57.95],[x+.14,18.15,-57.35],'metal',[angle,0,0],[0,11,-57.5])
-project={'meta':{'format_version':'5.0','model_format':'free','box_uv':False},'name':'Horizon Combina Moderna 1-1','model_identifier':'horizon_combina_moderna','visible_box':[8,8,0],'resolution':{'width':16,'height':16},'elements':elements,'groups':groups,'outliner':roots,'textures':textures}
+if not CORN:
+ # Cutter and reel are on the FRONT (-Z), auger behind them toward +Z.
+ # A continuous, deeper trough links the cutting bar to the feeder mouth.
+ box(header,'jgheab fund',-38.4,1.2,-64,38.4,2.2,-39,'sasiu')
+ box(header,'jgheab perete',-38.4,2.2,-40,38.4,11,-39,'rosu')
+ box(header,'rama cuplare heder inferioara',-8,5.5,-40.4,8,7,-38.6,'otel')
+ for x in (-8,7):box(header,'rama cuplare laterala',x,7,-40.4,x+1,12,-38.6,'sasiu')
+ box(header,'rama cuplare heder superioara',-8,11,-40.4,8,12,-38.6,'otel')
+ for side in (-1,1):
+  x=side*36.8;box(header,'capac lateral heder',x-1.6,2,-64,x+1.6,10,-39,'rosu')
+  for k in range(8):
+   z1=-70+6*k/8;z2=-70+6*(k+1)/8;w=.16+1.44*(k+1)/8
+   box(header,'despartitor conic',x-w,1.2,z1,x+w,1.8+1.5*(k+1)/8,z2,'rosu')
+  beam_yz(header,'protectie cromata',x,.4,1.75,-69,3,-64,.4,'metal')
+  # Pivot bracket and two fixed support/hydraulic arms terminate at the axle.
+  beam_yz(header,'brat rabator',x-side*1.8,1.25,9,-40,11,-57.5,1.2,'rosu')
+  beam_yz(header,'cilindru rabator corp',x-side*1.8,1.0,5.5,-41,8.0,-50,1.0,'negru')
+  beam_yz(header,'cilindru rabator tija',x-side*1.8,.55,8,-50,11,-57.5,.55,'metal')
+  box(header,'lagar rabator',x-side*1.8-.8,10.2,-58.3,x-side*1.8+.8,11.8,-56.7,'negru')
+ cutter=group('cutter_bar',[0,1.2,-64],header);box(cutter,'bara taiere',-37.5,0,-64.5,37.5,.8,-63.6,'metal')
+ for i in range(38):
+  x=-37+i*2;box(cutter,'dinte taiere',x,0,-65.7,x+1.1,.5,-64,'crem')
+ # Polygonal auger drum plus continuous helical flighting from both ends.
+ # Left and right spirals have opposite handedness to lead toward the centre.
+ intake=group('intake_auger',[0,6.5,-47.5],header)
+ box(intake,'tambur snec miez',-36.9,5.2,-49.0,36.9,7.8,-46.0,'metal')
+ box(intake,'tambur snec miez',-36.9,4.9,-48.65,36.9,8.1,-46.35,'metal')
+ for j in range(12):
+  angle=j*30;cube(intake,'tambur octogonal',[-36.9,8.0,-47.95],[36.9,8.35,-47.05],'metal',[angle,0,0],[0,6.5,-47.5])
+ for side in (-1,1):
+  for i in range(68):
+   u1=i/68;u2=(i+1)/68
+   def helix(u):
+    x=side*(35.8-u*32.8);angle=side*u*math.pi*8
+    return [x,6.5+2.25*math.cos(angle),-47.5+2.25*math.sin(angle)]
+   beam_xyz(intake,'spirala continua snec',helix(u1),helix(u2),.42,'otel')
+ for x in (-4.5,-2.5,-.5,1.5,3.5):
+  box(intake,'deget alimentare snec',x,8.1,-47.8,x+.45,10,-47.2,'negru')
+ for x in (-37,36.5):box(intake,'flansa snec',x,4.4,-49.6,x+.5,8.6,-45.4,'sasiu')
+ # Lower and advance the reel to just behind the cutter, in front of the auger.
+ reel=group('reel',[0,11,-57.5],header);box(reel,'ax rabator',-37,10.6,-57.9,37,11.4,-57.1,'otel')
+ for j in range(6):
+  angle=j*60
+  for x in (-34,-11,11,34):cube(reel,'stea rabator',[x-.35,11,-57.85],[x+.35,20.3,-57.15],'metal',[angle,0,0],[x,11,-57.5])
+  cube(reel,'bara rabator',[-37,19.9,-57.8],[37,20.5,-57.2],'sasiu',[angle,0,0],[0,11,-57.5])
+  for x in range(-36,37,3):
+   cube(reel,'gheara rabator',[x-.12,18.0,-57.65],[x+.12,20.1,-57.35],'metal',[angle,0,0],[0,11,-57.5])
+   cube(reel,'varf gheara',[x-.14,17.7,-57.95],[x+.14,18.15,-57.35],'metal',[angle,0,0],[0,11,-57.5])
+else:
+ # Independent corn header at the same feeder hinge; no crop logic implied.
+ # Eight crop lanes and nine tapered dividers, following the supplied GLB.
+ box(header,'cadru heder porumb',-38.4,2,-48,38.4,5,-39,'sasiu')
+ box(header,'spate heder porumb',-38.4,5,-41,38.4,11,-39,'rosu')
+ box(header,'cuplaj heder porumb jos',-8,5.5,-40.4,8,7,-38.6,'otel')
+ for x in (-8,7):box(header,'cuplaj heder porumb lateral',x,7,-40.4,x+1,12,-38.6,'sasiu')
+ box(header,'cuplaj heder porumb sus',-8,11,-40.4,8,12,-38.6,'otel')
+ for side in (-1,1):
+  x=side*37.2
+  box(header,'carcasa laterala porumb',x-1.2,2,-57,x+1.2,10,-39,'rosu')
+ # Each snout narrows toward the front. The stepped silhouette is editable
+ # with Blockbench cubes and is an approximation, not the source GLB mesh.
+ for lane in range(9):
+  x=-35.2+lane*8.8
+  for i in range(12):
+   t=(i+.5)/12;z1=-70+i*2;z2=z1+2.04
+   width=.18+3.35*t;height=.55+3.8*t
+   box(header,'separator porumb',x-width,1.0,z1,x+width,1.0+height,z2,'rosu')
+  beam_yz(header,'muchie separator',x,.18,1.55,-69.6,5.05,-46,.18,'rosu_lumina')
+ for lane in range(8):
+  x=-30.8+lane*8.8
+  box(header,'canal alimentare porumb',x-1.8,3.1,-56,x+1.8,3.65,-42,'negru')
+  for side in (-1,1):
+   for j in range(6):
+    z=-55+j*2.1
+    box(header,'lant alimentare porumb',x+side*1.25-.3,3.65,z,x+side*1.25+.3,4.05,z+1.05,'metal')
+ # Empty placeholders maintain the common rig names while avoiding a cereal reel.
+ group('cutter_bar',[0,1.2,-64],header)
+ group('intake_auger',[0,6.5,-47.5],header)
+ group('reel',[0,11,-57.5],header)
+project={'meta':{'format_version':'5.0','model_format':'free','box_uv':False},'name':'Horizon Combina Moderna Porumb' if CORN else 'Horizon Combina Moderna 1-1','model_identifier':'horizon_combina_moderna_porumb' if CORN else 'horizon_combina_moderna','visible_box':[8,8,0],'resolution':{'width':16,'height':16},'elements':elements,'groups':groups,'outliner':roots,'textures':textures}
 OUT.parent.mkdir(exist_ok=True);OUT.write_text(json.dumps(project,separators=(',',':'))+'\n');print('Wrote',OUT,'elements',len(elements),'groups',len(groups))

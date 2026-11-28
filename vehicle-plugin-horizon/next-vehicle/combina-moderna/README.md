@@ -15,3 +15,7 @@ Revizia alb-perlat / roșu: hederul are plăci de pivot pe corp și o ramă de c
 Revizia hederului: fața este −Z; rabatorul este mai jos și mai aproape de cuțit decât melcul, iar sensul rotației de jos duce plantele spre +Z. Melcul este reprezentat prin tambur poligonal, spirale detaliate din segmente, flanșe și degete. Punctele de pe laturi ale rabatorului se prind de brațe fixate pe heder; nu se garantează funcționarea fizică sau lipsa intersecțiilor până la validare.
 
 Crampoanele au poziții și rotații individuale distribuite pe fiecare roată, nu depind de rotirea grupurilor intermediare. Hederul, rabatorul și melcul au revenit la geometria precedentă, mai detaliată; aceasta include numeroase rotații de cuburi. Toate intrările de textură din fișierul anterior au fost păstrate; paleta roșu/alb/antracit nu a fost schimbată. Conversia completă pentru Minecraft și aspectul vizual nu sunt încă validate.
+
+## Heder de porumb — prototip vizual
+
+`python3 build_model.py --corn` creează separat `downloads/horizon-combina-moderna-porumb.bbmodel`, folosind aceleași texturi și același pivot de heder. Preview-ul permite comutarea între fișiere. Hederul de porumb este o aproximare cu opt canale, nu o copie 1:1 a GLB-ului. Este doar vizual, fără recoltare sau integrare Minecraft. Hederul de cereale trebuie în continuare adaptat după referință.
