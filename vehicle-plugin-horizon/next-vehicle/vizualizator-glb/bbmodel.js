@@ -25,10 +25,12 @@ export async function loadBlockbench(data){
    const mesh=new THREE.Mesh(geometry,mats);mesh.position.set(...e.from.map((v,i)=>(v+e.to[i])/2-origin[i]));pivot.add(mesh);return;
   }
   if(e.type==='mesh'&&e.vertices&&e.faces){
-   for(const face of Object.values(e.faces)){const ids=face.vertices||[];if(ids.length<3)continue;const positions=[],uvs=[],indices=[],[w,h]=textureSize(face.texture);
-    for(const id of ids){const p=e.vertices[id],uv=face.uv?.[id]||[0,0];if(!p||p.length<3)throw Error('Vârf mesh lipsă');positions.push(...p);uvs.push(uv[0]/w,1-uv[1]/h)}
-    for(let j=1;j<ids.length-1;j++)indices.push(0,j,j+1);const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));geometry.setIndex(indices);geometry.computeVertexNormals();pivot.add(new THREE.Mesh(geometry,materialFor(face.texture)));
+   const buckets=new Map();
+   for(const face of Object.values(e.faces)){const ids=face.vertices||[];if(ids.length<3)continue;const key=String(face.texture),[w,h]=textureSize(face.texture);if(!buckets.has(key))buckets.set(key,{positions:[],uvs:[],indices:[],material:materialFor(face.texture)});const bucket=buckets.get(key),base=bucket.positions.length/3;
+    for(const id of ids){const p=e.vertices[id],uv=face.uv?.[id]||[0,0];if(!p||p.length<3)throw Error('Vârf mesh lipsă');bucket.positions.push(...p);bucket.uvs.push(uv[0]/w,1-uv[1]/h)}
+    for(let j=1;j<ids.length-1;j++)bucket.indices.push(base,base+j,base+j+1);
    }
+   for(const b of buckets.values()){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(b.positions,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(b.uvs,2));geometry.setIndex(b.indices);geometry.computeVertexNormals();pivot.add(new THREE.Mesh(geometry,b.material))}
   }
  }
  const used=new Set();

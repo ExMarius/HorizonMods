@@ -1,0 +1,7 @@
+# Simulare interactivă CL1000
+
+Pornește `node server.cjs` din acest director (port implicit 4188). Este nevoie de dependența `three` instalată cu `npm ci` în `next-vehicle/vizualizator-glb`; acest director furnizează și cititorul Blockbench comun. Serverul citește direct fișierul utilizatorului `downloads/glb-imports/cb7869cfffcd6e70/model.bbmodel`, fără să îl scrie. Fără acest fișier local, aplicația afișează o eroare în loc să încarce alt model.
+
+Previzualizarea scalează ansamblul la lățime 4,8 blocuri și construiește pivoți numai în memoria browserului. Folosește numele grupurilor originale pentru roți, rabator și tub; bucăți ale hederului sunt selectate euristic după poziție și pot include/exclude piese incorect. Pivoții sunt estimativi, iar textura poate avea diferențe de randare față de Blockbench.
+
+Comenzile simulează înainte/înapoi, viteză, rotirea roților, ridicare heder, oprire graduală a rabatorului la −6°, colectare a plantelor mature în mișcare, particule, un buncăr de 300 unități, un tub până la 90° și transfer limitat în remorca schematică poziționată la gura tubului. Acestea sunt **exclusiv simulări de browser**, nu implementează comportament în Paper, nu modifică lumea, inventarele sau economia serverului și nu validează performanța în Minecraft. Capacitățile din preview nu sunt valori aprobate pentru joc. Remorca nu este modelul RM-2. Modelul nu este modificat și niciun fișier de pe serverul de joc nu este instalat.
