@@ -20,7 +20,7 @@ def main():
  if not np.isfinite(span) or span<=0 or not np.isfinite(a.height) or a.height<=0:raise ValueError('invalid height')
  scale=16*a.height/span
  # The supplied layout contains vehicles with centres near these X coordinates.
- centres=[-585.0,29.0,561.0];names=['porumb','fara-heder','cereale'];buckets=[[],[],[]]
+ centres=[-585.0,29.0,561.0];names=['porumb','cereale','fara-heder'];buckets=[[],[],[]]
  for node in scene.graph.nodes_geometry:
   matrix,key=scene.graph[node];mesh=scene.geometry[key];points=trimesh.transform_points(mesh.vertices,matrix)
   if not len(points):continue

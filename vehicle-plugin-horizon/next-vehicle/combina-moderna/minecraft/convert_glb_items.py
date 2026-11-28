@@ -14,7 +14,7 @@ import numpy as np
 import trimesh
 
 CENTRES=(-585.0,29.0,561.0)
-NAMES=('porumb','fara_heder','cereale')
+NAMES=('porumb','cereale','fara_heder')
 FACES=('north','south','east','west','up','down')
 def compact(value): return json.dumps(value,separators=(',',':')).encode()
 def png(color):
@@ -75,7 +75,7 @@ def main():
   files[f'assets/vehicle/items/{name}.json']=compact({'model':{'type':'minecraft:model','model':'vehicle:item/'+name}})
   result.append({'variant':NAMES[idx],'item_model':'vehicle:'+name,'display_scale':8,'meshes':len(meshes),'voxels':sum(map(len,by_color.values())),'cuboids':len(elements),'source_center_x':CENTRES[idx],'source_center_z':zc})
   print(NAMES[idx],len(meshes),'meshes',result[-1]['voxels'],'voxels',len(elements),'cuboids',flush=True)
- manifest={'source_sha256':hashlib.sha256(a.source.read_bytes()).hexdigest(),'source_units_per_voxel':a.pitch,'assumed_height_blocks':a.height,'source_unit_to_model_units':scale,'warning':'Lossy surface voxelisation; static, no rig or crop logic; not tested in Minecraft. Items are NOT ready for live gameplay.','variants':result}
+ manifest={'source_sha256':hashlib.sha256(a.source.read_bytes()).hexdigest(),'source_ground_y':ground,'source_units_per_voxel':a.pitch,'assumed_height_blocks':a.height,'source_unit_to_model_units':scale,'warning':'Lossy surface voxelisation; static, no rig or crop logic; not tested in Minecraft. Items are NOT ready for live gameplay.','variants':result}
  a.output.parent.mkdir(parents=True,exist_ok=True);a.manifest.parent.mkdir(parents=True,exist_ok=True)
  with zipfile.ZipFile(a.output,'w',zipfile.ZIP_DEFLATED) as z:
   for name,data in sorted(files.items()):
