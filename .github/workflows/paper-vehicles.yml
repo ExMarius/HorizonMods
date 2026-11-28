@@ -193,6 +193,17 @@ jobs:
           }
       - name: Compile matching Paper plugin without tests
         run: ./vehicle-plugin-horizon/paper-plugin/gradlew -p vehicle-plugin-horizon/paper-plugin clean jar
+      - name: Publish Forge preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          source=vehicle-plugin-horizon/forge-client/build/libs/horizon-vehicle-pose-forge-1.21.4-0.1.0-srg.jar
+          test -f "$source"
+          jar tf "$source" | grep -q 'horizonvehiclepose.refmap.json'
+          cp "$source" /tmp/HorizonVehiclePose-Forge-1.21.4.jar
+          echo "::notice::Forge preview SHA-256 $(sha256sum /tmp/HorizonVehiclePose-Forge-1.21.4.jar | cut -d' ' -f1)"
+          gh release create "horizon-forge-pose-${GITHUB_RUN_ID}" /tmp/HorizonVehiclePose-Forge-1.21.4.jar --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Horizon Vehicle Pose Forge 1.21.4 preview' --notes 'Client-only preview; requires the matching Paper plugin. Visual behavior and compatibility are not yet verified in Minecraft.'
       - uses: actions/upload-artifact@v4
         with:
           name: Horizon-vehicle-pose-preview
