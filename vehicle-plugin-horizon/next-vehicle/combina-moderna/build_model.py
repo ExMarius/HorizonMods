@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[3]
 OUT=ROOT/'downloads'/'horizon-combina-moderna.bbmodel'
 uid=lambda: str(uuid.uuid4())
-palette={'rosu':'d92b2b','rosu_inchis':'85221b','rosu_lumina':'e54b32','crem':'f2f4f7','sasiu':'22252a','cauciuc':'1e1e1e','cauciuc_lumina':'30302e','metal':'a9aaa4','otel':'6e7373','negru':'121516','chihlimbar':'ffa52a','sticla':'8bb5b5','grau':'cfae59','grau_lumina':'e2c675','far':'fff1bf','bord':'3c3e3b','verde':'68b82e','verde_inchis':'407c24','gps':'b7d335'}
+palette={'rosu':'d92b2b','rosu_inchis':'85221b','rosu_lumina':'e54b32','crem':'f2f4f7','sasiu':'22252a','cauciuc':'1e1e1e','cauciuc_lumina':'30302e','metal':'a9aaa4','otel':'6e7373','negru':'121516','chihlimbar':'ffa52a','sticla':'8bb5b5','grau':'cfae59','grau_lumina':'e2c675','far':'fff1bf','bord':'3c3e3b','verde':'d92b2b','verde_inchis':'35383c','gps':'d7d9d6'}
 def png(rgb,alpha=255):
  raw=b'\0'+bytes.fromhex(rgb)+bytes([alpha])
  def chunk(tag,data):return struct.pack('>I',len(data))+tag+data+struct.pack('>I',zlib.crc32(tag+data)&0xffffffff)
@@ -33,8 +33,8 @@ def beam_xy(g,n,x1,y1,x2,y2,z1,z2,thickness,c):
  x,y=(x1+x2)/2,(y1+y2)/2;length=math.hypot(x2-x1,y2-y1);angle=-math.degrees(math.atan2(x2-x1,y2-y1))
  cube(g,n,[x-thickness/2,y-length/2,z1],[x+thickness/2,y+length/2,z2],c,[0,0,angle],[x,y,(z1+z2)/2])
 
-def wheel(name,x,y,z,r,width,count):
- g=group(name,[x,y,z]);half=width/2;step=360/count
+def wheel(name,x,y,z,r,width,count,parent=None):
+ g=group(name,[x,y,z],parent);half=width/2;step=360/count
  # Fill the tyres and hubs with crossed rectangular cores behind the rings.
  box(g,'miez anvelopa',x-half,y-r*.72,z-r*.52,x+half,y+r*.72,z+r*.52,'cauciuc')
  box(g,'miez anvelopa',x-half,y-r*.52,z-r*.72,x+half,y+r*.52,z+r*.72,'cauciuc')
@@ -81,13 +81,36 @@ for side in (-1,1):
 # Sculpted rear cap with raised central engine cover, offset from the rear axle.
 box(body,'capota motor',-10.5,30,17,10.5,44,48,'crem')
 beam_yz(body,'capac spate inclinat',0,23,42,46,28,59.7,1.2,'crem')
-box(body,'ax punte spate',-15,7,30,15,9,32,'sasiu')
+# Rear axle: central oscillating pivot, rigid beam, steering knuckles and
+# tie rods. Each rear wheel remains a separate child pivot for steering.
+rear_axle=group('rear_steering_axle',[0,8.4,31],body)
+box(rear_axle,'corp punte spate',-13,7,29.9,13,9.8,32.1,'sasiu')
+box(rear_axle,'suport pivot central',-2.2,8.5,29.3,2.2,12,32.7,'metal')
+box(rear_axle,'bolt central balans',-1.2,7.4,29,1.2,9.6,33,'negru')
+box(rear_axle,'bara directie transversala',-11.5,6.3,27.8,11.5,6.85,28.4,'metal')
+box(rear_axle,'cilindru directie',-3.5,6.65,27.4,2.5,7.65,28.8,'negru')
+box(rear_axle,'tija cilindru directie',2.4,6.9,27.7,7.5,7.4,28.3,'metal')
+for side in (-1,1):
+ x=side*12.6
+ box(rear_axle,'fuzeta port roata',x-.85,5.7,30.1,x+.85,11.8,31.9,'otel')
+ box(rear_axle,'pivot vertical directie',x-.5,5.3,30.5,x+.5,12.2,31.5,'negru')
+ box(rear_axle,'brat directie',x-.5,6.2,27.8,x+.5,7.2,30.6,'otel')
+ box(rear_axle,'articulatie bara directie',x-.8,6.05,27.65,x+.8,7.35,28.55,'negru')
 box(body,'protectie motor spate',-11,20,57.5,11,31,60.7,'sasiu')
 # Rear straw chopper and two spreaders; decorative, not functional.
 box(body,'tocator paie',-10,10,52,10,15.5,60,'sasiu')
 for x in (-6,6):
  box(body,'disc tocator',x-3.6,9.5,54,x+3.6,10,60,'negru')
  for a in range(0,360,60):cube(body,'paleta tocator',[x-.25,9.3,53],[x+.25,10,60],'metal',[0,a,0],[x,9.6,57])
+# Body reveals, service fasteners, reflective markers and rear lamps.
+for side in (-1,1):
+ x=side*14.0;lo,hi=sorted((x,x+side*.12))
+ for z in (3,9,15,47):box(body,'separatie panou',lo,26,z,hi,38,z+.20,'otel')
+ for z in (2,10):box(body,'maner capota',lo,24,z,hi,24.5,z+2,'negru')
+ for z in (-8,41):box(body,'reflector lateral',lo,27,z,hi,28,z+1.5,'chihlimbar')
+for x in (-9,7):
+ box(body,'carcasa lampa spate',x,23,60,x+2.5,25.5,60.8,'negru')
+ box(body,'lampa spate rosie',x+.25,23.3,60.8,x+2.25,25.2,60.95,'rosu')
 # Curved/panoramic cab approximation: slender black frame + angled window panes.
 box(body,'podea cabina',-10.5,28,-26,10.5,29,-10,'sasiu')
 for side in (-1,1):
@@ -139,14 +162,25 @@ for y in (11,15,19,23,27,31,35):box(body,'treapta spate',-8,y,60,8.5,y+.4,61.2,'
 # Exact wheel diameters, 14-section front wheels; rear axle moved back to
 # preserve convincing proportions within the corrected total length.
 wheel('wheel_fl',-18,14,-12,14,8,14);wheel('wheel_fr',18,14,-12,14,8,14)
-wheel('wheel_rl',-14,8.4,31,8.4,4.8,10);wheel('wheel_rr',14,8.4,31,8.4,4.8,10)
+wheel('wheel_rl',-14,8.4,31,8.4,4.8,10,rear_axle);wheel('wheel_rr',14,8.4,31,8.4,4.8,10,rear_axle)
 auger=group('unloading_auger',[-13,44,0]);box(auger,'cot baza',-14.6,42.4,-1.6,-11.4,45.6,1.6,'verde');box(auger,'tub descarcare',-14.6,42.4,0,-11.4,45.6,44,'crem');box(auger,'manson flexibil',-14.8,42.2,42,-11.2,45.8,44,'negru');box(auger,'lampa descarcare',-14.8,41.2,39,-11.2,42.4,41,'far')
+# Fixed feeder hinge supports on the machine remain anchored to the body.
+for side in (-1,1):
+ x=side*7.6
+ box(body,'placa prindere heder',x-.8,18.2,-21.2,x+.8,23.8,-18.8,'sasiu')
+ box(body,'bolt pivot heder',x-1.05,20.1,-20.9,x+1.05,21.9,-19.1,'metal')
+# Whole feeder and header rotate around the same hinge; the rear wall sits
+# across the feeder mouth, not floating in front of it.
 header=group('header_assembly',[0,21,-20]);beam_yz(header,'feeder neted',0,15,8,-40,21,-20,5,'sasiu')
 for x in (-7.6,7.6):
  beam_yz(header,'bara feeder',x,.65,8,-40,21,-20,.7,'metal')
  beam_yz(header,'cilindru hidraulic corp',x,1.8,7,-37,11,-30,1.8,'negru')
  beam_yz(header,'cilindru hidraulic tija',x,.7,11,-30,17,-23,.7,'metal')
 box(header,'jgheab fund',-38.4,1.2,-54,38.4,2.2,-39,'sasiu');box(header,'jgheab perete',-38.4,2.2,-40,38.4,11,-39,'rosu')
+# Coupler surrounds the feeder mouth and overlaps the trough's rear wall.
+box(header,'rama cuplare heder inferioara',-8,5.5,-40.4,8,7,-38.6,'otel')
+for x in (-8,7):box(header,'rama cuplare laterala',x,7,-40.4,x+1,12,-38.6,'sasiu')
+box(header,'rama cuplare heder superioara',-8,11,-40.4,8,12,-38.6,'otel')
 for side in (-1,1):
  x=side*36.8;box(header,'capac lateral heder',x-1.6,2,-54,x+1.6,10,-39,'rosu')
  for k in range(8):
@@ -155,9 +189,9 @@ for side in (-1,1):
  beam_yz(header,'protectie cromata',x,.4,1.75,-69,3,-54,.4,'metal')
 for x in (-35,35):
  beam_yz(header,'brat rabator',x,1.25,9,-39,14,-44,1.2,'rosu');beam_yz(header,'tija rabator',x,.65,6,-39,14,-44,.65,'metal')
-cutter=group('cutter_bar',[0,1.2,-54],header);box(cutter,'bara taiere',-37.5,1.1,-54.5,37.5,1.9,-53.6,'metal')
+cutter=group('cutter_bar',[0,1.2,-54],header);box(cutter,'bara taiere',-37.5,0,-54.5,37.5,.8,-53.6,'metal')
 for i in range(38):
- x=-37+i*2;box(cutter,'dinte taiere',x,1.05,-55.7,x+1.1,1.55,-54,'crem')
+ x=-37+i*2;box(cutter,'dinte taiere',x,0,-55.7,x+1.1,.5,-54,'crem')
 intake=group('intake_auger',[0,6.5,-40],header);box(intake,'snec',-37,4.8,-41.7,37,8.2,-38.3,'metal')
 for i in range(52):
  x=-36.4+i*1.4;cube(intake,'spirala',[x,8.2,-40.35],[x+.75,8.8,-39.65],'otel',[i*33,0,0],[x,6.5,-40])
