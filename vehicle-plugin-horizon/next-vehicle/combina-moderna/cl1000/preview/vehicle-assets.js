@@ -13,11 +13,16 @@ function build(data,scale){const buckets=new Map();
  }
  const root=new THREE.Group();for(const [name,parts] of buckets){const geom=mergeGeometries(parts);for(const part of parts)part.dispose();root.add(new THREE.Mesh(geom,material(name)))}root.scale.setScalar(scale/16);return root;
 }
-export async function createServerVehiclePreview(){const [tractorBody,frontWheel,rearWheel,trailerBody]=await Promise.all(['utb_650_body','utb_650_wheel_front','utb_650_wheel_rear','tractor_trailer_body'].map(model));const rig=new THREE.Group(),oriented=new THREE.Group();oriented.rotation.y=Math.PI;rig.add(oriented);
+export async function createServerVehiclePreview(kind='small'){
+ if(!['small','large'].includes(kind))throw Error('Tip de remorcă necunoscut');
+ const large=kind==='large',names=['utb_650_body','utb_650_wheel_front','utb_650_wheel_rear',large?'tractor_trailer_modern_body':'tractor_trailer_body'];if(large)names.push('tractor_trailer_modern_axle','tractor_trailer_modern_drawbar');
+ const [tractorBody,frontWheel,rearWheel,trailerBody,axle,drawbar]=await Promise.all(names.map(model));const rig=new THREE.Group(),oriented=new THREE.Group();oriented.rotation.y=Math.PI;rig.add(oriented);
  const body=build(trailerBody,2);body.position.y=.5;oriented.add(body);const wheels=[];
- function wheel(parent,data,x,y,z,side){const pivot=new THREE.Group();pivot.position.set(x,y,z);parent.add(pivot);const m=build(data,1);if(side>0)m.rotation.y=Math.PI;pivot.add(m);wheels.push(pivot)}
- for(const side of [-1,1])wheel(oriented,frontWheel,side*1,.43125,0,side);
- const tractor=new THREE.Group();tractor.position.z=3.93;oriented.add(tractor);const bodyTractor=build(tractorBody,2);bodyTractor.position.y=.5;tractor.add(bodyTractor);
+ function wheel(parent,data,x,y,z,side,shape=[1,1,1]){const pivot=new THREE.Group();pivot.position.set(x,y,z);parent.add(pivot);const m=build(data,1);m.scale.multiply(new THREE.Vector3(...shape));if(side>0)m.rotation.y=Math.PI;pivot.add(m);wheels.push(pivot)}
+ if(large){const a=build(axle,2);a.position.set(0,.5,1.5);oriented.add(a);const d=build(drawbar,2);d.position.set(0,.6,1.5);oriented.add(d);for(const side of [-1,1])for(const z of [-1.45,1.5])wheel(oriented,frontWheel,side*.885,.48,z,side,[1.28,1.113,1.113])}
+ else for(const side of [-1,1])wheel(oriented,frontWheel,side*1,.43125,0,side);
+ const tractor=new THREE.Group();tractor.position.z=large?5.55:3.93;oriented.add(tractor);const bodyTractor=build(tractorBody,2);bodyTractor.position.y=.5;tractor.add(bodyTractor);
  for(const side of [-1,1]){wheel(tractor,frontWheel,side*11.25/16,6.9/16,13.68/16,side);wheel(tractor,rearWheel,side*14.65/16,12.4/16,-25.2/16,side)}
- const grain=new THREE.Mesh(new THREE.BoxGeometry(1.6,.03,2.05),new THREE.MeshStandardMaterial({color:'#d2b36a'}));grain.position.set(0,.59,0);grain.visible=false;oriented.add(grain);rig.userData.grain=grain;rig.userData.wheels=wheels;rig.userData.bed={halfX:.82,halfZ:1.04,floor:.575,top:1.25};return rig;
+ const bed=large?{halfX:1.0,halfZ:1.98,floor:1.15,top:2.15,levelBase:1.18,levelRise:.8}:{halfX:.82,halfZ:1.04,floor:.575,top:1.25,levelBase:.59,levelRise:.55};
+ const grain=new THREE.Mesh(new THREE.BoxGeometry(large?1.9:1.6,.03,large?3.9:2.05),new THREE.MeshStandardMaterial({color:'#d2b36a'}));grain.position.set(0,bed.levelBase,0);grain.visible=false;oriented.add(grain);rig.userData.grain=grain;rig.userData.wheels=wheels;rig.userData.bed=bed;rig.userData.kind=kind;return rig;
 }
