@@ -20,5 +20,5 @@ with zipfile.ZipFile(a.pack) as z:
   group_names=['body','header_assembly','unloading_auger','wheel_rl','wheel_rr','wheel_fl','wheel_fr','reel','intake_auger']
   groups=[{'uuid':n,'name':n,'origin':[0,0,0]} for n in group_names]
   outliner=[{'uuid':n,'children':children if n=='body' else []} for n in group_names]
-  (a.output/f'glb-{variant}-preview.json').write_text(json.dumps({'textures':textures,'elements':elements,'groups':groups,'outliner':outliner},separators=(',',':')))
+  (a.output/f'glb-{variant}-preview.json').write_text(json.dumps({'textures':textures,'elements':elements,'groups':groups,'outliner':outliner,'static_source_glb':True},separators=(',',':')))
   print(variant,len(elements),'cuburi')
