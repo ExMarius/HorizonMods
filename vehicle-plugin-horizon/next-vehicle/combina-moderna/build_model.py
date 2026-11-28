@@ -57,6 +57,13 @@ def wheel(name,x,y,z,r,width,count,parent=None):
   box(g,'butuc rosu',lo,y-1.35,z-1.35,hi,y+1.35,z+1.35,'rosu')
   for dy,dz in ((2,0),(-2,0),(0,2),(0,-2)):box(g,'prezon',lo,y+dy-.2,z+dz-.2,hi,y+dy+.2,z+dz+.2,'metal')
  return g
+def beam_xyz(g,n,p1,p2,thickness,c):
+ # One short rotated cuboid joining consecutive points on the helix.
+ dx,dy,dz=(p2[i]-p1[i] for i in range(3));length=math.sqrt(dx*dx+dy*dy+dz*dz)
+ cx,cy,cz=((p1[i]+p2[i])/2 for i in range(3))
+ yaw=math.degrees(math.atan2(-dz,math.hypot(dx,dy)));roll=math.degrees(math.atan2(dy,dx))
+ cube(g,n,[cx-length/2,cy-thickness/2,cz-thickness/2],[cx+length/2,cy+thickness/2,cz+thickness/2],c,[0,yaw,roll],[cx,cy,cz])
+
 # 8.20 m = 131.2 units, with the specified header/reel/auger pivots.
 # Contradictory source Z range -52..32 is only 84 units; the sculpted
 # body extends rearward and the crop dividers forward instead.
@@ -176,31 +183,52 @@ for x in (-7.6,7.6):
  beam_yz(header,'bara feeder',x,.65,8,-40,21,-20,.7,'metal')
  beam_yz(header,'cilindru hidraulic corp',x,1.8,7,-37,11,-30,1.8,'negru')
  beam_yz(header,'cilindru hidraulic tija',x,.7,11,-30,17,-23,.7,'metal')
-box(header,'jgheab fund',-38.4,1.2,-54,38.4,2.2,-39,'sasiu');box(header,'jgheab perete',-38.4,2.2,-40,38.4,11,-39,'rosu')
-# Coupler surrounds the feeder mouth and overlaps the trough's rear wall.
+# Cutter and reel are on the FRONT (-Z), auger behind them toward +Z.
+# A continuous, deeper trough links the cutting bar to the feeder mouth.
+box(header,'jgheab fund',-38.4,1.2,-64,38.4,2.2,-39,'sasiu')
+box(header,'jgheab perete',-38.4,2.2,-40,38.4,11,-39,'rosu')
 box(header,'rama cuplare heder inferioara',-8,5.5,-40.4,8,7,-38.6,'otel')
 for x in (-8,7):box(header,'rama cuplare laterala',x,7,-40.4,x+1,12,-38.6,'sasiu')
 box(header,'rama cuplare heder superioara',-8,11,-40.4,8,12,-38.6,'otel')
 for side in (-1,1):
- x=side*36.8;box(header,'capac lateral heder',x-1.6,2,-54,x+1.6,10,-39,'rosu')
+ x=side*36.8;box(header,'capac lateral heder',x-1.6,2,-64,x+1.6,10,-39,'rosu')
  for k in range(8):
-  z1=-70+16*k/8;z2=-70+16*(k+1)/8;w=.16+1.44*(k+1)/8
+  z1=-70+6*k/8;z2=-70+6*(k+1)/8;w=.16+1.44*(k+1)/8
   box(header,'despartitor conic',x-w,1.2,z1,x+w,1.8+1.5*(k+1)/8,z2,'rosu')
- beam_yz(header,'protectie cromata',x,.4,1.75,-69,3,-54,.4,'metal')
-for x in (-35,35):
- beam_yz(header,'brat rabator',x,1.25,9,-39,14,-44,1.2,'rosu');beam_yz(header,'tija rabator',x,.65,6,-39,14,-44,.65,'metal')
-cutter=group('cutter_bar',[0,1.2,-54],header);box(cutter,'bara taiere',-37.5,0,-54.5,37.5,.8,-53.6,'metal')
+ beam_yz(header,'protectie cromata',x,.4,1.75,-69,3,-64,.4,'metal')
+ # Pivot bracket and two fixed support/hydraulic arms terminate at the axle.
+ beam_yz(header,'brat rabator',x-side*1.8,1.25,9,-40,11,-57.5,1.2,'rosu')
+ beam_yz(header,'cilindru rabator corp',x-side*1.8,1.0,5.5,-41,8.0,-50,1.0,'negru')
+ beam_yz(header,'cilindru rabator tija',x-side*1.8,.55,8,-50,11,-57.5,.55,'metal')
+ box(header,'lagar rabator',x-side*1.8-.8,10.2,-58.3,x-side*1.8+.8,11.8,-56.7,'negru')
+cutter=group('cutter_bar',[0,1.2,-64],header);box(cutter,'bara taiere',-37.5,0,-64.5,37.5,.8,-63.6,'metal')
 for i in range(38):
- x=-37+i*2;box(cutter,'dinte taiere',x,0,-55.7,x+1.1,.5,-54,'crem')
-intake=group('intake_auger',[0,6.5,-40],header);box(intake,'snec',-37,4.8,-41.7,37,8.2,-38.3,'metal')
-for i in range(52):
- x=-36.4+i*1.4;cube(intake,'spirala',[x,8.2,-40.35],[x+.75,8.8,-39.65],'otel',[i*33,0,0],[x,6.5,-40])
-for x in (-5,-2,1,4):box(intake,'deget snec',x,8.2,-40.25,x+.45,10,-39.75,'negru')
-reel=group('reel',[0,14,-44],header);box(reel,'ax rabator',-37,13.6,-44.4,37,14.4,-43.6,'otel')
+ x=-37+i*2;box(cutter,'dinte taiere',x,0,-65.7,x+1.1,.5,-64,'crem')
+# Polygonal auger drum plus continuous helical flighting from both ends.
+# Left and right spirals have opposite handedness to lead toward the centre.
+intake=group('intake_auger',[0,6.5,-47.5],header)
+box(intake,'tambur snec miez',-36.9,5.2,-49.0,36.9,7.8,-46.0,'metal')
+box(intake,'tambur snec miez',-36.9,4.9,-48.65,36.9,8.1,-46.35,'metal')
+for j in range(12):
+ angle=j*30;cube(intake,'tambur octogonal',[-36.9,8.0,-47.95],[36.9,8.35,-47.05],'metal',[angle,0,0],[0,6.5,-47.5])
+for side in (-1,1):
+ for i in range(68):
+  u1=i/68;u2=(i+1)/68
+  def helix(u):
+   x=side*(35.8-u*32.8);angle=side*u*math.pi*8
+   return [x,6.5+2.25*math.cos(angle),-47.5+2.25*math.sin(angle)]
+  beam_xyz(intake,'spirala continua snec',helix(u1),helix(u2),.42,'otel')
+for x in (-4.5,-2.5,-.5,1.5,3.5):
+ box(intake,'deget alimentare snec',x,8.1,-47.8,x+.45,10,-47.2,'negru')
+for x in (-37,36.5):box(intake,'flansa snec',x,4.4,-49.6,x+.5,8.6,-45.4,'sasiu')
+# Lower and advance the reel to just behind the cutter, in front of the auger.
+reel=group('reel',[0,11,-57.5],header);box(reel,'ax rabator',-37,10.6,-57.9,37,11.4,-57.1,'otel')
 for j in range(6):
  angle=j*60
- for x in (-34,-11,11,34):cube(reel,'stea rabator',[x-.35,14,-44.35],[x+.35,24,-43.65],'metal',[angle,0,0],[x,14,-44])
- cube(reel,'bara rabator',[-37,23.6,-44.3],[37,24.3,-43.7],'sasiu',[angle,0,0],[0,14,-44])
- for x in range(-36,37,3):cube(reel,'gheara', [x-.12,21.5,-44.15],[x+.12,23.8,-43.85],'metal',[angle,0,0],[0,14,-44])
+ for x in (-34,-11,11,34):cube(reel,'stea rabator',[x-.35,11,-57.85],[x+.35,20.3,-57.15],'metal',[angle,0,0],[x,11,-57.5])
+ cube(reel,'bara rabator',[-37,19.9,-57.8],[37,20.5,-57.2],'sasiu',[angle,0,0],[0,11,-57.5])
+ for x in range(-36,37,3):
+  cube(reel,'gheara rabator',[x-.12,18.0,-57.65],[x+.12,20.1,-57.35],'metal',[angle,0,0],[0,11,-57.5])
+  cube(reel,'varf gheara',[x-.14,17.7,-57.95],[x+.14,18.15,-57.35],'metal',[angle,0,0],[0,11,-57.5])
 project={'meta':{'format_version':'5.0','model_format':'free','box_uv':False},'name':'Horizon Combina Moderna 1-1','model_identifier':'horizon_combina_moderna','visible_box':[8,8,0],'resolution':{'width':16,'height':16},'elements':elements,'groups':groups,'outliner':roots,'textures':textures}
 OUT.parent.mkdir(exist_ok=True);OUT.write_text(json.dumps(project,separators=(',',':'))+'\n');print('Wrote',OUT,'elements',len(elements),'groups',len(groups))
