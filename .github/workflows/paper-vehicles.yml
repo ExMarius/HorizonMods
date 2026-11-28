@@ -15,6 +15,10 @@ on:
       - '.github/workflows/paper-vehicles.yml'
   workflow_dispatch:
     inputs:
+      install_red_pump:
+        description: Install red pump visual pack on test server
+        type: boolean
+        default: false
       install_new_cab:
         description: Back up and install the approved recovery cab
         type: boolean
@@ -68,7 +72,7 @@ jobs:
           retention-days: 14
 
   recovery-package:
-    if: github.event_name == 'workflow_dispatch' && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab && !inputs.build_forge_client
+    if: github.event_name == 'workflow_dispatch' && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab && !inputs.build_forge_client && !inputs.install_red_pump
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -169,6 +173,34 @@ jobs:
           echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
       - name: Install matching JAR and resource pack
         run: python3 paper-vehicles/deploy/falix_recovery_cab_install.py install vehicle-plugin-horizon/paper-plugin/build/libs/MrCrayfishVehiclePlugin-0.1.0-SNAPSHOT.jar /tmp/recovery-new/HorizonOffRoader-1.21.4.zip "$PACK_URL"
+
+  install-red-pump:
+    if: github.event_name == 'workflow_dispatch' && inputs.install_red_pump && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab && !inputs.build_forge_client
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    concurrency:
+      group: falix-vehicle-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare pump-only pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p /tmp/pump-old /tmp/pump-new
+          gh release download horizon-offroader-46057404122 --repo ExMarius/HorizonMods --pattern HorizonOffRoader-1.21.4.zip --dir /tmp/pump-old
+          python3 vehicle-plugin-horizon/next-vehicle/pompa-preview/minecraft/build_pack.py /tmp/pump-old/HorizonOffRoader-1.21.4.zip /tmp/pump-new/HorizonOffRoader-1.21.4.zip
+      - name: Back up and verify current installation
+        run: python3 paper-vehicles/deploy/falix_red_pump_install.py backup /tmp/pump-old/HorizonOffRoader-1.21.4.zip /tmp/pump-new/HorizonOffRoader-1.21.4.zip
+      - name: Publish pump resource pack
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="horizon-offroader-${GITHUB_RUN_ID}"
+          gh release create "$tag" /tmp/pump-new/HorizonOffRoader-1.21.4.zip --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title 'Red pump resource pack' --notes 'Red pump concept adapted for Minecraft; visual alignment awaits in-game verification.'
+          echo "PACK_URL=https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/HorizonOffRoader-1.21.4.zip" >> "$GITHUB_ENV"
+      - name: Install resource pack and retain current JAR
+        run: python3 paper-vehicles/deploy/falix_red_pump_install.py install /tmp/pump-old/HorizonOffRoader-1.21.4.zip /tmp/pump-new/HorizonOffRoader-1.21.4.zip "$PACK_URL"
 
   forge-client-build:
     if: github.event_name == 'workflow_dispatch' && inputs.build_forge_client && !inputs.deploy_recovery && !inputs.diagnose_recovery && !inputs.install_new_cab
