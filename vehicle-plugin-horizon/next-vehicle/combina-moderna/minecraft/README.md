@@ -28,3 +28,9 @@ Conversia detaliată locală a fost construită cu `--pitch 5`: cereale 5.106 cu
 Anterior, modelul din dreapta, fără heder, era etichetat greșit drept cereale. Modelul de cereale este cel din mijloc: `cereale` X≈29, `porumb` X≈−585, `fara_heder` X≈561. S-au regenerat modelele detaliate și preview-ul.
 
 `rig_glb_boxes.py <pack> <manifest> <director>` separă aproximativ cuburile convertite în grupuri Blockbench pentru caroserie, heder și patru roți, folosind regiuni spațiale și pivoți estimați. Clasificarea poate include accidental cuburi ale caroseriei în roți/heder și trebuie inspectată vizual; rabatorul, melcul și tubul nu sunt separate în mod fiabil. Nu este încă un model realizat manual, optimizat sau un rig Minecraft funcțional.
+
+## Cuburile utilizatorului, fără redesenare
+
+`merge_voxel_boxes.py <input.bbmodel> <output.bbmodel>` încearcă reunirea cuburilor adiacente cu aceleași fețe/textură în interiorul fiecărui bone, fără modificarea volumului sau a culorilor. Pentru cele două fișiere curente, conversia inițială făcuse deja aceste reuniri: rezultatul rămâne la 5.106 cuburi pentru cereale și 5.899 pentru porumb. Exportul `build_parts.py` le grupează în câte șase modele/ItemDisplay, dar fiecare model conține în continuare mii de cuburi: șase display-uri nu înseamnă un model performant sau cu sub 300 de elemente.
+
+Fișierele `glb-*-optimizat.bbmodel` și copiile `horizon-combina-glb-*-bucati.bbmodel` păstrează geometria voxelizată, nu reconstrucția desenată separat. Gruparea actuală în roți și heder este estimată spațial, nu identificată sigur din sursă, și poate include cuburi greșite; melcii și rabatorul nu sunt separați. Preview-ul grupează cuburile după bone/culoare doar pentru afișare rapidă, fără a reduce complexitatea resursei din joc. Nu există încă integrare sau verificare Minecraft. Atingerea limitei de 250–300 de cuburi va necesita înlocuirea formelor prin aproximări, nu o reunire exactă.
