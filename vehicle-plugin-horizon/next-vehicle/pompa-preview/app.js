@@ -42,17 +42,24 @@ box([.15,.11,.16],black,[.55,1.61,.02],pump);
 function label(text,sub){const c=document.createElement('canvas');c.width=512;c.height=192;const q=c.getContext('2d');q.fillStyle='#b7d1c0';q.fillRect(0,0,512,192);q.fillStyle='#20342e';q.font='bold 54px monospace';q.fillText(text,22,78);q.font='bold 25px sans-serif';q.fillText(sub,25,137);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const plane=new THREE.Mesh(new THREE.PlaneGeometry(.57,.215),new THREE.MeshBasicMaterial({map:tex}));plane.position.set(0,1.49,.436);pump.add(plane)}
 label('00.00 L','HORIZON   /   COMBUSTIBIL');
 const nameCanvas=document.createElement('canvas');nameCanvas.width=512;nameCanvas.height=100;const nc=nameCanvas.getContext('2d');nc.fillStyle='#8f2024';nc.fillRect(0,0,512,100);nc.font='bold 48px sans-serif';nc.fillStyle='#fff1de';nc.textAlign='center';nc.fillText('HORIZON',256,65);const nt=new THREE.CanvasTexture(nameCanvas);nt.colorSpace=THREE.SRGBColorSpace;const nameplate=new THREE.Mesh(new THREE.PlaneGeometry(.62,.11),new THREE.MeshBasicMaterial({map:nt}));nameplate.position.set(0,1.72,.375);pump.add(nameplate);
-// Pistol: grip, guard, trigger, body and metal spout are independently built.
+// Existing MrCrayfish nozzle geometry, with only its orange texture shades
+// recolored red. Coordinate origin is the centre of the grip (8, 4.5, 8).
 const nozzlePivot=new THREE.Group();scene.add(nozzlePivot);
-box([.13,.25,.13],redDark,[0,-.075,0],nozzlePivot);
-box([.15,.095,.27],red,[0,.065,.085],nozzlePivot);
-box([.12,.075,.18],black,[0,.075,-.095],nozzlePivot);
-box([.08,.075,.25],steel,[0,.085,.30],nozzlePivot);
-box([.09,.075,.045],steel,[0,.105,.445],nozzlePivot);
-box([.055,.025,.16],steel,[0,-.13,.105],nozzlePivot);
-box([.055,.14,.025],steel,[0,-.065,.18],nozzlePivot);
-box([.055,.08,.035],black,[0,-.02,.075],nozzlePivot);
-const nozzleHosePoint=new THREE.Vector3(0,-.205,-.035);
+const nozzleHosePoint=new THREE.Vector3(0,(6.8-4.5)/16,-.5);
+const hiddenFace=new THREE.MeshBasicMaterial({visible:false});
+const nozzleTexture=new THREE.TextureLoader().load('/assets/nozzle-red.png');
+nozzleTexture.colorSpace=THREE.SRGBColorSpace;nozzleTexture.magFilter=THREE.NearestFilter;nozzleTexture.minFilter=THREE.NearestFilter;
+const nozzleMaterial=new THREE.MeshStandardMaterial({map:nozzleTexture,roughness:.75,transparent:true,alphaTest:.1,side:THREE.DoubleSide});
+function buildNozzle(data){
+ const result=new THREE.Group(),faces=['east','west','up','down','south','north'];
+ for(const e of data.elements){
+  const size=e.to.map((v,i)=>v-e.from[i]),center=e.to.map((v,i)=>(v+e.from[i])/2-8),geo=new THREE.BoxGeometry(...size),uv=geo.attributes.uv;
+  const materials=faces.map((face,i)=>{const f=e.faces[face];if(!f)return hiddenFace;const [u0,v0,u1,v1]=f.uv||[0,0,16,16];const points=[[u0,16-v0],[u1,16-v0],[u0,16-v1],[u1,16-v1]];const turns=((f.rotation||0)/90)%4;for(let k=0;k<4;k++){let j=k;for(let n=0;n<turns;n++)j=[1,3,0,2][j];uv.setXY(i*4+k,points[j][0]/16,points[j][1]/16)}return nozzleMaterial});
+  uv.needsUpdate=true;const piece=new THREE.Mesh(geo,materials);piece.castShadow=true;piece.receiveShadow=true;
+  if(e.rotation&&e.rotation.angle){const origin=e.rotation.origin.map(v=>v-8),pivot=new THREE.Group();pivot.position.set(...origin);piece.position.set(...center.map((v,i)=>v-origin[i]));pivot.rotation[e.rotation.axis]=THREE.MathUtils.degToRad(e.rotation.angle);pivot.add(piece);result.add(pivot)}else{piece.position.set(...center);result.add(piece)}
+ }
+ result.scale.setScalar(1/16);result.rotation.y=Math.PI;result.position.y=(8-4.5)/16;return result;
+}
 // Schematic Minecraft-like figure; not the in-game skin or proof of an actual arm pose.
 const player=new THREE.Group(),skin=soft('#dba577'),shirt=soft('#4e8b81'),pants=soft('#38445a'),boots=soft('#303541'),hair=soft('#49382c');scene.add(player);
 box([.5,.68,.26],shirt,[0,1.04,0],player);box([.5,.5,.5],skin,[0,1.63,0],player);box([.51,.105,.51],hair,[0,1.835,0],player);
@@ -84,5 +91,5 @@ function update(){
 function reset(){first=false;camera.position.set(5.8,3.5,6.2);controls.target.set(.45,1,0);controls.update();update()}
 distance.addEventListener('input',update);angle.addEventListener('input',update);document.querySelector('#held').onclick=()=>{held=true;update()};document.querySelector('#docked').onclick=()=>{held=false;update()};document.querySelector('#orbit').onclick=reset;document.querySelector('#first').onclick=()=>{first=true;update()};document.querySelector('#reset').onclick=reset;
 new ResizeObserver(()=>{const w=view.clientWidth,h=view.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}).observe(view);
-loading.hidden=true;reset();
+fetch('/assets/nozzle.json').then(response=>{if(!response.ok)throw Error('modelul pistolului nu a fost găsit');return response.json()}).then(data=>{nozzlePivot.add(buildNozzle(data));loading.hidden=true;reset()}).catch(error=>{console.error(error);loading.textContent='Pistolul nu s-a putut încărca. Reîncarcă pagina.'});
 function frame(){requestAnimationFrame(frame);if(!first)controls.update();renderer.render(scene,camera)}frame();
